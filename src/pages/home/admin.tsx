@@ -1,6 +1,5 @@
 import { faUserPlus, faUsersCog } from '@fortawesome/free-solid-svg-icons';
 import { Alert, Button, Grid, Group, Modal, Stack, Text } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import type { GetServerSideProps } from 'next';
 import { signIn, useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
@@ -16,6 +15,7 @@ import UserSearchFilter from '@/components/UserSearchFilter';
 import { useUser } from '@/context/users';
 import { endImpersonation } from '@/hooks/useImpersonation';
 import { PermissionType } from '@/lib/prisma-browser-exports';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
 interface UserSummary {
@@ -137,14 +137,13 @@ const AdminUsersPage = () => {
         if (signInResult?.error) throw new Error(signInResult.error);
         window.location.href = '/home/overview';
       } catch (requestError) {
-        notifications.show({
-          title: t('errors.impersonationTitle'),
-          message:
-            requestError instanceof Error
-              ? requestError.message
-              : t('errors.impersonation'),
-          color: 'red',
-        });
+        alertService.notify(
+          'error',
+          requestError instanceof Error
+            ? requestError.message
+            : t('errors.impersonation'),
+          { title: t('errors.impersonationTitle') },
+        );
       } finally {
         setIsImpersonationLoading(false);
       }

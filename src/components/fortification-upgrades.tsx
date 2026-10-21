@@ -1,80 +1,55 @@
-import { Badge, Button, Table } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 
+import { UpgradeLedger } from '@/components/game/UpgradeLedger';
 import { Fortifications } from '@/constants';
-import { useUser } from '@/context/users';
 import type { BattleUpgradeProps, Locales } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { toLocale } from '@/utils/numberFormatting';
 import { structureName } from '@/utils/structureNames';
 
-import { StyledTable } from './game/StyledTable';
-
 const FortificationsTab: React.FC<BattleUpgradeProps> = ({
   userLevel,
   fortLevel,
+  forceUpdate,
 }) => {
   const { t, i18n } = useTranslation(['structures', 'common']);
   const locale = i18n.language as Locales;
-  const { forceUpdate } = useUser();
 
-  const rows = Object.values(Fortifications)
-    .filter((item) => item.level <= fortLevel + 2)
-    .map((item, index) => (
-      <Table.Tr key={`${item.level}_${item.name}`}>
-        <Table.Td>
-          {structureName(t, 'fortifications', item.level, item.name)}{' '}
-          {item.level === fortLevel && (
-            <Badge color="yellow" ml={5}>
-              {t('labels.owned', { ns: 'common' })}
-            </Badge>
-          )}
-        </Table.Td>
-        <Table.Td>{item.levelRequirement}</Table.Td>
-        <Table.Td>
+  // Server rule: requested index === current fort level.
+  const rows = Fortifications.filter((item) => item.level <= fortLevel + 2).map(
+    (item, index) => ({
+      key: `${item.level}_${item.name}`,
+      name:
+        structureName(t, 'fortifications', item.level, item.name) ?? item.name,
+      position: item.level,
+      purchaseIndex: index,
+      cells: [
+        item.levelRequirement,
+        <>
           {t('fortifications.goldPerTurn')}:{' '}
           {toLocale(item.goldPerTurn, locale)}
           <br />
           {t('fortifications.defenseBonus')}: {item.defenseBonusPercentage}%
           <br />
           {t('upgrades.maxHp')}: {toLocale(item.hitpoints, locale)}
-        </Table.Td>
-        <Table.Td>
-          {toLocale(item.cost, locale)} {t('currency.gold', { ns: 'common' })}
-        </Table.Td>
-        <Table.Td>
-          {item.level === fortLevel + 1 &&
-          item.levelRequirement <= userLevel ? (
-            <Button
-              onClick={() => buyUpgrade('fortifications', index, forceUpdate)}
-            >
-              {t('labels.buy', { ns: 'common' })}
-            </Button>
-          ) : (
-            item.level === fortLevel + 1 && (
-              <span>
-                {t('upgrades.unlockAtLevel', {
-                  level: item.levelRequirement,
-                })}
-              </span>
-            )
-          )}
-        </Table.Td>
-      </Table.Tr>
-    ));
+        </>,
+      ],
+      cost: item.cost,
+      requirement: {
+        type: 'level' as const,
+        value: item.levelRequirement,
+        met: item.levelRequirement <= userLevel,
+      },
+    }),
+  );
 
   return (
-    <StyledTable
-      headers={[
-        t('labels.name', { ns: 'common' }),
-        t('upgrades.levelReq'),
-        t('labels.bonus', { ns: 'common' }),
-        t('labels.cost', { ns: 'common' }),
-        t('labels.action', { ns: 'common' }),
-      ]}
-    >
-      {rows}
-    </StyledTable>
+    <UpgradeLedger
+      columns={[t('upgrades.levelReq'), t('labels.bonus', { ns: 'common' })]}
+      rows={rows}
+      ownedPosition={fortLevel}
+      onBuy={(index) => buyUpgrade('fortifications', index, forceUpdate)}
+    />
   );
 };
 

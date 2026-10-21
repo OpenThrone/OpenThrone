@@ -27,9 +27,9 @@ import {
 import { useUser } from '@/context/users';
 import { useActiveGameEvents } from '@/hooks/useActiveGameEvents';
 import { alertService } from '@/services/Alert.service';
-import type { PlayerUnit, UnitType, User } from '@/types/typings'; // Assuming User type is defined elsewhere or use specific type from context
+import type { Locales, PlayerUnit, UnitType, User } from '@/types/typings'; // Assuming User type is defined elsewhere or use specific type from context
 import { logDebug, logError, logWarn } from '@/utils/logger'; // Added logError
-import { toLocale } from '@/utils/numberFormatting';
+import { formatGold, toLocale } from '@/utils/numberFormatting';
 
 /**
  * Represents data structure for a unit displayed in training section.
@@ -65,11 +65,12 @@ interface UnitTypeIndex {
  * for order summary and actions.
  */
 const Training: React.FC = () => {
-  const { t } = useTranslation('battle');
+  const { t, i18n } = useTranslation('battle');
   const {
     modifiers: { unitCostDiscountPercent: unitDiscount },
   } = useActiveGameEvents();
   const { user, forceUpdate } = useUser();
+  const locale = user?.locale ?? (i18n.language as Locales);
   const [totalCost, setTotalCost] = useState(0);
   const [showUntrainConfirm, setShowUntrainConfirm] = useState(false);
   const [unitCosts, setUnitCosts] = useState<{ [key: string]: number }>({}); // Maps unitId to quantity input
@@ -379,8 +380,8 @@ const Training: React.FC = () => {
         if (requiredGold > userGold) {
           alertService.error(
             t('training.insufficientGold', {
-              needed: toLocale(requiredGold, user.locale),
-              have: toLocale(userGold, user.locale),
+              needed: formatGold(requiredGold, locale),
+              have: formatGold(userGold, locale),
             }),
           );
           return;
@@ -394,8 +395,8 @@ const Training: React.FC = () => {
         if (citizensRequired > availableCitizens) {
           alertService.error(
             t('training.insufficientCitizens', {
-              needed: toLocale(citizensRequired, user.locale),
-              have: toLocale(availableCitizens, user.locale),
+              needed: toLocale(citizensRequired, locale),
+              have: toLocale(availableCitizens, locale),
             }),
           );
           return;
@@ -458,22 +459,22 @@ const Training: React.FC = () => {
         stats={[
           {
             label: t('training.untrainedCitizens'),
-            value: toLocale(citizenCount),
+            value: toLocale(citizenCount, locale),
             icon: faPeopleGroup,
           },
           {
             label: t('training.goldOnHand'),
-            value: toLocale(user.gold) ?? 0,
+            value: formatGold(user.gold, locale),
             icon: faCoins,
           },
           {
             label: t('training.bankedGold'),
-            value: toLocale(user.goldInBank) ?? 0,
+            value: formatGold(user.goldInBank, locale),
             icon: faBuildingColumns,
           },
           {
             label: t('training.defenseRatio'),
-            value: `${toLocale(defenseRatio * 100, user.locale)} %`,
+            value: `${toLocale(defenseRatio * 100, locale)} %`,
             icon: faShield,
           },
         ]}
@@ -534,18 +535,18 @@ const Training: React.FC = () => {
         message={t('attack.untrainMessage', {
           // What the player paid minus what untraining refunds (75% of the
           // full price, even during a training discount event).
-          gold: toLocale(
+          gold: formatGold(
             Math.max(
               0,
               Math.ceil(totalCost) -
                 refundFromDiscountedCost(totalCost, unitDiscount),
             ),
-            user.locale,
+            locale,
           ),
         })}
         confirmText={t('attack.confirm')}
         cancelText={t('training.cancel')}
-        type="remove"
+        type="destructive"
       />
     </MainArea>
   );

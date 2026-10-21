@@ -7,7 +7,10 @@ import {
   resetUserRelations,
 } from '@/services/UserDefaults.service';
 import { logActionStrict } from '@/utils/auditLogger';
-import { lockEraLifecycle } from '@/utils/eraLifecycleLock';
+import {
+  ERA_TRANSACTION_OPTIONS,
+  lockEraLifecycle,
+} from '@/utils/eraLifecycleLock';
 import {
   type EraStartSettings,
   resolveEraStartSettings,
@@ -71,13 +74,10 @@ export async function resetCurrentEra(input: CurrentEraResetInput) {
   if (input.confirmation !== `RESET ERA ${input.eraId}`) {
     throw new Error('Explicit confirmation is required');
   }
-  const result = await prisma.$transaction(
-    async (tx) => {
-      await lockEraLifecycle(tx);
-      return resetCurrentEraInTransaction(tx, input);
-    },
-    { maxWait: 10_000, timeout: 300_000, isolationLevel: 'ReadCommitted' },
-  );
+  const result = await prisma.$transaction(async (tx) => {
+    await lockEraLifecycle(tx);
+    return resetCurrentEraInTransaction(tx, input);
+  }, ERA_TRANSACTION_OPTIONS);
   invalidateRuntimeConfigCache();
   return result;
 }

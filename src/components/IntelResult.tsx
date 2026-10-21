@@ -7,6 +7,7 @@ import { Box, Grid, Group, RingProgress, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 
+import panelClasses from '@/components/game/Panels.module.css';
 import { useUser } from '@/context/users';
 import type { PlayerItem, PlayerUnit } from '@/types/typings';
 import { toLocale } from '@/utils/numberFormatting';
@@ -172,16 +173,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
               <Grid mt="md">
                 {unitSegments.map((segment, index) => (
                   <Grid.Col span={4} key={index}>
-                    <Box
-                      style={{
-                        backgroundColor: '#0f141a',
-                        borderRadius: '6px',
-                        border: '1px solid #1f2b3b',
-                        boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-                        padding: '8px',
-                        textAlign: 'center',
-                      }}
-                    >
+                    <Box className={panelClasses.insetRow} p="xs" ta="center">
                       <Text tt="uppercase" fz="xs" c="dimmed">
                         {t(`intelReport.unitTypes.${segment.label}`, {
                           defaultValue: segment.label,
@@ -231,14 +223,9 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                       {category.itemsBreakdown.map((item, idx) => (
                         <Grid.Col span={4} key={idx}>
                           <Box
-                            style={{
-                              backgroundColor: '#0f141a',
-                              borderRadius: '6px',
-                              border: '1px solid #1f2b3b',
-                              boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-                              padding: '8px',
-                              textAlign: 'center',
-                            }}
+                            className={panelClasses.insetRow}
+                            p="xs"
+                            ta="center"
                           >
                             <Text tt="uppercase" fz="xs" c="dimmed">
                               {t(`intelReport.itemTypes.${item.type}`, {

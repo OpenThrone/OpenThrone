@@ -38,3 +38,13 @@
     opacity: 0.2;
   }
 }
+/* Hold the dots at full strength when motion is reduced. */
+@media (prefers-reduced-motion: reduce) {
+  .loading span {
+    animation: none;
+  }
+}
+
+:global(body.reduced-motion) .loading span {
+  animation: none;
+}

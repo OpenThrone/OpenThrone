@@ -1,7 +1,6 @@
 import {
   Badge,
   Button,
-  Divider,
   Grid,
   Group,
   NumberInput,
@@ -12,8 +11,8 @@ import {
   Tabs,
   Text,
   TextInput,
-  Title,
-} from "@mantine/core";
+} from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import {
   forwardRef,
   useCallback,
@@ -21,16 +20,20 @@ import {
   useImperativeHandle,
   useMemo,
   useState,
-} from "react";
+} from 'react';
 
-import { BattleUpgrades } from "@/constants/Battle_Upgrades";
-import { ItemTypes } from "@/constants/Items";
-import { UnitTypes } from "@/constants/Units";
-import UserModel from "@/models/Users";
+import { BattleStatStrip } from '@/components/BattleStatStrip';
+import { SectionHeading } from '@/components/game/SectionHeading';
+import { BattleUpgrades } from '@/constants/Battle_Upgrades';
+import { ItemTypes } from '@/constants/Items';
+import { UnitTypes } from '@/constants/Units';
+import { useUser } from '@/context/users';
+import UserModel from '@/models/Users';
 import type {
   BattleUpgradeType,
   ItemType,
   ItemUsage,
+  Locales,
   PlayerBattleUpgrade,
   PlayerClass,
   PlayerItem,
@@ -39,8 +42,9 @@ import type {
   StructureUpgrade,
   UnitType,
   User,
-} from "@/types/typings";
-import { getBattleUpgradeStructure } from "@/utils/battleUpgradeStructure";
+} from '@/types/typings';
+import { getBattleUpgradeStructure } from '@/utils/battleUpgradeStructure';
+import { toLocale } from '@/utils/numberFormatting';
 
 type SimulatorUser = User & {
   UserUnit?: PlayerUnit[];
@@ -56,26 +60,29 @@ interface ArmyInputFormProps {
   attacker?: boolean;
 }
 
-const RACES: PlayerRace[] = ["HUMAN", "ELF", "GOBLIN", "UNDEAD"];
-const CLASSES: PlayerClass[] = ["FIGHTER", "CLERIC", "ASSASSIN", "THIEF"];
-const STRUCTURE_UPGRADES: StructureUpgrade["type"][] = [
-  "OFFENSE",
-  "SPY",
-  "SENTRY",
-  "ARMORY",
+const RACES: PlayerRace[] = ['HUMAN', 'ELF', 'GOBLIN', 'UNDEAD'];
+const CLASSES: PlayerClass[] = ['FIGHTER', 'CLERIC', 'ASSASSIN', 'THIEF'];
+const STRUCTURE_UPGRADES: StructureUpgrade['type'][] = [
+  'OFFENSE',
+  'SPY',
+  'SENTRY',
+  'ARMORY',
 ];
-const ITEM_GROUPS: Array<{ type: ItemType; usage: ItemUsage; label: string }> =
-  [
-    { type: "WEAPON", usage: "OFFENSE", label: "Attack weapon" },
-    { type: "ARMOR", usage: "DEFENSE", label: "Defense armor" },
-    { type: "SHIELD", usage: "DEFENSE", label: "Shield wall" },
-    { type: "HELM", usage: "DEFENSE", label: "Helms" },
-    { type: "BOOTS", usage: "OFFENSE", label: "Raiding boots" },
-    { type: "BRACERS", usage: "OFFENSE", label: "Bracers" },
-  ];
+const ITEM_GROUPS: Array<{
+  type: ItemType;
+  usage: ItemUsage;
+  labelKey: string;
+}> = [
+  { type: 'WEAPON', usage: 'OFFENSE', labelKey: 'weapon' },
+  { type: 'ARMOR', usage: 'DEFENSE', labelKey: 'armor' },
+  { type: 'SHIELD', usage: 'DEFENSE', labelKey: 'shield' },
+  { type: 'HELM', usage: 'DEFENSE', labelKey: 'helm' },
+  { type: 'BOOTS', usage: 'OFFENSE', labelKey: 'boots' },
+  { type: 'BRACERS', usage: 'OFFENSE', labelKey: 'bracers' },
+];
 
 const numberValue = (value: string | number): number =>
-  typeof value === "number" && Number.isFinite(value) ? value : 0;
+  typeof value === 'number' && Number.isFinite(value) ? value : 0;
 
 const normalizeUser = (user: SimulatorUser): SimulatorUser => ({
   ...user,
@@ -88,9 +95,9 @@ const normalizeUser = (user: SimulatorUser): SimulatorUser => ({
 const formatType = (value: string) =>
   value
     .toLowerCase()
-    .split("_")
+    .split('_')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+    .join(' ');
 
 const getUnitQuantity = (units: PlayerUnit[], type: UnitType, level: number) =>
   units.find((unit) => unit.type === type && unit.level === level)?.quantity ??
@@ -117,15 +124,15 @@ const getBattleUpgradeQuantity = (
 
 const getStructureLevel = (
   upgrades: StructureUpgrade[],
-  type: StructureUpgrade["type"],
+  type: StructureUpgrade['type'],
 ) => upgrades.find((upgrade) => upgrade.type === type)?.level ?? 1;
 
 const isRaceAllowed = (itemRace: PlayerRace, playerRace: PlayerRace) =>
-  itemRace === "ALL" || itemRace === playerRace;
+  itemRace === 'ALL' || itemRace === playerRace;
 
 const getRequiredStructureType = (
   type: BattleUpgradeType,
-): StructureUpgrade["type"] => getBattleUpgradeStructure(type);
+): StructureUpgrade['type'] => getBattleUpgradeStructure(type);
 
 const canUseUnit = (
   unit: (typeof UnitTypes)[number],
@@ -175,7 +182,7 @@ const sanitizeUserForAvailability = (user: SimulatorUser): SimulatorUser => {
   const playerLevel = model.level;
   const fortLevel = normalized.fort_level ?? 1;
   const structureUpgrades = normalized.UserStructureUpgrade ?? [];
-  const armoryLevel = getStructureLevel(structureUpgrades, "ARMORY");
+  const armoryLevel = getStructureLevel(structureUpgrades, 'ARMORY');
   const race = normalized.race as PlayerRace;
 
   const UserUnit = (normalized.UserUnit ?? []).filter((unit) => {
@@ -224,6 +231,11 @@ const ArmyInputForm = forwardRef<
   { getFormData: () => SimulatorUser },
   ArmyInputFormProps
 >(({ title, armyData, onUpdate, attacker = true }, ref) => {
+  const { t, i18n } = useTranslation('battle');
+  const { user: viewer } = useUser();
+  const locale = viewer?.locale ?? (i18n.language as Locales);
+  const typeLabel = (type: string) =>
+    t(`unitTypes.${type}`, { defaultValue: formatType(type) });
   const [formData, setFormData] = useState<SimulatorUser>(() =>
     normalizeUser(armyData),
   );
@@ -328,7 +340,7 @@ const ArmyInputForm = forwardRef<
   );
 
   const handleStructureChange = useCallback(
-    (type: StructureUpgrade["type"], value: string | number) => {
+    (type: StructureUpgrade['type'], value: string | number) => {
       const level = Math.max(1, numberValue(value));
       updateUser((current: SimulatorUser) => {
         const nextUpgrades = (current.UserStructureUpgrade ?? []).filter(
@@ -358,7 +370,7 @@ const ArmyInputForm = forwardRef<
   const structureUpgrades = formData.UserStructureUpgrade ?? [];
   const playerLevel = userModel.level;
   const fortLevel = formData.fort_level ?? 1;
-  const armoryLevel = getStructureLevel(structureUpgrades, "ARMORY");
+  const armoryLevel = getStructureLevel(structureUpgrades, 'ARMORY');
 
   useImperativeHandle(ref, () => ({ getFormData: () => availableFormData }), [
     availableFormData,
@@ -366,103 +378,118 @@ const ArmyInputForm = forwardRef<
 
   const updateButton = onUpdate ? (
     <Button size="xs" variant="light" onClick={() => onUpdate(formData)}>
-      Apply
+      {t('battleSimulator.form.apply')}
     </Button>
   ) : null;
 
   return (
-    <Stack gap="md">
+    // The surrounding card already shows the side's name, so the form only
+    // keeps it as its accessible label.
+    <Stack gap="md" role="group" aria-label={title}>
       <Group justify="space-between" align="flex-start">
         <div>
-          <Title order={3}>{title}</Title>
           <Text size="sm" c="dimmed">
             {attacker
-              ? "Configure the raiding force"
-              : "Shape the defending realm"}
+              ? t('battleSimulator.form.attackerSubtitle')
+              : t('battleSimulator.form.defenderSubtitle')}
           </Text>
         </div>
         {updateButton}
       </Group>
 
-      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-        <StatTile label="Offense" value={userModel.offense} />
-        <StatTile label="Defense" value={userModel.defense} />
-        <StatTile label="Sentry" value={userModel.sentry} />
-        <StatTile label="Army" value={userModel.armySize} />
-      </SimpleGrid>
+      <BattleStatStrip
+        stats={[
+          { label: t('stats.offense'), value: userModel.offense },
+          { label: t('stats.defense'), value: userModel.defense },
+          { label: t('stats.sentry'), value: userModel.sentry },
+          { label: t('battleSimulator.form.army'), value: userModel.armySize },
+        ].map(({ label, value }) => ({
+          label,
+          value: toLocale(Math.round(value), locale),
+          tone: 'normal' as const,
+        }))}
+      />
 
       <Tabs defaultValue="basic" variant="outline">
         <Tabs.List>
-          <Tabs.Tab value="basic">Command</Tabs.Tab>
-          <Tabs.Tab value="units">Units</Tabs.Tab>
-          <Tabs.Tab value="items">Items</Tabs.Tab>
-          <Tabs.Tab value="upgrades">Upgrades</Tabs.Tab>
+          <Tabs.Tab value="basic">
+            {t('battleSimulator.form.tabCommand')}
+          </Tabs.Tab>
+          <Tabs.Tab value="units">
+            {t('battleSimulator.form.tabUnits')}
+          </Tabs.Tab>
+          <Tabs.Tab value="items">
+            {t('battleSimulator.form.tabItems')}
+          </Tabs.Tab>
+          <Tabs.Tab value="upgrades">
+            {t('battleSimulator.form.tabUpgrades')}
+          </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="basic" pt="md">
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
             <TextInput
-              label="Name"
-              value={formData.display_name ?? ""}
+              label={t('battleSimulator.form.name')}
+              value={formData.display_name ?? ''}
               onChange={(event) =>
-                handleBasicChange("display_name", event.currentTarget.value)
+                handleBasicChange('display_name', event.currentTarget.value)
               }
             />
             <Select
-              label="Race"
+              label={t('battleSimulator.form.race')}
               data={RACES}
               value={formData.race}
               onChange={(value) =>
-                handleBasicChange("race", (value ?? "HUMAN") as PlayerRace)
+                handleBasicChange('race', (value ?? 'HUMAN') as PlayerRace)
               }
             />
             <Select
-              label="Class"
+              label={t('battleSimulator.form.class')}
               data={CLASSES}
               value={formData.class}
               onChange={(value) =>
-                handleBasicChange("class", (value ?? "FIGHTER") as PlayerClass)
+                handleBasicChange('class', (value ?? 'FIGHTER') as PlayerClass)
               }
             />
             <NumberInput
-              label="Experience"
+              label={t('battleSimulator.form.experience')}
               min={0}
               value={formData.experience ?? 0}
               onChange={(value) =>
-                handleBasicChange("experience", numberValue(value))
+                handleBasicChange('experience', numberValue(value))
               }
             />
             <NumberInput
-              label="Gold on hand"
+              label={t('battleSimulator.form.gold')}
               min={0}
               value={Number(formData.gold ?? 0)}
               onChange={(value) =>
-                handleBasicChange("gold", BigInt(numberValue(value)))
+                handleBasicChange('gold', BigInt(numberValue(value)))
               }
             />
             <NumberInput
-              label="Fort level"
+              label={t('battleSimulator.form.fortLevel')}
               min={1}
               max={30}
               value={formData.fort_level ?? 1}
               onChange={(value) =>
-                handleBasicChange("fort_level", numberValue(value))
+                handleBasicChange('fort_level', numberValue(value))
               }
             />
             <NumberInput
-              label="Fort hitpoints"
+              label={t('battleSimulator.form.fortHitpoints')}
               min={0}
               value={formData.fort_hitpoints ?? 0}
               onChange={(value) =>
-                handleBasicChange("fort_hitpoints", numberValue(value))
+                handleBasicChange('fort_hitpoints', numberValue(value))
               }
             />
             <NumberInput
-              label="Attack turns"
+              label={t('battleSimulator.form.attackTurns')}
               min={0}
               value={formData.attack_turns ?? 0}
               onChange={(value) =>
-                handleBasicChange("attack_turns", numberValue(value))
+                handleBasicChange('attack_turns', numberValue(value))
               }
             />
           </SimpleGrid>
@@ -474,13 +501,23 @@ const ArmyInputForm = forwardRef<
               (() => {
                 const disabled = !canUseUnit(unit, playerLevel, fortLevel);
                 const unlockText = disabled
-                  ? `Requires player level ${unit.level} and fort ${unit.fortLevel}+`
-                  : `HP ${unit.hp} · fort ${unit.fortLevel}+`;
+                  ? t('battleSimulator.form.unitRequires', {
+                      level: unit.level,
+                      fort: unit.fortLevel,
+                    })
+                  : t('battleSimulator.form.unitInfo', {
+                      hp: unit.hp,
+                      fort: unit.fortLevel,
+                    });
 
                 return (
                   <NumberInput
                     key={`${unit.type}-${unit.level}`}
-                    label={`${unit.name} · ${formatType(unit.type)} L${unit.level}`}
+                    label={t('battleSimulator.form.unitLabel', {
+                      name: unit.name,
+                      type: typeLabel(unit.type),
+                      level: unit.level,
+                    })}
                     description={unlockText}
                     min={0}
                     disabled={disabled}
@@ -509,8 +546,10 @@ const ArmyInputForm = forwardRef<
               return (
                 <Paper key={`${group.usage}-${group.type}`} withBorder p="md">
                   <Group justify="space-between" mb="sm">
-                    <Title order={5}>{group.label}</Title>
-                    <Badge variant="outline">{group.usage}</Badge>
+                    <SectionHeading>
+                      {t(`battleSimulator.form.itemGroups.${group.labelKey}`)}
+                    </SectionHeading>
+                    <Badge variant="outline">{typeLabel(group.usage)}</Badge>
                   </Group>
                   <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
                     {levels.map((item) =>
@@ -522,13 +561,29 @@ const ArmyInputForm = forwardRef<
                           formData.race as PlayerRace,
                         );
                         const unlockText = disabled
-                          ? `Requires level ${item.level}, armory ${item.armoryLevel}, ${item.race === "ALL" ? "any race" : item.race}`
-                          : `Armory ${item.armoryLevel} · ${item.race === "ALL" ? "all races" : item.race}`;
+                          ? t('battleSimulator.form.itemRequires', {
+                              level: item.level,
+                              armory: item.armoryLevel,
+                              race:
+                                item.race === 'ALL'
+                                  ? t('battleSimulator.form.anyRace')
+                                  : item.race,
+                            })
+                          : t('battleSimulator.form.itemInfo', {
+                              armory: item.armoryLevel,
+                              race:
+                                item.race === 'ALL'
+                                  ? t('battleSimulator.form.allRaces')
+                                  : item.race,
+                            });
 
                         return (
                           <NumberInput
                             key={item.id}
-                            label={`${item.name} · L${item.level}`}
+                            label={t('battleSimulator.form.itemLabel', {
+                              name: item.name,
+                              level: item.level,
+                            })}
                             description={unlockText}
                             min={0}
                             disabled={disabled}
@@ -561,14 +616,14 @@ const ArmyInputForm = forwardRef<
           <Grid>
             <Grid.Col span={{ base: 12, md: 5 }}>
               <Paper withBorder p="md" h="100%">
-                <Title order={5} mb="sm">
-                  Structure doctrine
-                </Title>
+                <SectionHeading mb="sm">
+                  {t('battleSimulator.form.structureDoctrine')}
+                </SectionHeading>
                 <Stack gap="sm">
                   {STRUCTURE_UPGRADES.map((type) => (
                     <NumberInput
                       key={type}
-                      label={formatType(type)}
+                      label={t(`battleSimulator.form.structures.${type}`)}
                       min={1}
                       max={30}
                       value={getStructureLevel(structureUpgrades, type)}
@@ -580,9 +635,9 @@ const ArmyInputForm = forwardRef<
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 7 }}>
               <Paper withBorder p="md" h="100%">
-                <Title order={5} mb="sm">
-                  Battle equipment crews
-                </Title>
+                <SectionHeading mb="sm">
+                  {t('battleSimulator.form.battleCrews')}
+                </SectionHeading>
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                   {BattleUpgrades.map((upgrade) =>
                     (() => {
@@ -596,15 +651,26 @@ const ArmyInputForm = forwardRef<
                         playerLevel,
                       );
                       const unlockText = disabled
-                        ? `Requires level ${upgrade.minUnitLevel}+ ${formatType(type)} units and ${formatType(requiredStructureType)} structure ${upgrade.SiegeUpgradeLevel}`
-                        : `Covers ${upgrade.unitsCovered} unit${
-                            upgrade.unitsCovered === 1 ? "" : "s"
-                          }`;
+                        ? t('battleSimulator.form.upgradeRequires', {
+                            level: upgrade.minUnitLevel,
+                            unit: typeLabel(type),
+                            structure: t(
+                              `battleSimulator.form.structures.${requiredStructureType}`,
+                            ),
+                            structureLevel: upgrade.SiegeUpgradeLevel,
+                          })
+                        : t('battleSimulator.form.upgradeCovers', {
+                            count: upgrade.unitsCovered,
+                          });
 
                       return (
                         <NumberInput
                           key={`${upgrade.type}-${upgrade.level}`}
-                          label={`${upgrade.name} · ${formatType(upgrade.type)} L${upgrade.level}`}
+                          label={t('battleSimulator.form.unitLabel', {
+                            name: upgrade.name,
+                            type: typeLabel(upgrade.type),
+                            level: upgrade.level,
+                          })}
                           description={unlockText}
                           min={0}
                           disabled={disabled}
@@ -634,15 +700,5 @@ const ArmyInputForm = forwardRef<
   );
 });
 
-const StatTile = ({ label, value }: { label: string; value: number }) => (
-  <Paper withBorder p="sm">
-    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
-      {label}
-    </Text>
-    <Divider my={6} />
-    <Text fw={800}>{Math.round(value).toLocaleString()}</Text>
-  </Paper>
-);
-
-ArmyInputForm.displayName = "ArmyInputForm";
+ArmyInputForm.displayName = 'ArmyInputForm';
 export default ArmyInputForm;

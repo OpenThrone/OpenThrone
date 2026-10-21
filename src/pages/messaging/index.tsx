@@ -1,12 +1,9 @@
-import { Button, Space, Switch } from '@mantine/core';
-import { useLocalStorage } from '@mantine/hooks';
+import { Button, Space } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import ChatMessageList from '@/components/ChatMessageList';
-import ChatRoomList from '@/components/ChatRoomList';
 import ChatMessageListThemed from '@/components/game/ChatMessageListThemed';
 import ChatRoomListThemed from '@/components/game/ChatRoomListThemed';
 import styles from '@/components/game/ChatThemed.module.css';
@@ -211,10 +208,6 @@ const MessageListComponent = ({
     [rooms, selectedRoomId],
   );
   const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
-  const [useThemedChat, setUseThemedChat] = useLocalStorage({
-    key: 'ot-chat-themed',
-    defaultValue: true,
-  });
   const composeToUserId = useMemo(() => {
     const raw = router.query.composeToUserId;
     const id = Number(Array.isArray(raw) ? raw[0] : raw);
@@ -261,75 +254,34 @@ const MessageListComponent = ({
   return (
     <MainArea title={t('title')}>
       <div className="p-4">
-        <GameCard
-          title={t('newMessage')}
-          action={
-            <Switch
-              checked={useThemedChat}
-              onChange={(event) =>
-                setUseThemedChat(event.currentTarget.checked)
-              }
-              label={t('themedChat')}
-              size="sm"
-            />
-          }
-        >
+        <GameCard title={t('newMessage')}>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="text-sm text-gray-300">
-                {t('startConversation')}
-              </div>
-              <div className="text-xs text-gray-400">{t('toggleThemed')}</div>
+            <div className="text-sm text-gray-300">
+              {t('startConversation')}
             </div>
-            <Button
-              color="yellow"
-              onClick={() => setIsNewMessageModalOpen(true)}
-            >
+            <Button onClick={() => setIsNewMessageModalOpen(true)}>
               {t('compose')}
             </Button>
           </div>
         </GameCard>
       </div>
-      {useThemedChat ? (
-        <div className={styles.chatLayout}>
-          <div className={`${styles.panel} ${styles.roomsPanel}`}>
-            <ChatRoomListThemed
-              rooms={rooms}
-              onRoomSelect={setSelectedRoomId}
-              selectedRoomId={selectedRoomId}
-            />
-          </div>
-          <div className={`${styles.panel} ${styles.messagesPanel}`}>
-            <ChatMessageListThemed
-              selectedRoomId={selectedRoomId}
-              messages={messages}
-              roomInfo={selectedRoom}
-              isLoading={loadingMessages}
-            />
-          </div>
+      <div className={styles.chatLayout}>
+        <div className={`${styles.panel} ${styles.roomsPanel}`}>
+          <ChatRoomListThemed
+            rooms={rooms}
+            onRoomSelect={setSelectedRoomId}
+            selectedRoomId={selectedRoomId}
+          />
         </div>
-      ) : (
-        <div className="flex h-[calc(100vh-250px)]">
-          <GameCard title={t('chatRooms')} className="w-1/4">
-            <ChatRoomList
-              rooms={rooms}
-              onRoomSelect={setSelectedRoomId}
-              selectedRoomId={selectedRoomId}
-            />
-          </GameCard>
-          <GameCard
-            title={selectedRoom?.name || t('selectRoom')}
-            className="w-3/4"
-          >
-            <ChatMessageList
-              selectedRoomId={selectedRoomId}
-              messages={messages}
-              roomInfo={selectedRoom}
-              isLoading={loadingMessages}
-            />
-          </GameCard>
+        <div className={`${styles.panel} ${styles.messagesPanel}`}>
+          <ChatMessageListThemed
+            selectedRoomId={selectedRoomId}
+            messages={messages}
+            roomInfo={selectedRoom}
+            isLoading={loadingMessages}
+          />
         </div>
-      )}
+      </div>
       <Space h="md" />
       <NewMessageModal
         opened={isNewMessageModalOpen}

@@ -4,6 +4,53 @@ OpenThrone follows [Semantic Versioning](https://semver.org/) on the 0.x line:
 each production release raises the minor version and hotfixes raise the patch
 version. Alpha builds carry the next version with an `-alpha` suffix.
 
+## v0.6.0 (2026-10-20)
+
+### Changed
+- **One look across the game.** Pages, dialogs, tables and alerts now share
+  the same frames, fonts and colours in every race theme:
+  - Confirmation dialogs say what is at stake: red for actions you can't undo
+    (some ask you to type a name first), the race colour for normal actions
+    and green for positive ones. Red and green buttons now actually look red
+    and green.
+  - Alerts appear in one themed style in the bottom-right corner, and respect
+    reduced motion.
+  - Pages show a loading placeholder instead of zeros while they load, and a
+    clear message when there is nothing to show.
+  - War history, the attack target list, the armory and every alliance tab
+    use one table style, and the tables scroll instead of overflowing on small
+    screens.
+  - Each page has one title. Bank, upgrades and armory share one tab bar.
+  - Gold amounts are formatted the same way everywhere, in your language.
+- **One quantity control** for training, the armory, battle upgrades, the
+  bank, repairs and the alliance treasury, with the same Max button. Repairs
+  and treasury deposits gain a Max button.
+- **Upgrade tables** (fortifications, housing, economy, offense, armory and
+  clandestine) follow one rule: they show what you own and what you can buy
+  next, and explain what a locked row is waiting for.
+- Player names show race and class in your language, with the race in its own
+  colour, and online status is consistent on friends, enemies and profiles.
+  The enemies list shows players instead of bare IDs.
+- Alliance panels, role badges and the infighting tab use the race colours.
+- The sidebar advisor arrows and stats refresh button are dark on the
+  parchment so they are readable.
+
+### Fixed
+- The armory showed Buy on every level above yours; it now shows it only on
+  the next level, which is the only one the server accepts.
+- Gold dialogs, the session dialog, player profiles and the battle simulator
+  are translated into German and Spanish, and long German button labels no
+  longer get cut off.
+- The friends and enemies pages no longer break when the server returns an
+  error, and a failed load no longer leaves them loading forever.
+- Upgrade Buy buttons can't be pressed twice while a purchase is in progress.
+- Keyboard and screen-reader fixes for the XP info, loading animations and
+  dialog buttons.
+- Starting a new era no longer times out with many players, and battles
+  running at the moment the era changes can no longer leak into the new era.
+  A repeated request to start the same era is refused instead of running
+  twice.
+
 ## v0.5.1 (2026-10-20)
 
 ### Fixed

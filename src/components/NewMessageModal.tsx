@@ -288,6 +288,7 @@ const NewMessageModal = ({
       }}
       title={modalTitle}
       size="md"
+      centered
     >
       <Stack gap="md">
         {error ? (
@@ -344,9 +345,9 @@ const NewMessageModal = ({
           />
         ) : null}
 
-        <Group gap="right" mt="md">
+        <Group justify="flex-end" mt="md">
           <Button
-            variant="outline"
+            variant="default"
             disabled={submitting}
             onClick={() => {
               resetForm();

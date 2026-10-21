@@ -15,6 +15,7 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
+import { ADMIN_STAT_COLORS } from '@/components/admin/adminColors';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminRequestState from '@/components/admin/AdminRequestState';
 import { GameCard } from '@/components/game/GameCard';
@@ -39,7 +40,7 @@ const StatCard = ({
   label,
   value,
   icon,
-  color = 'blue',
+  color = ADMIN_STAT_COLORS.info,
 }: {
   label: string;
   value: number | string;
@@ -132,7 +133,7 @@ const OverviewDashboardPage = () => {
                 label="Total Players"
                 value={stats.totalUsers}
                 icon={faUsers}
-                color="#22c55e"
+                color={ADMIN_STAT_COLORS.positive}
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
@@ -140,7 +141,7 @@ const OverviewDashboardPage = () => {
                 label="Active (24h)"
                 value={stats.activeUsers24h}
                 icon={faBolt}
-                color="#3b82f6"
+                color={ADMIN_STAT_COLORS.info}
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
@@ -148,7 +149,7 @@ const OverviewDashboardPage = () => {
                 label="New (7d)"
                 value={stats.newUsers7d}
                 icon={faUserPlus}
-                color="#eab308"
+                color={ADMIN_STAT_COLORS.gold}
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
@@ -156,7 +157,7 @@ const OverviewDashboardPage = () => {
                 label="Banned"
                 value={stats.bannedUsers}
                 icon={faBan}
-                color="#ef4444"
+                color={ADMIN_STAT_COLORS.danger}
               />
             </Grid.Col>
           </Grid>
@@ -169,7 +170,7 @@ const OverviewDashboardPage = () => {
                 label="Open Reports"
                 value={stats.openReports}
                 icon={faExclamationTriangle}
-                color="#f59e0b"
+                color={ADMIN_STAT_COLORS.warning}
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
@@ -177,7 +178,7 @@ const OverviewDashboardPage = () => {
                 label="Open Appeals"
                 value={stats.openAppeals}
                 icon={faGavel}
-                color="#a855f7"
+                color={ADMIN_STAT_COLORS.special}
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
@@ -185,7 +186,7 @@ const OverviewDashboardPage = () => {
                 label="Cheat Signals"
                 value={stats.openCheatSignals}
                 icon={faShieldAlt}
-                color="#dc2626"
+                color={ADMIN_STAT_COLORS.danger}
               />
             </Grid.Col>
           </Grid>
@@ -198,7 +199,7 @@ const OverviewDashboardPage = () => {
                 label="Alliances"
                 value={stats.totalAlliances}
                 icon={faScroll}
-                color="#a855f7"
+                color={ADMIN_STAT_COLORS.special}
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6 }}>
@@ -206,7 +207,7 @@ const OverviewDashboardPage = () => {
                 label="Attacks (24h)"
                 value={stats.recentAttacks}
                 icon={faCrosshairs}
-                color="#6366f1"
+                color={ADMIN_STAT_COLORS.combat}
               />
             </Grid.Col>
           </Grid>

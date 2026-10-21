@@ -1,7 +1,10 @@
-import { Button, NumberInput, SimpleGrid, Space, Table } from '@mantine/core';
+import { Button, SimpleGrid, Space, Table } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import React, { useEffect, useState } from 'react';
 
+import QuantityInput from '@/components/battle/QuantityInput';
+import { EmptyState } from '@/components/game/EmptyState';
+import { PageLoading } from '@/components/game/PageLoading';
 import { alertService } from '@/services/Alert.service';
 import type { Locales } from '@/types/typings';
 import { DEPOSIT_CAP_PERCENT, getMaxDeposit } from '@/utils/bankLimits';
@@ -26,7 +29,7 @@ const SERVER_ERROR_KEYS: Record<string, string> = {
 export default function BankDepositWithdraw({ user, forceUpdate }) {
   const [depositAmount, setDepositAmount] = useState(BigInt(0));
   const [withdrawAmount, setWithdrawAmount] = useState(BigInt(0));
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState<any[] | null>(null);
   const [pending, setPending] = useState<'deposit' | 'withdraw' | null>(null);
   const { t, i18n } = useTranslation('structures');
   const locale = i18n.language;
@@ -37,8 +40,11 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
     if (user) {
       fetch('/api/bank/history?deposits=true&withdraws=true&limit=10&page=0')
         .then((res) => res.json())
-        .then((data) => setHistory(data.rows))
-        .catch((err) => logError('Error fetching bank history:', err));
+        .then((data) => setHistory(Array.isArray(data?.rows) ? data.rows : []))
+        .catch((err) => {
+          logError('Error fetching bank history:', err);
+          setHistory([]);
+        });
     }
   }, [user]);
 
@@ -79,7 +85,7 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
     }
   };
 
-  const historyRows = history.map((entry, index) => (
+  const historyRows = (history ?? []).map((entry, index) => (
     <Table.Tr key={index}>
       <Table.Td>{new Date(entry?.date_time).toLocaleString(locale)}</Table.Td>
       <Table.Td>{translateTransactionType(entry, t)}</Table.Td>
@@ -91,25 +97,16 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
     <>
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <GameCard title={t('bank.deposit')}>
-          <NumberInput
+          <QuantityInput
             label={t('bank.amount')}
             description={t('bank.depositHint', {
               percent: DEPOSIT_CAP_PERCENT,
             })}
-            value={depositAmount.toString()}
-            onChange={(val) => setDepositAmount(toBigIntSafe(val))}
-            min={0}
-            rightSection={
-              <Button
-                size="compact-xs"
-                variant="subtle"
-                aria-label={t('bank.depositMaxAria')}
-                onClick={() => setDepositAmount(maxDeposit)}
-              >
-                {t('bank.max')}
-              </Button>
-            }
-            rightSectionWidth={56}
+            value={depositAmount}
+            onChange={setDepositAmount}
+            grow
+            onMax={() => setDepositAmount(maxDeposit)}
+            maxAriaLabel={t('bank.depositMaxAria')}
             error={
               depositAmount > maxDeposit
                 ? t('bank.depositOverCap', { percent: DEPOSIT_CAP_PERCENT })
@@ -126,25 +123,16 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
           </Button>
         </GameCard>
         <GameCard title={t('bank.withdraw')}>
-          <NumberInput
+          <QuantityInput
             label={t('bank.amount')}
             description={t('bank.withdrawHint', {
               amount: toLocale(bankBalance, locale as Locales),
             })}
-            value={withdrawAmount.toString()}
-            onChange={(val) => setWithdrawAmount(toBigIntSafe(val))}
-            min={0}
-            rightSection={
-              <Button
-                size="compact-xs"
-                variant="subtle"
-                aria-label={t('bank.withdrawMaxAria')}
-                onClick={() => setWithdrawAmount(bankBalance)}
-              >
-                {t('bank.max')}
-              </Button>
-            }
-            rightSectionWidth={56}
+            value={withdrawAmount}
+            onChange={setWithdrawAmount}
+            grow
+            onMax={() => setWithdrawAmount(bankBalance)}
+            maxAriaLabel={t('bank.withdrawMaxAria')}
             error={
               withdrawAmount > bankBalance
                 ? t('bank.withdrawOverBalance')
@@ -163,11 +151,17 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
       </SimpleGrid>
       <Space h="md" />
       <GameCard title={t('bank.recentTransactions')}>
-        <StyledTable
-          headers={[t('bank.date'), t('bank.type'), t('bank.amount')]}
-        >
-          {historyRows}
-        </StyledTable>
+        {history === null ? (
+          <PageLoading block={false} />
+        ) : history.length === 0 ? (
+          <EmptyState compact title={t('bank.noRecords')} />
+        ) : (
+          <StyledTable
+            headers={[t('bank.date'), t('bank.type'), t('bank.amount')]}
+          >
+            {historyRows}
+          </StyledTable>
+        )}
       </GameCard>
     </>
   );

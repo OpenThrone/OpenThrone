@@ -1,7 +1,7 @@
 import { Box, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
 
-type BattleStat = {
+export type BattleStat = {
   label: string;
   value: ReactNode;
   tone: 'normal' | 'gold' | 'bad' | 'good';
@@ -11,33 +11,41 @@ type BattleStatStripProps = {
   stats: BattleStat[];
 };
 
-const toneStyles: Record<
+const mix = (color: string, percent: number) =>
+  `color-mix(in srgb, ${color} ${percent}%, transparent)`;
+
+/**
+ * The one stat-tone palette (#133), built from --ot-* tokens and Mantine's
+ * green/red ramps so it retints with the race theme. Each glow is a soft halo
+ * of its own colour over a dark legibility drop.
+ */
+export const STAT_TONES: Record<
   BattleStat['tone'],
   { color: string; glow: string; accent: string }
 > = {
   normal: {
-    color: '#f3ead2',
+    color: 'var(--ot-heading)',
     glow: '0 2px 3px rgba(0,0,0,0.85)',
-    accent: 'rgba(201,166,89,0.24)',
+    accent: 'var(--ot-border)',
   },
   gold: {
-    color: '#ffd56f',
-    glow: '0 0 14px rgba(255, 199, 89, 0.28), 0 2px 3px rgba(0,0,0,0.9)',
-    accent: 'rgba(255, 199, 89, 0.48)',
+    color: 'var(--ot-text)',
+    glow: `0 0 14px ${mix('var(--ot-accent)', 28)}, 0 2px 3px rgba(0,0,0,0.9)`,
+    accent: mix('var(--ot-accent)', 48),
   },
   good: {
-    color: '#8ee6a1',
-    glow: '0 0 12px rgba(79, 209, 107, 0.24), 0 2px 3px rgba(0,0,0,0.9)',
-    accent: 'rgba(79, 209, 107, 0.38)',
+    color: 'var(--mantine-color-green-3)',
+    glow: `0 0 12px ${mix('var(--mantine-color-green-6)', 24)}, 0 2px 3px rgba(0,0,0,0.9)`,
+    accent: mix('var(--mantine-color-green-6)', 38),
   },
   bad: {
-    color: '#f08d7f',
-    glow: '0 0 12px rgba(229, 83, 67, 0.24), 0 2px 3px rgba(0,0,0,0.9)',
-    accent: 'rgba(229, 83, 67, 0.38)',
+    color: 'var(--mantine-color-red-4)',
+    glow: `0 0 12px ${mix('var(--mantine-color-red-6)', 24)}, 0 2px 3px rgba(0,0,0,0.9)`,
+    accent: mix('var(--mantine-color-red-6)', 38),
   },
 };
 
-/** Battle stat strip. */
+/** Row of labelled stat tiles: battle reports and the simulator army forms. */
 export function BattleStatStrip({ stats }: BattleStatStripProps) {
   return (
     <Box
@@ -45,14 +53,14 @@ export function BattleStatStrip({ stats }: BattleStatStripProps) {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
         gap: 0,
-        borderTop: '1px solid rgba(201,166,89,0.35)',
-        borderBottom: '1px solid rgba(201,166,89,0.35)',
+        borderTop: '1px solid var(--ot-border)',
+        borderBottom: '1px solid var(--ot-border)',
         background:
-          'linear-gradient(180deg, rgba(16,20,26,0.92), rgba(6,8,12,0.96))',
+          'linear-gradient(180deg, var(--ot-surface), var(--ot-inset))',
       }}
     >
       {stats.map((stat, index) => {
-        const tone = toneStyles[stat.tone];
+        const tone = STAT_TONES[stat.tone];
 
         return (
           <Box
@@ -61,7 +69,9 @@ export function BattleStatStrip({ stats }: BattleStatStripProps) {
               position: 'relative',
               padding: '14px 18px',
               borderLeft:
-                index === 0 ? undefined : '1px solid rgba(201,166,89,0.22)',
+                index === 0
+                  ? undefined
+                  : `1px solid ${mix('var(--ot-accent)', 22)}`,
             }}
           >
             <Box
@@ -79,8 +89,8 @@ export function BattleStatStrip({ stats }: BattleStatStripProps) {
             <Text
               size="xs"
               style={{
-                fontFamily: 'Cinzel, serif',
-                color: 'rgba(220, 196, 135, 0.85)',
+                fontFamily: 'MedievalSharp, serif',
+                color: mix('var(--ot-heading)', 80),
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
               }}

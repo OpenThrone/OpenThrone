@@ -1,5 +1,5 @@
 /* eslint-disable react/no-danger */
-import { Button, Table as MantineTable, Text, Title } from '@mantine/core';
+import { Button } from '@mantine/core';
 import { RichTextEditor } from '@mantine/tiptap';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
@@ -15,13 +15,12 @@ import { useEditor } from '@tiptap/react';
 import { StarterKit } from '@tiptap/starter-kit';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
 import { Markdown } from 'tiptap-markdown';
 
 import { GameCard } from '@/components/game/GameCard';
+import panelClasses from '@/components/game/Panels.module.css';
 import MainArea from '@/components/MainArea';
+import MarkdownArticle from '@/components/news/MarkdownArticle';
 import { logDebug } from '@/utils/logger';
 
 const Admin = () => {
@@ -134,7 +133,7 @@ const Admin = () => {
           <RichTextEditor.Content />
         </RichTextEditor>
 
-        <Button mt="md" color="yellow" onClick={handleCreatePost}>
+        <Button mt="md" onClick={handleCreatePost}>
           {t('blog.submitPost')}
         </Button>
       </GameCard>
@@ -143,54 +142,12 @@ const Admin = () => {
         {/* eslint-disable-next-line react/no-danger */}
         <div
           dangerouslySetInnerHTML={{ __html: postHTML }}
-          style={{
-            border: '1px solid #2f3e52',
-            padding: '1em',
-            borderRadius: '6px',
-            backgroundColor: '#0f141a',
-          }}
+          className={panelClasses.insetRow}
         />
       </GameCard>
 
       <GameCard title={t('blog.markdownContent')} mt="md">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeRaw]}
-          components={{
-            h1: ({ node: _node, ...props }) => <Title order={1} {...props} />,
-            h3: ({ node: _node, ...props }) => <Title order={3} {...props} />,
-            h4: ({ node: _node, ...props }) => <Title order={4} {...props} />,
-            p: ({ node: _node, ...props }) => (
-              <Text component="p" fw="normal" size="lg" mb="xl">
-                {props.children}
-              </Text>
-            ),
-            table: ({ node: _node, ...props }) => (
-              <MantineTable
-                striped
-                highlightOnHover
-                withRowBorders
-                withColumnBorders
-                {...props}
-              />
-            ),
-            th: ({ node: _node, ...props }) => (
-              <MantineTable.Th
-                style={{
-                  fontWeight: 'bold',
-                  textAlign: 'left',
-                  padding: '0.5em',
-                }}
-                {...props}
-              />
-            ),
-            td: ({ node: _node, ...props }) => (
-              <MantineTable.Td style={{ padding: '0.5em' }} {...props} />
-            ),
-          }}
-        >
-          {markdownContent}
-        </ReactMarkdown>
+        <MarkdownArticle content={markdownContent} />
       </GameCard>
     </MainArea>
   );

@@ -1,8 +1,10 @@
 import { faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Text, Tooltip } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React, { useMemo } from 'react';
 
+import type { Locales } from '@/types/typings';
 import { toLocale } from '@/utils/numberFormatting';
 
 interface DiscountEntry {
@@ -21,6 +23,8 @@ const DiscountSummary: React.FC<Props> = ({
   baseCost,
   discountedCost,
 }) => {
+  const { t, i18n } = useTranslation('battle');
+  const locale = i18n.language as Locales;
   const totalPct = user?.priceBonus ?? 0;
 
   const breakdown = useMemo(() => {
@@ -34,11 +38,11 @@ const DiscountSummary: React.FC<Props> = ({
     const points = (user.bonus_points || [])
       .filter((p: any) => p.type === 'PRICES')
       .map((p: any) => ({
-        label: `Proficiency Points`,
+        label: t('discountSummary.proficiencyPoints'),
         percent: p.level ?? 0,
       }));
     return [...player, ...points] as DiscountEntry[];
-  }, [user]);
+  }, [t, user]);
 
   if (!user || (!breakdown.length && totalPct === 0)) return null;
 
@@ -48,7 +52,9 @@ const DiscountSummary: React.FC<Props> = ({
       label={
         <div style={{ minWidth: 220 }}>
           <Text size="sm" fw={600} mb={6}>
-            Discount breakdown — total {Number(totalPct).toFixed(2)}%
+            {t('discountSummary.breakdown', {
+              percent: Number(totalPct).toFixed(2),
+            })}
           </Text>
           {breakdown.length > 0 ? (
             breakdown.map((d, i) => (
@@ -68,7 +74,7 @@ const DiscountSummary: React.FC<Props> = ({
             ))
           ) : (
             <Text size="sm" c="dimmed">
-              No individual sources (total shown)
+              {t('discountSummary.noSources')}
             </Text>
           )}
           <hr
@@ -80,18 +86,18 @@ const DiscountSummary: React.FC<Props> = ({
           />
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <Text size="sm" c="dimmed">
-              Original
+              {t('discountSummary.original')}
             </Text>
             <Text size="sm" style={{ textDecoration: 'line-through' }}>
-              {toLocale(baseCost)}
+              {toLocale(baseCost, locale)}
             </Text>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <Text size="sm" c="dimmed">
-              Discounted
+              {t('discountSummary.discounted')}
             </Text>
             <Text size="sm" fw={700}>
-              {toLocale(discountedCost)}
+              {toLocale(discountedCost, locale)}
             </Text>
           </div>
         </div>
@@ -101,7 +107,7 @@ const DiscountSummary: React.FC<Props> = ({
         <ActionIcon
           size="xs"
           variant="light"
-          aria-label="Show discount details"
+          aria-label={t('discountSummary.showDetails')}
         >
           <FontAwesomeIcon icon={faCircleInfo} />
         </ActionIcon>

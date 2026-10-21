@@ -2,17 +2,17 @@ import {
   Alert,
   Button,
   Group,
-  Modal,
   Paper,
   Stack,
   Text,
   Textarea,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
+import { alertService } from '@/services/Alert.service';
 
 interface UserOperationsProps {
   userId: string;
@@ -90,10 +90,8 @@ const UserOperations = ({
       setOperation(null);
       setReason('');
       onSaved();
-      notifications.show({
+      alertService.notify('success', successMessage, {
         title: t('user.actionComplete'),
-        message: successMessage,
-        color: 'green',
       });
     } catch (requestError) {
       setError(
@@ -118,7 +116,7 @@ const UserOperations = ({
           </Text>
           <Group align="stretch" wrap="wrap">
             <Button
-              variant="light"
+              variant="default"
               onClick={() => setOperation('password')}
               disabled={pending}
             >
@@ -128,21 +126,20 @@ const UserOperations = ({
               <>
                 <Button
                   color="red"
-                  variant="light"
                   onClick={() => setOperation('reset')}
                   disabled={pending}
                 >
                   {t('user.accountResetAction')}
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="default"
                   onClick={() => setOperation('vacation-start')}
                   disabled={pending}
                 >
                   {t('user.vacationStartAction')}
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="default"
                   onClick={() => setOperation('vacation-end')}
                   disabled={pending}
                 >
@@ -160,53 +157,45 @@ const UserOperations = ({
         </Stack>
       </GameCard>
 
-      <Modal
-        opened={operation !== null}
+      <ConfirmationModal
+        isOpen={operation !== null}
         onClose={close}
+        onConfirm={confirm}
         title={actionTitle}
-        centered
-        closeOnClickOutside={!pending}
-        closeOnEscape={!pending}
+        message={actionMessage}
+        type={
+          operation === 'password' || operation === 'vacation-end'
+            ? 'primary'
+            : 'destructive'
+        }
+        confirmText={t('user.confirmAction')}
+        cancelText={t('user.cancel')}
+        isLoading={pending}
+        confirmDisabled={!operation}
       >
-        <Stack>
-          <Text size="sm">{actionMessage}</Text>
-          {operation === 'reset' && (
-            <Textarea
-              label={t('user.reasonLabel')}
-              description={t('user.reasonOptional')}
-              value={reason}
-              onChange={(event) => setReason(event.currentTarget.value)}
-              maxLength={500}
-              autosize
-              minRows={2}
-              maxRows={5}
-            />
-          )}
-          {operation === 'vacation-start' && (
-            <Paper p="sm" withBorder>
-              <Text size="sm">{t('user.vacationDuration')}</Text>
-            </Paper>
-          )}
-          {error && (
-            <Alert color="red" role="alert">
-              {error}
-            </Alert>
-          )}
-          <Group justify="flex-end">
-            <Button variant="default" onClick={close} disabled={pending}>
-              {t('user.cancel')}
-            </Button>
-            <Button
-              color={operation === 'password' ? 'blue' : 'red'}
-              onClick={confirm}
-              loading={pending}
-              disabled={!operation}
-            >
-              {t('user.confirmAction')}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        {operation === 'reset' && (
+          <Textarea
+            label={t('user.reasonLabel')}
+            description={t('user.reasonOptional')}
+            value={reason}
+            onChange={(event) => setReason(event.currentTarget.value)}
+            maxLength={500}
+            autosize
+            minRows={2}
+            maxRows={5}
+          />
+        )}
+        {operation === 'vacation-start' && (
+          <Paper p="sm" withBorder>
+            <Text size="sm">{t('user.vacationDuration')}</Text>
+          </Paper>
+        )}
+        {error && (
+          <Alert color="red" role="alert">
+            {error}
+          </Alert>
+        )}
+      </ConfirmationModal>
     </>
   );
 };

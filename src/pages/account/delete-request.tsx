@@ -1,9 +1,10 @@
-import { Box, Button, Group, List, Text, Title } from '@mantine/core';
+import { Box, Button, Group, List, Text } from '@mantine/core';
 import type { GetStaticProps } from 'next';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 
+import { SectionHeading } from '@/components/game/SectionHeading';
 import MainArea from '@/components/MainArea';
 import PublicAuthLayout from '@/components/public/PublicAuthLayout';
 import classes from '@/components/public/PublicPages.module.css';
@@ -41,9 +42,9 @@ const DeleteRequestPage = () => {
           </Text>
 
           <Box component="section" mb="md">
-            <Title order={3} size="h4" mb="xs">
+            <SectionHeading mb="xs">
               {t('deleteRequest.removedTitle')}
-            </Title>
+            </SectionHeading>
             <List spacing={4} withPadding>
               <List.Item>{t('deleteRequest.removedEmail')}</List.Item>
               <List.Item>{t('deleteRequest.removedPassword')}</List.Item>
@@ -52,9 +53,9 @@ const DeleteRequestPage = () => {
           </Box>
 
           <Box component="section" mb="lg">
-            <Title order={3} size="h4" mb="xs">
+            <SectionHeading mb="xs">
               {t('deleteRequest.keptTitle')}
-            </Title>
+            </SectionHeading>
             <List spacing={4} withPadding>
               <List.Item>{t('deleteRequest.keptHistory')}</List.Item>
               <List.Item>{t('deleteRequest.keptNameReserved')}</List.Item>

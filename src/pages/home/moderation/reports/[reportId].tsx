@@ -12,7 +12,6 @@ import {
   Textarea,
   Timeline,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -26,6 +25,7 @@ import {
   ReportResolution,
   ReportStatus,
 } from '@/lib/prisma-browser-exports';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
 const ReportDetailsPage = () => {
@@ -84,18 +84,14 @@ const ReportDetailsPage = () => {
         body: JSON.stringify({}),
       });
       if (!response.ok) throw new Error('Failed to assign report');
-      notifications.show({
+      alertService.notify('success', 'Report assigned to you.', {
         title: 'Success',
-        message: 'Report assigned to you.',
-        color: 'green',
       });
       fetchReportDetails();
     } catch (error) {
       logError('Failed to assign:', error);
-      notifications.show({
+      alertService.notify('error', 'Failed to assign report.', {
         title: 'Error',
-        message: 'Failed to assign report.',
-        color: 'red',
       });
     } finally {
       setAssigning(false);
@@ -104,10 +100,8 @@ const ReportDetailsPage = () => {
 
   const handleResolve = async () => {
     if (!resolution) {
-      notifications.show({
+      alertService.notify('error', 'Please select a resolution.', {
         title: 'Error',
-        message: 'Please select a resolution.',
-        color: 'red',
       });
       return;
     }
@@ -122,18 +116,14 @@ const ReportDetailsPage = () => {
         }),
       });
       if (!response.ok) throw new Error('Failed to resolve report');
-      notifications.show({
+      alertService.notify('success', 'Report resolved successfully.', {
         title: 'Success',
-        message: 'Report resolved successfully.',
-        color: 'green',
       });
       fetchReportDetails();
     } catch (error) {
       logError('Failed to resolve:', error);
-      notifications.show({
+      alertService.notify('error', 'Failed to resolve report.', {
         title: 'Error',
-        message: 'Failed to resolve report.',
-        color: 'red',
       });
     } finally {
       setResolving(false);
@@ -142,10 +132,8 @@ const ReportDetailsPage = () => {
 
   const handleAddAction = async () => {
     if (!actionType) {
-      notifications.show({
+      alertService.notify('error', 'Please select an action type.', {
         title: 'Error',
-        message: 'Please select an action type.',
-        color: 'red',
       });
       return;
     }
@@ -163,10 +151,8 @@ const ReportDetailsPage = () => {
         }),
       });
       if (!response.ok) throw new Error('Failed to add action');
-      notifications.show({
+      alertService.notify('success', 'Action updated successfully.', {
         title: 'Success',
-        message: 'Action updated successfully.',
-        color: 'green',
       });
       setActionBody('');
       setActionType(null);
@@ -175,10 +161,8 @@ const ReportDetailsPage = () => {
       fetchReportDetails();
     } catch (error) {
       logError('Failed to update action:', error);
-      notifications.show({
+      alertService.notify('error', 'Failed to update action.', {
         title: 'Error',
-        message: 'Failed to update action.',
-        color: 'red',
       });
     } finally {
       setAddingAction(false);
@@ -334,12 +318,7 @@ const ReportDetailsPage = () => {
         <Grid.Col span={{ base: 12, md: 4 }}>
           <Stack gap="md">
             {!report.assignedToUserId && (
-              <Button
-                color="blue"
-                fullWidth
-                onClick={handleAssign}
-                loading={assigning}
-              >
+              <Button fullWidth onClick={handleAssign} loading={assigning}>
                 Claim / Self-Assign
               </Button>
             )}
@@ -426,7 +405,6 @@ const ReportDetailsPage = () => {
                   />
 
                   <Button
-                    color="orange"
                     fullWidth
                     onClick={handleAddAction}
                     loading={addingAction}

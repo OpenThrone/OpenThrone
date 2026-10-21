@@ -59,6 +59,18 @@ const panelStyles = {
   boxShadow: 'var(--ot-shadow)',
 };
 
+/** Filled-button tones; see the Buttons specimen on /test. */
+const BUTTON_TONES: Record<string, { fill: string; border: string }> = {
+  red: {
+    fill: 'var(--mantine-color-red-9)',
+    border: 'var(--mantine-color-red-6)',
+  },
+  green: {
+    fill: 'var(--mantine-color-green-9)',
+    border: 'var(--mantine-color-green-6)',
+  },
+};
+
 const rpgComponentOverrides = {
   Paper: Paper.extend({
     defaultProps: { radius: 'sm' },
@@ -87,12 +99,14 @@ const rpgComponentOverrides = {
     styles: (_, props) => {
       const variant = props.variant ?? 'filled';
       if (variant === 'filled') {
+        // Destructive (red) and positive (green) actions get a tinted plate;
+        // every other colour keeps the race-branded gold plate.
+        const tone = BUTTON_TONES[props.color ?? ''];
         return {
           root: {
-            background:
-              'linear-gradient(180deg, color-mix(in srgb, var(--ot-brand) 45%, var(--ot-surface-2)), var(--ot-inset))',
+            background: `linear-gradient(180deg, color-mix(in srgb, ${tone?.fill ?? 'var(--ot-brand)'} 45%, var(--ot-surface-2)), var(--ot-inset))`,
             color: 'var(--ot-heading)',
-            border: '1px solid var(--ot-accent)',
+            border: `1px solid ${tone?.border ?? 'var(--ot-accent)'}`,
             boxShadow:
               'inset 0 1px 0 var(--ot-heading), inset 0 -3px 5px rgba(0,0,0,0.65), 0 2px 4px rgba(0,0,0,0.6)',
           },

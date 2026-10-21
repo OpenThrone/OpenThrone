@@ -173,14 +173,6 @@ body.reduced-motion .public-rise-delay-2,
 body.reduced-motion .public-rise-delay-3 {
   animation: none;
 }
-.content .card-dark {
-  background-color: #222;
-  border: 1px solid rgba(250, 250, 250, 0.125);
-}
-.content .card-header-dark {
-  background-color: rgba(250, 250, 250, 0.03);
-  border-bottom: 1px solid rgba(250, 250, 250, 0.125);
-}
 .content .list-group-item.active {
   z-index: 2;
   color: #fafafa;
@@ -759,6 +751,20 @@ body,
   z-index: 1;
 }
 
+/* The /test showcase pins the art to the viewport so long pages show it whole,
+   and lets the veil be tuned to judge readability over each backdrop. */
+.mainArea-bg[data-showcase-backdrop]::before {
+  transform: none;
+  background-attachment: fixed;
+}
+
+.mainArea-bg[data-showcase-backdrop]::after {
+  background: linear-gradient(
+    rgba(0, 0, 0, var(--showcase-veil, 0.55)),
+    rgba(0, 0, 0, calc(var(--showcase-veil, 0.55) + 0.2))
+  );
+}
+
 /* ensure your actual content sits above both layers */
 .mainArea-bg > * {
   position: relative;
@@ -937,7 +943,7 @@ body,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .game-card, .toolbar-icon, .friend-request-button, .friend-request-button::before {
+  .game-card, .toolbar-icon, .friend-request-button, .friend-request-button::before, .friend-request-button.loading::after {
     animation: none;
     transition: none;
     transform: none;
@@ -948,6 +954,11 @@ body.reduced-motion :is(.game-card, .toolbar-icon, .friend-request-button, .frie
   animation: none;
   transition: none;
   transform: none;
+}
+
+/* :is() cannot match pseudo-elements, so the spinner ring needs its own rule. */
+body.reduced-motion .friend-request-button.loading::after {
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

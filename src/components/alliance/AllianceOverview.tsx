@@ -1,7 +1,8 @@
-import { Card, Grid, Group, Text, Title } from '@mantine/core';
+import { Grid, Group, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 
 import { AllianceLatestAnnouncement } from '@/components/alliance/AllianceLatestAnnouncement';
+import { GameCard } from '@/components/game/GameCard';
 import { useUser } from '@/context/users';
 import type { AllianceInfo } from '@/services/Alliance.service';
 import { toLocale } from '@/utils/numberFormatting';
@@ -32,22 +33,16 @@ export const AllianceOverview = ({
             />
           </div>
         )}
-        <Card withBorder padding="lg" radius="md">
-          <Title order={3} mb="md">
-            {t('overview.about', 'About Us')}
-          </Title>
+        <GameCard title={t('overview.about', 'About Us')}>
           <Text style={{ whiteSpace: 'pre-line' }}>
             {alliance.comments ||
               t('overview.noDescription', 'No description provided.')}
           </Text>
-        </Card>
+        </GameCard>
       </Grid.Col>
 
       <Grid.Col span={{ base: 12, md: 4 }}>
-        <Card withBorder padding="lg" radius="md">
-          <Title order={4} mb="md">
-            {t('overview.stats', 'Stats')}
-          </Title>
+        <GameCard title={t('overview.stats', 'Stats')}>
           <Group justify="space-between" mb="xs">
             <Text c="dimmed">{t('overview.leader', 'Leader')}</Text>
             <Text fw={500}>{alliance.leader?.display_name}</Text>
@@ -73,7 +68,7 @@ export const AllianceOverview = ({
               </Text>
             </Group>
           )}
-        </Card>
+        </GameCard>
       </Grid.Col>
     </Grid>
   );

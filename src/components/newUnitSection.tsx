@@ -14,14 +14,16 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  Tooltip,
   useMantineTheme,
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import ImageWithFallback from '@/components/ArtworkImage';
+import QuantityInput from '@/components/battle/QuantityInput';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import { ActionTooltip } from '@/components/game/ActionTooltip';
+import panelClasses from '@/components/game/Panels.module.css';
 import { refundFromDiscountedCost } from '@/constants/gameEvents';
 import { useUser } from '@/context/users';
 import { useActiveGameEvents } from '@/hooks/useActiveGameEvents';
@@ -634,9 +636,6 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
   const untrainTooltip =
     sectionTotalCost <= 0 ? t('training.section.enterUntrainQuantities') : '';
   const accent = theme.colors.secondary?.[1] ?? '#e5c55a';
-  const slotBorder = 'var(--ot-line)';
-  const slotBg = 'var(--ot-inset)';
-  const slotInset = 'inset 0 3px 6px rgba(0,0,0,0.6)';
   const citizenCount =
     user?.units?.find((unit) => unit.type === 'CITIZEN')?.quantity ?? 0;
 
@@ -709,52 +708,33 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
             >
               {t('training.clearSection')}
             </Button>
-            <Tooltip
+            <ActionTooltip
               label={trainTooltip}
               disabled={!trainDisabled || isProcessingTrain}
-              withArrow
             >
-              <div style={{ width: 'auto' }}>
-                <Button
-                  color="yellow"
-                  onClick={handleTrainSection}
-                  disabled={trainDisabled}
-                  loading={isProcessingTrain}
-                  size="xs"
-                  style={{
-                    background: `linear-gradient(180deg, ${accent} 0%, var(--ot-accent) 100%)`,
-                    color: '#000',
-                    border: `1px solid ${accent}`,
-                    boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-                  }}
-                >
-                  {t('training.section.train')}
-                </Button>
-              </div>
-            </Tooltip>
-            <Tooltip
+              <Button
+                onClick={handleTrainSection}
+                disabled={trainDisabled}
+                loading={isProcessingTrain}
+                size="xs"
+              >
+                {t('training.section.train')}
+              </Button>
+            </ActionTooltip>
+            <ActionTooltip
               label={untrainTooltip}
               disabled={!untrainDisabled || isProcessingUntrain}
-              withArrow
             >
-              <div style={{ width: 'auto' }}>
-                <Button
-                  color="gray"
-                  onClick={() => setConfirmUntrainOpen(true)}
-                  disabled={untrainDisabled}
-                  loading={isProcessingUntrain}
-                  size="xs"
-                  style={{
-                    backgroundColor: 'var(--ot-surface-2)',
-                    borderColor: 'var(--ot-line)',
-                    color: 'var(--ot-body)',
-                    boxShadow: '0 2px 0 var(--ot-inset)',
-                  }}
-                >
-                  {t('training.section.untrain')}
-                </Button>
-              </div>
-            </Tooltip>
+              <Button
+                variant="default"
+                onClick={() => setConfirmUntrainOpen(true)}
+                disabled={untrainDisabled}
+                loading={isProcessingUntrain}
+                size="xs"
+              >
+                {t('training.section.untrain')}
+              </Button>
+            </ActionTooltip>
           </Group>
         </Flex>
       </>
@@ -769,14 +749,8 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
             <Box
               key={unit.id}
               data-testid="unit-card"
-              style={{
-                backgroundColor: slotBg,
-                borderRadius: '6px',
-                border: `1px solid ${slotBorder}`,
-                boxShadow: slotInset,
-                padding: '12px',
-                opacity: unit.enabled ? 1 : 0.6,
-              }}
+              className={panelClasses.insetRow}
+              data-disabled={unit.enabled ? undefined : true}
             >
               <Group justify="space-between" align="center">
                 <Group gap="sm" align="center" wrap="nowrap">
@@ -918,56 +892,23 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                   wrap="nowrap"
                   className="w-full justify-end sm:w-auto sm:justify-start"
                 >
-                  <NumberInput
-                    aria-label={t('training.unitCard.quantityFor', {
+                  <QuantityInput
+                    label={t('training.unitCard.quantityFor', {
                       unit: unitName(unit.name),
                     })}
+                    hideLabel
                     name={unit.id}
                     value={unitCosts[unit.id] || 0}
                     onChange={(value) => handleInputChange(unit.id, value)}
-                    min={0}
-                    step={1}
-                    allowNegative={false}
-                    size="sm"
                     disabled={!unit.enabled}
-                    styles={{
-                      input: {
-                        backgroundColor: 'var(--ot-inset)',
-                        border: '1px solid var(--ot-line)',
-                        color: accent,
-                        fontFamily: 'var(--mantine-font-family)',
-                        fontVariantNumeric: 'tabular-nums',
-                        fontWeight: 700,
-                        width: '88px',
-                        textAlign: 'center',
-                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
-                      },
-                    }}
-                  />
-                  <Button
-                    size="xs"
-                    variant="default"
-                    disabled={!unit.enabled}
-                    onClick={() =>
+                    onMax={() =>
                       handleInputChange(unit.id, getMaxTrainable(unit))
                     }
-                    data-testid="train-button"
-                    aria-label={t('training.unitCard.setMax', {
+                    maxAriaLabel={t('training.unitCard.setMax', {
                       unit: unitName(unit.name),
                     })}
-                    role="button"
-                    style={{
-                      backgroundImage:
-                        'linear-gradient(180deg, var(--ot-surface-2) 0%, var(--ot-surface-2) 100%)',
-                      borderColor: 'var(--ot-line)',
-                      color: 'var(--ot-muted)',
-                      minWidth: '48px',
-                      minHeight: '48px',
-                      boxShadow: '0 2px 0 var(--ot-inset)',
-                    }}
-                  >
-                    {t('training.unitCard.max')}
-                  </Button>
+                    maxTestId="train-button"
+                  />
                 </Group>
               </Group>
             </Box>
@@ -1035,7 +976,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                 clearable
                 disabled={!fromUnitId}
               />
-              <Tooltip
+              <ActionTooltip
                 label={
                   convertError ||
                   (!fromUnitId || !toUnitId
@@ -1054,37 +995,29 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                     (!toLower && BigInt(Math.ceil(conversionCost)) > userGold)
                   ) || isProcessingConvert
                 }
-                withArrow
+                fullWidth
+                wrapperStyle={{ alignSelf: 'end' }}
               >
-                <div style={{ alignSelf: 'end' }}>
-                  <Button
-                    onClick={handleConvert}
-                    disabled={
-                      !fromUnitId ||
-                      !toUnitId ||
-                      conversionAmount <= 0 ||
-                      (!toLower &&
-                        BigInt(Math.ceil(conversionCost)) > userGold) ||
-                      isProcessingTrain ||
-                      isProcessingUntrain ||
-                      isProcessingConvert
-                    }
-                    loading={isProcessingConvert}
-                    size="sm"
-                    color="yellow"
-                    data-testid="action-button"
-                    style={{
-                      background: `linear-gradient(180deg, ${accent} 0%, var(--ot-accent) 100%)`,
-                      color: '#000',
-                      border: `1px solid ${accent}`,
-                      boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-                      width: '100%',
-                    }}
-                  >
-                    {t('training.convert.convert')}
-                  </Button>
-                </div>
-              </Tooltip>
+                <Button
+                  onClick={handleConvert}
+                  disabled={
+                    !fromUnitId ||
+                    !toUnitId ||
+                    conversionAmount <= 0 ||
+                    (!toLower &&
+                      BigInt(Math.ceil(conversionCost)) > userGold) ||
+                    isProcessingTrain ||
+                    isProcessingUntrain ||
+                    isProcessingConvert
+                  }
+                  loading={isProcessingConvert}
+                  size="sm"
+                  fullWidth
+                  data-testid="action-button"
+                >
+                  {t('training.convert.convert')}
+                </Button>
+              </ActionTooltip>
             </SimpleGrid>
             {/* Inline Error Display for Convert */}
             {convertError && (
@@ -1117,7 +1050,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
         })}
         confirmText={t('attack.confirm')}
         cancelText={t('training.cancel')}
-        type="remove"
+        type="destructive"
       />
     </GameCard>
   );

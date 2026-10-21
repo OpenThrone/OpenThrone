@@ -5,13 +5,11 @@ import {
   Loader,
   NumberInput,
   Pagination,
-  Paper,
   SegmentedControl,
   Stack,
   Table,
   Text,
   TextInput,
-  Title,
   Tooltip,
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
@@ -22,6 +20,8 @@ import {
   allianceRequest,
   getAllianceStanding,
 } from '@/components/alliance/allianceStanding';
+import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
 import type { AllianceListTypeName } from '@/services/AllianceLists.service';
@@ -133,25 +133,25 @@ export const AllianceLists = ({
   };
 
   return (
-    <Paper p="md" radius="md" withBorder>
+    <GameCard
+      title={t('lists.title', 'Target Lists')}
+      action={
+        <SegmentedControl
+          aria-label={t('lists.listSwitch', 'Choose a list')}
+          value={listType}
+          onChange={(value) => {
+            setListType(value as AllianceListTypeName);
+            setPage(1);
+          }}
+          data={[
+            { value: 'FARM', label: t('lists.farm', 'Farm') },
+            { value: 'HIT', label: t('lists.hit', 'Hit') },
+            { value: 'BLOCK', label: t('lists.block', 'Block') },
+          ]}
+        />
+      }
+    >
       <Stack gap="md">
-        <Group justify="space-between" align="center">
-          <Title order={3}>{t('lists.title', 'Target Lists')}</Title>
-          <SegmentedControl
-            aria-label={t('lists.listSwitch', 'Choose a list')}
-            value={listType}
-            onChange={(value) => {
-              setListType(value as AllianceListTypeName);
-              setPage(1);
-            }}
-            data={[
-              { value: 'FARM', label: t('lists.farm', 'Farm') },
-              { value: 'HIT', label: t('lists.hit', 'Hit') },
-              { value: 'BLOCK', label: t('lists.block', 'Block') },
-            ]}
-          />
-        </Group>
-
         {canEdit && (
           <form
             onSubmit={(event) => {
@@ -199,85 +199,76 @@ export const AllianceLists = ({
                   count: data.total,
                 })}
               </Text>
-              <Table.ScrollContainer minWidth={560}>
-                <Table striped highlightOnHover>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>{t('lists.columns.player', 'Player')}</Table.Th>
-                      <Table.Th>{t('lists.columns.level', 'Level')}</Table.Th>
-                      <Table.Th>{t('lists.columns.race', 'Race')}</Table.Th>
-                      <Table.Th>{t('lists.columns.note', 'Note')}</Table.Th>
-                      <Table.Th>
-                        {t('lists.columns.addedBy', 'Added by')}
-                      </Table.Th>
-                      <Table.Th>{t('lists.columns.added', 'Added')}</Table.Th>
+              <StyledTable
+                ariaLabel={t('lists.title', 'Target Lists')}
+                tableProps={{ striped: true, highlightOnHover: true }}
+                headers={[
+                  t('lists.columns.player', 'Player'),
+                  t('lists.columns.level', 'Level'),
+                  t('lists.columns.race', 'Race'),
+                  t('lists.columns.note', 'Note'),
+                  t('lists.columns.addedBy', 'Added by'),
+                  t('lists.columns.added', 'Added'),
+                  ...(canEdit ? [t('lists.columns.actions', 'Actions')] : []),
+                ]}
+              >
+                {data.entries.length === 0 ? (
+                  <Table.Tr>
+                    <Table.Td colSpan={canEdit ? 7 : 6}>
+                      <Text c="dimmed" ta="center">
+                        {t('lists.empty', 'Nobody is on this list yet.')}
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                ) : (
+                  data.entries.map((entry) => (
+                    <Table.Tr key={entry.id}>
+                      <Table.Td>
+                        <Text
+                          component="a"
+                          href={`/userprofile/${entry.target_user_id}`}
+                          size="sm"
+                        >
+                          {entry.target_display_name ??
+                            `#${entry.target_user_id}`}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>{entry.target_level ?? '-'}</Table.Td>
+                      <Table.Td>{entry.target_race ?? '-'}</Table.Td>
+                      <Table.Td>{entry.note ?? ''}</Table.Td>
+                      <Table.Td>{entry.added_by_name ?? '-'}</Table.Td>
+                      <Table.Td>
+                        {new Date(entry.created_at).toLocaleDateString()}
+                      </Table.Td>
                       {canEdit && (
-                        <Table.Th>
-                          {t('lists.columns.actions', 'Actions')}
-                        </Table.Th>
+                        <Table.Td>
+                          <Tooltip
+                            label={t(
+                              'lists.removeLabel',
+                              'Remove {{name}} from the list',
+                              { name: entry.target_display_name ?? '' },
+                            )}
+                          >
+                            <ActionIcon
+                              color="red"
+                              variant="subtle"
+                              disabled={busy}
+                              aria-label={t(
+                                'lists.removeLabel',
+                                'Remove {{name}} from the list',
+                                { name: entry.target_display_name ?? '' },
+                              )}
+                              onClick={() => remove(entry)}
+                            >
+                              <span aria-hidden="true">&times;</span>
+                            </ActionIcon>
+                          </Tooltip>
+                        </Table.Td>
                       )}
                     </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {data.entries.length === 0 ? (
-                      <Table.Tr>
-                        <Table.Td colSpan={canEdit ? 7 : 6}>
-                          <Text c="dimmed" ta="center">
-                            {t('lists.empty', 'Nobody is on this list yet.')}
-                          </Text>
-                        </Table.Td>
-                      </Table.Tr>
-                    ) : (
-                      data.entries.map((entry) => (
-                        <Table.Tr key={entry.id}>
-                          <Table.Td>
-                            <Text
-                              component="a"
-                              href={`/userprofile/${entry.target_user_id}`}
-                              size="sm"
-                            >
-                              {entry.target_display_name ??
-                                `#${entry.target_user_id}`}
-                            </Text>
-                          </Table.Td>
-                          <Table.Td>{entry.target_level ?? '-'}</Table.Td>
-                          <Table.Td>{entry.target_race ?? '-'}</Table.Td>
-                          <Table.Td>{entry.note ?? ''}</Table.Td>
-                          <Table.Td>{entry.added_by_name ?? '-'}</Table.Td>
-                          <Table.Td>
-                            {new Date(entry.created_at).toLocaleDateString()}
-                          </Table.Td>
-                          {canEdit && (
-                            <Table.Td>
-                              <Tooltip
-                                label={t(
-                                  'lists.removeLabel',
-                                  'Remove {{name}} from the list',
-                                  { name: entry.target_display_name ?? '' },
-                                )}
-                              >
-                                <ActionIcon
-                                  color="red"
-                                  variant="subtle"
-                                  disabled={busy}
-                                  aria-label={t(
-                                    'lists.removeLabel',
-                                    'Remove {{name}} from the list',
-                                    { name: entry.target_display_name ?? '' },
-                                  )}
-                                  onClick={() => remove(entry)}
-                                >
-                                  <span aria-hidden="true">&times;</span>
-                                </ActionIcon>
-                              </Tooltip>
-                            </Table.Td>
-                          )}
-                        </Table.Tr>
-                      ))
-                    )}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
+                  ))
+                )}
+              </StyledTable>
 
               {data.totalPages > 1 && (
                 <Group justify="space-between" align="flex-end" wrap="wrap">
@@ -310,6 +301,6 @@ export const AllianceLists = ({
           )
         )}
       </Stack>
-    </Paper>
+    </GameCard>
   );
 };

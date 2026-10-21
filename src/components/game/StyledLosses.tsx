@@ -1,6 +1,8 @@
 import { Box, Group, Progress, Table, Text } from '@mantine/core';
 import React, { useMemo } from 'react';
 
+import classes from '@/components/game/Panels.module.css';
+
 import { GameCard } from './GameCard';
 
 interface StyledLossesProps {
@@ -13,15 +15,7 @@ export const StyledLosses: React.FC<StyledLossesProps> = ({ losses }) => {
 
   return (
     <GameCard title="Battle Casualties">
-      <Box
-        p="md"
-        style={{
-          backgroundColor: '#0f141a', // Slot bg
-          border: '1px solid #1f2b3b', // Slot border
-          borderRadius: '6px',
-          boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-        }}
-      >
+      <Box p="md" className={classes.insetRow}>
         <Group justify="space-between" mb="sm">
           <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
             Total Lost

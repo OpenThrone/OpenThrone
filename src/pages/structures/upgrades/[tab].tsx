@@ -1,4 +1,3 @@
-import { Box, Tabs } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 
@@ -7,6 +6,8 @@ import ClandestineUpgrade from '@/components/clandestineupgrades';
 import EconomyTab from '@/components/economy-upgrades';
 import FortificationsTab from '@/components/fortification-upgrades';
 import { GameCard } from '@/components/game/GameCard';
+import { PageLoading } from '@/components/game/PageLoading';
+import { TabBar } from '@/components/game/TabBar';
 import HousingTab from '@/components/housing-upgrades';
 import MainArea from '@/components/MainArea';
 import OffenseUpgrade from '@/components/offenseupgrade';
@@ -40,6 +41,14 @@ const UpgradeTab = () => {
         return t('upgrades.title');
     }
   };
+
+  if (!user) {
+    return (
+      <MainArea title={t('upgrades.title')}>
+        <PageLoading cardTitle={getTabTitle(tab)} lines={4} />
+      </MainArea>
+    );
+  }
 
   const tabs = [
     {
@@ -111,28 +120,16 @@ const UpgradeTab = () => {
   ];
 
   return (
-    <MainArea title={getTabTitle(tab)}>
-      <Box className="rpg-inset" p="xs" style={{ borderRadius: '6px' }}>
-        <Tabs
-          value={tab}
-          onChange={(value) => {
-            if (value) {
-              router.push(`/structures/upgrades/${value}`, undefined, {
-                locale: router.locale,
-              });
-            }
-          }}
-          variant="pills"
-        >
-          <Tabs.List grow justify="center">
-            {tabs.map((t) => (
-              <Tabs.Tab key={t.value} value={t.value}>
-                {t.label}
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-        </Tabs>
-      </Box>
+    <MainArea title={t('upgrades.title')}>
+      <TabBar
+        value={tab}
+        tabs={tabs}
+        onChange={(value) =>
+          router.push(`/structures/upgrades/${value}`, undefined, {
+            locale: router.locale,
+          })
+        }
+      />
 
       <GameCard title={getTabTitle(tab)} mt="md">
         {tabs.find((t) => t.value === tab)?.component}

@@ -93,7 +93,8 @@
     "dexterity": "Destreza (Espía y Centinela)",
     "charisma": "Carisma (Precios Reducidos)",
     "saveChanges": "Guardar Cambios",
-    "changesSavedSuccessfully": "Cambios guardados exitosamente"
+    "changesSavedSuccessfully": "Cambios guardados exitosamente",
+    "saveFailed": "No se pudieron guardar los cambios"
   },
   "profile": {
     "title": "Mi Perfil",
@@ -199,6 +200,7 @@
     "accountResetSuccessfully": "Cuenta restablecida exitosamente.",
     "accountDisabledSuccessfully": "Cuenta desactivada exitosamente.",
     "accountDataRemovedSuccessfully": "Datos de la cuenta eliminados exitosamente.",
+    "unexpectedError": "Algo salió mal. Inténtalo de nuevo.",
     "userNotLoaded": "Usuario no cargado. Por favor, actualiza la página.",
     "failedToDisable2FA": "Error al desactivar 2FA",
     "failedToGenerate2FASecret": "Error al generar secreto de 2FA",

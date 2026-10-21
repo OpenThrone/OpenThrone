@@ -4,14 +4,16 @@ import {
   faPeopleGroup,
   faUniversity,
 } from '@fortawesome/free-solid-svg-icons';
-import { Box, Space, Tabs } from '@mantine/core';
+import { Box, Space } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 
 import { ArmoryLoadoutPlanner } from '@/components/game/ArmoryLoadoutPlanner';
 import { OrderSummaryBar } from '@/components/game/OrderSummaryBar';
+import { PageLoading } from '@/components/game/PageLoading';
 import { StatGrid } from '@/components/game/StatGrid';
+import { TabBar } from '@/components/game/TabBar';
 import MainArea from '@/components/MainArea';
 import NewItemSection from '@/components/newItemSection';
 import { applyEventDiscount } from '@/constants/gameEvents';
@@ -264,6 +266,14 @@ const ArmoryTab = () => {
       0,
     ) ?? 0;
 
+  if (!user) {
+    return (
+      <MainArea title={t('armory.title')}>
+        <PageLoading stats={4} lines={4} />
+      </MainArea>
+    );
+  }
+
   const statItems = [
     {
       label: t('armory.citizens'),
@@ -287,26 +297,20 @@ const ArmoryTab = () => {
     <MainArea title={t('armory.title')}>
       <StatGrid title={t('armory.status')} stats={statItems} />
       <Space h="md" />
-      <Box className="rpg-inset" p="xs" style={{ borderRadius: '6px' }}>
-        <Tabs
-          value={tab}
-          onChange={(value) => {
-            if (value) {
-              router.push(`/structures/armory/${value}`, undefined, {
-                locale: router.locale,
-              });
-            }
-          }}
-          variant="pills"
-        >
-          <Tabs.List grow justify="center">
-            <Tabs.Tab value="offense">{t('armory.offense')}</Tabs.Tab>
-            <Tabs.Tab value="defense">{t('armory.defense')}</Tabs.Tab>
-            <Tabs.Tab value="spy">{t('armory.spy')}</Tabs.Tab>
-            <Tabs.Tab value="sentry">{t('armory.sentry')}</Tabs.Tab>
-          </Tabs.List>
-        </Tabs>
-      </Box>
+      <TabBar
+        value={tab}
+        tabs={[
+          { value: 'offense', label: t('armory.offense') },
+          { value: 'defense', label: t('armory.defense') },
+          { value: 'spy', label: t('armory.spy') },
+          { value: 'sentry', label: t('armory.sentry') },
+        ]}
+        onChange={(value) =>
+          router.push(`/structures/armory/${value}`, undefined, {
+            locale: router.locale,
+          })
+        }
+      />
       <Space h="md" />
       <ArmoryLoadoutPlanner
         key={tab}

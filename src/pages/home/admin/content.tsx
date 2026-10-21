@@ -10,12 +10,11 @@ import {
   ActionIcon,
   Alert,
   Badge,
+  Box,
   Button,
   Group,
   Loader,
   Modal,
-  Paper,
-  ScrollArea,
   Select,
   Stack,
   Switch,
@@ -27,19 +26,19 @@ import {
   Title,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
+import panelClasses from '@/components/game/Panels.module.css';
+import MarkdownArticle from '@/components/news/MarkdownArticle';
 import { useUser } from '@/context/users';
 import { PermissionType } from '@/lib/prisma-browser-exports';
+import { alertService } from '@/services/Alert.service';
 import { getAdminRequestError } from '@/utils/adminRequests';
 import { logError } from '@/utils/logger';
 
@@ -56,6 +55,9 @@ type PostData = {
   emailedAt?: string;
   postedBy?: { id: number; display_name: string };
 };
+
+const POST_KINDS = ['NEWS', 'BLOG', 'CHANGELOG'] as const;
+const POST_STATUSES = ['DRAFT', 'PUBLISHED', 'ARCHIVED'] as const;
 
 const kindColor: Record<string, string> = {
   BLOG: 'blue',
@@ -105,22 +107,19 @@ const ContentManagementPage = () => {
       } else {
         setLoadError(true);
         const errData = await res.json().catch(() => ({}));
-        notifications.show({
-          title: 'Error',
-          message:
-            errData.error ??
+        alertService.notify(
+          'error',
+          errData.error ??
             errData.message ??
-            `Failed to load posts (${res.status})`,
-          color: 'red',
-        });
+            t('content.loadFailedStatus', { status: res.status }),
+          { title: t('content.errorTitle') },
+        );
       }
     } catch (err) {
       logError('Failed to load posts:', err);
       setLoadError(true);
-      notifications.show({
-        title: 'Error',
-        message: 'Network error loading posts.',
-        color: 'red',
+      alertService.notify('error', t('content.networkError'), {
+        title: t('content.errorTitle'),
       });
     } finally {
       setLoading(false);
@@ -160,10 +159,8 @@ const ContentManagementPage = () => {
   const handleSubmit = async (confirmedEmail = false) => {
     if (submitting) return;
     if (!title.trim() || !content.trim()) {
-      notifications.show({
-        title: 'Error',
-        message: 'Title and content are required.',
-        color: 'red',
+      alertService.notify('error', t('content.required'), {
+        title: t('content.errorTitle'),
       });
       return;
     }
@@ -207,28 +204,26 @@ const ContentManagementPage = () => {
       if (res.ok) {
         const saved = await res.json();
         if (saved.emailAlreadySent)
-          notifications.show({ message: t('emailAdmin.alreadySent') });
-        notifications.show({
-          title: editId ? 'Updated' : 'Created',
-          message: `Post ${editId ? 'updated' : 'created'} successfully.`,
-          color: 'green',
-        });
+          alertService.notify('info', t('emailAdmin.alreadySent'));
+        alertService.notify(
+          'success',
+          t(editId ? 'content.updatedMessage' : 'content.createdMessage'),
+          {
+            title: t(editId ? 'content.updatedTitle' : 'content.createdTitle'),
+          },
+        );
         setEmailCount(null);
         closeEditor();
         fetchPosts();
       } else {
-        notifications.show({
-          title: 'Error',
-          message: await getAdminRequestError(res),
-          color: 'red',
+        alertService.notify('error', await getAdminRequestError(res), {
+          title: t('content.errorTitle'),
         });
       }
     } catch (err) {
       logError('Failed to save post:', err);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to save.',
-        color: 'red',
+      alertService.notify('error', t('content.saveFailed'), {
+        title: t('content.errorTitle'),
       });
     } finally {
       setSubmitting(false);
@@ -244,20 +239,22 @@ const ContentManagementPage = () => {
       });
       if (res.ok) {
         fetchPosts();
-        notifications.show({
-          title: 'Updated',
-          message: `Post ${newStatus.toLowerCase()}.`,
-          color: 'green',
-        });
+        alertService.notify(
+          'success',
+          t('content.statusChanged', {
+            status: t(`content.statuses.${newStatus}`),
+          }),
+          { title: t('content.updatedTitle') },
+        );
       } else {
         throw new Error(await getAdminRequestError(res));
       }
     } catch (err) {
-      notifications.show({
-        title: 'Error',
-        message: err instanceof Error ? err.message : 'Failed to update.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        err instanceof Error ? err.message : t('content.updateFailed'),
+        { title: t('content.errorTitle') },
+      );
     }
   };
 
@@ -269,18 +266,16 @@ const ContentManagementPage = () => {
       if (!res.ok) throw new Error(await getAdminRequestError(res));
       {
         await fetchPosts();
-        notifications.show({
-          title: 'Deleted',
-          message: 'Post removed.',
-          color: 'green',
+        alertService.notify('success', t('content.deletedMessage'), {
+          title: t('content.deletedTitle'),
         });
       }
     } catch (err) {
-      notifications.show({
-        title: 'Error',
-        message: err instanceof Error ? err.message : 'Failed to delete.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        err instanceof Error ? err.message : t('content.deleteFailed'),
+        { title: t('content.errorTitle') },
+      );
     }
   };
 
@@ -290,55 +285,56 @@ const ContentManagementPage = () => {
     return true;
   });
 
+  const kindOptions = POST_KINDS.map((value) => ({
+    value,
+    label: t(`content.kinds.${value}`),
+  }));
+  const statusOptions = POST_STATUSES.map((value) => ({
+    value,
+    label: t(`content.statuses.${value}`),
+  }));
+
   const pinned = filteredPosts.filter((p) => p.isPinned);
   const unpinned = filteredPosts.filter((p) => !p.isPinned);
   const sorted = [...pinned, ...unpinned];
 
   return (
     <AdminLayout
-      title="Content Management"
+      title={t('content.pageTitle')}
       permissions={[PermissionType.MANAGE_CONTENT]}
     >
       <Stack gap="md">
         <GameCard
-          title="War Room Dispatches"
+          title={t('content.dispatches')}
           icon={faNewspaper}
           action={
-            <Button size="xs" color="yellow" onClick={openCreate}>
-              + New Post
+            <Button size="xs" onClick={openCreate}>
+              {t('content.newPost')}
             </Button>
           }
         >
           <Text size="sm" c="gray.3" lh={1.7} mb="md">
-            Compose and manage news, blog posts, and changelog entries.
-            Published posts appear in the War Room Intelligence panel and
-            community news feed.
+            {t('content.intro')}
           </Text>
 
           <Group gap="xs" mb="md">
             <Select
-              placeholder="All kinds"
+              placeholder={t('content.allKinds')}
+              aria-label={t('content.kind')}
               size="xs"
-              w={140}
+              w={{ base: '100%', sm: 140 }}
               clearable
-              data={[
-                { value: 'NEWS', label: 'News' },
-                { value: 'BLOG', label: 'Blog' },
-                { value: 'CHANGELOG', label: 'Changelog' },
-              ]}
+              data={kindOptions}
               value={kindFilter}
               onChange={setKindFilter}
             />
             <Select
-              placeholder="All statuses"
+              placeholder={t('content.allStatuses')}
+              aria-label={t('content.status')}
               size="xs"
-              w={140}
+              w={{ base: '100%', sm: 140 }}
               clearable
-              data={[
-                { value: 'DRAFT', label: 'Draft' },
-                { value: 'PUBLISHED', label: 'Published' },
-                { value: 'ARCHIVED', label: 'Archived' },
-              ]}
+              data={statusOptions}
               value={statusFilter}
               onChange={setStatusFilter}
             />
@@ -350,210 +346,209 @@ const ContentManagementPage = () => {
             </Group>
           ) : loadError ? (
             <Alert color="red" role="alert">
-              Posts could not be loaded.{' '}
-              <Button variant="light" onClick={fetchPosts}>
-                Retry
+              {t('content.loadFailed')}{' '}
+              <Button variant="default" onClick={fetchPosts}>
+                {t('request.retry')}
               </Button>
             </Alert>
           ) : sorted.length === 0 ? (
             <Text c="dimmed" ta="center" py="xl">
-              No posts yet. Use &quot;+ New Post&quot; above or the community
-              news page to create dispatches.
+              {t('content.empty')}
             </Text>
           ) : (
-            <ScrollArea>
-              <Table highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th w={40}>
-                      <FontAwesomeIcon icon={faThumbtack} size="xs" />
-                    </Table.Th>
-                    <Table.Th>Title</Table.Th>
-                    <Table.Th w={90}>Kind</Table.Th>
-                    <Table.Th w={100}>Status</Table.Th>
-                    <Table.Th w={120}>Author</Table.Th>
-                    <Table.Th w={100}>Published</Table.Th>
-                    <Table.Th w={120}>Actions</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {sorted.map((p) => (
-                    <Table.Tr
-                      key={p.id}
-                      opacity={p.status === 'ARCHIVED' ? 0.5 : 1}
-                    >
-                      <Table.Td>
-                        {p.isPinned && (
-                          <Text c="yellow" fw={700}>
-                            <FontAwesomeIcon icon={faThumbtack} size="xs" />
-                          </Text>
-                        )}
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" fw={600} lineClamp={1}>
-                          {p.title}
+            <AdminDataTable ariaLabel={t('content.dispatches')}>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th w={40}>
+                    <FontAwesomeIcon
+                      icon={faThumbtack}
+                      size="xs"
+                      title={t('content.pinned')}
+                    />
+                  </Table.Th>
+                  <Table.Th>{t('content.title')}</Table.Th>
+                  <Table.Th w={90}>{t('content.kind')}</Table.Th>
+                  <Table.Th w={100}>{t('content.status')}</Table.Th>
+                  <Table.Th w={120}>{t('content.author')}</Table.Th>
+                  <Table.Th w={100}>{t('content.published')}</Table.Th>
+                  <Table.Th w={120}>{t('content.actions')}</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {sorted.map((p) => (
+                  <Table.Tr
+                    key={p.id}
+                    opacity={p.status === 'ARCHIVED' ? 0.5 : 1}
+                  >
+                    <Table.Td>
+                      {p.isPinned && (
+                        <Text c="yellow" fw={700}>
+                          <FontAwesomeIcon icon={faThumbtack} size="xs" />
                         </Text>
-                        {p.emailedAt && (
-                          <Text size="xs" c="dimmed">
-                            {t('emailAdmin.emailedOn', {
-                              date: new Date(p.emailedAt).toLocaleDateString(
-                                i18n.language,
-                              ),
-                            })}
-                          </Text>
-                        )}
-                        {p.excerpt && (
-                          <Text size="xs" c="dimmed" lineClamp={1} mt={2}>
-                            {p.excerpt}
-                          </Text>
-                        )}
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge
-                          size="xs"
-                          variant="light"
-                          color={kindColor[p.kind] ?? 'gray'}
-                        >
-                          {p.kind}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge
-                          size="xs"
-                          variant="light"
-                          color={statusColor[p.status] ?? 'gray'}
-                        >
-                          {p.status}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="xs">{p.postedBy?.display_name ?? '—'}</Text>
-                      </Table.Td>
-                      <Table.Td>
+                      )}
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm" fw={600} lineClamp={1}>
+                        {p.title}
+                      </Text>
+                      {p.emailedAt && (
                         <Text size="xs" c="dimmed">
-                          {p.publishedAt
-                            ? new Date(p.publishedAt).toLocaleDateString()
-                            : '—'}
+                          {t('emailAdmin.emailedOn', {
+                            date: new Date(p.emailedAt).toLocaleDateString(
+                              i18n.language,
+                            ),
+                          })}
                         </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Group gap={4} wrap="nowrap">
+                      )}
+                      {p.excerpt && (
+                        <Text size="xs" c="dimmed" lineClamp={1} mt={2}>
+                          {p.excerpt}
+                        </Text>
+                      )}
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge
+                        size="xs"
+                        variant="light"
+                        color={kindColor[p.kind] ?? 'gray'}
+                      >
+                        {t(`content.kinds.${p.kind}`, { defaultValue: p.kind })}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge
+                        size="xs"
+                        variant="light"
+                        color={statusColor[p.status] ?? 'gray'}
+                      >
+                        {t(`content.statuses.${p.status}`, {
+                          defaultValue: p.status,
+                        })}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="xs">{p.postedBy?.display_name ?? '—'}</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="xs" c="dimmed">
+                        {p.publishedAt
+                          ? new Date(p.publishedAt).toLocaleDateString(
+                              i18n.language,
+                            )
+                          : '—'}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Group gap={4} wrap="nowrap">
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          color="gray"
+                          onClick={() => openEditPost(p)}
+                          aria-label={t('content.edit')}
+                        >
+                          <FontAwesomeIcon icon={faEdit} size="xs" />
+                        </ActionIcon>
+                        {p.status !== 'ARCHIVED' && (
                           <ActionIcon
                             size="sm"
                             variant="subtle"
-                            color="gray"
-                            onClick={() => openEditPost(p)}
-                            aria-label="Edit"
+                            color="orange"
+                            onClick={() => handleStatusChange(p.id, 'ARCHIVED')}
+                            aria-label={t('content.archive')}
                           >
-                            <FontAwesomeIcon icon={faEdit} size="xs" />
+                            <FontAwesomeIcon icon={faScroll} size="xs" />
                           </ActionIcon>
-                          {p.status !== 'ARCHIVED' && (
-                            <ActionIcon
-                              size="sm"
-                              variant="subtle"
-                              color="orange"
-                              onClick={() =>
-                                handleStatusChange(p.id, 'ARCHIVED')
-                              }
-                              aria-label="Archive"
-                            >
-                              <FontAwesomeIcon icon={faScroll} size="xs" />
-                            </ActionIcon>
-                          )}
-                          {p.status === 'DRAFT' && (
-                            <ActionIcon
-                              size="sm"
-                              variant="subtle"
-                              color="green"
-                              onClick={() =>
-                                handleStatusChange(p.id, 'PUBLISHED')
-                              }
-                              aria-label="Publish"
-                              title="Publish"
-                            >
-                              <FontAwesomeIcon icon={faNewspaper} size="xs" />
-                            </ActionIcon>
-                          )}
+                        )}
+                        {p.status === 'DRAFT' && (
                           <ActionIcon
                             size="sm"
                             variant="subtle"
-                            color="red"
-                            onClick={() => setDeleteTarget(p.id)}
-                            aria-label="Delete"
+                            color="green"
+                            onClick={() =>
+                              handleStatusChange(p.id, 'PUBLISHED')
+                            }
+                            aria-label={t('content.publish')}
+                            title={t('content.publish')}
                           >
-                            <FontAwesomeIcon icon={faTrash} size="xs" />
+                            <FontAwesomeIcon icon={faNewspaper} size="xs" />
                           </ActionIcon>
-                        </Group>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </ScrollArea>
+                        )}
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          color="red"
+                          onClick={() => setDeleteTarget(p.id)}
+                          aria-label={t('content.delete')}
+                        >
+                          <FontAwesomeIcon icon={faTrash} size="xs" />
+                        </ActionIcon>
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </AdminDataTable>
           )}
         </GameCard>
       </Stack>
 
       <Modal
         opened={editorOpened}
-        onClose={closeEditor}
-        title={editId ? 'Edit Post' : 'New Post'}
+        onClose={() => !submitting && closeEditor()}
+        title={t(editId ? 'content.editPost' : 'content.newPostTitle')}
         size="xl"
+        centered
+        closeOnClickOutside={!submitting}
+        closeOnEscape={!submitting}
+        withCloseButton={!submitting}
         styles={{ body: { maxHeight: '80vh', overflowY: 'auto' } }}
       >
         <Tabs defaultValue="write">
           <Tabs.List>
-            <Tabs.Tab value="write">Write</Tabs.Tab>
-            <Tabs.Tab value="preview">Preview</Tabs.Tab>
+            <Tabs.Tab value="write">{t('content.write')}</Tabs.Tab>
+            <Tabs.Tab value="preview">{t('content.preview')}</Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="write" pt="md">
             <Stack gap="sm">
               <Group grow>
                 <TextInput
-                  label="Title"
+                  label={t('content.title')}
                   value={title}
                   onChange={(e) => setTitle(e.currentTarget.value)}
                   required
                 />
                 <Select
-                  label="Kind"
-                  data={[
-                    { value: 'NEWS', label: '📰 News' },
-                    { value: 'BLOG', label: '📝 Blog' },
-                    { value: 'CHANGELOG', label: '🔧 Changelog' },
-                  ]}
+                  label={t('content.kind')}
+                  data={kindOptions}
                   value={kind}
                   onChange={(v) => v && setKind(v)}
                 />
               </Group>
               <Group grow>
                 <TextInput
-                  label="Slug (optional)"
+                  label={t('content.slug')}
                   value={slug}
                   onChange={(e) => setSlug(e.currentTarget.value)}
-                  placeholder="auto-generated-if-empty"
+                  placeholder={t('content.slugPlaceholder')}
                 />
                 <Select
-                  label="Status"
-                  data={[
-                    { value: 'DRAFT', label: 'Draft' },
-                    { value: 'PUBLISHED', label: 'Published' },
-                    { value: 'ARCHIVED', label: 'Archived' },
-                  ]}
+                  label={t('content.status')}
+                  data={statusOptions}
                   value={status}
                   onChange={(v) => v && setStatus(v)}
                 />
               </Group>
               <Textarea
-                label="Excerpt"
+                label={t('content.excerpt')}
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.currentTarget.value)}
                 maxLength={500}
                 rows={2}
               />
               <Textarea
-                label="Content (Markdown)"
+                label={t('content.body')}
                 value={content}
                 onChange={(e) => setContent(e.currentTarget.value)}
                 minRows={12}
@@ -572,40 +567,31 @@ const ContentManagementPage = () => {
                 />
               )}
               <Switch
-                label="Pin to top"
+                label={t('content.pin')}
                 checked={isPinned}
                 onChange={(e) => setIsPinned(e.currentTarget.checked)}
               />
               <Group justify="flex-end" mt="md">
                 <Button
-                  variant="outline"
+                  variant="default"
                   onClick={closeEditor}
                   disabled={submitting}
                 >
-                  Cancel
+                  {t('content.cancel')}
                 </Button>
                 <Button onClick={() => handleSubmit()} loading={submitting}>
                   {editId
-                    ? 'Update'
+                    ? t('content.update')
                     : status === 'PUBLISHED'
-                      ? 'Publish'
-                      : 'Save Draft'}
+                      ? t('content.publish')
+                      : t('content.saveDraft')}
                 </Button>
               </Group>
             </Stack>
           </Tabs.Panel>
 
           <Tabs.Panel value="preview" pt="md">
-            <Paper
-              p="md"
-              radius="sm"
-              style={{
-                backgroundColor: '#0f141a',
-                border: '1px solid #2f3e52',
-                borderRadius: '6px',
-                minHeight: 200,
-              }}
-            >
+            <Box className={panelClasses.insetRow} p="md" mih={200}>
               {title && (
                 <Title
                   order={3}
@@ -616,15 +602,8 @@ const ContentManagementPage = () => {
                   {title}
                 </Title>
               )}
-              <div className="prose prose-invert max-w-none">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw]}
-                >
-                  {content || '*No content yet...*'}
-                </ReactMarkdown>
-              </div>
-            </Paper>
+              <MarkdownArticle content={content || t('content.previewEmpty')} />
+            </Box>
           </Tabs.Panel>
         </Tabs>
       </Modal>
@@ -637,6 +616,7 @@ const ContentManagementPage = () => {
         confirmText={t('emailAdmin.send')}
         cancelText={t('emailAdmin.cancel')}
         isLoading={submitting}
+        type="primary"
       />
       <ConfirmationModal
         isOpen={deleteTarget !== null}
@@ -645,11 +625,11 @@ const ContentManagementPage = () => {
           if (deleteTarget !== null) handleDelete(deleteTarget);
           setDeleteTarget(null);
         }}
-        title="Confirm deletion"
-        message="Are you sure you want to permanently delete this post?"
-        confirmText="Delete"
-        cancelText="Cancel"
-        type="remove"
+        title={t('content.deleteTitle')}
+        message={t('content.deleteMessage')}
+        confirmText={t('content.delete')}
+        cancelText={t('content.cancel')}
+        type="destructive"
       />
     </AdminLayout>
   );

@@ -11,6 +11,7 @@ import {
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
 import { PermissionType } from '@/lib/prisma-browser-exports';
@@ -119,7 +120,7 @@ const AuditLogsPage = () => {
               <Text c="red" role="alert">
                 Audit logs could not be loaded.
               </Text>
-              <Button variant="light" onClick={fetchLogs}>
+              <Button variant="default" onClick={fetchLogs}>
                 Retry
               </Button>
             </Group>
@@ -129,49 +130,46 @@ const AuditLogsPage = () => {
             </Text>
           ) : (
             <Stack gap="md">
-              <Table.ScrollContainer minWidth={800}>
-                <Table striped highlightOnHover>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>ID</Table.Th>
-                      <Table.Th>User</Table.Th>
-                      <Table.Th>Action</Table.Th>
-                      <Table.Th>IP Address</Table.Th>
-                      <Table.Th>Target User ID</Table.Th>
-                      <Table.Th>Entity Type / ID</Table.Th>
-                      <Table.Th>Timestamp</Table.Th>
-                      <Table.Th>Details</Table.Th>
+              <AdminDataTable size="wide" ariaLabel="Audit logs">
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>ID</Table.Th>
+                    <Table.Th>User</Table.Th>
+                    <Table.Th>Action</Table.Th>
+                    <Table.Th>IP Address</Table.Th>
+                    <Table.Th>Target User ID</Table.Th>
+                    <Table.Th>Entity Type / ID</Table.Th>
+                    <Table.Th>Timestamp</Table.Th>
+                    <Table.Th>Details</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {logs.map((log) => (
+                    <Table.Tr key={log.id}>
+                      <Table.Td>{log.id}</Table.Td>
+                      <Table.Td>
+                        {log.user?.display_name || 'System'} (ID: {log.userId})
+                      </Table.Td>
+                      <Table.Td fw={700}>{log.action}</Table.Td>
+                      <Table.Td>{log.ip || 'N/A'}</Table.Td>
+                      <Table.Td>{log.targetUserId || 'N/A'}</Table.Td>
+                      <Table.Td>
+                        {log.entityType
+                          ? `${log.entityType} (${log.entityId})`
+                          : 'N/A'}
+                      </Table.Td>
+                      <Table.Td>
+                        {new Date(log.timestamp).toLocaleString()}
+                      </Table.Td>
+                      <Table.Td
+                        style={{ maxWidth: '300px', wordBreak: 'break-all' }}
+                      >
+                        {log.details ? JSON.stringify(log.details) : 'None'}
+                      </Table.Td>
                     </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {logs.map((log) => (
-                      <Table.Tr key={log.id}>
-                        <Table.Td>{log.id}</Table.Td>
-                        <Table.Td>
-                          {log.user?.display_name || 'System'} (ID: {log.userId}
-                          )
-                        </Table.Td>
-                        <Table.Td fw={700}>{log.action}</Table.Td>
-                        <Table.Td>{log.ip || 'N/A'}</Table.Td>
-                        <Table.Td>{log.targetUserId || 'N/A'}</Table.Td>
-                        <Table.Td>
-                          {log.entityType
-                            ? `${log.entityType} (${log.entityId})`
-                            : 'N/A'}
-                        </Table.Td>
-                        <Table.Td>
-                          {new Date(log.timestamp).toLocaleString()}
-                        </Table.Td>
-                        <Table.Td
-                          style={{ maxWidth: '300px', wordBreak: 'break-all' }}
-                        >
-                          {log.details ? JSON.stringify(log.details) : 'None'}
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
+                  ))}
+                </Table.Tbody>
+              </AdminDataTable>
 
               {totalPages > 1 && (
                 <Group justify="center" mt="md">

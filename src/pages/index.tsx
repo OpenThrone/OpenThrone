@@ -250,12 +250,7 @@ const Index = () => {
                 {t('newcomerProtocol.description')}
               </Text>
               <Group mt="md">
-                <Button
-                  component={Link}
-                  href="/account/register"
-                  size="sm"
-                  color="yellow"
-                >
+                <Button component={Link} href="/account/register" size="sm">
                   {t('newcomerProtocol.createCommander')}
                 </Button>
                 <Button

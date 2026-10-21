@@ -1,0 +1,50 @@
+/* Themed surface for alertService toasts (rendered by GameNotifications). */
+.root {
+  background: var(--ot-panel);
+  border: 1px solid var(--ot-line);
+  border-inline-start: 3px solid var(--notification-color);
+  box-shadow:
+    var(--ot-shadow),
+    0 12px 24px -16px rgba(0, 0, 0, 0.8);
+}
+
+.root::before {
+  display: none;
+}
+
+.title {
+  color: var(--ot-heading);
+  font-weight: 700;
+}
+
+.description {
+  color: var(--ot-body);
+}
+
+.icon {
+  background: color-mix(
+    in srgb,
+    var(--notification-color) 30%,
+    var(--ot-inset)
+  );
+  color: var(--ot-heading);
+  border: 1px solid var(--notification-color);
+}
+
+.loader {
+  --loader-color: var(--ot-accent);
+}
+
+.closeButton {
+  color: var(--ot-muted);
+}
+
+.closeButton:hover {
+  color: var(--ot-heading);
+  background: var(--ot-surface-2);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--ot-accent);
+  outline-offset: 2px;
+}

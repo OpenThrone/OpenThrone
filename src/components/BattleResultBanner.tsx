@@ -66,7 +66,7 @@ export function BattleResultBanner({
           component="h1"
           style={{
             margin: 0,
-            fontFamily: 'Cinzel, MedievalSharp, serif',
+            fontFamily: 'MedievalSharp, serif',
             fontSize: 'clamp(2.4rem, 6vw, 3.5rem)',
             lineHeight: 0.95,
             letterSpacing: '0.08em',

@@ -8,6 +8,7 @@ import {
   Table,
   Text,
 } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useState } from 'react';
 
 import { alertService } from '@/services/Alert.service';
@@ -38,6 +39,8 @@ interface SessionModalProps {
  * Includes an auto-refresh feature.
  */
 const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
+  const { t, i18n } = useTranslation('common');
+  const locale = i18n.language;
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
@@ -67,11 +70,11 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
         alertService.error(data.error);
       }
     } catch {
-      alertService.error('Failed to fetch sessions');
+      alertService.error(t('autoRecruit.sessions.fetchFailed'));
     } finally {
       setLoading(false);
     }
-  }, [autoRefresh]);
+  }, [autoRefresh, t]);
 
   useEffect(() => {
     if (opened) {
@@ -126,13 +129,13 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
       });
       if (response.ok) {
         setSessions(sessions.filter((s) => s.id !== sessionId));
-        alertService.success('Session ended');
+        alertService.success(t('autoRecruit.sessionEnded'));
       } else {
         const data = await response.json();
-        setEndSessionError(data.error || 'Failed to end session.');
+        setEndSessionError(data.error || t('autoRecruit.sessions.endFailed'));
       }
     } catch (error: any) {
-      setEndSessionError('Network error: Failed to end session.');
+      setEndSessionError(t('autoRecruit.sessions.endNetworkError'));
       logError('End session error:', error); // Log the error
     } finally {
       setEndingSessionId(null); // Clear loading state for this session
@@ -148,31 +151,36 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
   };
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Active Sessions" size="lg">
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title={t('autoRecruit.sessions.title')}
+      size="lg"
+    >
       <Group mb="xs" align="center">
         <Switch
           label={
             <Text
               size="sm"
-              color="dimmed"
+              c="dimmed"
               mb="md"
-              style={{ width: '130px', display: 'inline-block' }}
+              style={{ minWidth: '130px', display: 'inline-block' }}
             >
               {autoRefresh
-                ? `Refreshing in ${countdown}s`
-                : 'Enable Auto-Refresh'}
+                ? t('autoRecruit.sessions.refreshingIn', { count: countdown })
+                : t('autoRecruit.sessions.enableAutoRefresh')}
             </Text>
           }
           checked={autoRefresh}
           onChange={(event) => handleAutoRefresh(event.currentTarget.checked)}
         />
         <Button onClick={fetchSessions} loading={loading}>
-          Refresh
+          {t('buttons.refresh')}
         </Button>
       </Group>
       {/* Display End Session Error */}
       {endSessionError && (
-        <Text color="red" size="sm" mt="xs" mb="xs" ta="center">
+        <Text c="red" size="sm" mt="xs" mb="xs" ta="center" role="alert">
           {endSessionError}
         </Text>
       )}
@@ -185,18 +193,20 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
         <Table>
           <thead>
             <tr>
-              <th>Session ID</th>
-              <th>Created At</th>
-              <th>Last Activity</th>
-              <th>Action</th>
+              <th>{t('autoRecruit.sessions.sessionId')}</th>
+              <th>{t('autoRecruit.sessions.createdAt')}</th>
+              <th>{t('autoRecruit.sessions.lastActivity')}</th>
+              <th>{t('labels.action')}</th>
             </tr>
           </thead>
           <tbody>
             {sessions.map((session) => (
               <tr key={session.id}>
                 <td>{session.id}</td>
-                <td>{new Date(session.createdAt).toLocaleString()}</td>
-                <td>{new Date(session.lastActivityAt).toLocaleString()}</td>
+                <td>{new Date(session.createdAt).toLocaleString(locale)}</td>
+                <td>
+                  {new Date(session.lastActivityAt).toLocaleString(locale)}
+                </td>
                 <td>
                   <Button
                     color="red"
@@ -205,7 +215,7 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
                     loading={endingSessionId === session.id}
                     disabled={endingSessionId !== null}
                   >
-                    End Session
+                    {t('autoRecruit.endSession')}
                   </Button>
                 </td>
               </tr>
@@ -213,7 +223,7 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
           </tbody>
         </Table>
       ) : (
-        <Text>No active sessions.</Text>
+        <Text>{t('autoRecruit.sessions.empty')}</Text>
       )}
     </Modal>
   );

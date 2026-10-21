@@ -11,6 +11,7 @@
   background: var(--ot-surface-2);
 }
 
+/* The one admin hover convention: a faint accent wash over the row. */
 .table tbody tr:hover {
-  background: var(--ot-surface-2);
+  background: color-mix(in srgb, var(--ot-accent) 10%, var(--ot-surface-2));
 }

@@ -104,6 +104,7 @@
     "resetPassword": "Passwort zurücksetzen",
     "passwordReset": "Passwort erfolgreich zurückgesetzt!",
     "resetFailed": "Zurücksetzen des Passworts fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "errorTitle": "Kontowiederherstellung fehlgeschlagen",
     "passwordTooShort": "Das Passwort muss mindestens 8 Zeichen lang sein.",
     "passwordSame": "Das neue Passwort muss sich von Ihrem aktuellen Passwort unterscheiden.",
     "enterYourEmail": "Geben Sie Ihre E-Mail ein",

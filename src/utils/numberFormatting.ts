@@ -30,6 +30,16 @@ export const toLocale = (num: number | string | bigint, locale?: Locales) => {
   return '0';
 };
 
+/**
+ * The one gold formatter: a locale-grouped amount (large bigints abbreviate via
+ * `toLocale`). Wrap it in `common:currency.goldAmount` for "{{amount}} gold"
+ * text. Pass `user?.locale ?? i18n.language` as the locale.
+ */
+export const formatGold = (
+  amount: number | string | bigint | null | undefined,
+  locale?: Locales,
+) => toLocale(amount ?? 0, locale);
+
 const _fromLocale = (str: string, locale?: Locales) => {
   const localeSeparators = {
     'en-US': { decimal: '.', thousands: ',' },

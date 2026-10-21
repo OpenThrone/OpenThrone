@@ -10,19 +10,17 @@ import '@mantine/notifications/styles.css';
 import { config } from '@fortawesome/fontawesome-svg-core';
 import { MantineProvider } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import { Notifications } from '@mantine/notifications';
 import type { AppProps } from 'next/app';
 import { useRouter } from 'next/router';
 import { SessionProvider } from 'next-auth/react';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 
+import GameNotifications from '@/components/GameNotifications';
 import Layout from '@/components/Layout';
 import LoadingDots from '@/components/loading-dots';
 import RuntimeMaintenanceBoundary from '@/components/RuntimeMaintenanceBoundary';
-import SnackbarBridge from '@/components/SnackbarBridge';
 import { LayoutProvider } from '@/context/LayoutContext';
-import { SnackbarProvider } from '@/context/snackbar-context';
 import { UserProvider, useUser } from '@/context/users';
 import { useArtworkPreview } from '@/hooks/useArtworkPreview';
 import { cssVariablesResolver, themes } from '@/styles/themes';
@@ -40,12 +38,9 @@ const MyApp = ({ Component, pageProps: { session, ...pageProps } }) => (
       refetchInterval={0}
       refetchOnWindowFocus={false}
     >
-      <SnackbarProvider>
-        <UserProvider>
-          <SnackbarBridge />
-          <AppWithTheme Component={Component} pageProps={pageProps} />
-        </UserProvider>
-      </SnackbarProvider>
+      <UserProvider>
+        <AppWithTheme Component={Component} pageProps={pageProps} />
+      </UserProvider>
     </SessionProvider>
   </Suspense>
 );
@@ -90,7 +85,15 @@ const namespaceMatchers: Array<{
     matches: (path) => path.startsWith('/auto-recruit'),
     namespaces: ['community'],
   },
-  { matches: (path) => path.startsWith('/social'), namespaces: ['social'] },
+  // 'how-to-play' supplies the race names shown by PlayerIdentityLine.
+  {
+    matches: (path) => path.startsWith('/social'),
+    namespaces: ['social', 'how-to-play'],
+  },
+  {
+    matches: (path) => path.startsWith('/userprofile'),
+    namespaces: ['how-to-play'],
+  },
   {
     matches: (path) => path.startsWith('/structures'),
     namespaces: ['structures'],
@@ -201,7 +204,7 @@ export const AppWithTheme = ({ Component, pageProps }: AppWithThemeProps) => {
       theme={theme}
       cssVariablesResolver={cssVariablesResolver}
     >
-      <Notifications position="top-right" />
+      <GameNotifications />
       <LayoutProvider key={artworkPreview}>
         <Layout>
           {pageResources === syncedPage.resources ||

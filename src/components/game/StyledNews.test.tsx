@@ -55,4 +55,11 @@ describe('dispatch Markdown preview', () => {
     expect(html).toContain('<li>Supplies</li>');
     expect(html).not.toContain('<p><p>');
   });
+
+  it('keeps heading levels through the shared MarkdownArticle renderer', () => {
+    const html = renderPreview('# Era\n\n## New\n\n- Planner');
+    expect(html).toMatch(/<h1[^>]*>Era<\/h1>/);
+    expect(html).toMatch(/<h2[^>]*>New<\/h2>/);
+    expect(html).not.toContain('<strong>Era</strong>');
+  });
 });

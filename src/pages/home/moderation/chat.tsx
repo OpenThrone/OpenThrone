@@ -13,13 +13,14 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
 const ChatModerationPage = () => {
@@ -115,21 +116,20 @@ const ChatModerationPage = () => {
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      notifications.show({
-        title: 'Muted',
-        message: `User ${muteUserId} muted for ${muteDuration} minutes.`,
-        color: 'green',
-      });
+      alertService.notify(
+        'success',
+        t('chatMutedMessage', { userId: muteUserId, count: muteDuration }),
+        { title: t('chatMutedTitle') },
+      );
       muteModal.close();
       await fetchMutes();
     } catch (error) {
       logError('Failed to mute user:', error);
-      notifications.show({
-        title: 'Error',
-        message:
-          error instanceof Error ? error.message : 'Failed to mute user.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        error instanceof Error ? error.message : t('chatMuteFailed'),
+        { title: t('error') },
+      );
     } finally {
       setMutationLoading(false);
     }
@@ -158,21 +158,19 @@ const ChatModerationPage = () => {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       {
-        notifications.show({
-          title: 'Edited',
-          message: 'Message edited.',
-          color: 'green',
+        alertService.notify('success', t('chatEditedMessage'), {
+          title: t('chatEditedTitle'),
         });
         editModal.close();
         await fetchMessages();
       }
     } catch (error) {
       logError('Failed to edit chat message:', error);
-      notifications.show({
-        title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to edit.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        error instanceof Error ? error.message : t('chatEditFailed'),
+        { title: t('error') },
+      );
     } finally {
       setMutationLoading(false);
     }
@@ -199,21 +197,19 @@ const ChatModerationPage = () => {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       {
-        notifications.show({
-          title: 'Deleted',
-          message: 'Message removed.',
-          color: 'green',
+        alertService.notify('success', t('chatDeletedMessage'), {
+          title: t('chatDeletedTitle'),
         });
         deleteModal.close();
         await fetchMessages();
       }
     } catch (error) {
       logError('Failed to delete chat message:', error);
-      notifications.show({
-        title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to delete.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        error instanceof Error ? error.message : t('chatDeleteFailed'),
+        { title: t('error') },
+      );
     } finally {
       setMutationLoading(false);
     }
@@ -230,20 +226,18 @@ const ChatModerationPage = () => {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       {
-        notifications.show({
-          title: 'Unmuted',
-          message: 'User unmuted.',
-          color: 'green',
+        alertService.notify('success', t('chatUnmutedMessage'), {
+          title: t('chatUnmutedTitle'),
         });
         await fetchMutes();
       }
     } catch (error) {
       logError('Failed to unmute user:', error);
-      notifications.show({
-        title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to unmute.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        error instanceof Error ? error.message : t('chatUnmuteFailed'),
+        { title: t('error') },
+      );
     } finally {
       setMutationLoading(false);
     }
@@ -252,21 +246,21 @@ const ChatModerationPage = () => {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <AdminLayout title="Moderation: Chat" permissions={['MODERATE_CHAT']}>
+    <AdminLayout title={t('chatPageTitle')} permissions={['MODERATE_CHAT']}>
       <Stack gap="md">
-        <GameCard title="Search Chat Logs">
+        <GameCard title={t('chatSearchTitle')}>
           <Group>
             <TextInput
-              placeholder="Search by user ID or content"
+              placeholder={t('chatSearchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.currentTarget.value)}
               style={{ flex: 1 }}
             />
-            <Button onClick={handleSearch}>Search</Button>
+            <Button onClick={handleSearch}>{t('chatSearch')}</Button>
           </Group>
         </GameCard>
 
-        <GameCard title={`Messages (${total})`}>
+        <GameCard title={t('chatMessagesTitle', { count: total })}>
           {loading ? (
             <Group justify="center" py="xl">
               <Loader />
@@ -280,20 +274,20 @@ const ChatModerationPage = () => {
             </Stack>
           ) : messages.length === 0 ? (
             <Text c="dimmed" ta="center" py="md">
-              No messages found.
+              {t('chatNoMessages')}
             </Text>
           ) : (
             <Stack gap="md">
               <Table>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>ID</Table.Th>
-                    <Table.Th>Sender</Table.Th>
-                    <Table.Th>Room</Table.Th>
-                    <Table.Th>Content</Table.Th>
-                    <Table.Th>Sent At</Table.Th>
-                    <Table.Th>Status</Table.Th>
-                    <Table.Th>Actions</Table.Th>
+                    <Table.Th>{t('colId')}</Table.Th>
+                    <Table.Th>{t('chatColSender')}</Table.Th>
+                    <Table.Th>{t('chatColRoom')}</Table.Th>
+                    <Table.Th>{t('chatColContent')}</Table.Th>
+                    <Table.Th>{t('chatColSentAt')}</Table.Th>
+                    <Table.Th>{t('colStatus')}</Table.Th>
+                    <Table.Th>{t('colActions')}</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -301,13 +295,16 @@ const ChatModerationPage = () => {
                     <Table.Tr key={m.id}>
                       <Table.Td>{m.id}</Table.Td>
                       <Table.Td>
-                        {m.sender?.display_name || 'N/A'} (ID: {m.senderId})
+                        {t('chatSender', {
+                          name: m.sender?.display_name || t('notAvailable'),
+                          id: m.senderId,
+                        })}
                       </Table.Td>
                       <Table.Td>{m.roomId}</Table.Td>
                       <Table.Td style={{ maxWidth: 300, overflow: 'hidden' }}>
                         {m.deletedAt ? (
                           <Text c="dimmed" fs="italic">
-                            [deleted]
+                            {t('chatDeletedPlaceholder')}
                           </Text>
                         ) : (
                           m.content
@@ -315,9 +312,11 @@ const ChatModerationPage = () => {
                       </Table.Td>
                       <Table.Td>{new Date(m.sentAt).toLocaleString()}</Table.Td>
                       <Table.Td>
-                        {m.deletedAt && <Badge color="red">Deleted</Badge>}
+                        {m.deletedAt && (
+                          <Badge color="red">{t('chatBadgeDeleted')}</Badge>
+                        )}
                         {m.editReason && !m.deletedAt && (
-                          <Badge color="yellow">Edited</Badge>
+                          <Badge color="yellow">{t('chatBadgeEdited')}</Badge>
                         )}
                       </Table.Td>
                       <Table.Td>
@@ -325,35 +324,33 @@ const ChatModerationPage = () => {
                           {!m.deletedAt && (
                             <Button
                               size="xs"
-                              variant="outline"
+                              variant="default"
                               onClick={() => openEdit(m)}
                               disabled={mutationLoading}
-                              aria-label={`Edit message ${m.id}`}
+                              aria-label={t('chatEditAria', { id: m.id })}
                             >
-                              Edit
+                              {t('chatEdit')}
                             </Button>
                           )}
                           {!m.deletedAt && (
                             <Button
                               size="xs"
                               color="red"
-                              variant="outline"
                               onClick={() => openDelete(m.id)}
                               disabled={mutationLoading}
-                              aria-label={`Delete message ${m.id}`}
+                              aria-label={t('chatDeleteAria', { id: m.id })}
                             >
-                              Delete
+                              {t('chatDeleteConfirm')}
                             </Button>
                           )}
                           <Button
                             size="xs"
-                            color="orange"
-                            variant="subtle"
+                            variant="default"
                             onClick={() => openMute(m.senderId)}
                             disabled={mutationLoading}
-                            aria-label={`Mute user ${m.senderId}`}
+                            aria-label={t('chatMuteAria', { id: m.senderId })}
                           >
-                            Mute
+                            {t('chatMuteConfirm')}
                           </Button>
                         </Group>
                       </Table.Td>
@@ -374,7 +371,9 @@ const ChatModerationPage = () => {
           )}
         </GameCard>
 
-        <GameCard title={`Active Mutes (${activeMutes.length})`}>
+        <GameCard
+          title={t('chatActiveMutesTitle', { count: activeMutes.length })}
+        >
           {muteLoadError ? (
             <Stack align="center">
               <Text role="alert" c="red">
@@ -384,17 +383,17 @@ const ChatModerationPage = () => {
             </Stack>
           ) : activeMutes.length === 0 ? (
             <Text c="dimmed" ta="center" py="md">
-              No active mutes.
+              {t('chatNoMutes')}
             </Text>
           ) : (
             <Table>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>User ID</Table.Th>
-                  <Table.Th>Reason</Table.Th>
-                  <Table.Th>Starts</Table.Th>
-                  <Table.Th>Ends</Table.Th>
-                  <Table.Th>Action</Table.Th>
+                  <Table.Th>{t('colUserId')}</Table.Th>
+                  <Table.Th>{t('reason')}</Table.Th>
+                  <Table.Th>{t('chatColStarts')}</Table.Th>
+                  <Table.Th>{t('chatColEnds')}</Table.Th>
+                  <Table.Th>{t('colAction')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -406,7 +405,7 @@ const ChatModerationPage = () => {
                     <Table.Td>
                       {m.endsAt
                         ? new Date(m.endsAt).toLocaleString()
-                        : 'Permanent'}
+                        : t('permanent')}
                     </Table.Td>
                     <Table.Td>
                       <Button
@@ -414,9 +413,9 @@ const ChatModerationPage = () => {
                         color="green"
                         onClick={() => unmute(m.id)}
                         loading={mutationLoading}
-                        aria-label={`Unmute user ${m.userId}`}
+                        aria-label={t('chatUnmuteAria', { id: m.userId })}
                       >
-                        Unmute
+                        {t('chatUnmute')}
                       </Button>
                     </Table.Td>
                   </Table.Tr>
@@ -427,96 +426,86 @@ const ChatModerationPage = () => {
         </GameCard>
       </Stack>
 
-      <Modal opened={muteModalOpen} onClose={muteModal.close} title="Mute User">
-        <Stack>
-          <NumberInput
-            label="Duration (minutes)"
-            value={muteDuration}
-            onChange={(v) => setMuteDuration(Number(v) || 60)}
-            min={5}
-            max={10080}
-          />
-          <TextInput
-            label="Reason"
-            value={muteReason}
-            onChange={(e) => setMuteReason(e.currentTarget.value)}
-          />
-          <Group justify="flex-end">
-            <Button variant="outline" onClick={muteModal.close}>
-              Cancel
-            </Button>
-            <Button
-              color="orange"
-              onClick={submitMute}
-              loading={mutationLoading}
-            >
-              Mute
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+      <ConfirmationModal
+        isOpen={muteModalOpen}
+        onClose={() => !mutationLoading && muteModal.close()}
+        onConfirm={submitMute}
+        title={t('chatMuteTitle')}
+        type="destructive"
+        confirmText={t('chatMuteConfirm')}
+        cancelText={t('cancel')}
+        isLoading={mutationLoading}
+      >
+        <NumberInput
+          label={t('chatMuteDuration')}
+          value={muteDuration}
+          onChange={(v) => setMuteDuration(Number(v) || 60)}
+          min={5}
+          max={10080}
+          disabled={mutationLoading}
+        />
+        <TextInput
+          label={t('reason')}
+          value={muteReason}
+          onChange={(e) => setMuteReason(e.currentTarget.value)}
+          disabled={mutationLoading}
+        />
+      </ConfirmationModal>
 
       <Modal
         opened={editModalOpen}
-        onClose={editModal.close}
-        title="Edit Message"
+        onClose={() => !mutationLoading && editModal.close()}
+        title={t('chatEditTitle')}
+        centered
+        closeOnClickOutside={!mutationLoading}
+        closeOnEscape={!mutationLoading}
+        withCloseButton={!mutationLoading}
       >
         <Stack>
           <Textarea
-            label="New Content"
+            label={t('chatEditContent')}
             minRows={3}
             value={editContent}
             onChange={(e) => setEditContent(e.currentTarget.value)}
           />
           <TextInput
-            label="Edit Reason"
+            label={t('chatEditReason')}
             value={editReason}
             onChange={(e) => setEditReason(e.currentTarget.value)}
           />
           <Group justify="flex-end">
-            <Button variant="outline" onClick={editModal.close}>
-              Cancel
-            </Button>
             <Button
-              color="yellow"
-              onClick={submitEdit}
-              loading={mutationLoading}
+              variant="default"
+              onClick={editModal.close}
+              disabled={mutationLoading}
             >
-              Save Edit
+              {t('cancel')}
+            </Button>
+            <Button onClick={submitEdit} loading={mutationLoading}>
+              {t('chatEditSave')}
             </Button>
           </Group>
         </Stack>
       </Modal>
 
-      <Modal
-        opened={deleteModalOpen}
-        onClose={deleteModal.close}
-        title="Delete Message"
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => !mutationLoading && deleteModal.close()}
+        onConfirm={submitDelete}
+        title={t('chatDeleteTitle')}
+        message={t('chatDeleteMessage')}
+        type="destructive"
+        confirmText={t('chatDeleteConfirm')}
+        cancelText={t('cancel')}
+        isLoading={mutationLoading}
       >
-        <Stack>
-          <Text size="sm">
-            This will soft-delete the message. The original content will be
-            preserved in the audit trail.
-          </Text>
-          <TextInput
-            label="Delete Reason"
-            value={deleteReason}
-            onChange={(e) => setDeleteReason(e.currentTarget.value)}
-          />
-          <Group justify="flex-end">
-            <Button variant="outline" onClick={deleteModal.close}>
-              Cancel
-            </Button>
-            <Button
-              color="red"
-              onClick={submitDelete}
-              loading={mutationLoading}
-            >
-              Delete
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        <TextInput
+          label={t('chatDeleteReason')}
+          value={deleteReason}
+          onChange={(e) => setDeleteReason(e.currentTarget.value)}
+          disabled={mutationLoading}
+        />
+      </ConfirmationModal>
     </AdminLayout>
   );
 };

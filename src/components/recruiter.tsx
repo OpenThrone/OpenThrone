@@ -1,5 +1,6 @@
 import { Box, Text } from '@mantine/core';
 import { Turnstile } from '@marsidev/react-turnstile';
+import { useTranslation } from 'next-i18next';
 import React, { useEffect } from 'react';
 
 import Image from '@/components/ArtworkImage';
@@ -7,6 +8,7 @@ import { GameCard } from '@/components/game/GameCard';
 import { getAssetPath, getLevelFromXP } from '@/utils/utilities';
 
 const Recruiter = ({ user, showCaptcha, onSuccess, status }) => {
+  const { t } = useTranslation('common');
   useEffect(() => {
     if (!showCaptcha) {
       // Automatically succeed after 3 seconds if no captcha is required
@@ -18,11 +20,15 @@ const Recruiter = ({ user, showCaptcha, onSuccess, status }) => {
   }, [showCaptcha, onSuccess]);
 
   return (
-    <GameCard title="Recruitment Target">
+    <GameCard title={t('recruit.targetTitle')}>
       <Box className="mb-5 place-content-center items-center text-center">
         <Text>
-          {user.display_name} is a level {getLevelFromXP(user.experience)}{' '}
-          {user.race} {user.class}.
+          {t('recruit.targetSummary', {
+            name: user.display_name,
+            level: getLevelFromXP(user.experience),
+            race: user.race,
+            class: user.class,
+          })}
         </Text>
         <center>
           <Image
@@ -33,7 +39,7 @@ const Recruiter = ({ user, showCaptcha, onSuccess, status }) => {
           />
         </center>
         {status && (
-          <Text className="mt-2 text-lg font-semibold text-green-400">
+          <Text mt="xs" size="lg" fw={600} c="green.3">
             {status}
           </Text>
         )}

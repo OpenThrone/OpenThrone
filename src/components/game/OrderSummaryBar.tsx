@@ -8,20 +8,6 @@ import { toLocale } from '@/utils/numberFormatting';
 
 const LABEL_STYLE: React.CSSProperties = { letterSpacing: '0.3em' };
 
-const PRIMARY_BUTTON_STYLE: React.CSSProperties = {
-  background: 'linear-gradient(180deg, #e5c55a 0%, #b98f2f 100%)',
-  color: '#000',
-  border: '1px solid #e5c55a',
-  boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-};
-
-const SECONDARY_BUTTON_STYLE: React.CSSProperties = {
-  backgroundColor: '#1f2b3b',
-  borderColor: '#2f3e52',
-  color: '#e5e7eb',
-  boxShadow: '0 2px 0 #0f151c',
-};
-
 export interface OrderSummaryAction {
   label: string;
   onClick: () => void;
@@ -172,27 +158,24 @@ export const OrderSummaryBar: React.FC<OrderSummaryBarProps> = ({
                     </Button>
                   )}
                   <Button
-                    color="yellow"
                     onClick={primaryAction.onClick}
                     disabled={
                       primaryAction.disabled ||
                       (anyLoading && !primaryAction.loading)
                     }
                     loading={primaryAction.loading}
-                    style={PRIMARY_BUTTON_STYLE}
                     data-testid={primaryAction.testId}
                   >
                     {primaryAction.label}
                   </Button>
                   <Button
-                    color="gray"
+                    variant="default"
                     onClick={secondaryAction.onClick}
                     disabled={
                       secondaryAction.disabled ||
                       (anyLoading && !secondaryAction.loading)
                     }
                     loading={secondaryAction.loading}
-                    style={SECONDARY_BUTTON_STYLE}
                     data-testid={secondaryAction.testId}
                   >
                     {secondaryAction.label}

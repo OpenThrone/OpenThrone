@@ -55,7 +55,13 @@ const Index = () => {
             {t('passwordReset.sendLinkText')}
           </Text>
           {errorMessage && (
-            <Alert color="red" role="alert" mb="md">
+            <Alert
+              variant="filled"
+              color="red"
+              title={t('passwordReset.errorTitle')}
+              role="alert"
+              mb="md"
+            >
               {errorMessage}
             </Alert>
           )}

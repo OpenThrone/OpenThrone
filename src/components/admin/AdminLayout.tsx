@@ -1,10 +1,11 @@
-import { Alert, Container, Loader, Space, Stack, Title } from '@mantine/core';
+import { Alert, Container, Loader, Stack, Title } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import { forwardRef, type ReactNode } from 'react';
 
 import { useUser } from '@/context/users';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 
+import classes from './AdminLayout.module.css';
 import AdminSidebar, { AdminMobileNav } from './AdminSidebar';
 
 interface AdminLayoutProps {
@@ -49,7 +50,7 @@ const AdminLayout = forwardRef<HTMLDivElement, AdminLayoutProps>(
 
     if (loading) {
       return (
-        <div className="flex w-full flex-col overflow-y-auto pb-10" ref={ref}>
+        <div className={classes.root} ref={ref}>
           <Container p="md">
             <Stack align="center" py="xl">
               <Loader aria-label={t('interface.loading')} />
@@ -61,7 +62,7 @@ const AdminLayout = forwardRef<HTMLDivElement, AdminLayoutProps>(
 
     if (!hasAccess) {
       return (
-        <div className="flex w-full flex-col overflow-y-auto pb-10" ref={ref}>
+        <div className={classes.root} ref={ref}>
           <Container p="md">
             <Alert
               color="red"
@@ -76,29 +77,9 @@ const AdminLayout = forwardRef<HTMLDivElement, AdminLayoutProps>(
     }
 
     return (
-      <div
-        className="flex w-full flex-col overflow-y-auto pb-10"
-        ref={ref}
-        data-testid="admin-layout"
-      >
-        <header
-          className="main-header-titleBar"
-          style={{
-            minHeight: 56,
-            borderBottom: '1px solid var(--ot-line)',
-            flexShrink: 0,
-          }}
-        >
-          <Container
-            fluid
-            style={{
-              minHeight: 56,
-              display: 'flex',
-              alignItems: 'center',
-              paddingLeft: 16,
-              paddingRight: 16,
-            }}
-          >
+      <div className={classes.root} ref={ref} data-testid="admin-layout">
+        <header className={`main-header-titleBar ${classes.header}`}>
+          <Container fluid className={classes.headerInner}>
             <Title
               order={1}
               className="main-header-title"
@@ -109,26 +90,18 @@ const AdminLayout = forwardRef<HTMLDivElement, AdminLayoutProps>(
           </Container>
         </header>
 
-        <div className="flex flex-1 flex-col lg:flex-row">
-          <div className="lg:hidden">
+        <div className={classes.body}>
+          <div className={classes.mobileNav}>
             <AdminMobileNav />
           </div>
 
-          <aside
-            className="hidden shrink-0 border-[var(--ot-border)] lg:block lg:w-[250px] lg:border-r"
-            style={{
-              backgroundColor: 'var(--ot-surface-2)',
-            }}
-          >
-            <div className="sticky top-0 max-h-dvh overflow-y-auto p-3">
+          <aside className={classes.sidebar}>
+            <div className={classes.sidebarInner}>
               <AdminSidebar />
             </div>
           </aside>
 
-          <div className="min-w-0 flex-1">
-            <Space h="md" />
-            <div className="min-w-0 px-4 pb-4">{children}</div>
-          </div>
+          <div className={classes.content}>{children}</div>
         </div>
       </div>
     );

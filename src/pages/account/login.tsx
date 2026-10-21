@@ -110,6 +110,7 @@ const Login = () => {
                 variant="filled"
                 color="red"
                 title={t('login.loginDisabled')}
+                role="alert"
               >
                 {t('login.checkDiscordNews')}
               </Alert>
@@ -129,7 +130,6 @@ const Login = () => {
             </Button>
           </Group>
         </PublicAuthLayout>
-
       </MainArea>
     </>
   );

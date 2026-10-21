@@ -4,6 +4,7 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
 import { logError } from '@/utils/logger';
@@ -76,7 +77,7 @@ const MultiAccountPage = () => {
                 hash: c.hash,
               })}
             >
-              <Table>
+              <AdminDataTable size="compact">
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>{t('userId')}</Table.Th>
@@ -95,7 +96,7 @@ const MultiAccountPage = () => {
                     </Table.Tr>
                   ))}
                 </Table.Tbody>
-              </Table>
+              </AdminDataTable>
             </GameCard>
           ))
         )}

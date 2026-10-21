@@ -1,12 +1,4 @@
-import {
-  Button,
-  Group,
-  Paper,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core';
+import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
@@ -133,10 +125,7 @@ export const AllianceInvitePanel = ({ allianceId }: { allianceId: number }) => {
   };
 
   return (
-    <Paper p="md" radius="md" withBorder>
-      <Title order={4} mb="md">
-        {t('invites.title')}
-      </Title>
+    <GameCard title={t('invites.title')}>
       <Group align="flex-end" gap="sm" wrap="nowrap">
         <TextInput
           label={t('invites.playerName')}
@@ -172,6 +161,6 @@ export const AllianceInvitePanel = ({ allianceId }: { allianceId: number }) => {
           ))}
         </Stack>
       )}
-    </Paper>
+    </GameCard>
   );
 };

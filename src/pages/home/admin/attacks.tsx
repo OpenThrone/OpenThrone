@@ -17,7 +17,7 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useRef, useState } from 'react';
 
-import tableClasses from '@/components/admin/AdminDataTable.module.css';
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import CombatDetails from '@/components/admin/CombatDetails';
 import type { adminCombatDetails } from '@/utils/adminCombat';
@@ -129,7 +129,7 @@ export default function AttacksPage() {
               min={1}
               value={player}
               onChange={(e) => setPlayer(e.currentTarget.value)}
-              w={130}
+              w={{ base: '100%', sm: 130 }}
             />
             <Select
               label={t('mission')}
@@ -174,7 +174,9 @@ export default function AttacksPage() {
         {error && (
           <Alert color="red" role="alert">
             {t('loadError')}{' '}
-            <Button onClick={() => setRetry((v) => v + 1)}>{t('retry')}</Button>
+            <Button variant="default" onClick={() => setRetry((v) => v + 1)}>
+              {t('retry')}
+            </Button>
           </Alert>
         )}
         {loading ? (
@@ -183,83 +185,79 @@ export default function AttacksPage() {
           data && (
             <>
               <Text size="sm">{t('recordCount', { count: data.total })}</Text>
-              <Table.ScrollContainer minWidth={1000}>
-                <Table
-                  className={tableClasses.table}
-                  striped
-                  highlightOnHover
-                  withTableBorder
-                  style={{ fontVariantNumeric: 'tabular-nums' }}
-                >
-                  <Table.Thead>
-                    <Table.Tr>
-                      {[
-                        'id',
-                        'time',
-                        'mission',
-                        'attacker',
-                        'defender',
-                        'winner',
-                        'gold',
-                        'attackerLosses',
-                        'defenderLosses',
-                        'details',
-                      ].map((key) => (
-                        <Table.Th key={key}>{t(key)}</Table.Th>
-                      ))}
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {data.logs.map((log) => (
-                      <Table.Tr key={log.id}>
-                        <Table.Td>#{log.id}</Table.Td>
-                        <Table.Td>
-                          {log.timestamp
-                            ? new Date(log.timestamp).toLocaleString()
-                            : t('notRecorded')}
-                        </Table.Td>
-                        <Table.Td>
-                          {t(`actions.${log.type}`, { defaultValue: log.type })}
-                        </Table.Td>
-                        <Table.Td>
-                          {log.attackerPlayer.display_name} (#
-                          {log.attackerPlayer.id})
-                        </Table.Td>
-                        <Table.Td>
-                          {log.defenderPlayer.display_name} (#
-                          {log.defenderPlayer.id})
-                        </Table.Td>
-                        <Table.Td>
-                          {log.winner === log.attackerPlayer.id
-                            ? log.attackerPlayer.display_name
-                            : log.winner === log.defenderPlayer.id
-                              ? log.defenderPlayer.display_name
-                              : t('notRecorded')}
-                        </Table.Td>
-                        <Table.Td>
-                          {log.pillaged_gold ?? t('notRecorded')}
-                        </Table.Td>
-                        <Table.Td>
-                          {log.attacker_losses_total ?? t('notRecorded')}
-                        </Table.Td>
-                        <Table.Td>
-                          {log.defender_losses_total ?? t('notRecorded')}
-                        </Table.Td>
-                        <Table.Td>
-                          <Button
-                            size="xs"
-                            variant="light"
-                            onClick={() => setSelected(log.id)}
-                            aria-label={t('viewAttack', { id: log.id })}
-                          >
-                            {t('details')}
-                          </Button>
-                        </Table.Td>
-                      </Table.Tr>
+              <AdminDataTable
+                size="wide"
+                ariaLabel={t('attackLedger')}
+                withTableBorder
+              >
+                <Table.Thead>
+                  <Table.Tr>
+                    {[
+                      'id',
+                      'time',
+                      'mission',
+                      'attacker',
+                      'defender',
+                      'winner',
+                      'gold',
+                      'attackerLosses',
+                      'defenderLosses',
+                      'details',
+                    ].map((key) => (
+                      <Table.Th key={key}>{t(key)}</Table.Th>
                     ))}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {data.logs.map((log) => (
+                    <Table.Tr key={log.id}>
+                      <Table.Td>#{log.id}</Table.Td>
+                      <Table.Td>
+                        {log.timestamp
+                          ? new Date(log.timestamp).toLocaleString()
+                          : t('notRecorded')}
+                      </Table.Td>
+                      <Table.Td>
+                        {t(`actions.${log.type}`, { defaultValue: log.type })}
+                      </Table.Td>
+                      <Table.Td>
+                        {log.attackerPlayer.display_name} (#
+                        {log.attackerPlayer.id})
+                      </Table.Td>
+                      <Table.Td>
+                        {log.defenderPlayer.display_name} (#
+                        {log.defenderPlayer.id})
+                      </Table.Td>
+                      <Table.Td>
+                        {log.winner === log.attackerPlayer.id
+                          ? log.attackerPlayer.display_name
+                          : log.winner === log.defenderPlayer.id
+                            ? log.defenderPlayer.display_name
+                            : t('notRecorded')}
+                      </Table.Td>
+                      <Table.Td>
+                        {log.pillaged_gold ?? t('notRecorded')}
+                      </Table.Td>
+                      <Table.Td>
+                        {log.attacker_losses_total ?? t('notRecorded')}
+                      </Table.Td>
+                      <Table.Td>
+                        {log.defender_losses_total ?? t('notRecorded')}
+                      </Table.Td>
+                      <Table.Td>
+                        <Button
+                          size="xs"
+                          variant="default"
+                          onClick={() => setSelected(log.id)}
+                          aria-label={t('viewAttack', { id: log.id })}
+                        >
+                          {t('details')}
+                        </Button>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </AdminDataTable>
               {!data.total && <Text c="dimmed">{t('empty')}</Text>}
               {data.total > 50 && (
                 <Pagination
@@ -285,7 +283,10 @@ export default function AttacksPage() {
               {detailError ? (
                 <Alert color="red" role="alert">
                   {t('loadError')}{' '}
-                  <Button onClick={() => setRetry((v) => v + 1)}>
+                  <Button
+                    variant="default"
+                    onClick={() => setRetry((v) => v + 1)}
+                  >
                     {t('retry')}
                   </Button>
                 </Alert>

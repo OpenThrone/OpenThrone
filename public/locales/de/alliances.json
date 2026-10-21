@@ -217,7 +217,6 @@
   },
   "bank": {
     "totalBalance": "Gesamte Allianz-Schatzkammer",
-    "goldAmount": "{{amount}} Gold",
     "historyTitle": "Transaktionsverlauf",
     "date": "Datum",
     "user": "Mitglied",

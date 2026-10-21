@@ -3,9 +3,7 @@ import {
   Button,
   Checkbox,
   Group,
-  Modal,
   Pagination,
-  ScrollArea,
   Select,
   Stack,
   Table,
@@ -16,7 +14,9 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { getAdminRequestError } from '@/utils/adminRequests';
 
@@ -225,74 +225,73 @@ const InactiveUsersPage = () => {
                 {t('emailAdmin.sendAllUnnoticed')}
               </Button>
             </Group>
-            <ScrollArea>
-              <Table aria-busy={loading}>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>
+            <AdminDataTable
+              ariaLabel={t('emailAdmin.inactiveUsers')}
+              aria-busy={loading}
+            >
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>
+                    <Checkbox
+                      aria-label={t('emailAdmin.selectPage')}
+                      checked={
+                        users.length > 0 && selected.length === users.length
+                      }
+                      indeterminate={
+                        selected.length > 0 && selected.length < users.length
+                      }
+                      onChange={(e) =>
+                        setSelected(
+                          e.currentTarget.checked ? users.map((u) => u.id) : [],
+                        )
+                      }
+                    />
+                  </Table.Th>
+                  {['name', 'lastActive', 'created', 'noticeStatus'].map(
+                    (key) => (
+                      <Table.Th key={key}>{t(`emailAdmin.${key}`)}</Table.Th>
+                    ),
+                  )}
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {users.map((u) => (
+                  <Table.Tr key={u.id}>
+                    <Table.Td>
                       <Checkbox
-                        aria-label={t('emailAdmin.selectPage')}
-                        checked={
-                          users.length > 0 && selected.length === users.length
-                        }
-                        indeterminate={
-                          selected.length > 0 && selected.length < users.length
-                        }
+                        aria-label={t('emailAdmin.selectUser', {
+                          name: u.display_name,
+                        })}
+                        checked={selected.includes(u.id)}
                         onChange={(e) =>
                           setSelected(
                             e.currentTarget.checked
-                              ? users.map((u) => u.id)
-                              : [],
+                              ? [...selected, u.id]
+                              : selected.filter((id) => id !== u.id),
                           )
                         }
                       />
-                    </Table.Th>
-                    {['name', 'lastActive', 'created', 'noticeStatus'].map(
-                      (key) => (
-                        <Table.Th key={key}>{t(`emailAdmin.${key}`)}</Table.Th>
-                      ),
-                    )}
+                    </Table.Td>
+                    <Table.Td>{u.display_name}</Table.Td>
+                    <Table.Td>{date(u.last_active)}</Table.Td>
+                    <Table.Td>{date(u.created_at)}</Table.Td>
+                    <Table.Td>
+                      {noticeLabel(
+                        u.accountInactivityNotice,
+                        u.deliverableEmail,
+                      )}
+                    </Table.Td>
                   </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {users.map((u) => (
-                    <Table.Tr key={u.id}>
-                      <Table.Td>
-                        <Checkbox
-                          aria-label={t('emailAdmin.selectUser', {
-                            name: u.display_name,
-                          })}
-                          checked={selected.includes(u.id)}
-                          onChange={(e) =>
-                            setSelected(
-                              e.currentTarget.checked
-                                ? [...selected, u.id]
-                                : selected.filter((id) => id !== u.id),
-                            )
-                          }
-                        />
-                      </Table.Td>
-                      <Table.Td>{u.display_name}</Table.Td>
-                      <Table.Td>{date(u.last_active)}</Table.Td>
-                      <Table.Td>{date(u.created_at)}</Table.Td>
-                      <Table.Td>
-                        {noticeLabel(
-                          u.accountInactivityNotice,
-                          u.deliverableEmail,
-                        )}
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                  {!users.length && (
-                    <Table.Tr>
-                      <Table.Td colSpan={5}>
-                        {t(loading ? 'emailAdmin.loading' : 'emailAdmin.empty')}
-                      </Table.Td>
-                    </Table.Tr>
-                  )}
-                </Table.Tbody>
-              </Table>
-            </ScrollArea>
+                ))}
+                {!users.length && (
+                  <Table.Tr>
+                    <Table.Td colSpan={5}>
+                      {t(loading ? 'emailAdmin.loading' : 'emailAdmin.empty')}
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </Table.Tbody>
+            </AdminDataTable>
             <Pagination
               value={page}
               onChange={setPage}
@@ -301,32 +300,30 @@ const InactiveUsersPage = () => {
             />
           </Stack>
         </GameCard>
-        <Modal
-          opened={!!confirm}
+        <ConfirmationModal
+          isOpen={!!confirm}
           onClose={() => !busy && setConfirm(null)}
+          onConfirm={() => act()}
           title={t('emailAdmin.confirm')}
+          message={t(
+            confirm === 'sweep'
+              ? 'emailAdmin.confirmSweep'
+              : confirm === 'all'
+                ? 'emailAdmin.confirmAllNotices'
+                : 'emailAdmin.confirmNotices',
+            { count: selected.length },
+          )}
+          type={confirm === 'sweep' ? 'destructive' : 'primary'}
+          confirmText={t('emailAdmin.confirm')}
+          cancelText={t('emailAdmin.cancel')}
+          isLoading={busy}
         >
-          <Stack>
-            {error && (
-              <Alert color="red" role="alert">
-                {error}
-              </Alert>
-            )}
-            <Text>
-              {t(
-                confirm === 'sweep'
-                  ? 'emailAdmin.confirmSweep'
-                  : confirm === 'all'
-                    ? 'emailAdmin.confirmAllNotices'
-                    : 'emailAdmin.confirmNotices',
-                { count: selected.length },
-              )}
-            </Text>
-            <Button loading={busy} onClick={() => act()}>
-              {t('emailAdmin.confirm')}
-            </Button>
-          </Stack>
-        </Modal>
+          {error && (
+            <Alert color="red" role="alert">
+              {error}
+            </Alert>
+          )}
+        </ConfirmationModal>
       </Stack>
     </AdminLayout>
   );

@@ -4,11 +4,13 @@ import {
   Button,
   Group,
   Modal,
+  Paper,
   Stack,
   Text,
   Textarea,
   TextInput,
 } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -19,7 +21,9 @@ import {
   calculateTransferFee,
   getCompleteFriendTransferConfig,
 } from '@/services/Config.service';
+import type { Locales } from '@/types/typings';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
+import { formatGold } from '@/utils/numberFormatting';
 
 interface GoldTransferModalProps {
   isOpen: boolean;
@@ -39,9 +43,11 @@ export function GoldTransferModal({
   userGold,
   onTransferComplete,
 }: GoldTransferModalProps) {
+  const { t, i18n } = useTranslation('social');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { forceUpdate } = useUser();
+  const { user, forceUpdate } = useUser();
+  const locale = user?.locale ?? (i18n.language as Locales);
   const config = getCompleteFriendTransferConfig();
 
   const {
@@ -89,28 +95,29 @@ export function GoldTransferModal({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Transfer failed');
+        throw new Error(errorData.error || t('goldTransfer.transferFailed'));
       }
 
       forceUpdate();
       onTransferComplete();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Transfer failed');
+      setError(
+        err instanceof Error ? err.message : t('goldTransfer.transferFailed'),
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const formatNumber = (num: bigint): string => {
-    return num.toLocaleString();
-  };
+  const goldAmount = (num: bigint) =>
+    t('currency.goldAmount', { ns: 'common', amount: formatGold(num, locale) });
 
   return (
     <Modal
       opened={isOpen}
       onClose={onClose}
-      title={`Transfer Gold to ${targetUserName}`}
+      title={t('goldTransfer.modalTitle', { player: targetUserName })}
       size="md"
     >
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -122,8 +129,8 @@ export function GoldTransferModal({
 
         <Stack gap="md">
           <TextInput
-            label="Transfer Amount"
-            placeholder="Enter amount (numbers only)"
+            label={t('goldTransfer.amountLabel')}
+            placeholder={t('goldTransfer.amountPlaceholder')}
             {...register('amount')}
             required
             type="number"
@@ -132,64 +139,74 @@ export function GoldTransferModal({
             step={1}
           />
           {errors.amount && (
-            <Text color="red" size="sm">
+            <Text c="red" size="sm">
               {errors.amount.message}
             </Text>
           )}
 
-          {/* Transfer Summary */}
-          <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
-            <Text size="sm" mb="xs" className="text-gray-400">
-              Transfer Summary
+          <Paper withBorder radius="md" p="md" bg="var(--ot-inset)">
+            <Text size="sm" mb="xs" c="var(--ot-muted)">
+              {t('goldTransfer.summaryTitle')}
             </Text>
             <Stack gap="xs">
               <Group justify="space-between">
-                <span className="text-gray-300">Transfer Amount:</span>
-                <span className="text-white">
-                  {formatNumber(transferAmount)} gold
-                </span>
+                <Text size="sm" c="var(--ot-body)">
+                  {t('goldTransfer.amountRow')}
+                </Text>
+                <Text size="sm" c="var(--ot-heading)">
+                  {goldAmount(transferAmount)}
+                </Text>
               </Group>
 
               {feeAmount > BigInt(0) && (
                 <Group justify="space-between">
-                  <span className="text-gray-300">
-                    Transfer Fee ({config.feePercentage}%):
-                  </span>
-                  <span className="text-yellow-400">
-                    {formatNumber(feeAmount)} gold
-                  </span>
+                  <Text size="sm" c="var(--ot-body)">
+                    {t('goldTransfer.feeRow', {
+                      percent: config.feePercentage,
+                    })}
+                  </Text>
+                  <Text size="sm" c="var(--ot-accent)">
+                    {goldAmount(feeAmount)}
+                  </Text>
                 </Group>
               )}
 
               <Group
                 justify="space-between"
-                className="border-t border-gray-700 pt-2"
+                pt="xs"
+                style={{ borderTop: '1px solid var(--ot-line)' }}
               >
-                <span className="font-medium text-white">Total Cost:</span>
-                <span className="font-medium text-green-400">
-                  {formatNumber(totalCost)} gold
-                </span>
+                <Text size="sm" fw={600} c="var(--ot-heading)">
+                  {t('goldTransfer.totalRow')}
+                </Text>
+                <Text size="sm" fw={600} c="var(--ot-accent)">
+                  {goldAmount(totalCost)}
+                </Text>
               </Group>
 
-              <Text size="xs" color="dimmed" mt="xs">
-                Maximum transfer: {formatNumber(config.maxAmount)} gold
+              <Text size="xs" c="dimmed" mt="xs">
+                {t('goldTransfer.maxTransfer', {
+                  amount: formatGold(config.maxAmount, locale),
+                })}
               </Text>
 
-              <Text size="xs" color="dimmed">
-                Your available gold: {formatNumber(userGold)} gold
+              <Text size="xs" c="dimmed">
+                {t('goldTransfer.availableGold', {
+                  amount: formatGold(userGold, locale),
+                })}
               </Text>
 
               {totalCost > userGold && (
-                <Text size="xs" color="red">
-                  Insufficient gold for this transfer
+                <Text size="xs" c="red">
+                  {t('goldTransfer.insufficientGold')}
                 </Text>
               )}
             </Stack>
-          </div>
+          </Paper>
 
           <Textarea
-            label="Optional Notes"
-            placeholder="Add a message for your friend"
+            label={t('goldTransfer.notesLabel')}
+            placeholder={t('goldTransfer.notesPlaceholder')}
             {...register('notes')}
             minRows={2}
             maxRows={3}
@@ -197,7 +214,7 @@ export function GoldTransferModal({
             resize="vertical"
           />
           {errors.notes && (
-            <Text color="red" size="sm">
+            <Text c="red" size="sm">
               {errors.notes.message}
             </Text>
           )}
@@ -205,11 +222,11 @@ export function GoldTransferModal({
           <Group justify="flex-end" mt="md">
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               onClick={onClose}
               disabled={loading}
             >
-              Cancel
+              {t('goldTransfer.cancel')}
             </Button>
             <Button
               type="submit"
@@ -221,7 +238,7 @@ export function GoldTransferModal({
                 !config.enabled
               }
             >
-              Transfer Gold
+              {t('goldTransfer.submit')}
             </Button>
           </Group>
         </Stack>

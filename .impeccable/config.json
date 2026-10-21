@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-10-15T14:41:40.933Z",
+        "reason": "Project AGENTS.md specifies Inter is already loaded and forbids a repo-wide font overhaul; this preview preserves the existing OpenThrone typography with Chomsky headings."
+      }
+    ]
+  }
+}

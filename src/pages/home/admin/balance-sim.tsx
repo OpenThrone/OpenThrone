@@ -19,11 +19,11 @@ import {
   SimpleGrid,
   Slider,
   Stack,
+  Table,
   Tabs,
   Text,
   Title,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import type { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -43,10 +43,16 @@ import {
   YAxis,
 } from 'recharts';
 
+import {
+  ADMIN_CHART_PALETTE,
+  ADMIN_CHART_TOOLTIP_STYLE,
+} from '@/components/admin/adminColors';
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { alertService } from '@/services/Alert.service';
 import { isAdmin, isImpersonatedSession } from '@/utils/authorization';
 
 interface SimConfig {
@@ -235,17 +241,6 @@ const BALANCE_PRESETS: Record<string, Partial<SimConfig['balance']>> = {
   },
 };
 
-const CHART_COLORS = {
-  attacker: '#f59e0b',
-  defender: '#6366f1',
-  gold: '#eab308',
-  loot: '#22c55e',
-  active: '#3b82f6',
-  defeated: '#ef4444',
-  lowTurn: '#f97316',
-  highTurn: '#8b5cf6',
-};
-
 const defaultConfig: SimConfig = {
   populationSize: 100,
   levelRange: [5, 20],
@@ -334,7 +329,7 @@ function ConfigPanel({
 
   return (
     <Stack gap="md">
-      <Title order={4}>Population</Title>
+      <Title order={3}>Population</Title>
       <NumberInput
         label="Players"
         description="Initial active players in the simulation"
@@ -376,7 +371,7 @@ function ConfigPanel({
         </Grid.Col>
       </Grid>
 
-      <Title order={4}>Duration</Title>
+      <Title order={3}>Duration</Title>
       <NumberInput
         label="Days"
         description="How many in-game days to simulate"
@@ -544,6 +539,7 @@ function ConfigPanel({
 }
 
 function ResultsDashboard({ result }: { result: SimResult }) {
+  const { t } = useTranslation('admin-game');
   const { summary, charts, topPlayers, config, timing, playerProgress } =
     result;
 
@@ -688,18 +684,24 @@ function ResultsDashboard({ result }: { result: SimResult }) {
           </Text>
           <ResponsiveContainer width="100%" height={320}>
             <LineChart data={charts.winRates}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="day" stroke="#888" fontSize={12} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={ADMIN_CHART_PALETTE.grid}
+              />
+              <XAxis
+                dataKey="day"
+                stroke={ADMIN_CHART_PALETTE.axis}
+                fontSize={12}
+              />
               <YAxis
-                stroke="#888"
+                stroke={ADMIN_CHART_PALETTE.axis}
                 fontSize={12}
                 domain={[0, 100]}
                 tickFormatter={(v: number) => `${v}%`}
               />
               <Tooltip
                 contentStyle={{
-                  background: '#1a1a2e',
-                  border: '1px solid #333',
+                  ...ADMIN_CHART_TOOLTIP_STYLE,
                   borderRadius: 8,
                 }}
                 formatter={(v: number) => `${v.toFixed(1)}%`}
@@ -708,7 +710,7 @@ function ResultsDashboard({ result }: { result: SimResult }) {
               <Line
                 type="monotone"
                 dataKey="attacker"
-                stroke={CHART_COLORS.attacker}
+                stroke={ADMIN_CHART_PALETTE.attacker}
                 strokeWidth={2}
                 dot={false}
                 name="Attacker Win %"
@@ -716,7 +718,7 @@ function ResultsDashboard({ result }: { result: SimResult }) {
               <Line
                 type="monotone"
                 dataKey="defender"
-                stroke={CHART_COLORS.defender}
+                stroke={ADMIN_CHART_PALETTE.defender}
                 strokeWidth={2}
                 dot={false}
                 name="Defender Win %"
@@ -732,13 +734,19 @@ function ResultsDashboard({ result }: { result: SimResult }) {
           </Text>
           <ResponsiveContainer width="100%" height={320}>
             <ComposedChart data={charts.economy}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="day" stroke="#888" fontSize={12} />
-              <YAxis stroke="#888" fontSize={12} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={ADMIN_CHART_PALETTE.grid}
+              />
+              <XAxis
+                dataKey="day"
+                stroke={ADMIN_CHART_PALETTE.axis}
+                fontSize={12}
+              />
+              <YAxis stroke={ADMIN_CHART_PALETTE.axis} fontSize={12} />
               <Tooltip
                 contentStyle={{
-                  background: '#1a1a2e',
-                  border: '1px solid #333',
+                  ...ADMIN_CHART_TOOLTIP_STYLE,
                   borderRadius: 8,
                 }}
                 formatter={(v: number) =>
@@ -753,8 +761,8 @@ function ResultsDashboard({ result }: { result: SimResult }) {
               <Area
                 type="monotone"
                 dataKey="totalGold"
-                stroke={CHART_COLORS.gold}
-                fill={CHART_COLORS.gold}
+                stroke={ADMIN_CHART_PALETTE.gold}
+                fill={ADMIN_CHART_PALETTE.gold}
                 fillOpacity={0.15}
                 strokeWidth={2}
                 name="Total Gold"
@@ -762,8 +770,8 @@ function ResultsDashboard({ result }: { result: SimResult }) {
               <Area
                 type="monotone"
                 dataKey="lootPerDay"
-                stroke={CHART_COLORS.loot}
-                fill={CHART_COLORS.loot}
+                stroke={ADMIN_CHART_PALETTE.loot}
+                fill={ADMIN_CHART_PALETTE.loot}
                 fillOpacity={0.1}
                 strokeWidth={2}
                 name="Loot/Day"
@@ -771,7 +779,7 @@ function ResultsDashboard({ result }: { result: SimResult }) {
               <Line
                 type="monotone"
                 dataKey="turnIncome"
-                stroke={CHART_COLORS.active}
+                stroke={ADMIN_CHART_PALETTE.active}
                 strokeWidth={2}
                 dot={false}
                 name="Turn Income/Day"
@@ -786,13 +794,19 @@ function ResultsDashboard({ result }: { result: SimResult }) {
           </Text>
           <ResponsiveContainer width="100%" height={320}>
             <ComposedChart data={charts.population}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="day" stroke="#888" fontSize={12} />
-              <YAxis stroke="#888" fontSize={12} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={ADMIN_CHART_PALETTE.grid}
+              />
+              <XAxis
+                dataKey="day"
+                stroke={ADMIN_CHART_PALETTE.axis}
+                fontSize={12}
+              />
+              <YAxis stroke={ADMIN_CHART_PALETTE.axis} fontSize={12} />
               <Tooltip
                 contentStyle={{
-                  background: '#1a1a2e',
-                  border: '1px solid #333',
+                  ...ADMIN_CHART_TOOLTIP_STYLE,
                   borderRadius: 8,
                 }}
               />
@@ -800,8 +814,8 @@ function ResultsDashboard({ result }: { result: SimResult }) {
               <Area
                 type="monotone"
                 dataKey="players"
-                stroke={CHART_COLORS.active}
-                fill={CHART_COLORS.active}
+                stroke={ADMIN_CHART_PALETTE.active}
+                fill={ADMIN_CHART_PALETTE.active}
                 fillOpacity={0.2}
                 strokeWidth={2}
                 name="Players"
@@ -809,8 +823,8 @@ function ResultsDashboard({ result }: { result: SimResult }) {
               <Area
                 type="monotone"
                 dataKey="breached"
-                stroke={CHART_COLORS.defeated}
-                fill={CHART_COLORS.defeated}
+                stroke={ADMIN_CHART_PALETTE.defeated}
+                fill={ADMIN_CHART_PALETTE.defeated}
                 fillOpacity={0.2}
                 strokeWidth={2}
                 name="Breached Forts"
@@ -818,7 +832,7 @@ function ResultsDashboard({ result }: { result: SimResult }) {
               <Line
                 type="monotone"
                 dataKey="avgHeldTurns"
-                stroke={CHART_COLORS.gold}
+                stroke={ADMIN_CHART_PALETTE.gold}
                 strokeWidth={2}
                 dot={false}
                 name="Avg Held Turns"
@@ -833,13 +847,19 @@ function ResultsDashboard({ result }: { result: SimResult }) {
           </Text>
           <ResponsiveContainer width="100%" height={320}>
             <ComposedChart data={charts.attacks}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="day" stroke="#888" fontSize={12} />
-              <YAxis stroke="#888" fontSize={12} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={ADMIN_CHART_PALETTE.grid}
+              />
+              <XAxis
+                dataKey="day"
+                stroke={ADMIN_CHART_PALETTE.axis}
+                fontSize={12}
+              />
+              <YAxis stroke={ADMIN_CHART_PALETTE.axis} fontSize={12} />
               <Tooltip
                 contentStyle={{
-                  background: '#1a1a2e',
-                  border: '1px solid #333',
+                  ...ADMIN_CHART_TOOLTIP_STYLE,
                   borderRadius: 8,
                 }}
               />
@@ -847,19 +867,19 @@ function ResultsDashboard({ result }: { result: SimResult }) {
               <Bar
                 dataKey="lowTurn"
                 stackId="a"
-                fill={CHART_COLORS.lowTurn}
+                fill={ADMIN_CHART_PALETTE.lowTurn}
                 name="Low Turn (≤5)"
               />
               <Bar
                 dataKey="highTurn"
                 stackId="a"
-                fill={CHART_COLORS.highTurn}
+                fill={ADMIN_CHART_PALETTE.highTurn}
                 name="High Turn (>5)"
               />
               <Line
                 type="monotone"
                 dataKey="turnsGenerated"
-                stroke={CHART_COLORS.active}
+                stroke={ADMIN_CHART_PALETTE.active}
                 strokeWidth={2}
                 dot={false}
                 name="Turns Generated"
@@ -867,7 +887,7 @@ function ResultsDashboard({ result }: { result: SimResult }) {
               <Line
                 type="monotone"
                 dataKey="turnsSpent"
-                stroke={CHART_COLORS.gold}
+                stroke={ADMIN_CHART_PALETTE.gold}
                 strokeWidth={2}
                 dot={false}
                 name="Turns Spent"
@@ -950,57 +970,47 @@ function ResultsDashboard({ result }: { result: SimResult }) {
                   </Text>
                 </SimpleGrid>
 
-                <Paper withBorder radius="sm" style={{ overflow: 'auto' }}>
-                  <table
-                    style={{
-                      width: '100%',
-                      borderCollapse: 'collapse',
-                      fontSize: 13,
-                    }}
-                  >
-                    <thead>
-                      <tr style={{ textAlign: 'left' }}>
-                        <th style={{ padding: '6px 8px' }}>Day</th>
-                        <th style={{ padding: '6px 8px' }}>Level</th>
-                        <th style={{ padding: '6px 8px' }}>Gold</th>
-                        <th style={{ padding: '6px 8px' }}>Power</th>
-                        <th style={{ padding: '6px 8px' }}>Army</th>
-                        <th style={{ padding: '6px 8px' }}>Spy/Sentry</th>
-                        <th style={{ padding: '6px 8px' }}>Fort</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {player.checkpoints.map((point) => (
-                        <tr
-                          key={`${player.id}-${point.day}`}
-                          style={{
-                            borderTop: '1px solid var(--mantine-color-dark-4)',
-                          }}
-                        >
-                          <td style={{ padding: '6px 8px' }}>{point.day}</td>
-                          <td style={{ padding: '6px 8px' }}>{point.level}</td>
-                          <td style={{ padding: '6px 8px' }}>
-                            {formatCompact(point.gold + point.goldInBank)}
-                          </td>
-                          <td style={{ padding: '6px 8px' }}>
-                            {formatCompact(point.power)}
-                          </td>
-                          <td style={{ padding: '6px 8px' }}>
-                            {getOffenseUnits(point.units)}/
-                            {getDefenseUnits(point.units)}
-                          </td>
-                          <td style={{ padding: '6px 8px' }}>
-                            {getSpyUnits(point.units)}/
-                            {getSentryUnits(point.units)}
-                          </td>
-                          <td style={{ padding: '6px 8px' }}>
-                            {Math.round(point.fortHp)}/{point.fortMaxHp}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </Paper>
+                <AdminDataTable
+                  ariaLabel={`${player.displayName} checkpoints`}
+                  fz={13}
+                  horizontalSpacing={8}
+                  verticalSpacing={6}
+                >
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Day</Table.Th>
+                      <Table.Th>Level</Table.Th>
+                      <Table.Th>Gold</Table.Th>
+                      <Table.Th>Power</Table.Th>
+                      <Table.Th>Army</Table.Th>
+                      <Table.Th>Spy/Sentry</Table.Th>
+                      <Table.Th>Fort</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {player.checkpoints.map((point) => (
+                      <Table.Tr key={`${player.id}-${point.day}`}>
+                        <Table.Td>{point.day}</Table.Td>
+                        <Table.Td>{point.level}</Table.Td>
+                        <Table.Td>
+                          {formatCompact(point.gold + point.goldInBank)}
+                        </Table.Td>
+                        <Table.Td>{formatCompact(point.power)}</Table.Td>
+                        <Table.Td>
+                          {getOffenseUnits(point.units)}/
+                          {getDefenseUnits(point.units)}
+                        </Table.Td>
+                        <Table.Td>
+                          {getSpyUnits(point.units)}/
+                          {getSentryUnits(point.units)}
+                        </Table.Td>
+                        <Table.Td>
+                          {Math.round(point.fortHp)}/{point.fortMaxHp}
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </AdminDataTable>
               </Paper>
             ))}
           </Stack>
@@ -1008,71 +1018,43 @@ function ResultsDashboard({ result }: { result: SimResult }) {
 
         <Tabs.Panel value="leaderboard" pt="md">
           <Text size="sm" c="dimmed" mb="sm">
-            Top 10 players by level and power at simulation end
+            {t('balanceSim.leaderboardCaption')}
           </Text>
-          <Paper withBorder radius="md" style={{ overflow: 'auto' }}>
-            <table
-              style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                fontSize: 14,
-              }}
-            >
-              <thead>
-                <tr
-                  style={{
-                    background: 'var(--mantine-color-dark-6)',
-                    textAlign: 'left',
-                  }}
-                >
-                  <th style={{ padding: '8px 12px' }}>#</th>
-                  <th style={{ padding: '8px 12px' }}>Name</th>
-                  <th style={{ padding: '8px 12px' }}>Level</th>
-                  <th style={{ padding: '8px 12px' }}>Gold</th>
-                  <th style={{ padding: '8px 12px' }}>Power</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topPlayers.map((p, i) => (
-                  <tr
-                    key={p.id}
-                    style={{
-                      borderBottom: '1px solid var(--mantine-color-dark-4)',
-                    }}
-                  >
-                    <td style={{ padding: '6px 12px', color: '#888' }}>
-                      {i + 1}
-                    </td>
-                    <td style={{ padding: '6px 12px' }}>{p.displayName}</td>
-                    <td
-                      style={{
-                        padding: '6px 12px',
-                        fontWeight: 700,
-                        color: CHART_COLORS.attacker,
-                      }}
-                    >
-                      {p.level}
-                    </td>
-                    <td
-                      style={{
-                        padding: '6px 12px',
-                        color: CHART_COLORS.gold,
-                      }}
-                    >
-                      {p.gold > 1000000
-                        ? `${(p.gold / 1000000).toFixed(1)}M`
-                        : p.gold > 1000
-                          ? `${(p.gold / 1000).toFixed(0)}K`
-                          : p.gold}
-                    </td>
-                    <td style={{ padding: '6px 12px' }}>
-                      {Math.round(p.power)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Paper>
+          <AdminDataTable
+            ariaLabel={t('balanceSim.leaderboardCaption')}
+            fz={14}
+            horizontalSpacing={12}
+            verticalSpacing={6}
+          >
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>#</Table.Th>
+                <Table.Th>{t('balanceSim.name')}</Table.Th>
+                <Table.Th>{t('balanceSim.level')}</Table.Th>
+                <Table.Th>{t('balanceSim.gold')}</Table.Th>
+                <Table.Th>{t('balanceSim.power')}</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {topPlayers.map((p, i) => (
+                <Table.Tr key={p.id}>
+                  <Table.Td c="dimmed">{i + 1}</Table.Td>
+                  <Table.Td>{p.displayName}</Table.Td>
+                  <Table.Td fw={700} c={ADMIN_CHART_PALETTE.attacker}>
+                    {p.level}
+                  </Table.Td>
+                  <Table.Td c={ADMIN_CHART_PALETTE.gold}>
+                    {p.gold > 1000000
+                      ? `${(p.gold / 1000000).toFixed(1)}M`
+                      : p.gold > 1000
+                        ? `${(p.gold / 1000).toFixed(0)}K`
+                        : p.gold}
+                  </Table.Td>
+                  <Table.Td>{Math.round(p.power)}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </AdminDataTable>
         </Tabs.Panel>
       </Tabs>
     </Stack>
@@ -1096,21 +1078,20 @@ const BalanceSimPage = () => {
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Simulation failed');
+        throw new Error(error.error || t('balanceSim.runFailed'));
       }
       const data = await response.json();
       setResult(data);
     } catch (error) {
-      notifications.show({
-        title: 'Simulation Error',
-        message:
-          error instanceof Error ? error.message : 'Failed to run simulation',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        error instanceof Error ? error.message : t('balanceSim.runFailed'),
+        { title: t('balanceSim.errorTitle') },
+      );
     } finally {
       setLoading(false);
     }
-  }, [config]);
+  }, [config, t]);
 
   return (
     <AdminLayout
@@ -1120,7 +1101,7 @@ const BalanceSimPage = () => {
     >
       <Grid>
         <Grid.Col span={{ base: 12, lg: 4 }}>
-          <GameCard title="Configuration" icon={faBalanceScale}>
+          <GameCard title={t('balanceSim.configuration')} icon={faBalanceScale}>
             <ConfigPanel
               config={config}
               onChange={setConfig}
@@ -1142,13 +1123,10 @@ const BalanceSimPage = () => {
                   style={{ opacity: 0.3 }}
                 />
                 <Text c="dimmed" size="lg">
-                  Configure parameters and run a simulation to see balance
-                  metrics.
+                  {t('balanceSim.emptyTitle')}
                 </Text>
                 <Text c="dimmed" size="sm">
-                  The simulation will generate an AI-driven population that
-                  attacks, spies, and grows economy over the configured
-                  duration.
+                  {t('balanceSim.emptyDescription')}
                 </Text>
               </Stack>
             </Paper>

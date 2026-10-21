@@ -3,20 +3,20 @@ import {
   Button,
   Group,
   Loader,
-  Paper,
   Stack,
   Table,
   Tabs,
   Text,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import InvestigationSignals from '@/components/admin/InvestigationSignals';
 import { useUser } from '@/context/users';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
 const severityColor = (s: string) => {
@@ -80,19 +80,13 @@ const CheatSignalsPage = () => {
         body: JSON.stringify({ signalId: id }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      notifications.show({
+      alertService.notify('success', t('signalUpdated'), {
         title: t('updated'),
-        message: t('signalUpdated'),
-        color: 'green',
       });
       await fetchSignals();
     } catch (error) {
       logError('Failed to update cheat signal', error);
-      notifications.show({
-        title: t('error'),
-        message: t('actionFailed'),
-        color: 'red',
-      });
+      alertService.notify('error', t('actionFailed'), { title: t('error') });
     } finally {
       setActionId(null);
     }
@@ -135,93 +129,81 @@ const CheatSignalsPage = () => {
                 </Text>
               )
             ) : (
-              <Paper withBorder>
-                <Table>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>{t('severity')}</Table.Th>
-                      <Table.Th>{t('type')}</Table.Th>
-                      <Table.Th>{t('user')}</Table.Th>
-                      <Table.Th>{t('score')}</Table.Th>
-                      <Table.Th>{t('summary')}</Table.Th>
-                      <Table.Th>{t('firstSeen')}</Table.Th>
-                      <Table.Th>{t('status')}</Table.Th>
-                      {canAct && <Table.Th>{t('actions')}</Table.Th>}
+              <AdminDataTable size="wide" ariaLabel={tSignals('savedSignals')}>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>{t('severity')}</Table.Th>
+                    <Table.Th>{t('type')}</Table.Th>
+                    <Table.Th>{t('user')}</Table.Th>
+                    <Table.Th>{t('score')}</Table.Th>
+                    <Table.Th>{t('summary')}</Table.Th>
+                    <Table.Th>{t('firstSeen')}</Table.Th>
+                    <Table.Th>{t('status')}</Table.Th>
+                    {canAct && <Table.Th>{t('actions')}</Table.Th>}
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {signals.map((s) => (
+                    <Table.Tr key={s.id}>
+                      <Table.Td>
+                        <Badge color={severityColor(s.severity)}>
+                          {s.severity}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        {t(`signalTypes.${s.type}`, {
+                          defaultValue: s.type.replaceAll('_', ' '),
+                        })}
+                      </Table.Td>
+                      <Table.Td>
+                        {s.user?.display_name || t('unknownUser')} ({t('id')}:{' '}
+                        {s.userId})
+                      </Table.Td>
+                      <Table.Td>{s.score}</Table.Td>
+                      <Table.Td style={{ maxWidth: 300 }}>{s.summary}</Table.Td>
+                      <Table.Td>
+                        {new Date(s.firstSeenAt).toLocaleString()}
+                      </Table.Td>
+                      <Table.Td>{s.status}</Table.Td>
+                      {canAct && (
+                        <Table.Td>
+                          <Group gap="xs">
+                            <Button
+                              size="xs"
+                              variant="default"
+                              onClick={() => handleAction(s.id, 'acknowledge')}
+                              loading={actionId === s.id}
+                              disabled={actionId !== null && actionId !== s.id}
+                            >
+                              {t('acknowledge')}
+                            </Button>
+                            <Button
+                              size="xs"
+                              color="red"
+                              variant="subtle"
+                              onClick={() => handleAction(s.id, 'dismiss')}
+                              loading={actionId === s.id}
+                              disabled={actionId !== null && actionId !== s.id}
+                            >
+                              {t('dismiss')}
+                            </Button>
+                            <Button
+                              size="xs"
+                              color="green"
+                              variant="subtle"
+                              onClick={() => handleAction(s.id, 'takeAction')}
+                              loading={actionId === s.id}
+                              disabled={actionId !== null && actionId !== s.id}
+                            >
+                              {t('markActionTaken')}
+                            </Button>
+                          </Group>
+                        </Table.Td>
+                      )}
                     </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {signals.map((s) => (
-                      <Table.Tr key={s.id}>
-                        <Table.Td>
-                          <Badge color={severityColor(s.severity)}>
-                            {s.severity}
-                          </Badge>
-                        </Table.Td>
-                        <Table.Td>
-                          {t(`signalTypes.${s.type}`, {
-                            defaultValue: s.type.replaceAll('_', ' '),
-                          })}
-                        </Table.Td>
-                        <Table.Td>
-                          {s.user?.display_name || t('unknownUser')} ({t('id')}:{' '}
-                          {s.userId})
-                        </Table.Td>
-                        <Table.Td>{s.score}</Table.Td>
-                        <Table.Td style={{ maxWidth: 300 }}>
-                          {s.summary}
-                        </Table.Td>
-                        <Table.Td>
-                          {new Date(s.firstSeenAt).toLocaleString()}
-                        </Table.Td>
-                        <Table.Td>{s.status}</Table.Td>
-                        {canAct && (
-                          <Table.Td>
-                            <Group gap="xs">
-                              <Button
-                                size="xs"
-                                variant="outline"
-                                onClick={() =>
-                                  handleAction(s.id, 'acknowledge')
-                                }
-                                loading={actionId === s.id}
-                                disabled={
-                                  actionId !== null && actionId !== s.id
-                                }
-                              >
-                                {t('acknowledge')}
-                              </Button>
-                              <Button
-                                size="xs"
-                                color="red"
-                                variant="subtle"
-                                onClick={() => handleAction(s.id, 'dismiss')}
-                                loading={actionId === s.id}
-                                disabled={
-                                  actionId !== null && actionId !== s.id
-                                }
-                              >
-                                {t('dismiss')}
-                              </Button>
-                              <Button
-                                size="xs"
-                                color="green"
-                                variant="subtle"
-                                onClick={() => handleAction(s.id, 'takeAction')}
-                                loading={actionId === s.id}
-                                disabled={
-                                  actionId !== null && actionId !== s.id
-                                }
-                              >
-                                {t('markActionTaken')}
-                              </Button>
-                            </Group>
-                          </Table.Td>
-                        )}
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Paper>
+                  ))}
+                </Table.Tbody>
+              </AdminDataTable>
             )}
           </Stack>
         </Tabs.Panel>

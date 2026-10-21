@@ -5,6 +5,7 @@ import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
+import { PageLoading } from '@/components/game/PageLoading';
 import MainArea from '@/components/MainArea';
 import SessionModal from '@/components/SessionModal';
 import { AUTO_RECRUIT_ENABLED } from '@/constants/AutoRecruit';
@@ -358,11 +359,7 @@ function AutoRecruiter() {
           <GameCard title={t('autoRecruit.sessionControls')} goldAccent={false}>
             <Stack align="center">
               <Text>{t('autoRecruit.clickStart')}</Text>
-              <Button
-                color="yellow"
-                onClick={startRecruiting}
-                loading={isStartingSession}
-              >
+              <Button onClick={startRecruiting} loading={isStartingSession}>
                 {t('autoRecruit.startSession')}
               </Button>
               <Button
@@ -389,13 +386,10 @@ function AutoRecruiter() {
         title={t('autoRecruit.title')}
         icon={<FontAwesomeIcon icon={faUsers} />}
       >
-        <Center style={{ height: '50vh' }}>
-          <GameCard title={t('autoRecruit.sessionStatus')} goldAccent={false}>
-            <Stack align="center">
-              <Text>{t('autoRecruit.loadingNextUser')}</Text>
-            </Stack>
-          </GameCard>
-        </Center>
+        <PageLoading
+          label={t('autoRecruit.loadingNextUser')}
+          cardTitle={t('autoRecruit.sessionStatus')}
+        />
         <SessionModal
           opened={sessionModalOpened}
           onClose={() => setSessionModalOpened(false)}
@@ -414,11 +408,7 @@ function AutoRecruiter() {
           <GameCard title={t('autoRecruit.sessionComplete')} goldAccent={false}>
             <Stack align="center">
               <Text>{t('autoRecruit.sessionEnded')}</Text>
-              <Button
-                color="yellow"
-                onClick={startRecruiting}
-                loading={isStartingSession}
-              >
+              <Button onClick={startRecruiting} loading={isStartingSession}>
                 {t('autoRecruit.startNewSession')}
               </Button>
             </Stack>
@@ -474,7 +464,6 @@ function AutoRecruiter() {
           )}
           {isPaused ? (
             <Button
-              color="yellow"
               onClick={resumeRecruiting}
               loading={isResumingSession}
               disabled={isStartingSession || hasEnded}
@@ -483,7 +472,6 @@ function AutoRecruiter() {
             </Button>
           ) : (
             <Button
-              color="yellow"
               onClick={() => stopRecruiting(false)}
               loading={isStoppingSession}
               disabled={isStartingSession || hasEnded}

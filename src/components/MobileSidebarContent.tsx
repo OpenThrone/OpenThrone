@@ -128,7 +128,7 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
       label: t('labels.experience'),
       value: <span id="experience">{sidebar.xp}</span>,
       tooltip: t('sidebar.xpToNextLevel', { xp: sidebar.xpNextLevel }),
-      icon: <RpgAwesomeIcon icon="experience" fw />,
+      icon: <RpgAwesomeIcon icon="level-three-advanced" fw />,
     },
     {
       label: t('labels.turns'),

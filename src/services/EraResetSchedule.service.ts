@@ -10,7 +10,10 @@ import {
 } from '@/services/CurrentEraReset.service';
 import { invalidateRuntimeConfigCache } from '@/services/RuntimeConfig.service';
 import { logActionStrict } from '@/utils/auditLogger';
-import { lockEraLifecycle } from '@/utils/eraLifecycleLock';
+import {
+  ERA_TRANSACTION_OPTIONS,
+  lockEraLifecycle,
+} from '@/utils/eraLifecycleLock';
 import {
   type EraStartSettings,
   eraStartSettingsSchema,
@@ -285,54 +288,51 @@ export async function processScheduledEraReset() {
     Date.parse(candidate.resetAt) > Date.now()
   )
     return;
-  await prisma.$transaction(
-    async (tx) => {
-      await lockEraLifecycle(tx);
-      const schedule = await readSchedule(tx);
-      if (
-        !schedule ||
-        schedule.id !== candidate.id ||
-        !['pending', 'closing'].includes(schedule.state) ||
-        Date.parse(schedule.resetAt) > Date.now()
-      )
-        return;
-      if (!matchesEra(schedule, await activeEra(tx))) {
-        await writeSchedule(tx, { ...schedule, state: 'cancelled' });
-        await logActionStrict(
-          {
-            userId: schedule.adminUserId,
-            ip: 'scheduler',
-            action: 'ADMIN_ERA_RESET_STALE',
-            entityType: 'Era',
-            entityId: schedule.eraId,
-            details: { scheduleId: schedule.id },
-          },
-          tx,
-        );
-        return;
-      }
-      if (schedule.state === 'pending') {
-        await closeEraReset(tx, schedule);
-        return;
-      }
-      // Runtime configuration may use a last-good value for up to 30 seconds on other processes.
-      if (
-        !schedule.closedAt ||
-        Date.now() - Date.parse(schedule.closedAt) < 35_000
-      )
-        return;
-      await resetCurrentEraInTransaction(tx, {
-        eraId: schedule.eraId,
-        expectedEraStartDate: new Date(schedule.expectedEraStartDate),
-        confirmation: `RESET ERA ${schedule.eraId}`,
-        enableLogins: schedule.enableLogins,
-        startSettings: schedule.startSettings,
-        adminUserId: schedule.adminUserId,
-        ip: 'scheduler',
-      });
-      await writeSchedule(tx, { ...schedule, state: 'completed' });
-    },
-    { maxWait: 10_000, timeout: 300_000, isolationLevel: 'ReadCommitted' },
-  );
+  await prisma.$transaction(async (tx) => {
+    await lockEraLifecycle(tx);
+    const schedule = await readSchedule(tx);
+    if (
+      !schedule ||
+      schedule.id !== candidate.id ||
+      !['pending', 'closing'].includes(schedule.state) ||
+      Date.parse(schedule.resetAt) > Date.now()
+    )
+      return;
+    if (!matchesEra(schedule, await activeEra(tx))) {
+      await writeSchedule(tx, { ...schedule, state: 'cancelled' });
+      await logActionStrict(
+        {
+          userId: schedule.adminUserId,
+          ip: 'scheduler',
+          action: 'ADMIN_ERA_RESET_STALE',
+          entityType: 'Era',
+          entityId: schedule.eraId,
+          details: { scheduleId: schedule.id },
+        },
+        tx,
+      );
+      return;
+    }
+    if (schedule.state === 'pending') {
+      await closeEraReset(tx, schedule);
+      return;
+    }
+    // Runtime configuration may use a last-good value for up to 30 seconds on other processes.
+    if (
+      !schedule.closedAt ||
+      Date.now() - Date.parse(schedule.closedAt) < 35_000
+    )
+      return;
+    await resetCurrentEraInTransaction(tx, {
+      eraId: schedule.eraId,
+      expectedEraStartDate: new Date(schedule.expectedEraStartDate),
+      confirmation: `RESET ERA ${schedule.eraId}`,
+      enableLogins: schedule.enableLogins,
+      startSettings: schedule.startSettings,
+      adminUserId: schedule.adminUserId,
+      ip: 'scheduler',
+    });
+    await writeSchedule(tx, { ...schedule, state: 'completed' });
+  }, ERA_TRANSACTION_OPTIONS);
   invalidateRuntimeConfigCache();
 }

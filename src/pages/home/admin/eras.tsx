@@ -2,26 +2,26 @@ import {
   Badge,
   Button,
   Group,
-  Modal,
   NumberInput,
   Paper,
   Stack,
   Table,
   Text,
-  TextInput,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import type { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import ResetCurrentEra from '@/components/admin/ResetCurrentEra';
 import ScheduleEraReset from '@/components/admin/ScheduleEraReset';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { alertService } from '@/services/Alert.service';
 import { isAdmin, isImpersonatedSession } from '@/utils/authorization';
 import {
   DEFAULT_ERA_START_SETTINGS,
@@ -37,7 +37,6 @@ interface EraManagementPageProps {
 const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
   const { t } = useTranslation('admin-game');
   const [eras, setEras] = useState<any[]>([]);
-  const [confirmText, setConfirmText] = useState('');
   const [starting, setStarting] = useState(false);
   const [modalOpened, setModalOpened] = useState(false);
   const [gold, setGold] = useState<string>(DEFAULT_ERA_START_SETTINGS.gold);
@@ -71,13 +70,15 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
   }, []);
 
   const startNewEra = async () => {
-    if (!current || confirmText.trim() !== current.name) return;
+    // The dialog only enables confirm once the era name is typed.
+    if (!current || starting) return;
     setStarting(true);
     try {
       const res = await fetch('/api/admin/game/eras', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          expectedEraId: current.id,
           startSettings: {
             gold: String(gold),
             citizens: Number(citizens),
@@ -87,29 +88,23 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
       });
 
       if (res.ok) {
-        notifications.show({
-          title: 'New Era Started',
-          message: 'A new game era has been initiated.',
-          color: 'green',
+        alertService.notify('success', t('eras.startedMessage'), {
+          title: t('eras.startedTitle'),
         });
         setModalOpened(false);
         fetchEras();
       } else {
         const data = await res.json().catch(() => ({}));
-        const errorMessage = data?.error || 'Failed to start new era.';
+        const errorMessage = data?.error || t('eras.startError');
         logError('Failed to start new era:', errorMessage);
-        notifications.show({
-          title: 'Error',
-          message: errorMessage,
-          color: 'red',
+        alertService.notify('error', errorMessage, {
+          title: t('eras.errorTitle'),
         });
       }
     } catch (err) {
       logError('Failed to start new era:', err);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to start new era.',
-        color: 'red',
+      alertService.notify('error', t('eras.startError'), {
+        title: t('eras.errorTitle'),
       });
     } finally {
       setStarting(false);
@@ -121,50 +116,28 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
 
   return (
     <AdminLayout title={t('eraTitle')} permissions={['MANAGE_ERAS']}>
-      <Modal
-        opened={canStartEra && modalOpened}
+      {/* Same safeguard as the other reset: type the era's name. */}
+      <ConfirmationModal
+        isOpen={canStartEra && modalOpened}
         onClose={() => {
           if (!starting) setModalOpened(false);
         }}
-        title="Confirm New Era"
-      >
-        <Text size="sm" mb="lg">
-          Are you sure you want to start a new era? This resets every
-          player&apos;s gold, units, structures and upgrades (messages, friends,
-          enemies and alliances are kept).
-        </Text>
-        {/* Same safeguard as the other reset: type the era's name. */}
-        <TextInput
-          mb="lg"
-          label={`Type "${current?.name ?? ''}" to confirm`}
-          value={confirmText}
-          onChange={(event) => setConfirmText(event.currentTarget.value)}
-          autoComplete="off"
-          data-autofocus
-        />
-        <Group justify="flex-end">
-          <Button
-            variant="default"
-            onClick={() => setModalOpened(false)}
-            disabled={starting}
-          >
-            Cancel
-          </Button>
-          <Button
-            color="orange"
-            onClick={startNewEra}
-            loading={starting}
-            disabled={
-              starting || !current || confirmText.trim() !== current.name
-            }
-          >
-            Confirm & Start Era
-          </Button>
-        </Group>
-      </Modal>
+        onConfirm={startNewEra}
+        title={t('eraStartConfirm.title')}
+        message={t('eraStartConfirm.message')}
+        type="destructive"
+        confirmText={t('eraStartConfirm.confirm')}
+        cancelText={t('cancel')}
+        isLoading={starting}
+        confirmDisabled={!current}
+        requiredText={current?.name ?? ''}
+        requiredTextLabel={t('eraStartConfirm.typeLabel', {
+          name: current?.name ?? '',
+        })}
+      />
 
       <Stack gap="md">
-        <GameCard title="Current Era">
+        <GameCard title={t('eras.current')}>
           {current ? (
             <Paper p="md" withBorder>
               <Group justify="space-between">
@@ -173,20 +146,23 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
                     {current.name}
                   </Text>
                   <Text size="sm" c="dimmed">
-                    Started: {new Date(current.startDate).toLocaleString()}
+                    {t('eras.startedOn', {
+                      date: new Date(current.startDate).toLocaleString(),
+                    })}
                   </Text>
                   <Text size="sm" c="dimmed">
-                    Players:{' '}
-                    {current.players ?? current._count?.userEras ?? '—'}
+                    {t('eras.playerCount', {
+                      value: current.players ?? current._count?.userEras ?? '—',
+                    })}
                   </Text>
                 </div>
                 <Badge color="green" size="lg">
-                  Active
+                  {t('eras.active')}
                 </Badge>
               </Group>
             </Paper>
           ) : (
-            <Text c="dimmed">No active era.</Text>
+            <Text c="dimmed">{t('eras.noActive')}</Text>
           )}
           {!canStartEra && (
             <Text size="sm" c="dimmed" mt="md">
@@ -207,11 +183,11 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
             <>
               <Paper p="md" withBorder mt="md">
                 <Text fw={700} mb="sm">
-                  Next Era Starting Settings
+                  {t('eras.nextSettings')}
                 </Text>
                 <Group grow>
                   <NumberInput
-                    label="Starting Gold"
+                    label={t('eraReset.startGold')}
                     value={gold}
                     onChange={(val) => setGold(String(val ?? ''))}
                     min={0}
@@ -221,7 +197,7 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
                     disabled={starting}
                   />
                   <NumberInput
-                    label="Starting Citizens"
+                    label={t('eraReset.startCitizens')}
                     value={citizens}
                     onChange={(val) => setCitizens(val)}
                     min={0}
@@ -231,7 +207,7 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
                     disabled={starting}
                   />
                   <NumberInput
-                    label="Starting Attack Turns"
+                    label={t('eraReset.startAttackTurns')}
                     value={attackTurns}
                     onChange={(val) => setAttackTurns(val)}
                     min={0}
@@ -245,28 +221,25 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
 
               <Group mt="md" justify="flex-end">
                 <Button
-                  color="orange"
-                  onClick={() => {
-                    setConfirmText('');
-                    setModalOpened(true);
-                  }}
+                  color="red"
+                  onClick={() => setModalOpened(true)}
                   disabled={!current || starting}
                 >
-                  End Current Era & Start New
+                  {t('eras.endAndStart')}
                 </Button>
               </Group>
             </>
           )}
         </GameCard>
 
-        <GameCard title={`Past Eras (${past.length})`}>
-          <Table>
+        <GameCard title={t('eras.past', { count: past.length })}>
+          <AdminDataTable size="compact" ariaLabel={t('eras.pastLabel')}>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Name</Table.Th>
-                <Table.Th>Started</Table.Th>
-                <Table.Th>Ended</Table.Th>
-                <Table.Th>Players</Table.Th>
+                <Table.Th>{t('eras.name')}</Table.Th>
+                <Table.Th>{t('eras.started')}</Table.Th>
+                <Table.Th>{t('eras.ended')}</Table.Th>
+                <Table.Th>{t('eras.players')}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -283,7 +256,7 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
                 </Table.Tr>
               ))}
             </Table.Tbody>
-          </Table>
+          </AdminDataTable>
         </GameCard>
       </Stack>
     </AdminLayout>

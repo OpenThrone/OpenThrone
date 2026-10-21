@@ -45,6 +45,7 @@
     "submit": "Submit",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "typeToConfirm": "Type \"{{text}}\" to confirm",
     "save": "Save",
     "delete": "Delete",
     "edit": "Edit",
@@ -109,6 +110,7 @@
     "owned": "Owned",
     "buy": "Buy",
     "sell": "Sell",
+    "max": "Max",
     "player": "Player"
   },
   "status": {
@@ -180,6 +182,7 @@
   },
   "currency": {
     "gold": "Gold",
+    "goldAmount": "{{amount}} gold",
     "goldInBank": "Gold in Bank",
     "totalGold": "Total Gold"
   },
@@ -267,7 +270,9 @@
     "again": "Recruit again",
     "blockedPair": "You have recruited with {{name}} {{used}} of {{limit}} times today. Resets at {{time}}.",
     "blockedRecruiter": "You have used all {{limit}} of your daily recruits. Resets at {{time}}.",
-    "blockedTarget": "{{name}} has reached their daily limit of {{limit}} recruits. Resets at {{time}}."
+    "blockedTarget": "{{name}} has reached their daily limit of {{limit}} recruits. Resets at {{time}}.",
+    "targetTitle": "Recruitment Target",
+    "targetSummary": "{{name}} is a level {{level}} {{race}} {{class}}."
   },
   "ariaLabels": {
     "closeAlert": "Close alert",
@@ -312,7 +317,19 @@
     "networkErrorDuringRecruitment": "Network error during recruitment. Please try again.",
     "errorVerifyingSession": "Error verifying session.",
     "errorStartingSession": "Error starting recruitment session.",
-    "sessionInvalid": "Invalid session. Please start a new session."
+    "sessionInvalid": "Invalid session. Please start a new session.",
+    "sessions": {
+      "title": "Active Sessions",
+      "refreshingIn": "Refreshing in {{count}}s",
+      "enableAutoRefresh": "Enable Auto-Refresh",
+      "sessionId": "Session ID",
+      "createdAt": "Created At",
+      "lastActivity": "Last Activity",
+      "empty": "No active sessions.",
+      "fetchFailed": "Failed to fetch sessions",
+      "endFailed": "Failed to end session.",
+      "endNetworkError": "Network error: Failed to end session."
+    }
   },
   "connection": {
     "banner": {
@@ -396,7 +413,42 @@
     "attackingDisabled": "Attacking is currently disabled by the server.",
     "spyDisabled": "All spy mission types are currently disabled by the server.",
     "report": "Report player",
-    "message": "Message this player"
+    "message": "Message this player",
+    "recruit": "Recruit this Player",
+    "joinNow": "Join Now",
+    "attack": "Attack this Player",
+    "spyMissions": "Spy Missions",
+    "transferGold": "Transfer Gold",
+    "requestGold": "Request Gold",
+    "accept": "Accept",
+    "decline": "Decline",
+    "friendRequestPending": "Friend Request is Pending",
+    "cancelFriendRequest": "Cancel Friend Request",
+    "friendRequestFrom": "Friend Request from {{name}}",
+    "friendsWith": "Friends with {{name}}",
+    "addFriend": "Add to Friends List",
+    "removeFriend": "Remove Friend",
+    "removeFriendConfirm": "Are you sure you want to remove {{name}} from your friends list?",
+    "declareEnemy": "Declare Enemy",
+    "removeEnemy": "Remove Enemy",
+    "alerts": {
+      "friendRequestSent": "Friend request sent successfully",
+      "addFriendFailed": "Failed to add friend",
+      "friendRequestCancelled": "Friend request cancelled",
+      "cancelFriendRequestFailed": "Failed to cancel friend request",
+      "friendRemoved": "Friend removed successfully",
+      "removeFriendFailed": "Failed to remove friend",
+      "friendRequestAccepted": "Friend request accepted",
+      "acceptFailed": "Failed to accept friend request",
+      "friendRequestDeclined": "Friend request declined",
+      "declineFailed": "Failed to decline friend request",
+      "enemyDeclared": "Player declared as enemy",
+      "enemyRemoved": "Enemy status removed",
+      "declareEnemyFailed": "Failed to declare enemy",
+      "removeEnemyFailed": "Failed to remove enemy",
+      "transferComplete": "Gold transfer completed successfully",
+      "goldRequestSent": "Gold request sent successfully"
+    }
   },
   "profileSummary": {
     "level": "Level",
@@ -417,7 +469,35 @@
     "gold": "Gold",
     "kingdom": "Kingdom Statistics",
     "actions": "Actions",
-    "biography": "Biography"
+    "biography": "Biography",
+    "notFound": "User not found",
+    "neverLoggedIn": "Never logged in",
+    "topFriends": "Top Friends",
+    "noFriends": "No friends found.",
+    "accountStatus": {
+      "BANNED": "This account has been banned.",
+      "SUSPENDED": "This account is suspended.",
+      "CLOSED": "This account has been closed.",
+      "TIMEOUT": "This account is in timeout.",
+      "unavailable": "This account is unavailable."
+    }
+  },
+  "goldRequestInbox": {
+    "title": "Gold Requests",
+    "incoming": "Incoming Requests",
+    "outgoing": "Your Requests",
+    "empty": "No gold requests",
+    "expires": "Expires: {{time}}",
+    "expired": "Expired",
+    "loading": "Loading...",
+    "daysHoursLeft": "{{days}}d {{hours}}h left",
+    "hoursMinutesLeft": "{{hours}}h {{minutes}}m left",
+    "minutesLeft": "{{minutes}}m left",
+    "sent": "Sent: {{date}}",
+    "accept": "Accept",
+    "decline": "Decline",
+    "loadFailed": "Failed to load requests",
+    "responseFailed": "Response failed"
   },
   "walkthrough": {
     "offer": {
@@ -458,6 +538,9 @@
       "title": "Choose your first target",
       "body": "You are ready to scout the battlefield. Compare levels, gold, and risk before spending attack turns."
     }
+  },
+  "player": {
+    "you": "You"
   },
   "classes": {
     "FIGHTER": "Fighter",

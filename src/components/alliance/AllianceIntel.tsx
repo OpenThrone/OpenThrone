@@ -6,14 +6,12 @@ import {
   Loader,
   Modal,
   Pagination,
-  Paper,
   SegmentedControl,
   Select,
   SimpleGrid,
   Stack,
   Text,
   TextInput,
-  Title,
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
@@ -21,6 +19,7 @@ import useSWR from 'swr';
 
 import { AllianceIntelShareModal } from '@/components/alliance/AllianceIntelShareModal';
 import { allianceRequest } from '@/components/alliance/allianceStanding';
+import { GameCard } from '@/components/game/GameCard';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
 import type { AllianceCallTypeName } from '@/services/AllianceIntel.service';
@@ -303,16 +302,17 @@ export const AllianceIntel = ({
 
   return (
     <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-      <Paper p="md" radius="md" withBorder>
+      <GameCard
+        title={t('feed.title', 'Shared reports')}
+        action={
+          feed?.canShare && (
+            <Button onClick={() => setShareOpen(true)}>
+              {t('feed.share', 'Share a report')}
+            </Button>
+          )
+        }
+      >
         <Stack gap="md">
-          <Group justify="space-between" align="center">
-            <Title order={3}>{t('feed.title', 'Shared reports')}</Title>
-            {feed?.canShare && (
-              <Button onClick={() => setShareOpen(true)}>
-                {t('feed.share', 'Share a report')}
-              </Button>
-            )}
-          </Group>
           <Select
             aria-label={t('feed.filterAll', 'All')}
             data={filterOptions}
@@ -364,12 +364,10 @@ export const AllianceIntel = ({
             )
           )}
         </Stack>
-      </Paper>
+      </GameCard>
 
-      <Paper p="md" radius="md" withBorder>
+      <GameCard title={t('calls.title', 'Open calls')}>
         <Stack gap="md">
-          <Title order={3}>{t('calls.title', 'Open calls')}</Title>
-
           {canCall && (
             <form
               id="alliance-intel-call-form"
@@ -490,7 +488,7 @@ export const AllianceIntel = ({
             </Stack>
           )}
         </Stack>
-      </Paper>
+      </GameCard>
 
       <AllianceIntelShareModal
         opened={shareOpen}

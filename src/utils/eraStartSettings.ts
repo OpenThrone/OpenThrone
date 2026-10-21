@@ -33,6 +33,8 @@ export const DEFAULT_ERA_START_SETTINGS: EraStartSettings = {
 
 export const startEraBodySchema = z.object({
   startSettings: eraStartSettingsSchema.optional(),
+  /** The era the admin is ending; a stale or repeated request is refused. */
+  expectedEraId: z.number().int().positive().optional(),
 });
 
 export function resolveEraStartSettings(raw: unknown): EraStartSettings {
@@ -73,7 +75,7 @@ export function resolveEraStartSettings(raw: unknown): EraStartSettings {
 }
 
 export type ParseStartEraBodyResult =
-  | { ok: true; settings: EraStartSettings | undefined }
+  | { ok: true; settings: EraStartSettings | undefined; expectedEraId?: number }
   | { ok: false; error: string };
 
 export function parseStartEraBody(body: unknown): ParseStartEraBodyResult {
@@ -112,5 +114,9 @@ export function parseStartEraBody(body: unknown): ParseStartEraBodyResult {
     return { ok: false, error: message };
   }
 
-  return { ok: true, settings: result.data.startSettings };
+  return {
+    ok: true,
+    settings: result.data.startSettings,
+    expectedEraId: result.data.expectedEraId,
+  };
 }

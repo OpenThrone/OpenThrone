@@ -76,7 +76,11 @@ export default function Unsubscribe({ token, allToken, essential }: Props) {
               {t('all')}
             </Button>
           )}
-          <Button component={Link} href="/home/settings#email" variant="subtle">
+          <Button
+            component={Link}
+            href="/home/settings#email"
+            variant="outline"
+          >
             {t('settings')}
           </Button>
         </Stack>

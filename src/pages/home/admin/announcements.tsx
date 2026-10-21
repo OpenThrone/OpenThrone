@@ -4,7 +4,6 @@ import {
   Group,
   Loader,
   Modal,
-  Paper,
   Select,
   Stack,
   Switch,
@@ -14,13 +13,15 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { notifications } from '@mantine/notifications';
+import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { AnnouncementSeverity } from '@/lib/prisma-browser-exports';
+import { alertService } from '@/services/Alert.service';
 import { getAdminRequestError } from '@/utils/adminRequests';
 import { logError } from '@/utils/logger';
 
@@ -48,6 +49,7 @@ const safeLink = (value?: string | null) => {
 };
 
 const AnnouncementsPage = () => {
+  const { t } = useTranslation('admin-content');
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -75,9 +77,7 @@ const AnnouncementsPage = () => {
       setLoadError(null);
     } catch (err) {
       logError('Failed to load announcements:', err);
-      setLoadError(
-        'Announcements could not be loaded. Check your access or connection and retry.',
-      );
+      setLoadError(t('announcements.loadError'));
     } finally {
       setLoading(false);
     }
@@ -119,18 +119,14 @@ const AnnouncementsPage = () => {
 
   const handleSave = async () => {
     if (!title.trim() || !body.trim()) {
-      notifications.show({
-        title: 'Error',
-        message: 'Title and body are required.',
-        color: 'red',
+      alertService.notify('error', t('announcements.required'), {
+        title: t('announcements.errorTitle'),
       });
       return;
     }
     if (startsAt && endsAt && new Date(endsAt) <= new Date(startsAt)) {
-      notifications.show({
-        title: 'Error',
-        message: 'End time must be after start time.',
-        color: 'red',
+      alertService.notify('error', t('announcements.endAfterStart'), {
+        title: t('announcements.errorTitle'),
       });
       return;
     }
@@ -157,21 +153,24 @@ const AnnouncementsPage = () => {
         },
       );
       if (!res.ok) throw new Error(await getAdminRequestError(res));
-      notifications.show({
-        title: editId ? 'Updated' : 'Created',
-        message: editId ? 'Announcement updated.' : 'Announcement saved.',
-        color: 'green',
-      });
+      alertService.notify(
+        'success',
+        editId ? t('announcements.updated') : t('announcements.saved'),
+        {
+          title: editId
+            ? t('announcements.updatedTitle')
+            : t('announcements.createdTitle'),
+        },
+      );
       close();
       await fetchAnnouncements();
     } catch (err) {
       logError('Failed to create:', err);
-      notifications.show({
-        title: 'Error',
-        message:
-          err instanceof Error ? err.message : 'Failed to save announcement.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        err instanceof Error ? err.message : t('announcements.saveFailed'),
+        { title: t('announcements.errorTitle') },
+      );
     } finally {
       setSubmitting(false);
     }
@@ -188,18 +187,20 @@ const AnnouncementsPage = () => {
       if (!res.ok) throw new Error(await getAdminRequestError(res));
       {
         await fetchAnnouncements();
-        notifications.show({
-          title: 'Updated',
-          message: `Announcement ${!currentActive ? 'activated' : 'deactivated'}.`,
-          color: 'green',
-        });
+        alertService.notify(
+          'success',
+          !currentActive
+            ? t('announcements.activated')
+            : t('announcements.deactivated'),
+          { title: t('announcements.updatedTitle') },
+        );
       }
     } catch (err) {
-      notifications.show({
-        title: 'Error',
-        message: err instanceof Error ? err.message : 'Failed to update.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        err instanceof Error ? err.message : t('announcements.updateFailed'),
+        { title: t('announcements.errorTitle') },
+      );
     } finally {
       setSubmitting(false);
     }
@@ -213,32 +214,30 @@ const AnnouncementsPage = () => {
       if (!res.ok) throw new Error(await getAdminRequestError(res));
       {
         await fetchAnnouncements();
-        notifications.show({
-          title: 'Deleted',
-          message: 'Announcement removed.',
-          color: 'green',
+        alertService.notify('success', t('announcements.removed'), {
+          title: t('announcements.deletedTitle'),
         });
       }
     } catch (err) {
-      notifications.show({
-        title: 'Error',
-        message: err instanceof Error ? err.message : 'Failed to delete.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        err instanceof Error ? err.message : t('announcements.deleteFailed'),
+        { title: t('announcements.errorTitle') },
+      );
     }
   };
 
   return (
     <AdminLayout
-      title="Content: Announcements"
+      title={t('announcements.pageTitle')}
       permissions={['MANAGE_ANNOUNCEMENTS']}
     >
       <Stack gap="md">
         <Group justify="space-between">
           <Text size="sm" c="dimmed">
-            Publish game-wide banners and alerts visible to all users.
+            {t('announcements.intro')}
           </Text>
-          <Button onClick={openCreate}>+ New Announcement</Button>
+          <Button onClick={openCreate}>{t('announcements.new')}</Button>
         </Group>
 
         {loading ? (
@@ -248,159 +247,181 @@ const AnnouncementsPage = () => {
         ) : loadError ? (
           <Alert color="red" role="alert">
             {loadError}
-            <Button ml="md" variant="light" onClick={fetchAnnouncements}>
-              Retry
+            <Button ml="md" variant="default" onClick={fetchAnnouncements}>
+              {t('announcements.retry')}
             </Button>
           </Alert>
         ) : announcements.length === 0 ? (
-          <Alert color="blue">
-            No announcements yet. Create your first one.
-          </Alert>
+          <Alert color="blue">{t('announcements.empty')}</Alert>
         ) : (
-          <Paper withBorder>
-            <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Title</Table.Th>
-                  <Table.Th>Severity</Table.Th>
-                  <Table.Th>Banner</Table.Th>
-                  <Table.Th>Link</Table.Th>
-                  <Table.Th>Starts</Table.Th>
-                  <Table.Th>Active</Table.Th>
-                  <Table.Th>Created</Table.Th>
-                  <Table.Th>Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {announcements.map((a) => (
-                  <Table.Tr key={a.id}>
-                    <Table.Td>{a.title}</Table.Td>
-                    <Table.Td>
-                      <Text c={severityColor(a.severity)} fw={700}>
-                        {a.severity}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>{a.isBanner ? 'Yes' : 'No'}</Table.Td>
-                    <Table.Td>
-                      {safeLink(a.linkUrl) ? (
-                        <a
-                          href={safeLink(a.linkUrl) ?? undefined}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {a.linkUrl}
-                        </a>
-                      ) : (
-                        '—'
-                      )}
-                    </Table.Td>
-                    <Table.Td>
-                      {a.startsAt
-                        ? new Date(a.startsAt).toLocaleString()
-                        : 'Now'}
-                    </Table.Td>
-                    <Table.Td>
-                      <Switch
-                        checked={a.isActive}
-                        disabled={submitting}
-                        onChange={() => toggleActive(a.id, a.isActive)}
-                        aria-label={`Set ${a.title} ${a.isActive ? 'inactive' : 'active'}`}
-                      />
-                    </Table.Td>
-                    <Table.Td>
+          <AdminDataTable size="wide" ariaLabel={t('announcements.tableLabel')}>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>{t('announcements.colTitle')}</Table.Th>
+                <Table.Th>{t('announcements.colSeverity')}</Table.Th>
+                <Table.Th>{t('announcements.colBanner')}</Table.Th>
+                <Table.Th>{t('announcements.colLink')}</Table.Th>
+                <Table.Th>{t('announcements.colStarts')}</Table.Th>
+                <Table.Th>{t('announcements.colActive')}</Table.Th>
+                <Table.Th>{t('announcements.colCreated')}</Table.Th>
+                <Table.Th>{t('announcements.colActions')}</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {announcements.map((a) => (
+                <Table.Tr key={a.id}>
+                  <Table.Td>{a.title}</Table.Td>
+                  <Table.Td>
+                    <Text c={severityColor(a.severity)} fw={700}>
+                      {t(`announcements.severity.${a.severity}`, {
+                        defaultValue: a.severity,
+                      })}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    {a.isBanner
+                      ? t('announcements.yes')
+                      : t('announcements.no')}
+                  </Table.Td>
+                  <Table.Td>
+                    {safeLink(a.linkUrl) ? (
+                      <a
+                        href={safeLink(a.linkUrl) ?? undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {a.linkUrl}
+                      </a>
+                    ) : (
+                      '—'
+                    )}
+                  </Table.Td>
+                  <Table.Td>
+                    {a.startsAt
+                      ? new Date(a.startsAt).toLocaleString()
+                      : t('announcements.now')}
+                  </Table.Td>
+                  <Table.Td>
+                    <Switch
+                      checked={a.isActive}
+                      disabled={submitting}
+                      onChange={() => toggleActive(a.id, a.isActive)}
+                      aria-label={
+                        a.isActive
+                          ? t('announcements.setInactive', { title: a.title })
+                          : t('announcements.setActive', { title: a.title })
+                      }
+                    />
+                  </Table.Td>
+                  <Table.Td>
+                    {new Date(a.createdAt).toLocaleDateString()}
+                  </Table.Td>
+                  <Table.Td>
+                    <Group gap="xs" wrap="nowrap">
                       <Button
                         size="xs"
                         variant="subtle"
                         onClick={() => openEdit(a)}
+                        aria-label={t('announcements.editAria', {
+                          title: a.title,
+                        })}
                       >
-                        Edit
+                        {t('announcements.edit')}
                       </Button>
-                      {new Date(a.createdAt).toLocaleDateString()}
-                    </Table.Td>
-                    <Table.Td>
                       <Button
                         size="xs"
                         color="red"
                         variant="subtle"
                         onClick={() => setDeleteTarget(a.id)}
+                        aria-label={t('announcements.deleteAria', {
+                          title: a.title,
+                        })}
                       >
-                        Delete
+                        {t('announcements.delete')}
                       </Button>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Paper>
+                    </Group>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </AdminDataTable>
         )}
       </Stack>
 
       <Modal
         opened={opened}
-        onClose={close}
-        title={editId ? 'Edit Announcement' : 'New Announcement'}
+        onClose={() => !submitting && close()}
+        title={
+          editId ? t('announcements.editTitle') : t('announcements.newTitle')
+        }
         size="lg"
+        centered
+        closeOnClickOutside={!submitting}
+        closeOnEscape={!submitting}
+        withCloseButton={!submitting}
       >
         <Stack gap="md">
           <TextInput
-            label="Title"
+            label={t('announcements.fieldTitle')}
             value={title}
             onChange={(e) => setTitle(e.currentTarget.value)}
           />
           <Textarea
-            label="Body"
+            label={t('announcements.fieldBody')}
             minRows={4}
             value={body}
             onChange={(e) => setBody(e.currentTarget.value)}
           />
           <TextInput
-            label="Link URL"
+            label={t('announcements.fieldLink')}
             type="url"
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.currentTarget.value)}
           />
           <TextInput
-            label="Starts at (optional)"
+            label={t('announcements.fieldStarts')}
             type="datetime-local"
             value={startsAt}
             onChange={(e) => setStartsAt(e.currentTarget.value)}
           />
           <TextInput
-            label="Ends at (optional)"
+            label={t('announcements.fieldEnds')}
             type="datetime-local"
             value={endsAt}
             onChange={(e) => setEndsAt(e.currentTarget.value)}
           />
           <Select
-            label="Severity"
+            label={t('announcements.colSeverity')}
             data={Object.values(AnnouncementSeverity).map((s) => ({
               value: s,
-              label: s,
+              label: t(`announcements.severity.${s}`),
             }))}
             value={severity}
             onChange={(v) => v && setSeverity(v)}
           />
           <Switch
-            label="Show as banner"
+            label={t('announcements.fieldBanner')}
             checked={isBanner}
             onChange={(e) => setIsBanner(e.currentTarget.checked)}
           />
           <Switch
-            label="Active immediately"
+            label={t('announcements.fieldActive')}
             checked={isActive}
             onChange={(e) => setIsActive(e.currentTarget.checked)}
           />
           <Switch
-            label="User can dismiss"
+            label={t('announcements.fieldDismissible')}
             checked={dismissible}
             onChange={(e) => setDismissible(e.currentTarget.checked)}
           />
           <Group justify="flex-end">
-            <Button variant="outline" onClick={close} disabled={submitting}>
-              Cancel
+            <Button variant="default" onClick={close} disabled={submitting}>
+              {t('announcements.cancel')}
             </Button>
             <Button onClick={handleSave} loading={submitting}>
-              {editId ? 'Save changes' : 'Publish'}
+              {editId
+                ? t('announcements.saveChanges')
+                : t('announcements.publish')}
             </Button>
           </Group>
         </Stack>
@@ -412,11 +433,11 @@ const AnnouncementsPage = () => {
           if (deleteTarget !== null) handleDelete(deleteTarget);
           setDeleteTarget(null);
         }}
-        title="Confirm deletion"
-        message="Are you sure you want to permanently delete this announcement?"
-        confirmText="Delete"
-        cancelText="Cancel"
-        type="remove"
+        title={t('announcements.deleteConfirmTitle')}
+        message={t('announcements.deleteConfirmMessage')}
+        confirmText={t('announcements.delete')}
+        cancelText={t('announcements.cancel')}
+        type="destructive"
       />
     </AdminLayout>
   );

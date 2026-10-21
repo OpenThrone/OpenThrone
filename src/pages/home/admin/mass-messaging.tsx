@@ -5,7 +5,6 @@ import {
   Group,
   Modal,
   NumberInput,
-  ScrollArea,
   Select,
   Stack,
   Table,
@@ -13,15 +12,17 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import type { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { useUser } from '@/context/users';
+import { alertService } from '@/services/Alert.service';
 import { getAdminRequestError } from '@/utils/adminRequests';
 import { logError } from '@/utils/logger';
 
@@ -120,15 +121,16 @@ const MassMessagingPage = () => {
       }
       if (action === 'preview') setPreview(data);
       if (action === 'test')
-        notifications.show({ message: t('emailAdmin.testSent') });
+        alertService.notify('info', t('emailAdmin.testSent'));
       if (action === 'send') {
         setConfirm(false);
-        notifications.show({
-          message: t('emailAdmin.sent', {
+        alertService.notify(
+          'info',
+          t('emailAdmin.sent', {
             sent: data.sent,
             queued: data.queued,
           }),
-        });
+        );
         await loadHistory();
       }
     } catch (err) {
@@ -235,80 +237,68 @@ const MassMessagingPage = () => {
           </Stack>
         </GameCard>
         <GameCard title={t('emailAdmin.history')}>
-          <ScrollArea>
-            <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  {[
-                    'kind',
-                    'subject',
-                    'status',
-                    'counts',
-                    'creator',
-                    'date',
-                  ].map((key) => (
+          <AdminDataTable ariaLabel={t('emailAdmin.history')}>
+            <Table.Thead>
+              <Table.Tr>
+                {['kind', 'subject', 'status', 'counts', 'creator', 'date'].map(
+                  (key) => (
                     <Table.Th key={key}>{t(`emailAdmin.${key}`)}</Table.Th>
-                  ))}
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {campaigns.map((c) => (
-                  <Table.Tr key={c.id}>
-                    <Table.Td>{t(`emailAdmin.kinds.${c.kind}`)}</Table.Td>
-                    <Table.Td>{c.subject}</Table.Td>
-                    <Table.Td>{t(`emailAdmin.statuses.${c.status}`)}</Table.Td>
-                    <Table.Td>
-                      {t('emailAdmin.campaignCounts', {
-                        total: c.recipientCount,
-                        sent: c.sentCount,
-                        failed: c.failedCount,
-                        skipped: c.skippedCount,
-                      })}
-                    </Table.Td>
-                    <Table.Td>{c.createdBy?.display_name ?? '—'}</Table.Td>
-                    <Table.Td>
-                      {new Date(c.createdAt).toLocaleString(i18n.language)}
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-                {!campaigns.length && (
-                  <Table.Tr>
-                    <Table.Td colSpan={6}>{t('emailAdmin.empty')}</Table.Td>
-                  </Table.Tr>
+                  ),
                 )}
-              </Table.Tbody>
-            </Table>
-          </ScrollArea>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {campaigns.map((c) => (
+                <Table.Tr key={c.id}>
+                  <Table.Td>{t(`emailAdmin.kinds.${c.kind}`)}</Table.Td>
+                  <Table.Td>{c.subject}</Table.Td>
+                  <Table.Td>{t(`emailAdmin.statuses.${c.status}`)}</Table.Td>
+                  <Table.Td>
+                    {t('emailAdmin.campaignCounts', {
+                      total: c.recipientCount,
+                      sent: c.sentCount,
+                      failed: c.failedCount,
+                      skipped: c.skippedCount,
+                    })}
+                  </Table.Td>
+                  <Table.Td>{c.createdBy?.display_name ?? '—'}</Table.Td>
+                  <Table.Td>
+                    {new Date(c.createdAt).toLocaleString(i18n.language)}
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+              {!campaigns.length && (
+                <Table.Tr>
+                  <Table.Td colSpan={6}>{t('emailAdmin.empty')}</Table.Td>
+                </Table.Tr>
+              )}
+            </Table.Tbody>
+          </AdminDataTable>
         </GameCard>
-        <Modal
-          opened={confirm}
+        <ConfirmationModal
+          isOpen={confirm}
           onClose={() => !busy && setConfirm(false)}
+          onConfirm={() => act('send')}
           title={t('emailAdmin.confirm')}
+          message={t('emailAdmin.confirmCounts', {
+            inGame: counts?.inGame ?? 0,
+            email: counts?.email ?? 0,
+          })}
+          type="primary"
+          confirmText={t('emailAdmin.send')}
+          cancelText={t('emailAdmin.cancel')}
+          isLoading={busy}
+          confirmDisabled={sendDisabled}
         >
-          <Stack>
-            {error && (
-              <Alert color="red" role="alert">
-                {error}
-              </Alert>
-            )}
-            <Text>
-              {t('emailAdmin.confirmCounts', {
-                inGame: counts?.inGame ?? 0,
-                email: counts?.email ?? 0,
-              })}
-            </Text>
-            {!outboxEnabled && (
-              <Alert color="yellow">{t('emailAdmin.outboxDisabled')}</Alert>
-            )}
-            <Button
-              loading={busy}
-              disabled={sendDisabled}
-              onClick={() => act('send')}
-            >
-              {t('emailAdmin.send')}
-            </Button>
-          </Stack>
-        </Modal>
+          {!outboxEnabled && (
+            <Alert color="yellow">{t('emailAdmin.outboxDisabled')}</Alert>
+          )}
+          {error && (
+            <Alert color="red" role="alert">
+              {error}
+            </Alert>
+          )}
+        </ConfirmationModal>
         <Modal
           opened={!!preview}
           onClose={() => setPreview(null)}

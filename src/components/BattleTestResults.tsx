@@ -3,11 +3,22 @@ import {
   faScroll,
   faShieldAlt,
 } from '@fortawesome/free-solid-svg-icons';
-import { Badge, Grid, Group, Progress, Table, Text } from '@mantine/core';
+import {
+  Badge,
+  Grid,
+  Group,
+  Progress,
+  Stack,
+  Table,
+  Text,
+} from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React from 'react';
 
 import { Fortifications } from '@/constants';
-import type { PlayerUnit } from '@/types/typings';
+import { useUser } from '@/context/users';
+import type { Locales, PlayerUnit } from '@/types/typings';
+import { toLocale } from '@/utils/numberFormatting';
 
 import { GameCard } from './game/GameCard';
 import { StyledTable } from './game/StyledTable';
@@ -23,10 +34,14 @@ const BattleResults: React.FC<BattleResultsProps> = ({
   attackerStats,
   defenderStats,
 }) => {
+  const { t, i18n } = useTranslation('battle');
+  const { user } = useUser();
+  const locale = user?.locale ?? (i18n.language as Locales);
+
   if (!results || !attackerStats || !defenderStats) {
     return (
-      <GameCard title="Battle Results">
-        <Text>Incomplete battle data. Please try again.</Text>
+      <GameCard title={t('battleSimulator.results.title')}>
+        <Text>{t('battleSimulator.results.incomplete')}</Text>
       </GameCard>
     );
   }
@@ -48,7 +63,14 @@ const BattleResults: React.FC<BattleResultsProps> = ({
 
   const attackerTotalUnits = getTotalUnits(attackerStats.unitTotals);
   const defenderTotalUnits = getTotalUnits(defenderStats.unitTotals);
-  const winner = results.result === 'WIN' ? 'Attacker Won' : 'Defender Won';
+  const winner =
+    results.result === 'WIN'
+      ? t('battleSimulator.results.attackerWon')
+      : t('battleSimulator.results.defenderWon');
+  const lossHeaders = [
+    t('battleSimulator.results.unit'),
+    t('battleSimulator.results.losses'),
+  ];
 
   const renderUnitLosses = (losses: PlayerUnit[]) => {
     const sortedUnits = [...losses].sort(
@@ -58,7 +80,7 @@ const BattleResults: React.FC<BattleResultsProps> = ({
       return (
         <Table.Tr>
           <Table.Td colSpan={2} style={{ textAlign: 'center' }}>
-            No losses
+            {t('battleSimulator.results.noLosses')}
           </Table.Td>
         </Table.Tr>
       );
@@ -66,75 +88,100 @@ const BattleResults: React.FC<BattleResultsProps> = ({
     return sortedUnits.map(({ type, level, quantity }) => (
       <Table.Tr key={`${type}-${level}`}>
         <Table.Td>
-          {type} (Lvl {level})
+          {t('battleSimulator.results.unitLevel', {
+            unit: t(`unitTypes.${type}`, { defaultValue: type }),
+            level,
+          })}
         </Table.Td>
-        <Table.Td>{quantity.toLocaleString()}</Table.Td>
+        <Table.Td>{toLocale(quantity, locale)}</Table.Td>
       </Table.Tr>
     ));
   };
 
+  const renderSide = (
+    stats: any,
+    totalUnits: number,
+    losses: { total: number; units: PlayerUnit[] },
+  ) => (
+    <>
+      <Text>
+        {t('battleSimulator.results.attackPower', {
+          value: toLocale(stats.attackPower, locale),
+        })}
+      </Text>
+      <Text>
+        {t('battleSimulator.results.defensePower', {
+          value: toLocale(stats.defensePower, locale),
+        })}
+      </Text>
+      <Text>
+        {t('battleSimulator.results.totalUnits', {
+          value: toLocale(totalUnits, locale),
+        })}
+      </Text>
+      <Text fw={700} c="red">
+        {t('battleSimulator.results.lossesTotal', {
+          count: losses.total,
+          value: toLocale(losses.total, locale),
+        })}
+      </Text>
+      <Progress
+        value={(losses.total / totalUnits) * 100}
+        color="red"
+        size="lg"
+        striped
+        animated
+      />
+      <StyledTable headers={lossHeaders}>
+        {renderUnitLosses(losses.units)}
+      </StyledTable>
+    </>
+  );
+
   return (
-    <GameCard title="Battle Results" icon={faCrown}>
-      <Group justify="center" mb="md">
-        <Badge size="xl" color={results.result === 'WIN' ? 'green' : 'red'}>
-          {winner}
-        </Badge>
-      </Group>
+    <Stack gap="md">
+      <GameCard title={t('battleSimulator.results.title')} icon={faCrown}>
+        <Group justify="center">
+          <Badge size="xl" color={results.result === 'WIN' ? 'green' : 'red'}>
+            {winner}
+          </Badge>
+        </Group>
+      </GameCard>
       <Grid gutter="md">
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <GameCard title="Attacker" goldAccent={results.result === 'WIN'}>
-            <Text>
-              Attack Power: {attackerStats.attackPower.toLocaleString()}
-            </Text>
-            <Text>
-              Defense Power: {attackerStats.defensePower.toLocaleString()}
-            </Text>
-            <Text>Total Units: {attackerTotalUnits.toLocaleString()}</Text>
-            <Text fw={700} c="red">
-              Losses: {results.Losses.Attacker.total.toLocaleString()} units
-            </Text>
-            <Progress
-              value={(results.Losses.Attacker.total / attackerTotalUnits) * 100}
-              color="red"
-              size="lg"
-              striped
-              animated
-            />
-            <StyledTable headers={['Unit', 'Losses']}>
-              {renderUnitLosses(results.Losses.Attacker.units)}
-            </StyledTable>
+          <GameCard title={t('battleSimulator.attacker')} goldAccent={false}>
+            {renderSide(
+              attackerStats,
+              attackerTotalUnits,
+              results.Losses.Attacker,
+            )}
           </GameCard>
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <GameCard title="Defender" goldAccent={results.result !== 'WIN'}>
-            <Text>
-              Attack Power: {defenderStats.attackPower.toLocaleString()}
-            </Text>
-            <Text>
-              Defense Power: {defenderStats.defensePower.toLocaleString()}
-            </Text>
-            <Text>Total Units: {defenderTotalUnits.toLocaleString()}</Text>
-            <Text fw={700} c="red">
-              Losses: {results.Losses.Defender.total.toLocaleString()} units
-            </Text>
-            <Progress
-              value={(results.Losses.Defender.total / defenderTotalUnits) * 100}
-              color="red"
-              size="lg"
-              striped
-              animated
-            />
-            <StyledTable headers={['Unit', 'Losses']}>
-              {renderUnitLosses(results.Losses.Defender.units)}
-            </StyledTable>
+          <GameCard title={t('battleSimulator.defender')} goldAccent={false}>
+            {renderSide(
+              defenderStats,
+              defenderTotalUnits,
+              results.Losses.Defender,
+            )}
           </GameCard>
         </Grid.Col>
         <Grid.Col span={12}>
-          <GameCard title="Fort Status" icon={faShieldAlt}>
-            <Text>Fort Level: {results.defender.fortLevel}</Text>
+          <GameCard
+            title={t('battleSimulator.results.fortStatus')}
+            icon={faShieldAlt}
+            goldAccent={false}
+          >
             <Text>
-              HP: {results.finalFortHP.toLocaleString()} /{' '}
-              {defenderFort.hitpoints.toLocaleString()}
+              {t('battleSimulator.results.fortLevel', {
+                level: results.defender.fortLevel,
+              })}
+            </Text>
+            <Text>
+              {t('battleSimulator.results.fortHp', {
+                current: toLocale(results.finalFortHP, locale),
+                max: toLocale(defenderFort.hitpoints, locale),
+              })}
             </Text>
             <Progress
               value={(results.finalFortHP / defenderFort.hitpoints) * 100}
@@ -150,8 +197,16 @@ const BattleResults: React.FC<BattleResultsProps> = ({
           </GameCard>
         </Grid.Col>
         <Grid.Col span={12}>
-          <GameCard title="Battle Log" icon={faScroll}>
-            <Text>Turns: {results.turnsTaken}</Text>
+          <GameCard
+            title={t('battleSimulator.results.battleLog')}
+            icon={faScroll}
+            goldAccent={false}
+          >
+            <Text>
+              {t('battleSimulator.results.turnsTaken', {
+                turns: results.turnsTaken,
+              })}
+            </Text>
             {results.log && (
               <pre
                 style={{
@@ -167,7 +222,7 @@ const BattleResults: React.FC<BattleResultsProps> = ({
           </GameCard>
         </Grid.Col>
       </Grid>
-    </GameCard>
+    </Stack>
   );
 };
 

@@ -243,9 +243,7 @@ const Profile = () => {
                 onChange={setFile}
               >
                 {(props) => (
-                  <Button {...props} color="yellow">
-                    {t('profile.uploadImage')}
-                  </Button>
+                  <Button {...props}>{t('profile.uploadImage')}</Button>
                 )}
               </FileButton>
               {file && (
@@ -332,7 +330,7 @@ const Profile = () => {
           {t('profile.characterCount', { count: charCount, max: maxChars })}
         </Text>
         <Space h="md" />
-        <Group align="right" mt="md">
+        <Group justify="flex-end" mt="md">
           <Button onClick={saveProfile}>{t('profile.saveProfile')}</Button>
           <Link href={`/userprofile/${user?.id}`}>
             <Button variant="default">{t('profile.viewProfile')}</Button>

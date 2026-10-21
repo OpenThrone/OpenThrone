@@ -6,7 +6,6 @@ import {
   Loader,
   Modal,
   Pagination,
-  ScrollArea,
   Select,
   Stack,
   Table,
@@ -18,6 +17,7 @@ import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 
 import { allianceRequest } from '@/components/alliance/allianceStanding';
+import { StyledTable } from '@/components/game/StyledTable';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import type { Log } from '@/types/typings';
@@ -175,41 +175,38 @@ export const AllianceIntelShareModal = ({
             </Text>
           )}
           {!loading && logs.length > 0 && (
-            <ScrollArea h={280}>
-              <Table striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>{t('share.report', 'Report')}</Table.Th>
-                    <Table.Th>{t('share.date', 'Date')}</Table.Th>
-                    <Table.Th />
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {logs.map((log) => (
-                    <Table.Tr key={log.id}>
-                      <Table.Td>
-                        {t('share.battleRow', '{{attacker}} vs {{defender}}', {
-                          attacker:
-                            Number(log.attacker_id) === viewerId
-                              ? you
-                              : (log.attackerPlayer?.display_name ?? unknown),
-                          defender:
-                            Number(log.defender_id) === viewerId
-                              ? you
-                              : (log.defenderPlayer?.display_name ?? unknown),
-                        })}
-                      </Table.Td>
-                      <Table.Td>{formatDate(log.timestamp)}</Table.Td>
-                      <Table.Td>
-                        <Button size="xs" onClick={() => setSelected(log)}>
-                          {t('share.pickAction', 'Select')}
-                        </Button>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </ScrollArea>
+            <StyledTable
+              ariaLabel={t('share.pickTitle', 'Choose a report to share')}
+              tableProps={{ striped: true, highlightOnHover: true }}
+              headers={[
+                t('share.report', 'Report'),
+                t('share.date', 'Date'),
+                <Table.Th key="action" />,
+              ]}
+            >
+              {logs.map((log) => (
+                <Table.Tr key={log.id}>
+                  <Table.Td>
+                    {t('share.battleRow', '{{attacker}} vs {{defender}}', {
+                      attacker:
+                        Number(log.attacker_id) === viewerId
+                          ? you
+                          : (log.attackerPlayer?.display_name ?? unknown),
+                      defender:
+                        Number(log.defender_id) === viewerId
+                          ? you
+                          : (log.defenderPlayer?.display_name ?? unknown),
+                    })}
+                  </Table.Td>
+                  <Table.Td>{formatDate(log.timestamp)}</Table.Td>
+                  <Table.Td>
+                    <Button size="xs" onClick={() => setSelected(log)}>
+                      {t('share.pickAction', 'Select')}
+                    </Button>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </StyledTable>
           )}
           {totalPages > 1 && (
             <Group justify="center">

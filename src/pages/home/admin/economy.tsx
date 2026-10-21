@@ -8,6 +8,8 @@ import { Grid, Loader, Paper, Stack, Table, Text } from '@mantine/core';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
+import { ADMIN_STAT_COLORS } from '@/components/admin/adminColors';
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminRequestState from '@/components/admin/AdminRequestState';
 import { GameCard } from '@/components/game/GameCard';
@@ -83,7 +85,11 @@ const EconomyPage = () => {
           <Grid>
             <Grid.Col span={{ base: 12, sm: 4 }}>
               <Paper p="md" withBorder>
-                <FontAwesomeIcon icon={faCoins} size="2x" color="#eab308" />
+                <FontAwesomeIcon
+                  icon={faCoins}
+                  size="2x"
+                  style={{ color: ADMIN_STAT_COLORS.gold }}
+                />
                 <Text size="xs" tt="uppercase" c="dimmed" fw={700} mt="sm">
                   Total Liquid
                 </Text>
@@ -94,7 +100,11 @@ const EconomyPage = () => {
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 4 }}>
               <Paper p="md" withBorder>
-                <FontAwesomeIcon icon={faPiggyBank} size="2x" color="#a855f7" />
+                <FontAwesomeIcon
+                  icon={faPiggyBank}
+                  size="2x"
+                  style={{ color: ADMIN_STAT_COLORS.special }}
+                />
                 <Text size="xs" tt="uppercase" c="dimmed" fw={700} mt="sm">
                   In Banks
                 </Text>
@@ -108,7 +118,7 @@ const EconomyPage = () => {
                 <FontAwesomeIcon
                   icon={faMoneyBillWave}
                   size="2x"
-                  color="#22c55e"
+                  style={{ color: ADMIN_STAT_COLORS.positive }}
                 />
                 <Text size="xs" tt="uppercase" c="dimmed" fw={700} mt="sm">
                   Total Economy
@@ -158,7 +168,7 @@ const EconomyPage = () => {
         </GameCard>
 
         <GameCard title="Top 10 Wealthiest Players">
-          <Table>
+          <AdminDataTable ariaLabel="Top 10 Wealthiest Players">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Rank</Table.Th>
@@ -181,7 +191,7 @@ const EconomyPage = () => {
                 </Table.Tr>
               ))}
             </Table.Tbody>
-          </Table>
+          </AdminDataTable>
         </GameCard>
       </Stack>
     </AdminLayout>

@@ -17,7 +17,9 @@ import useSWR from 'swr';
 
 import { allianceRequest } from '@/components/alliance/allianceStanding';
 import { ApproveRequestButton } from '@/components/alliance/treasury/ApproveRequestButton';
+import QuantityInput from '@/components/battle/QuantityInput';
 import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
 import { ALLIANCE_NOTE_MAX_LENGTH } from '@/constants/allianceTreasury';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
@@ -217,21 +219,13 @@ export const LoanSection = ({
               </Text>
             )}
             <Group align="flex-end" gap="xs">
-              <NumberInput
+              <QuantityInput
                 label={t('loan.repayAmount')}
-                min={0}
-                value={repayAmount.toString()}
-                onChange={(val) => setRepayAmount(toBigIntSafe(val))}
-                thousandSeparator=","
-                style={{ flex: 1 }}
+                value={repayAmount}
+                onChange={setRepayAmount}
+                grow
+                onMax={() => setRepayAmount(maxRepay)}
               />
-              <Button
-                variant="default"
-                type="button"
-                onClick={() => setRepayAmount(maxRepay)}
-              >
-                {t('max')}
-              </Button>
               <Button
                 type="button"
                 loading={busy === 'repay'}
@@ -302,63 +296,55 @@ export const LoanSection = ({
           {live.length === 0 ? (
             <Text c="dimmed">{t('loan.queueEmpty')}</Text>
           ) : (
-            <Table.ScrollContainer minWidth={560}>
-              <Table>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>{t('queueMember')}</Table.Th>
-                    <Table.Th>{t('loan.principal')}</Table.Th>
-                    <Table.Th>{t('loan.balance')}</Table.Th>
-                    <Table.Th>{t('queueStatus')}</Table.Th>
-                    <Table.Th>{t('queueActions')}</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {live.map((loan) => (
-                    <Table.Tr key={loan.id}>
-                      <Table.Td>{loan.borrower?.display_name}</Table.Td>
-                      <Table.Td>{toLocale(loan.principal)}</Table.Td>
-                      <Table.Td>
-                        {loan.status === 'REQUESTED'
-                          ? '-'
-                          : `${toLocale(owedLeft(loan))} / ${toLocale(loan.amount_owed)}`}
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge
+            <StyledTable
+              ariaLabel={t('loan.queueTitle')}
+              headers={[
+                t('queueMember'),
+                t('loan.principal'),
+                t('loan.balance'),
+                t('queueStatus'),
+                t('queueActions'),
+              ]}
+            >
+              {live.map((loan) => (
+                <Table.Tr key={loan.id}>
+                  <Table.Td>{loan.borrower?.display_name}</Table.Td>
+                  <Table.Td>{toLocale(loan.principal)}</Table.Td>
+                  <Table.Td>
+                    {loan.status === 'REQUESTED'
+                      ? '-'
+                      : `${toLocale(owedLeft(loan))} / ${toLocale(loan.amount_owed)}`}
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge variant="light" color={STATUS_COLORS[loan.status]}>
+                      {t(`loan.status.${loan.status}`)}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>
+                    {loan.status === 'REQUESTED' && (
+                      <Group gap="xs" wrap="nowrap">
+                        <ApproveRequestButton
+                          blockedAsOwn={
+                            loan.borrower_id === user?.id && !data.canApproveOwn
+                          }
+                          loading={busy === `approve-${loan.id}`}
+                          onApprove={() => decide(loan.id, 'approve')}
+                        />
+                        <Button
+                          size="compact-xs"
+                          color="red"
                           variant="light"
-                          color={STATUS_COLORS[loan.status]}
+                          disabled={busy !== null}
+                          onClick={() => decide(loan.id, 'decline')}
                         >
-                          {t(`loan.status.${loan.status}`)}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        {loan.status === 'REQUESTED' && (
-                          <Group gap="xs" wrap="nowrap">
-                            <ApproveRequestButton
-                              blockedAsOwn={
-                                loan.borrower_id === user?.id &&
-                                !data.canApproveOwn
-                              }
-                              loading={busy === `approve-${loan.id}`}
-                              onApprove={() => decide(loan.id, 'approve')}
-                            />
-                            <Button
-                              size="compact-xs"
-                              color="red"
-                              variant="light"
-                              disabled={busy !== null}
-                              onClick={() => decide(loan.id, 'decline')}
-                            >
-                              {t('decline')}
-                            </Button>
-                          </Group>
-                        )}
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
+                          {t('decline')}
+                        </Button>
+                      </Group>
+                    )}
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </StyledTable>
           )}
           {history.length > 0 && (
             <Text size="xs" c="dimmed" mt="sm">

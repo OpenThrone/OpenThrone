@@ -16,7 +16,6 @@ import {
   Divider,
   Group,
   List,
-  Popover,
   Skeleton,
   Stack,
   Text,
@@ -24,7 +23,7 @@ import {
   Tooltip,
   UnstyledButton,
 } from '@mantine/core';
-import { useDisclosure, useMediaQuery } from '@mantine/hooks';
+import { useMediaQuery } from '@mantine/hooks';
 import { useTranslation } from 'next-i18next';
 
 import { ActiveEventsBanner } from '@/components/sidebar/ActiveEventsBanner';
@@ -40,10 +39,31 @@ import { GoldRequestNotificationModal } from './GoldRequestNotificationModal';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 import classes from './Sidebar.module.css';
 
+/**
+ * XP hint in the 16px stat-icon slot. A bare button (not ActionIcon, whose
+ * 36px frame would break the slot) so the tooltip opens on focus and touch.
+ */
+const XpInfoTooltip = ({ label }: { label: string }) => (
+  <Tooltip
+    label={label}
+    w={200}
+    multiline
+    withArrow
+    position="bottom"
+    events={{ hover: true, focus: true, touch: true }}
+  >
+    <UnstyledButton
+      aria-label={label}
+      style={{ display: 'inline-flex', color: 'inherit', lineHeight: 1 }}
+    >
+      <FontAwesomeIcon icon={faCircleInfo} aria-hidden />
+    </UnstyledButton>
+  </Tooltip>
+);
+
 const Sidebar: React.FC = () => {
   const { t } = useTranslation('common');
   const { user, forceUpdate, loading: userLoading } = useUser();
-  const [nextLevelOpened, { close, open }] = useDisclosure(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const {
@@ -124,7 +144,7 @@ const Sidebar: React.FC = () => {
                   size="sm"
                   onClick={forceUpdate}
                   aria-label={t('sidebar.refreshStats')}
-                  style={{ verticalAlign: 'middle' }}
+                  style={{ verticalAlign: 'middle', color: 'inherit' }}
                 >
                   <FontAwesomeIcon icon={faRefresh} style={{ fontSize: 15 }} />
                 </ActionIcon>
@@ -220,31 +240,11 @@ const Sidebar: React.FC = () => {
                     label={t('labels.xp')}
                     value={<span id="experience">{sidebar.xp}</span>}
                     icon={
-                      <>
-                        <RpgAwesomeIcon icon="experience" fw />
-                        <Popover
-                          width={200}
-                          position="bottom"
-                          withArrow
-                          shadow="md"
-                          opened={nextLevelOpened}
-                        >
-                          <Popover.Target>
-                            <FontAwesomeIcon
-                              icon={faCircleInfo}
-                              onMouseEnter={open}
-                              onMouseLeave={close}
-                            />
-                          </Popover.Target>
-                          <Popover.Dropdown style={{ pointerEvents: 'none' }}>
-                            <Text size="sm">
-                              {t('sidebar.xpToNextLevel', {
-                                xp: sidebar.xpNextLevel,
-                              })}
-                            </Text>
-                          </Popover.Dropdown>
-                        </Popover>
-                      </>
+                      <XpInfoTooltip
+                        label={t('sidebar.xpToNextLevel', {
+                          xp: sidebar.xpNextLevel,
+                        })}
+                      />
                     }
                   />
                   <StatRow
@@ -314,7 +314,7 @@ const Sidebar: React.FC = () => {
                 size="sm"
                 onClick={handlePrevAdvisor}
                 aria-label={t('sidebar.previousTip')}
-                style={{ verticalAlign: 'middle' }}
+                style={{ verticalAlign: 'middle', color: 'inherit' }}
               >
                 <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15 }} />
               </ActionIcon>
@@ -325,7 +325,7 @@ const Sidebar: React.FC = () => {
                 size="sm"
                 onClick={handleNextAdvisor}
                 aria-label={t('sidebar.nextTip')}
-                style={{ verticalAlign: 'middle' }}
+                style={{ verticalAlign: 'middle', color: 'inherit' }}
               >
                 <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15 }} />
               </ActionIcon>
@@ -350,7 +350,7 @@ const Sidebar: React.FC = () => {
                 size="sm"
                 onClick={forceUpdate}
                 aria-label={t('sidebar.refreshStats')}
-                style={{ verticalAlign: 'middle' }}
+                style={{ verticalAlign: 'middle', color: 'inherit' }}
               >
                 <FontAwesomeIcon icon={faRefresh} style={{ fontSize: 15 }} />
               </ActionIcon>
@@ -446,31 +446,11 @@ const Sidebar: React.FC = () => {
                   label={t('labels.xp')}
                   value={<span id="experience">{sidebar.xp}</span>}
                   icon={
-                    <>
-                      <RpgAwesomeIcon icon="experience" fw />
-                      <Popover
-                        width={200}
-                        position="bottom"
-                        withArrow
-                        shadow="md"
-                        opened={nextLevelOpened}
-                      >
-                        <Popover.Target>
-                          <FontAwesomeIcon
-                            icon={faCircleInfo}
-                            onMouseEnter={open}
-                            onMouseLeave={close}
-                          />
-                        </Popover.Target>
-                        <Popover.Dropdown style={{ pointerEvents: 'none' }}>
-                          <Text size="sm">
-                            {t('sidebar.xpToNextLevel', {
-                              xp: sidebar.xpNextLevel,
-                            })}
-                          </Text>
-                        </Popover.Dropdown>
-                      </Popover>
-                    </>
+                    <XpInfoTooltip
+                      label={t('sidebar.xpToNextLevel', {
+                        xp: sidebar.xpNextLevel,
+                      })}
+                    />
                   }
                 />
                 <StatRow

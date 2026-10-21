@@ -13,6 +13,7 @@ import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
+import panelClasses from '@/components/game/Panels.module.css';
 import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
@@ -57,12 +58,13 @@ export const UserCardImage = ({
           style={{
             borderRadius: '8px',
             overflow: 'hidden',
-            border: '1px solid #2f3e52',
+            border: '1px solid var(--ot-line)',
             height: 140,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(180deg, #1f2b3b 0%, #0f141a 100%)',
+            background:
+              'linear-gradient(180deg, var(--ot-surface-2) 0%, var(--ot-inset) 100%)',
           }}
         >
           {bannerimgsrc ? (
@@ -79,7 +81,7 @@ export const UserCardImage = ({
             size={96}
             radius={96}
             style={{
-              border: '2px solid #1f2b3b',
+              border: '2px solid var(--ot-line)',
               boxShadow: '0 6px 16px rgba(0,0,0,0.6)',
             }}
           />
@@ -87,16 +89,7 @@ export const UserCardImage = ({
         <Text ta="center" fz="sm" c="dimmed">
           {description}
         </Text>
-        <Group
-          justify="space-between"
-          style={{
-            backgroundColor: '#0f141a',
-            borderRadius: '6px',
-            border: '1px solid #1f2b3b',
-            boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-            padding: '12px',
-          }}
-        >
+        <Group justify="space-between" className={panelClasses.insetRow}>
           {/* Treasury is only sent for the viewer's own alliances (ALL-08). */}
           {gold != null && (
             <div>
@@ -119,7 +112,7 @@ export const UserCardImage = ({
               fullWidth
               radius="sm"
               size="sm"
-              color="blue"
+              variant="default"
               onClick={handleManageClick}
             >
               {t('browse.manage', 'View Dashboard')}
@@ -129,7 +122,6 @@ export const UserCardImage = ({
               fullWidth
               radius="sm"
               size="sm"
-              color="yellow"
               disabled={isInviteOnly}
               loading={loading}
               onClick={handleJoinClick}

@@ -1,20 +1,19 @@
-import {
-  Avatar,
-  Badge,
-  Group,
-  Indicator,
-  Loader,
-  Table,
-  Text,
-} from '@mantine/core';
+import { faUserGroup } from '@fortawesome/free-solid-svg-icons';
+import { Anchor, Avatar, Group, Table } from '@mantine/core';
 import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
 import React, { useEffect, useState } from 'react';
 
+import { EmptyState } from '@/components/game/EmptyState';
 import { GameCard } from '@/components/game/GameCard';
+import { PageLoading } from '@/components/game/PageLoading';
 import { StyledTable } from '@/components/game/StyledTable';
 import MainArea from '@/components/MainArea';
+import OnlineIndicator from '@/components/player/OnlineIndicator';
+import PlayerIdentityLine from '@/components/player/PlayerIdentityLine';
+import YouBadge from '@/components/player/YouBadge';
 import UserModel from '@/models/Users';
+import { logError } from '@/utils/logger';
 
 const Friends = () => {
   const { t } = useTranslation('social');
@@ -25,17 +24,16 @@ const Friends = () => {
     fetch('/api/social/listAll?type=FRIEND')
       .then((response) => response.json())
       .then((data) => {
-        setFriends(data);
-        setLoading(false);
-      });
+        setFriends(Array.isArray(data) ? data : []);
+      })
+      .catch((error) => logError('Failed to load friends:', error))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
       <MainArea title={t('friends.title')}>
-        <GameCard title={t('friends.title')}>
-          <Loader />
-        </GameCard>
+        <PageLoading cardTitle={t('friends.friendsList')} block={false} />
       </MainArea>
     );
   }
@@ -43,35 +41,32 @@ const Friends = () => {
   const rows = friends.map((friend) => {
     const player = new UserModel(friend.friend, true, false);
     return (
-      <Table.Tr key={player.id} style={{ background: '#0f141a' }}>
-        <Table.Td style={{ borderColor: '#1f2b3b' }}>
+      <Table.Tr key={player.id}>
+        <Table.Td>
           <Group gap="sm" className="text-justify">
-            <Indicator color={player.is_online ? 'teal' : 'red'}>
+            <OnlineIndicator online={!!player.is_online}>
               <Avatar src={player?.avatar} size={40} radius={40} />
-            </Indicator>
+            </OnlineIndicator>
             <div>
-              <Text fz="md" fw={500}>
-                <Link
+              <Group gap={5}>
+                <Anchor
+                  component={Link}
                   href={`/userprofile/${player.id}`}
-                  className="font-bold text-blue-500 hover:text-blue-700"
+                  fz="md"
+                  fw={700}
                 >
                   {player.displayName}
-                </Link>
-                {player.is_player && (
-                  <Badge color="blue" ml={5}>
-                    {t('friends.you')}
-                  </Badge>
-                )}
-              </Text>
-              <Text fz="xs" c="dimmed">
-                {player.race} {player.class}
-              </Text>
+                </Anchor>
+                {player.is_player && <YouBadge />}
+              </Group>
+              <PlayerIdentityLine
+                race={player.race}
+                playerClass={player.class}
+              />
             </div>
           </Group>
         </Table.Td>
-        <Table.Td style={{ borderColor: '#1f2b3b' }}>
-          {friend.acceptanceDate}
-        </Table.Td>
+        <Table.Td>{friend.acceptanceDate}</Table.Td>
       </Table.Tr>
     );
   });
@@ -79,9 +74,13 @@ const Friends = () => {
   return (
     <MainArea title={t('friends.title')}>
       <GameCard title={t('friends.friendsList')}>
-        <StyledTable headers={[t('friends.username'), t('friends.since')]}>
-          {rows}
-        </StyledTable>
+        {friends.length === 0 ? (
+          <EmptyState icon={faUserGroup} title={t('friends.noFriends')} />
+        ) : (
+          <StyledTable headers={[t('friends.username'), t('friends.since')]}>
+            {rows}
+          </StyledTable>
+        )}
       </GameCard>
     </MainArea>
   );

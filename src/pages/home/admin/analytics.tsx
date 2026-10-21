@@ -25,7 +25,7 @@ import {
   YAxis,
 } from 'recharts';
 
-import tableClasses from '@/components/admin/AdminDataTable.module.css';
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DateSortHeader from '@/components/admin/DateSortHeader';
 import PlayerActivity from '@/components/admin/PlayerActivity';
@@ -91,7 +91,7 @@ const AnalyticsPage = () => {
               { value: '30', label: t('days30') },
               { value: '90', label: t('days90') },
             ]}
-            w={160}
+            w={{ base: '100%', sm: 160 }}
           />
         </Group>
         <Tabs defaultValue="activity">
@@ -110,7 +110,11 @@ const AnalyticsPage = () => {
             </Text>
             {error && (
               <Alert color="red" title={t('analyticsError')}>
-                <Button size="xs" onClick={() => fetchStats()}>
+                <Button
+                  variant="default"
+                  size="xs"
+                  onClick={() => fetchStats()}
+                >
                   {t('retry')}
                 </Button>
               </Alert>
@@ -191,54 +195,53 @@ const AnalyticsPage = () => {
                       </ResponsiveContainer>
                     </div>
                   </GameCard>
-                  <Paper withBorder p="xs">
-                    <Table.ScrollContainer minWidth={480}>
-                      <Table className={tableClasses.table} striped>
-                        <Table.Thead>
-                          <Table.Tr>
-                            <DateSortHeader
-                              label={t('date')}
-                              direction={dateDirection}
-                              onToggle={() =>
-                                setDateDirection((value) =>
-                                  value === 'asc' ? 'desc' : 'asc',
-                                )
-                              }
-                            />
-                            <Table.Th>{t('registrations')}</Table.Th>
-                            <Table.Th>{t('activePlayers')}</Table.Th>
-                            <Table.Th>{t('attacks')}</Table.Th>
-                          </Table.Tr>
-                        </Table.Thead>
-                        <Table.Tbody>
-                          {[...data.trend]
-                            .sort((a, b) =>
-                              dateDirection === 'asc'
-                                ? a.date.localeCompare(b.date)
-                                : b.date.localeCompare(a.date),
+                  <AdminDataTable
+                    size="compact"
+                    ariaLabel={t('analyticsTitle')}
+                  >
+                    <Table.Thead>
+                      <Table.Tr>
+                        <DateSortHeader
+                          label={t('date')}
+                          direction={dateDirection}
+                          onToggle={() =>
+                            setDateDirection((value) =>
+                              value === 'asc' ? 'desc' : 'asc',
                             )
-                            .map((point) => (
-                              <Table.Tr key={point.date}>
-                                <Table.Td>
-                                  {new Date(
-                                    `${point.date}T00:00:00Z`,
-                                  ).toLocaleDateString()}
-                                </Table.Td>
-                                <Table.Td>
-                                  {point.registrations.toLocaleString()}
-                                </Table.Td>
-                                <Table.Td>
-                                  {point.activePlayers.toLocaleString()}
-                                </Table.Td>
-                                <Table.Td>
-                                  {point.attacks.toLocaleString()}
-                                </Table.Td>
-                              </Table.Tr>
-                            ))}
-                        </Table.Tbody>
-                      </Table>
-                    </Table.ScrollContainer>
-                  </Paper>
+                          }
+                        />
+                        <Table.Th>{t('registrations')}</Table.Th>
+                        <Table.Th>{t('activePlayers')}</Table.Th>
+                        <Table.Th>{t('attacks')}</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {[...data.trend]
+                        .sort((a, b) =>
+                          dateDirection === 'asc'
+                            ? a.date.localeCompare(b.date)
+                            : b.date.localeCompare(a.date),
+                        )
+                        .map((point) => (
+                          <Table.Tr key={point.date}>
+                            <Table.Td>
+                              {new Date(
+                                `${point.date}T00:00:00Z`,
+                              ).toLocaleDateString()}
+                            </Table.Td>
+                            <Table.Td>
+                              {point.registrations.toLocaleString()}
+                            </Table.Td>
+                            <Table.Td>
+                              {point.activePlayers.toLocaleString()}
+                            </Table.Td>
+                            <Table.Td>
+                              {point.attacks.toLocaleString()}
+                            </Table.Td>
+                          </Table.Tr>
+                        ))}
+                    </Table.Tbody>
+                  </AdminDataTable>
                 </>
               )
             )}

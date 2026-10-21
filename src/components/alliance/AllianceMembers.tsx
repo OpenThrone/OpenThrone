@@ -22,6 +22,8 @@ import {
   getAllianceStanding,
 } from '@/components/alliance/allianceStanding';
 import { ConfirmActionModal } from '@/components/alliance/ConfirmActionModal';
+import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo, AllianceMember } from '@/services/Alliance.service';
 import type { PlayerRace } from '@/types/typings';
@@ -140,8 +142,8 @@ export const AllianceMembers = ({
         </Table.Td>
         <Table.Td>
           <Badge
-            color={member.role.name === 'Leader' ? 'yellow' : 'blue'}
-            variant="light"
+            color="brand"
+            variant={member.user_id === alliance.leader_id ? 'filled' : 'light'}
           >
             {member.user_id === alliance.leader_id
               ? t('index.allianceLeader', 'Alliance Leader')
@@ -213,24 +215,28 @@ export const AllianceMembers = ({
 
   return (
     <>
-      <Table verticalSpacing="sm">
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>{t('members.name', 'Name')}</Table.Th>
-            <Table.Th>{t('members.role', 'Role')}</Table.Th>
-            <Table.Th>{t('members.raceClass', 'Race / Class')}</Table.Th>
-            <Table.Th>{t('members.lastActive', 'Last Active')}</Table.Th>
-            {showActions && (
-              <Table.Th>
-                <Text component="span" className="sr-only">
-                  {t('manage.memberActions', 'Member actions')}
-                </Text>
-              </Table.Th>
-            )}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>{rows}</Table.Tbody>
-      </Table>
+      <GameCard title={t('index.allianceMembers', 'Alliance Members')}>
+        <StyledTable
+          ariaLabel={t('index.allianceMembers', 'Alliance Members')}
+          headers={[
+            t('members.name', 'Name'),
+            t('members.role', 'Role'),
+            t('members.raceClass', 'Race / Class'),
+            t('members.lastActive', 'Last Active'),
+            ...(showActions
+              ? [
+                  <Table.Th key="actions">
+                    <Text component="span" className="sr-only">
+                      {t('manage.memberActions', 'Member actions')}
+                    </Text>
+                  </Table.Th>,
+                ]
+              : []),
+          ]}
+        >
+          {rows}
+        </StyledTable>
+      </GameCard>
 
       <Modal
         opened={pending?.type === 'rank'}

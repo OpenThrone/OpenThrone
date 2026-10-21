@@ -11,7 +11,6 @@ import {
   Button,
   Center,
   Group,
-  NumberInput,
   RingProgress,
   SimpleGrid,
   Space,
@@ -22,7 +21,9 @@ import {
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 
+import QuantityInput from '@/components/battle/QuantityInput';
 import { GameCard } from '@/components/game/GameCard';
+import { PageLoading } from '@/components/game/PageLoading';
 import { StatGrid } from '@/components/game/StatGrid';
 import { StyledTable } from '@/components/game/StyledTable';
 import MainArea from '@/components/MainArea';
@@ -81,9 +82,10 @@ const Repair = () => {
   if (!user || !fortification) {
     return (
       <MainArea title={t('repair.fortRepairTitle')}>
-        <GameCard title={t('repair.fortRepairTitle')}>
-          <Text>{t('repair.loading')}</Text>
-        </GameCard>
+        <PageLoading
+          label={t('repair.loading')}
+          cardTitle={t('repair.fortRepairTitle')}
+        />
       </MainArea>
     );
   }
@@ -168,14 +170,15 @@ const Repair = () => {
           title={t('repair.repair')}
           icon={<FontAwesomeIcon icon={faScrewdriverWrench} />}
         >
-          <NumberInput
+          <QuantityInput
             label={t('repair.amountToRepair')}
             value={repairPoints}
-            onChange={(value) =>
-              setRepairPoints(typeof value === 'number' ? value : 0)
-            }
-            min={0}
-            max={remainingHitpoints}
+            onChange={setRepairPoints}
+            max={Math.max(0, remainingHitpoints)}
+            grow
+            onMax={() => setRepairPoints(Math.max(0, remainingHitpoints))}
+            maxAriaLabel={t('repair.maxAria')}
+            maxDisabled={remainingHitpoints <= 0}
           />
           <Text size="sm" c="dimmed" mt="xs">
             {t('repair.cost')}:{' '}

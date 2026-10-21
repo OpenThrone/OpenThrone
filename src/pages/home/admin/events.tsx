@@ -18,11 +18,11 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { notifications } from '@mantine/notifications';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { describeEventEffects } from '@/components/sidebar/ActiveEventsBanner';
@@ -38,6 +38,7 @@ import {
   parseEventEffects,
 } from '@/constants/gameEvents';
 import { GameEventType } from '@/lib/prisma-browser-exports';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
 interface GameEvent {
@@ -261,7 +262,7 @@ const GameEventsPage = () => {
   };
 
   const notifyError = (message: string) =>
-    notifications.show({ title: t('eventsTitle'), message, color: 'red' });
+    alertService.notify('error', message, { title: t('eventsTitle') });
 
   const submit = async () => {
     if (!form.name.trim() || !form.startsAt) {
@@ -421,7 +422,7 @@ const GameEventsPage = () => {
                 {event.status === 'ACTIVE' ? (
                   <Button
                     size="xs"
-                    color="orange"
+                    variant="default"
                     loading={busyId === event.id}
                     onClick={() => runAction(event, 'deactivate')}
                   >
@@ -441,7 +442,6 @@ const GameEventsPage = () => {
                 <Button
                   size="xs"
                   color="red"
-                  variant="outline"
                   loading={busyId === event.id}
                   onClick={() => setDeleteTarget(event)}
                 >
@@ -549,27 +549,25 @@ const GameEventsPage = () => {
         </Group>
         {loadError && (
           <Alert color="red" title={t('loadError')}>
-            <Button size="xs" onClick={() => fetchEvents()}>
+            <Button variant="default" size="xs" onClick={() => fetchEvents()}>
               {t('retry')}
             </Button>
           </Alert>
         )}
         <Paper withBorder p="xs">
-          <Table.ScrollContainer minWidth={900}>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t('name')}</Table.Th>
-                  <Table.Th>{t('eventsForm.effectsHeading')}</Table.Th>
-                  <Table.Th>{t('status')}</Table.Th>
-                  <Table.Th>{t('startsAt')}</Table.Th>
-                  <Table.Th>{t('endsAt')}</Table.Th>
-                  <Table.Th>{t('actions')}</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{!loading && rows}</Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
+          <AdminDataTable ariaLabel={t('eventsTitle')}>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>{t('name')}</Table.Th>
+                <Table.Th>{t('eventsForm.effectsHeading')}</Table.Th>
+                <Table.Th>{t('status')}</Table.Th>
+                <Table.Th>{t('startsAt')}</Table.Th>
+                <Table.Th>{t('endsAt')}</Table.Th>
+                <Table.Th>{t('actions')}</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>{!loading && rows}</Table.Tbody>
+          </AdminDataTable>
           {loading && (
             <Text ta="center" p="md" role="status">
               {t('loading')}
@@ -760,7 +758,7 @@ const GameEventsPage = () => {
         confirmText={t('delete')}
         cancelText={t('cancel')}
         isLoading={deleteTarget !== null && busyId === deleteTarget.id}
-        type="remove"
+        type="destructive"
       />
     </AdminLayout>
   );
