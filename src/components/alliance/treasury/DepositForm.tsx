@@ -1,7 +1,8 @@
-import { Button, NumberInput } from '@mantine/core';
+import { Button } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
+import QuantityInput from '@/components/battle/QuantityInput';
 import { GameCard } from '@/components/game/GameCard';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
@@ -50,27 +51,17 @@ export const DepositForm = ({ allianceId, onDone }: DepositFormProps) => {
 
   return (
     <GameCard title={t('depositTitle')}>
-      <NumberInput
+      <QuantityInput
         label={t('amount')}
         description={t('depositHint', {
           percent: DEPOSIT_CAP_PERCENT,
           max: toLocale(maxDeposit, user?.locale),
         })}
-        value={amount.toString()}
-        onChange={(val) => setAmount(toBigIntSafe(val))}
-        min={0}
-        thousandSeparator=","
-        rightSection={
-          <Button
-            size="compact-xs"
-            variant="subtle"
-            aria-label={t('depositMaxAria')}
-            onClick={() => setAmount(maxDeposit)}
-          >
-            {t('max')}
-          </Button>
-        }
-        rightSectionWidth={56}
+        value={amount}
+        onChange={setAmount}
+        grow
+        onMax={() => setAmount(maxDeposit)}
+        maxAriaLabel={t('depositMaxAria')}
         error={
           overCap
             ? t('depositOverCap', { percent: DEPOSIT_CAP_PERCENT })

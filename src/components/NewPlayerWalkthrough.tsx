@@ -4,6 +4,7 @@ import {
   ActionIcon,
   Button,
   Group,
+  Modal,
   Paper,
   Portal,
   Progress,
@@ -258,104 +259,120 @@ export default function NewPlayerWalkthrough() {
   })();
 
   return (
-    <Portal>
-      {offered && (
-        <div className="fixed inset-0 z-[9000] bg-black/70 px-4 backdrop-blur-sm">
-          <Paper
-            className="mx-auto mt-[18vh] max-w-xl border border-[var(--ot-border)] bg-black/90 p-5 shadow-2xl"
-            radius="sm"
-            role="dialog"
-            aria-modal="true"
-          >
-            <Stack gap="md">
-              <Title order={2} className="font-medieval text-[var(--ot-text)]">
-                {t('walkthrough.offer.title', 'Take the first-turn tour?')}
-              </Title>
-              <Text c="gray.2">
-                {t(
-                  'walkthrough.offer.body',
-                  'A short optional walkthrough will point out the menu, advisor, stats, Training, Armory, Bank, and leave you on Attack.',
-                )}
-              </Text>
-              <Group justify="flex-end">
-                <Button variant="subtle" color="gray" onClick={finish}>
-                  {t('walkthrough.skip', 'Skip')}
-                </Button>
-                <Button color="yellow" onClick={start}>
-                  {t('walkthrough.start', 'Start tour')}
-                </Button>
-              </Group>
-            </Stack>
-          </Paper>
-        </div>
-      )}
+    <>
+      <Modal
+        opened={offered}
+        onClose={finish}
+        centered
+        size="lg"
+        zIndex={9000}
+        withCloseButton={false}
+        closeOnClickOutside={false}
+        overlayProps={{ backgroundOpacity: 0.7, blur: 3 }}
+        title={t('walkthrough.offer.title', 'Take the first-turn tour?')}
+      >
+        <Stack gap="md">
+          <Text c="var(--ot-muted)">
+            {t(
+              'walkthrough.offer.body',
+              'A short optional walkthrough will point out the menu, advisor, stats, Training, Armory, Bank, and leave you on Attack.',
+            )}
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={finish}>
+              {t('walkthrough.skip', 'Skip')}
+            </Button>
+            <Button onClick={start} data-autofocus>
+              {t('walkthrough.start', 'Start tour')}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       {active && (
-        <div className="pointer-events-none fixed inset-0 z-[9000]">
-          {targetRect ? (
-            <div
-              className="absolute rounded-md border-2 border-yellow-300 shadow-[0_0_0_9999px_rgba(0,0,0,0.58),0_0_28px_rgba(250,204,21,0.75)]"
-              style={targetRect}
-            />
-          ) : (
-            <div className="absolute inset-0 bg-black/65 backdrop-blur-[1px]" />
-          )}
-          <Paper
-            className="pointer-events-auto fixed max-w-[calc(100vw-2rem)] border border-[var(--ot-border)] bg-black/95 p-4 shadow-2xl"
-            radius="sm"
-            role="dialog"
-            aria-live="polite"
-            style={{
-              left: calloutLeft,
-              top: calloutTop ?? '22vh',
-              width: calloutWidth,
-            }}
-          >
-            <Stack gap="sm">
-              <Group justify="space-between" wrap="nowrap">
-                <Title
-                  order={3}
-                  className="font-medieval text-[var(--ot-text)]"
-                >
-                  {currentStep.title}
-                </Title>
-                <ActionIcon
-                  aria-label={t('walkthrough.close', 'Close walkthrough')}
-                  variant="subtle"
-                  color="gray"
-                  onClick={finish}
-                >
-                  <FontAwesomeIcon icon={faTimes} />
-                </ActionIcon>
-              </Group>
-              <Progress value={progressValue} color="yellow" size="xs" />
-              <Text size="sm" c="gray.2">
-                {currentStep.body}
-              </Text>
-              <Group justify="space-between" mt="xs">
-                <Button
-                  variant="subtle"
-                  color="gray"
-                  onClick={back}
-                  disabled={stepIndex === 0}
-                >
-                  {t('walkthrough.back', 'Back')}
-                </Button>
-                <Group gap="xs">
-                  <Button variant="subtle" color="gray" onClick={finish}>
-                    {t('walkthrough.skip', 'Skip')}
-                  </Button>
-                  <Button color="yellow" onClick={next}>
-                    {stepIndex === steps.length - 1
-                      ? t('walkthrough.finish', 'Finish')
-                      : t('walkthrough.next', 'Next')}
-                  </Button>
+        <Portal>
+          <div className="pointer-events-none fixed inset-0 z-[9000]">
+            {targetRect ? (
+              <div
+                className="absolute rounded-md border-2"
+                style={{
+                  ...targetRect,
+                  borderColor: 'var(--ot-accent)',
+                  boxShadow:
+                    '0 0 0 9999px color-mix(in srgb, var(--ot-inset) 58%, transparent), 0 0 28px color-mix(in srgb, var(--ot-accent) 75%, transparent)',
+                }}
+              />
+            ) : (
+              <div
+                className="absolute inset-0 backdrop-blur-[1px]"
+                style={{
+                  backgroundColor:
+                    'color-mix(in srgb, var(--ot-inset) 65%, transparent)',
+                }}
+              />
+            )}
+            <Paper
+              className="pointer-events-auto fixed max-w-[calc(100vw-2rem)] border border-[var(--ot-border)] p-4"
+              radius="sm"
+              role="dialog"
+              aria-live="polite"
+              style={{
+                left: calloutLeft,
+                top: calloutTop ?? '22vh',
+                width: calloutWidth,
+                backgroundColor: 'var(--ot-surface)',
+                boxShadow: 'var(--ot-shadow)',
+              }}
+            >
+              <Stack gap="sm">
+                <Group justify="space-between" wrap="nowrap">
+                  <Title
+                    order={3}
+                    className="font-medieval text-[var(--ot-text)]"
+                  >
+                    {currentStep.title}
+                  </Title>
+                  <ActionIcon
+                    aria-label={t('walkthrough.close', 'Close walkthrough')}
+                    variant="subtle"
+                    c="var(--ot-muted)"
+                    onClick={finish}
+                  >
+                    <FontAwesomeIcon icon={faTimes} />
+                  </ActionIcon>
                 </Group>
-              </Group>
-            </Stack>
-          </Paper>
-        </div>
+                <Progress
+                  value={progressValue}
+                  color="var(--ot-accent)"
+                  size="xs"
+                />
+                <Text size="sm" c="var(--ot-body)">
+                  {currentStep.body}
+                </Text>
+                <Group justify="space-between" mt="xs">
+                  <Button
+                    variant="subtle"
+                    onClick={back}
+                    disabled={stepIndex === 0}
+                  >
+                    {t('walkthrough.back', 'Back')}
+                  </Button>
+                  <Group gap="xs">
+                    <Button variant="default" onClick={finish}>
+                      {t('walkthrough.skip', 'Skip')}
+                    </Button>
+                    <Button onClick={next}>
+                      {stepIndex === steps.length - 1
+                        ? t('walkthrough.finish', 'Finish')
+                        : t('walkthrough.next', 'Next')}
+                    </Button>
+                  </Group>
+                </Group>
+              </Stack>
+            </Paper>
+          </div>
+        </Portal>
       )}
-    </Portal>
+    </>
   );
 }

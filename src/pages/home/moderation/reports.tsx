@@ -10,7 +10,7 @@ import {
   Text,
 } from '@mantine/core';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
@@ -25,7 +25,7 @@ import {
 import { logError } from '@/utils/logger';
 
 const ReportsQueuePage = () => {
-  const router = useRouter();
+  const { t } = useTranslation('moderation-admin');
   const [reports, setReports] = useState<any[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
@@ -48,7 +48,7 @@ const ReportsQueuePage = () => {
       if (priorityFilter) params.append('priority', priorityFilter);
 
       const response = await fetch(`/api/reports?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch reports');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       setReports(data.reports || []);
       setTotal(data.total || 0);
@@ -101,17 +101,17 @@ const ReportsQueuePage = () => {
 
   return (
     <AdminLayout
-      title="Moderation: Report Queue"
+      title={t('reportsPageTitle')}
       permission={PermissionType.REVIEW_REPORTS}
     >
       <Stack gap="md">
-        <GameCard title="Filters">
+        <GameCard title={t('reportsFilters')}>
           <Group grow>
             <Select
-              label="Status"
-              placeholder="All Statuses"
+              label={t('colStatus')}
+              placeholder={t('allStatuses')}
               data={[
-                { value: '', label: 'All' },
+                { value: '', label: t('reportsAll') },
                 ...Object.values(ReportStatus).map((status) => ({
                   value: status,
                   label: status,
@@ -123,10 +123,10 @@ const ReportsQueuePage = () => {
             />
 
             <Select
-              label="Category"
-              placeholder="All Categories"
+              label={t('reportsColCategory')}
+              placeholder={t('reportsAllCategories')}
               data={[
-                { value: '', label: 'All' },
+                { value: '', label: t('reportsAll') },
                 ...Object.values(ReportCategory).map((cat) => ({
                   value: cat,
                   label: cat.replace('_', ' '),
@@ -138,10 +138,10 @@ const ReportsQueuePage = () => {
             />
 
             <Select
-              label="Priority"
-              placeholder="All Priorities"
+              label={t('reportsColPriority')}
+              placeholder={t('reportsAllPriorities')}
               data={[
-                { value: '', label: 'All' },
+                { value: '', label: t('reportsAll') },
                 ...Object.values(ReportPriority).map((prio) => ({
                   value: prio,
                   label: prio,
@@ -154,14 +154,14 @@ const ReportsQueuePage = () => {
           </Group>
         </GameCard>
 
-        <GameCard title={`Reports (${total})`}>
+        <GameCard title={t('reportsListTitle', { count: total })}>
           {loading ? (
             <Group justify="center" py="xl">
               <Loader />
             </Group>
           ) : reports.length === 0 ? (
             <Text py="xl" ta="center" c="dimmed">
-              No reports found matching your criteria.
+              {t('reportsEmpty')}
             </Text>
           ) : (
             <Stack gap="md">
@@ -169,15 +169,15 @@ const ReportsQueuePage = () => {
                 <Table striped highlightOnHover>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th>ID</Table.Th>
-                      <Table.Th>Reporter</Table.Th>
-                      <Table.Th>Reported User</Table.Th>
-                      <Table.Th>Category</Table.Th>
-                      <Table.Th>Priority</Table.Th>
-                      <Table.Th>Status</Table.Th>
-                      <Table.Th>Assigned To</Table.Th>
-                      <Table.Th>Created At</Table.Th>
-                      <Table.Th>Action</Table.Th>
+                      <Table.Th>{t('colId')}</Table.Th>
+                      <Table.Th>{t('reportsColReporter')}</Table.Th>
+                      <Table.Th>{t('reportsColReportedUser')}</Table.Th>
+                      <Table.Th>{t('reportsColCategory')}</Table.Th>
+                      <Table.Th>{t('reportsColPriority')}</Table.Th>
+                      <Table.Th>{t('colStatus')}</Table.Th>
+                      <Table.Th>{t('reportsColAssignedTo')}</Table.Th>
+                      <Table.Th>{t('reportsColCreatedAt')}</Table.Th>
+                      <Table.Th>{t('colAction')}</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
@@ -185,10 +185,11 @@ const ReportsQueuePage = () => {
                       <Table.Tr key={report.id}>
                         <Table.Td>{report.id}</Table.Td>
                         <Table.Td>
-                          {report.reporter?.display_name || 'System'}
+                          {report.reporter?.display_name || t('reportsSystem')}
                         </Table.Td>
                         <Table.Td>
-                          {report.reportedUser?.display_name || 'N/A'}
+                          {report.reportedUser?.display_name ||
+                            t('notAvailable')}
                         </Table.Td>
                         <Table.Td>{report.category.replace('_', ' ')}</Table.Td>
                         <Table.Td>
@@ -202,7 +203,8 @@ const ReportsQueuePage = () => {
                           </Badge>
                         </Table.Td>
                         <Table.Td>
-                          {report.assignedTo?.display_name || 'Unassigned'}
+                          {report.assignedTo?.display_name ||
+                            t('reportsUnassigned')}
                         </Table.Td>
                         <Table.Td>
                           {new Date(report.createdAt).toLocaleString()}
@@ -212,9 +214,10 @@ const ReportsQueuePage = () => {
                             component={Link}
                             href={`/home/moderation/reports/${report.id}`}
                             size="xs"
-                            variant="outline"
+                            variant="default"
+                            aria-label={t('reportsViewAria', { id: report.id })}
                           >
-                            View
+                            {t('reportsView')}
                           </Button>
                         </Table.Td>
                       </Table.Tr>
@@ -248,6 +251,7 @@ export const getServerSideProps = async (context: any) => {
         'common',
         'home',
         'navigation',
+        'moderation-admin',
       ])),
     },
   };

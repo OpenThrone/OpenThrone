@@ -1,29 +1,19 @@
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { Box, Button, Grid, Stack, Text } from '@mantine/core';
-import Link from 'next/link';
+import { Button, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 
-import classes from '@/components/AttackResults.module.css';
-import type { PlayerRace } from '@/types/typings';
-import { getAssetPath, getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
+import type { ParticipantHeaderProps } from '@/components/battle/ReportHeader';
+import { ReportHeader } from '@/components/battle/ReportHeader';
+import panelClasses from '@/components/game/Panels.module.css';
+import { getLevelFromXP } from '@/utils/utilities';
 
-import { BattleResultBanner } from './BattleResultBanner';
-import { FramedAvatar } from './FramedAvatar';
 import { GameCard } from './game/GameCard';
 import Modal from './modal';
 import SpyMissionsModal from './spyMissionsModal';
 
 export type SpyMission = 'intel' | 'assassinate' | 'infiltrate';
-
-export const themedButtonStyle = {
-  background: 'linear-gradient(180deg, rgba(37,85,124,1), rgba(12,36,59,1))',
-  border: '1px solid rgba(201,166,89,0.42)',
-  boxShadow:
-    'inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 18px rgba(0,0,0,0.35)',
-  fontFamily: 'MedievalSharp, serif',
-};
 
 /** Banner title keys per mission, from the spymaster's or the target's side. */
 const DEFENDER_TITLES: Record<SpyMission, [string, string]> = {
@@ -46,45 +36,6 @@ const SUBTITLES: Record<SpyMission, string> = {
   assassinate: 'spyReport.assassinationSubtitle',
   infiltrate: 'spyReport.infiltrationSubtitle',
 };
-
-/** Name, level and role block styled like the battle report's participants. */
-const ParticipantIdentity = ({
-  name,
-  level,
-  role,
-  levelLabel,
-}: {
-  name?: string;
-  level: number;
-  role: string;
-  levelLabel: string;
-}) => (
-  <Box className={classes.identity}>
-    <Text className={classes.name}>{name}</Text>
-    <Text size="sm" c="dimmed" tt="uppercase" mt={6}>
-      {levelLabel} {level}
-    </Text>
-    <Box
-      mt="md"
-      style={{
-        height: 1,
-        width: '100%',
-        background:
-          'linear-gradient(90deg, rgba(201,166,89,0.55), transparent)',
-      }}
-    />
-    <Text
-      mt="sm"
-      size="sm"
-      style={{
-        fontFamily: 'MedievalSharp, serif',
-        color: 'rgba(236,229,211,0.78)',
-      }}
-    >
-      {role}
-    </Text>
-  </Box>
-);
 
 /**
  * Shared frame for every spy mission report (intel, assassination,
@@ -141,10 +92,6 @@ export const SpyReportShell = ({
     spyResults.attackerLevel ?? getLevelFromXP(attackerPlayer?.experience ?? 0);
   const defenderLevel =
     spyResults.defenderLevel ?? getLevelFromXP(defenderPlayer?.experience ?? 0);
-  const frame = (race?: string) =>
-    getAssetPath('avatarFrame', null, (race as PlayerRace) || 'ELF');
-  const avatar = (player: any) =>
-    getAvatarSrc(player?.avatar || 'SHIELD', player?.race, '150x150');
 
   // The spymaster follows up on the target; the target can strike back.
   const followUpTarget = isViewerDefender ? attackerPlayer : defenderPlayer;
@@ -154,174 +101,66 @@ export const SpyReportShell = ({
     player: any,
     side: 'attacker' | 'defender',
     role: string,
-  ) => {
-    const portrait = (
-      <Box
-        className={
-          side === 'defender'
-            ? `${classes.defenderAvatar} ${classes.portrait}`
-            : classes.portrait
-        }
-      >
-        <FramedAvatar
-          frameSrc={frame(player?.race)}
-          src={avatar(player)}
-          alt={t(
-            side === 'attacker'
-              ? 'intelReport.attackerAvatar'
-              : 'intelReport.defenderAvatar',
-          )}
-          size={240}
-          insetX={40}
-          insetY={58}
-          objectFit="cover"
-        />
-      </Box>
-    );
-    const identity = (
-      <ParticipantIdentity
-        name={player?.display_name}
-        level={side === 'attacker' ? attackerLevel : defenderLevel}
-        role={role}
-        levelLabel={t('intelReport.level')}
-      />
-    );
-    return (
-      <Box
-        className={`${classes.participant} ${classes[side]}`}
-        component={Link}
-        href={`/userprofile/${player?.id}`}
-        aria-label={t('intelReport.viewProfile', {
-          player: player?.display_name,
-        })}
-        style={{ textDecoration: 'none', color: 'inherit' }}
-      >
-        {side === 'attacker' ? (
-          <>
-            {portrait}
-            {identity}
-          </>
-        ) : (
-          <>
-            {identity}
-            {portrait}
-          </>
-        )}
-      </Box>
-    );
-  };
+    level: number,
+  ): ParticipantHeaderProps => ({
+    player,
+    side,
+    role,
+    levelLabel: `${t('intelReport.level')} ${level}`,
+    avatarAlt: t(
+      side === 'attacker'
+        ? 'intelReport.attackerAvatar'
+        : 'intelReport.defenderAvatar',
+    ),
+    profileLabel: t('intelReport.viewProfile', {
+      player: player?.display_name,
+    }),
+  });
 
   return (
     <GameCard title={t(TITLES[mission])} icon={icon}>
-      <BattleResultBanner
-        tone={bannerTone}
-        title={bannerTitle}
-        subtitle={t(SUBTITLES[mission], {
-          attacker: attackerPlayer?.display_name,
-          defender: defenderPlayer?.display_name,
-        })}
-      />
-
-      <Box
-        className={classes.battleHeader}
-        style={{
-          position: 'relative',
-          padding: '8px 28px 18px',
-          minHeight: 286,
-          display: 'flex',
-          alignItems: 'center',
-          marginTop: -26,
+      <ReportHeader
+        banner={{
+          tone: bannerTone,
+          title: bannerTitle,
+          subtitle: t(SUBTITLES[mission], {
+            attacker: attackerPlayer?.display_name,
+            defender: defenderPlayer?.display_name,
+          }),
         }}
-      >
-        <Grid align="center" gutter="xl" style={{ width: '100%' }}>
-          <Grid.Col
-            span={{ base: 12, md: 'auto' }}
-            className={classes.participantColumn}
-          >
-            {participant(
-              attackerPlayer,
-              'attacker',
-              t('intelReport.spymaster'),
-            )}
-          </Grid.Col>
-
-          <Grid.Col
-            span={{ base: 12, md: 'content' }}
-            className={classes.battleId}
-          >
-            <Stack
-              align="center"
-              gap={8}
-              style={{
-                minWidth: 200,
-                padding: '16px 10px',
-                background:
-                  'radial-gradient(circle at center, rgba(201,166,89,0.09), transparent 68%)',
-                borderTop: '1px solid rgba(201,166,89,0.22)',
-                borderBottom: '1px solid rgba(201,166,89,0.22)',
-              }}
-            >
-              <Text
-                size="xs"
-                tt="uppercase"
-                c="dimmed"
-                style={{ letterSpacing: '0.12em' }}
-              >
-                {t('intelReport.reportId')}
-              </Text>
-              <Text
-                size="xl"
-                fw={700}
-                style={{
-                  fontFamily: 'MedievalSharp, serif',
-                  color: '#e8d39a',
-                  lineHeight: 1,
-                }}
-              >
-                {battle.id}
-              </Text>
-              {canFollowUp && (
-                <>
-                  {!isViewerDefender && (
-                    <Button
-                      onClick={toggleSpyModal}
-                      size="md"
-                      fullWidth
-                      px="xs"
-                      style={{ ...themedButtonStyle, marginTop: 8 }}
-                    >
-                      {t('intelReport.sendMoreSpies')}
-                    </Button>
-                  )}
-                  <Button
-                    onClick={toggleAttackModal}
-                    size="md"
-                    fullWidth
-                    px="xs"
-                    style={{
-                      ...themedButtonStyle,
-                      ...(isViewerDefender ? { marginTop: 8 } : {}),
-                    }}
-                  >
-                    {t(
-                      isViewerDefender
-                        ? 'spyReport.attackBack'
-                        : 'intelReport.attack',
-                    )}
-                  </Button>
-                </>
+        attacker={participant(
+          attackerPlayer,
+          'attacker',
+          t('intelReport.spymaster'),
+          attackerLevel,
+        )}
+        defender={participant(
+          defenderPlayer,
+          'defender',
+          t('intelReport.target'),
+          defenderLevel,
+        )}
+        band={{
+          label: t('intelReport.reportId'),
+          reportId: battle.id,
+          actions: canFollowUp && (
+            <>
+              {!isViewerDefender && (
+                <Button onClick={toggleSpyModal} size="md" fullWidth px="xs">
+                  {t('intelReport.sendMoreSpies')}
+                </Button>
               )}
-            </Stack>
-          </Grid.Col>
-
-          <Grid.Col
-            span={{ base: 12, md: 'auto' }}
-            className={classes.participantColumn}
-          >
-            {participant(defenderPlayer, 'defender', t('intelReport.target'))}
-          </Grid.Col>
-        </Grid>
-      </Box>
+              <Button onClick={toggleAttackModal} size="md" fullWidth px="xs">
+                {t(
+                  isViewerDefender
+                    ? 'spyReport.attackBack'
+                    : 'intelReport.attack',
+                )}
+              </Button>
+            </>
+          ),
+        }}
+      />
 
       {children}
 
@@ -360,17 +199,7 @@ export const MissionLog = ({
   lines: string[];
 }) => (
   <GameCard title={title} goldAccent={false}>
-    <Stack
-      gap={6}
-      style={{
-        backgroundColor: 'var(--ot-inset, #0f141a)',
-        borderRadius: 6,
-        border: '1px solid var(--ot-line, #1f2b3b)',
-        boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-        padding: 12,
-        textAlign: 'center',
-      }}
-    >
+    <Stack gap={6} ta="center" className={panelClasses.insetRow}>
       {lines.map((line) => (
         <Text key={line} c="gray.4">
           {line}

@@ -104,6 +104,7 @@
     "resetPassword": "Reset Password",
     "passwordReset": "Password reset successfully!",
     "resetFailed": "Password reset failed. Please try again.",
+    "errorTitle": "Account recovery failed",
     "passwordTooShort": "Password must be at least 8 characters.",
     "passwordSame": "New password must be different from your current password.",
     "enterYourEmail": "Enter your Email",

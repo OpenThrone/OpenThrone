@@ -51,6 +51,7 @@ import {
 } from '@/components/battle/PlayerActions';
 import actionClasses from '@/components/battle/PlayerActions.module.css';
 import { GameCard } from '@/components/game/GameCard';
+import panelClasses from '@/components/game/Panels.module.css';
 import { StyledTable } from '@/components/game/StyledTable';
 import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
@@ -67,14 +68,6 @@ import { getEraParticipantWhere } from '@/utils/loginPolicy';
 import { toLocale } from '@/utils/numberFormatting';
 import { serverSideTranslations } from '@/utils/serverTranslations';
 import { getLevelFromXP } from '@/utils/utilities';
-/** Shared ledger column style for the leaderboard header cells. */
-const leaderboardThStyle = {
-  color: 'var(--ot-heading)',
-  borderBottom: '1px solid #2f3e52',
-  textTransform: 'uppercase',
-  fontSize: '11px',
-  letterSpacing: '1px',
-} as const;
 
 const Users = ({
   allUsers,
@@ -627,16 +620,7 @@ const Users = ({
               placeholder={t('users.placeholderName')}
             />
             <Collapse in={advancedOpen}>
-              <Box
-                mt="sm"
-                p="sm"
-                style={{
-                  backgroundColor: '#0f141a',
-                  borderRadius: '6px',
-                  border: '1px solid #1f2b3b',
-                  boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-                }}
-              >
+              <Box mt="sm" className={panelClasses.insetRow}>
                 <Stack gap="sm">
                   <Group justify="space-between" align="flex-end">
                     <Text size="sm" c="dimmed">
@@ -950,17 +934,16 @@ const Users = ({
           ].join(', ')}
           tableProps={{
             highlightOnHover: true,
-            className: `bg-gray-900 text-left text-white ${actionClasses.ledger}`,
+            className: `text-left ${actionClasses.ledger}`,
             'data-testid': 'warlord-table',
           }}
           theadProps={{ 'data-testid': 'table-header' }}
-          headerRowProps={{ style: { background: '#0e1520' } }}
           headers={[
             <Table.Th
               key="rank"
               className="p-1"
               data-testid="header-rank"
-              style={{ ...leaderboardThStyle, width: '100px' }}
+              w={100}
             >
               {getRankLabel()}
             </Table.Th>,
@@ -968,7 +951,6 @@ const Users = ({
               key="name"
               className="px-4 py-2"
               data-testid="header-name"
-              style={leaderboardThStyle}
             >
               {t('users.username')}
             </Table.Th>,
@@ -976,7 +958,6 @@ const Users = ({
               key="race"
               className="px-4 py-2"
               data-testid="header-race"
-              style={leaderboardThStyle}
             >
               {t('users.alliance')}
             </Table.Th>,
@@ -984,38 +965,25 @@ const Users = ({
               key="gold"
               className="px-4 py-2"
               data-testid="header-networth"
-              style={leaderboardThStyle}
             >
               <UnstyledButton onClick={() => handleSort('gold')}>
                 {t('users.gold')}{' '}
                 {sortBy === 'gold' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
               </UnstyledButton>
             </Table.Th>,
-            <Table.Th
-              key="population"
-              className="px-4 py-2"
-              style={leaderboardThStyle}
-            >
+            <Table.Th key="population" className="px-4 py-2">
               <UnstyledButton onClick={() => handleSort('population')}>
                 {t('users.population')}{' '}
                 {sortBy === 'population' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
               </UnstyledButton>
             </Table.Th>,
-            <Table.Th
-              key="level"
-              className="px-4 py-2"
-              style={leaderboardThStyle}
-            >
+            <Table.Th key="level" className="px-4 py-2">
               <UnstyledButton onClick={() => handleSort('level')}>
                 {t('users.level')}{' '}
                 {sortBy === 'level' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
               </UnstyledButton>
             </Table.Th>,
-            <Table.Th
-              key="actions"
-              className={actionClasses.actionsCell}
-              style={leaderboardThStyle}
-            >
+            <Table.Th key="actions" className={actionClasses.actionsCell}>
               {t('actions.title')}
             </Table.Th>,
           ]}
@@ -1056,7 +1024,7 @@ const Users = ({
                 <Table.Tr
                   key={player.id}
                   data-testid="table-row"
-                  className={`${actionClasses.playerRow} ${player.is_player ? 'bg-gray-500' : ''}`}
+                  className={actionClasses.playerRow}
                   style={{
                     background: player.is_player
                       ? `linear-gradient(90deg, ${withAlpha(rowGlow, '40')} 0%, transparent 100%)`
@@ -1084,9 +1052,9 @@ const Users = ({
                       >
                         <Box
                           style={{
-                            border: '1px solid #444',
+                            border: '1px solid var(--ot-line)',
                             padding: '1px',
-                            background: '#000',
+                            background: 'var(--ot-inset)',
                           }}
                         >
                           <Avatar
@@ -1112,7 +1080,7 @@ const Users = ({
                           >
                             <Link
                               href={`/userprofile/${player.id}`}
-                              className={`${actionClasses.displayName} font-bold text-blue-500 hover:text-blue-700`}
+                              className={`${actionClasses.displayName} font-bold text-[var(--ot-accent)] hover:underline`}
                             >
                               {player.displayName}
                             </Link>

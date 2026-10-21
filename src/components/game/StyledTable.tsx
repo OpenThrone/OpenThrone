@@ -25,11 +25,16 @@ interface StyledTableProps {
   /** Props forwarded to the inner Mantine Table. */
   tableProps?: WithDataAttributes<ComponentProps<typeof Table>>;
   /** Props forwarded to the header row. */
-  headerRowProps?: ComponentProps<typeof Table.Tr>;
+  headerRowProps?: WithDataAttributes<ComponentProps<typeof Table.Tr>>;
   /** Props forwarded to the table header section. */
   theadProps?: WithDataAttributes<ComponentProps<typeof Table.Thead>>;
   /** Test id for the scroll region; defaults to `table-wrapper`. */
   regionTestId?: string;
+  /**
+   * Narrowest width the ledger may shrink to before the region scrolls
+   * horizontally. Use instead of ad-hoc wrapper widths.
+   */
+  minWidth?: number | string;
 }
 
 /** A readable ledger with contained horizontal scrolling on narrow screens. */
@@ -41,6 +46,7 @@ export const StyledTable = ({
   headerRowProps,
   theadProps,
   regionTestId = 'table-wrapper',
+  minWidth,
 }: StyledTableProps) => {
   const regionRef = useRef<HTMLDivElement | null>(null);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -80,7 +86,16 @@ export const StyledTable = ({
         tabIndex={0}
         data-testid={regionTestId}
       >
-        <Table verticalSpacing="sm" data-testid="styled-table" {...tableProps}>
+        <Table
+          verticalSpacing="sm"
+          data-testid="styled-table"
+          {...tableProps}
+          style={
+            minWidth === undefined
+              ? tableProps?.style
+              : [{ minWidth }, tableProps?.style]
+          }
+        >
           <Table.Thead {...theadProps}>
             <Table.Tr {...headerRowProps}>
               {headers.map((head, index) =>

@@ -1,6 +1,6 @@
 import { faThumbtack } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Anchor, Badge, Card, Group, Text, Title } from '@mantine/core';
+import { Anchor, Badge, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import useSWR from 'swr';
 
@@ -8,6 +8,7 @@ import {
   type AllianceAnnouncementItem,
   announcementListUrl,
 } from '@/components/alliance/AllianceAnnouncements';
+import { GameCard } from '@/components/game/GameCard';
 
 interface AllianceLatestAnnouncementProps {
   allianceId: number;
@@ -35,10 +36,10 @@ export const AllianceLatestAnnouncement = ({
   if (!latest) return null;
 
   return (
-    <Card withBorder padding="lg" radius="md">
-      <Group justify="space-between" mb="xs">
-        <Title order={4}>{t('overview.heading')}</Title>
-        {latest.pinned && (
+    <GameCard
+      title={t('overview.heading')}
+      action={
+        latest.pinned && (
           <Badge
             color="yellow"
             variant="light"
@@ -46,8 +47,9 @@ export const AllianceLatestAnnouncement = ({
           >
             {t('list.pinned')}
           </Badge>
-        )}
-      </Group>
+        )
+      }
+    >
       <Text fw={600}>{latest.title}</Text>
       <Text size="xs" c="dimmed" mb="xs">
         {t('list.by', {
@@ -70,6 +72,6 @@ export const AllianceLatestAnnouncement = ({
       >
         {t('overview.viewAll')}
       </Anchor>
-    </Card>
+    </GameCard>
   );
 };

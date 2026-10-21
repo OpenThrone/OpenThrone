@@ -298,7 +298,7 @@ export default function RecruitmentFlow({
         )}
         {succeeded ? (
           <>
-            <Text role="status" c="teal.3">
+            <Text role="status" c="green.3">
               {t('recruit.completed')}
             </Text>
             {targetId && recruitStatus ? (

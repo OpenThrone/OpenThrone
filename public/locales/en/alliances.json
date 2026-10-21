@@ -217,7 +217,6 @@
   },
   "bank": {
     "totalBalance": "Total Alliance Treasury",
-    "goldAmount": "{{amount}} Gold",
     "historyTitle": "Transaction History",
     "date": "Date",
     "user": "User",

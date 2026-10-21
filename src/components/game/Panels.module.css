@@ -114,6 +114,22 @@
   border-radius: var(--mantine-radius-sm);
 }
 
+/* Sunken stone ledger row: the one inset recipe for list rows, slots and
+   log wells (#134). Surface only; lay out the contents with Mantine. */
+.insetRow {
+  min-width: 0;
+  padding: var(--mantine-spacing-sm);
+  color: var(--ot-body);
+  background: var(--ot-inset);
+  border: 1px solid var(--ot-line);
+  border-radius: var(--mantine-radius-sm);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.6);
+}
+
+.insetRow[data-disabled] {
+  opacity: 0.5;
+}
+
 .tableRegion {
   overflow-x: auto;
   max-width: 100%;
@@ -160,4 +176,15 @@
   .cardTitle { font-size: 21px; }
   .headingIcon { font-size: 24px; }
   .accentHeader + .content { padding: 16px; }
+}
+
+/* In-card section heading (SectionHeading): the card title's face, one step down. */
+.sectionHeading {
+  margin: 0 0 var(--mantine-spacing-xs);
+  font-family: MedievalSharp, serif;
+  font-size: var(--mantine-font-size-md);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  color: var(--ot-heading);
 }

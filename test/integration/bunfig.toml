@@ -1,0 +1,6 @@
+# Integration tests talk to a real (throwaway) database: no Prisma mock preload.
+[test]
+preload = ["./test/integration/setup.ts"]
+
+[alias]
+test = "./test"

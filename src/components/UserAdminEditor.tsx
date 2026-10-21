@@ -7,7 +7,6 @@ import {
   Button,
   Grid,
   Group,
-  Modal,
   NumberInput,
   Paper,
   Stack,
@@ -17,16 +16,17 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import UserOperations, {
   AdminUserExport,
 } from '@/components/admin/UserOperations';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import type { StaffRole } from '@/lib/prisma-exports';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 import { STAFF_ROLE_LABELS } from '@/utils/permissions';
 
@@ -179,10 +179,8 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
       );
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || t('errors.save'));
-      notifications.show({
+      alertService.notify('success', t('messages.saved'), {
         title: t('messages.savedTitle'),
-        message: t('messages.saved'),
-        color: 'green',
       });
       onSaved();
     } catch (requestError) {
@@ -723,24 +721,16 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
           </Stack>
         </Tabs.Panel>
       </Tabs>
-      <Modal
-        opened={noteDeleteTarget !== null}
-        onClose={() => setNoteDeleteTarget(null)}
+      <ConfirmationModal
+        isOpen={noteDeleteTarget !== null}
+        onClose={() => !deletingNote && setNoteDeleteTarget(null)}
+        onConfirm={removeNote}
         title={t('notes.deleteTitle')}
-        centered
-      >
-        <Stack>
-          <Text>{t('notes.deleteConfirm')}</Text>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={() => setNoteDeleteTarget(null)}>
-              {t('actions.close')}
-            </Button>
-            <Button color="red" onClick={removeNote} loading={deletingNote}>
-              {t('actions.deleteNote')}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        message={t('notes.deleteConfirm')}
+        type="destructive"
+        confirmText={t('actions.deleteNote')}
+        isLoading={deletingNote}
+      />
     </Stack>
   );
 };

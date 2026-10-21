@@ -6,7 +6,6 @@ import {
   Button,
   Group,
   Loader,
-  Paper,
   Select,
   SimpleGrid,
   Stack,
@@ -14,7 +13,6 @@ import {
   Text,
   Textarea,
   TextInput,
-  Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useRouter } from 'next/router';
@@ -27,6 +25,7 @@ import { classLabel, raceLabel } from '@/components/alliance/allianceLabels';
 import { allianceRequest } from '@/components/alliance/allianceStanding';
 import { ConfirmActionModal } from '@/components/alliance/ConfirmActionModal';
 import { TreasurySettingsCard } from '@/components/alliance/treasury/TreasurySettingsCard';
+import { GameCard } from '@/components/game/GameCard';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
@@ -175,10 +174,7 @@ export const AllianceSettings = ({
 
       {/* Join Requests Section */}
       {canManage && (
-        <Paper p="md" radius="md" withBorder>
-          <Title order={4} mb="md">
-            {t('settings.requestsTitle', 'Join Requests')}
-          </Title>
+        <GameCard title={t('settings.requestsTitle', 'Join Requests')}>
           {!requests ? (
             <Loader size="sm" />
           ) : !Array.isArray(requests) || requests.length === 0 ? (
@@ -186,68 +182,70 @@ export const AllianceSettings = ({
               {t('settings.noRequests', 'No pending requests')}
             </Text>
           ) : (
-            <Table>
-              <Table.Tbody>
-                {requests.map((req: any) => (
-                  <Table.Tr key={req.id}>
-                    <Table.Td>
-                      <Group gap="sm">
-                        {/* Avatar if we had it in join request include, but we only selected user... */}
-                        {/* <Avatar size="sm" /> */}
-                        <Text size="sm" fw={500}>
-                          {req.user.display_name}
+            <Table.ScrollContainer
+              minWidth={420}
+              aria-label={t('settings.requestsTitle', 'Join Requests')}
+            >
+              <Table>
+                <Table.Tbody>
+                  {requests.map((req: any) => (
+                    <Table.Tr key={req.id}>
+                      <Table.Td>
+                        <Group gap="sm">
+                          {/* Avatar if we had it in join request include, but we only selected user... */}
+                          {/* <Avatar size="sm" /> */}
+                          <Text size="sm" fw={500}>
+                            {req.user.display_name}
+                          </Text>
+                        </Group>
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge variant="outline" size="sm">
+                          {raceLabel(t, req.user.race)}
+                        </Badge>
+                        <Badge variant="outline" size="sm" ml="xs">
+                          {classLabel(t, req.user.class)}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        <Text size="xs" c="dimmed">
+                          {t('settings.level', 'Lvl {{level}}', {
+                            level: toLocale(req.user.level ?? 0, user?.locale),
+                          })}
                         </Text>
-                      </Group>
-                    </Table.Td>
-                    <Table.Td>
-                      <Badge variant="outline" size="sm">
-                        {raceLabel(t, req.user.race)}
-                      </Badge>
-                      <Badge variant="outline" size="sm" ml="xs">
-                        {classLabel(t, req.user.class)}
-                      </Badge>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="xs" c="dimmed">
-                        {t('settings.level', 'Lvl {{level}}', {
-                          level: toLocale(req.user.level ?? 0, user?.locale),
-                        })}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td align="right">
-                      <Group gap="xs" justify="flex-end">
-                        <ActionIcon
-                          color="green"
-                          variant="subtle"
-                          onClick={() => handleRequest(req.id, 'accept')}
-                          title={t('settings.accept', 'Accept')}
-                        >
-                          <FontAwesomeIcon icon={faCheck} />
-                        </ActionIcon>
-                        <ActionIcon
-                          color="red"
-                          variant="subtle"
-                          onClick={() => handleRequest(req.id, 'reject')}
-                          title={t('settings.reject', 'Reject')}
-                        >
-                          <FontAwesomeIcon icon={faXmark} />
-                        </ActionIcon>
-                      </Group>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
+                      </Table.Td>
+                      <Table.Td align="right">
+                        <Group gap="xs" justify="flex-end">
+                          <ActionIcon
+                            color="green"
+                            variant="subtle"
+                            onClick={() => handleRequest(req.id, 'accept')}
+                            title={t('settings.accept', 'Accept')}
+                          >
+                            <FontAwesomeIcon icon={faCheck} />
+                          </ActionIcon>
+                          <ActionIcon
+                            color="red"
+                            variant="subtle"
+                            onClick={() => handleRequest(req.id, 'reject')}
+                            title={t('settings.reject', 'Reject')}
+                          >
+                            <FontAwesomeIcon icon={faXmark} />
+                          </ActionIcon>
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
           )}
-        </Paper>
+        </GameCard>
       )}
 
       {/* General Settings Section */}
       {canEdit && (
-        <Paper p="md" radius="md" withBorder>
-          <Title order={4} mb="md">
-            {t('settings.generalTitle', 'General Settings')}
-          </Title>
+        <GameCard title={t('settings.generalTitle', 'General Settings')}>
           <form onSubmit={form.onSubmit(handleUpdate)}>
             <Stack gap="sm">
               <Group grow>
@@ -302,19 +300,20 @@ export const AllianceSettings = ({
               </Button>
             </Stack>
           </form>
-        </Paper>
+        </GameCard>
       )}
 
       {isLeader && (
         <TreasurySettingsCard alliance={alliance} onUpdate={onUpdate} />
       )}
 
-      <Paper p="md" radius="md" withBorder>
-        <Title order={4} mb="xs">
-          {isLeader
+      <GameCard
+        title={
+          isLeader
             ? t('manage.disbandTitle', 'Disband Alliance')
-            : t('index.leaveAlliance', 'Leave Alliance')}
-        </Title>
+            : t('index.leaveAlliance', 'Leave Alliance')
+        }
+      >
         <Text size="sm" c="dimmed" mb="md">
           {isLeader
             ? t(
@@ -335,7 +334,7 @@ export const AllianceSettings = ({
             ? t('manage.disbandTitle', 'Disband Alliance')
             : t('index.leaveAlliance', 'Leave Alliance')}
         </Button>
-      </Paper>
+      </GameCard>
 
       <ConfirmActionModal
         opened={exitAction === 'leave'}

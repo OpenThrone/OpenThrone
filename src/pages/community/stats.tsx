@@ -1,9 +1,10 @@
-import { Alert, Box, Grid, Loader, Tabs, Text } from '@mantine/core';
+import { Alert, Box, Grid, Tabs, Text } from '@mantine/core';
 import type { GetStaticPropsContext, InferGetStaticPropsType } from 'next';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 
+import { PageLoading } from '@/components/game/PageLoading';
 import MainArea from '@/components/MainArea';
 import PublicHero from '@/components/public/PublicHero';
 import classes from '@/components/public/PublicPages.module.css';
@@ -344,9 +345,11 @@ const Stats = ({
 
             {selectedEra !== 'current' && (
               <Tabs.Panel value={selectedEra}>
-                {historicalLoading ? <Loader /> : null}
+                {historicalLoading ? <PageLoading stats={4} /> : null}
                 {historicalError ? (
-                  <Alert color="red">{t('stats.failedEraStats')}</Alert>
+                  <Alert color="red" role="alert">
+                    {t('stats.failedEraStats')}
+                  </Alert>
                 ) : null}
                 {!historicalLoading && !historicalError && historicalData ? (
                   <>

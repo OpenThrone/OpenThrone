@@ -8,14 +8,15 @@ import {
   Table,
   TextInput,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
 const AllianceAdminPage = () => {
@@ -69,24 +70,18 @@ const AllianceAdminPage = () => {
         method: 'DELETE',
       });
       if (res.ok) {
-        notifications.show({
+        alertService.notify('success', 'Alliance dissolved.', {
           title: 'Dissolved',
-          message: 'Alliance dissolved.',
-          color: 'green',
         });
         fetchAlliances();
       } else {
-        notifications.show({
+        alertService.notify('error', t('dissolveError'), {
           title: t('alliancesTitle'),
-          message: t('dissolveError'),
-          color: 'red',
         });
       }
     } catch {
-      notifications.show({
+      alertService.notify('error', t('dissolveError'), {
         title: t('alliancesTitle'),
-        message: t('dissolveError'),
-        color: 'red',
       });
     } finally {
       setDissolvingId(null);
@@ -113,7 +108,11 @@ const AllianceAdminPage = () => {
         <GameCard title={t('allianceCount', { count: total })}>
           {loadError && (
             <Alert color="red" title={t('allianceLoadError')} mb="md">
-              <Button size="xs" onClick={() => fetchAlliances()}>
+              <Button
+                variant="default"
+                size="xs"
+                onClick={() => fetchAlliances()}
+              >
                 {t('retryLoad')}
               </Button>
             </Alert>
@@ -124,7 +123,7 @@ const AllianceAdminPage = () => {
             </Group>
           ) : (
             <Stack gap="md">
-              <Table>
+              <AdminDataTable ariaLabel={t('allianceCount', { count: total })}>
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>ID</Table.Th>
@@ -153,7 +152,6 @@ const AllianceAdminPage = () => {
                         <Button
                           size="xs"
                           color="red"
-                          variant="outline"
                           onClick={() => setDissolveTarget(a.id)}
                           loading={dissolvingId === a.id}
                         >
@@ -163,7 +161,7 @@ const AllianceAdminPage = () => {
                     </Table.Tr>
                   ))}
                 </Table.Tbody>
-              </Table>
+              </AdminDataTable>
               {totalPages > 1 && (
                 <Group justify="center">
                   <Pagination
@@ -189,7 +187,7 @@ const AllianceAdminPage = () => {
         confirmText={t('dissolve')}
         cancelText={t('cancel')}
         isLoading={dissolvingId !== null}
-        type="remove"
+        type="destructive"
       />
     </AdminLayout>
   );

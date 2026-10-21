@@ -7,13 +7,13 @@ import {
   Text,
   Textarea,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
 const MaintenancePage = () => {
@@ -59,16 +59,12 @@ const MaintenancePage = () => {
         }),
       });
       if (!res.ok) throw new Error('Save failed');
-      notifications.show({
+      alertService.notify('success', t('settings.saved'), {
         title: t('saved'),
-        message: t('settings.saved'),
-        color: 'green',
       });
     } catch {
-      notifications.show({
+      alertService.notify('error', t('settings.saveError'), {
         title: t('error'),
-        message: t('settings.saveError'),
-        color: 'red',
       });
     } finally {
       setSaving(false);

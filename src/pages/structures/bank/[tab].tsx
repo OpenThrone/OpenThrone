@@ -7,7 +7,7 @@ import {
   faUserTie,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Box, SimpleGrid, Space, Stack, Tabs, Text } from '@mantine/core';
+import { Box, SimpleGrid, Space, Stack, Text } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
@@ -17,14 +17,16 @@ import BankDepositWithdraw from '@/components/BankDepositWithdraw';
 import BankHistoryFilters from '@/components/BankHistoryFilters';
 import BankHistoryTable from '@/components/BankHistoryTable';
 import { GameCard } from '@/components/game/GameCard';
+import { PageLoading } from '@/components/game/PageLoading';
 import { StatGrid } from '@/components/game/StatGrid';
+import { TabBar } from '@/components/game/TabBar';
 import MainArea from '@/components/MainArea';
 import { EconomyUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import classes from '@/pages/structures/bank/[tab].module.css';
 import type { Locales } from '@/types/typings';
 import { logError } from '@/utils/logger';
-import { toLocale } from '@/utils/numberFormatting';
+import { formatGold, toLocale } from '@/utils/numberFormatting';
 import { structureName } from '@/utils/structureNames';
 
 const defaultFilters = {
@@ -77,7 +79,6 @@ function EconomyRow({
 /** Bank. */
 export default function Bank() {
   const { t, i18n } = useTranslation('structures');
-  const locale = i18n.language as Locales;
   const router = useRouter();
   const tabParam = Array.isArray(router.query.tab)
     ? router.query.tab[0]
@@ -88,6 +89,7 @@ export default function Bank() {
     defaultValue: defaultFilters,
   });
   const { user, forceUpdate } = useUser();
+  const locale = user?.locale ?? (i18n.language as Locales);
   const [history, setHistory] = useState([]);
   const [page, setPage] = useState(0);
   const [limit] = useState(10);
@@ -113,26 +115,29 @@ export default function Bank() {
     }
   }, [tab, filters, user, page, limit]);
 
+  if (!user) {
+    return (
+      <MainArea title={t('bank.title')}>
+        <PageLoading stats={4} />
+      </MainArea>
+    );
+  }
+
   const dailyIncome =
     BigInt(user?.goldPerTurn?.toString() ?? '0') * BigInt(TURNS_PER_DAY);
-  const formatGold = (amount: number | bigint | string | undefined) =>
-    (typeof amount === 'string'
-      ? BigInt(amount)
-      : (amount ?? 0)
-    ).toLocaleString(locale);
   const perTurn = (amount: number | bigint | string | undefined) =>
-    t('bank.incomePerTurn', { amount: formatGold(amount) });
+    t('bank.incomePerTurn', { amount: formatGold(amount, locale) });
   const nextDeposit = user?.nextDepositAvailable;
 
   const statItems = [
     {
       label: t('bank.goldOnHand'),
-      value: toLocale(user?.gold, locale),
+      value: formatGold(user?.gold, locale),
       icon: <FontAwesomeIcon icon={faCoins} />,
     },
     {
       label: t('bank.bankedGold'),
-      value: toLocale(user?.goldInBank, locale),
+      value: formatGold(user?.goldInBank, locale),
       icon: <FontAwesomeIcon icon={faBuildingColumns} />,
     },
     {
@@ -164,7 +169,7 @@ export default function Bank() {
     },
     {
       label: t('bank.projectedDailyIncome'),
-      value: formatGold(dailyIncome),
+      value: formatGold(dailyIncome, locale),
       icon: <FontAwesomeIcon icon={faChartLine} />,
     },
   ];
@@ -173,23 +178,19 @@ export default function Bank() {
     <MainArea title={t('bank.title')}>
       <StatGrid title={t('bank.overview')} stats={statItems} />
       <Space h="md" />
-      <Tabs
+      <TabBar
         value={tab}
-        onChange={(value) => {
-          if (value) {
-            router.push(`/structures/bank/${value}`, undefined, {
-              locale: router.locale,
-            });
-          }
-        }}
-        variant="pills"
-      >
-        <Tabs.List grow justify="center">
-          <Tabs.Tab value="deposit">{t('bank.deposit')}</Tabs.Tab>
-          <Tabs.Tab value="history">{t('bank.history')}</Tabs.Tab>
-          <Tabs.Tab value="economy">{t('bank.economy')}</Tabs.Tab>
-        </Tabs.List>
-      </Tabs>
+        tabs={[
+          { value: 'deposit', label: t('bank.deposit') },
+          { value: 'history', label: t('bank.history') },
+          { value: 'economy', label: t('bank.economy') },
+        ]}
+        onChange={(value) =>
+          router.push(`/structures/bank/${value}`, undefined, {
+            locale: router.locale,
+          })
+        }
+      />
       <Space h="md" />
 
       {tab === 'deposit' && (
@@ -203,11 +204,7 @@ export default function Bank() {
           title={t('bank.transactionHistory')}
           icon={<FontAwesomeIcon icon={faBuildingColumns} />}
         >
-          <BankHistoryFilters
-            colorScheme={user?.colorScheme}
-            filters={filters}
-            setFilters={setFilters}
-          />
+          <BankHistoryFilters filters={filters} setFilters={setFilters} />
           <BankHistoryTable
             bankHistory={history}
             user={user}
@@ -219,84 +216,80 @@ export default function Bank() {
       )}
 
       {tab === 'economy' && (
-        <Box>
-          <Text component="h2" size="lg" fw={600} c="var(--ot-heading)" mb="sm">
-            {t('bank.economyBreakdown')}
-          </Text>
-          <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
-            <GameCard
-              title={t('bank.workers')}
-              icon={<FontAwesomeIcon icon={faUserTie} />}
-            >
-              <Stack component="dl" gap="xs" m={0}>
-                <EconomyRow label={t('bank.workersTotal')}>
-                  {formatGold(
-                    user?.units
-                      ?.filter((unit) => unit.type === 'WORKER')
-                      .reduce((total, unit) => total + unit.quantity, 0),
-                  )}
-                </EconomyRow>
-                <EconomyRow label={t('bank.goldPerWorker')}>
-                  {perTurn(user?.goldPerWorkerPerTurn)}
-                </EconomyRow>
-                <EconomyRow label={t('bank.workerSubtotal')} accent>
-                  +{perTurn(user?.workerGoldPerTurn)}
-                </EconomyRow>
-              </Stack>
-            </GameCard>
-            <GameCard
-              title={t('bank.operations')}
-              icon={<FontAwesomeIcon icon={faGears} />}
-            >
-              <Stack component="dl" gap="xs" m={0}>
-                <EconomyRow label={t('bank.incomeUpgrade')}>
-                  {structureName(
-                    t,
-                    'economy',
-                    user?.economyLevel,
-                    EconomyUpgrades.find(
-                      (upgrade) => upgrade.index === user?.economyLevel,
-                    )?.name,
-                  ) ?? '—'}
-                </EconomyRow>
-                <EconomyRow label={t('bank.fortIncome')} accent>
-                  +{perTurn(user?.fortificationGoldPerTurn)}
-                </EconomyRow>
-              </Stack>
-            </GameCard>
-            <GameCard
-              title={t('bank.financialTotals')}
-              icon={<FontAwesomeIcon icon={faChartLine} />}
-            >
-              <Stack component="dl" gap="xs" m={0}>
-                <EconomyRow label={t('bank.totalIncome')}>
-                  {perTurn(user?.goldPerTurn)}
-                </EconomyRow>
-                <EconomyRow label={t('bank.turnsPerDay')}>
-                  {TURNS_PER_DAY}
-                </EconomyRow>
-                <Box className={classes.dailyTotal}>
-                  <Text component="dt" size="sm" c="var(--ot-heading)">
-                    {t('bank.estimatedDailyIncome')}
-                  </Text>
-                  <Text
-                    component="dd"
-                    size="xl"
-                    fw={700}
-                    m={0}
-                    c="var(--ot-heading)"
-                    className={classes.economyValue}
-                  >
-                    {formatGold(dailyIncome)}
-                  </Text>
-                </Box>
-              </Stack>
-              <Text size="xs" c="var(--ot-muted)" mt="xs">
-                {t('bank.incomeProjectionNote')}
-              </Text>
-            </GameCard>
-          </SimpleGrid>
-        </Box>
+        <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
+          <GameCard
+            title={t('bank.workers')}
+            icon={<FontAwesomeIcon icon={faUserTie} />}
+          >
+            <Stack component="dl" gap="xs" m={0}>
+              <EconomyRow label={t('bank.workersTotal')}>
+                {toLocale(
+                  user?.units
+                    ?.filter((unit) => unit.type === 'WORKER')
+                    .reduce((total, unit) => total + unit.quantity, 0) ?? 0,
+                  locale,
+                )}
+              </EconomyRow>
+              <EconomyRow label={t('bank.goldPerWorker')}>
+                {perTurn(user?.goldPerWorkerPerTurn)}
+              </EconomyRow>
+              <EconomyRow label={t('bank.workerSubtotal')} accent>
+                +{perTurn(user?.workerGoldPerTurn)}
+              </EconomyRow>
+            </Stack>
+          </GameCard>
+          <GameCard
+            title={t('bank.operations')}
+            icon={<FontAwesomeIcon icon={faGears} />}
+          >
+            <Stack component="dl" gap="xs" m={0}>
+              <EconomyRow label={t('bank.incomeUpgrade')}>
+                {structureName(
+                  t,
+                  'economy',
+                  user?.economyLevel,
+                  EconomyUpgrades.find(
+                    (upgrade) => upgrade.index === user?.economyLevel,
+                  )?.name,
+                ) ?? '—'}
+              </EconomyRow>
+              <EconomyRow label={t('bank.fortIncome')} accent>
+                +{perTurn(user?.fortificationGoldPerTurn)}
+              </EconomyRow>
+            </Stack>
+          </GameCard>
+          <GameCard
+            title={t('bank.financialTotals')}
+            icon={<FontAwesomeIcon icon={faChartLine} />}
+          >
+            <Stack component="dl" gap="xs" m={0}>
+              <EconomyRow label={t('bank.totalIncome')}>
+                {perTurn(user?.goldPerTurn)}
+              </EconomyRow>
+              <EconomyRow label={t('bank.turnsPerDay')}>
+                {TURNS_PER_DAY}
+              </EconomyRow>
+              <Box className={classes.dailyTotal}>
+                <Text component="dt" size="sm" c="var(--ot-heading)">
+                  {t('bank.estimatedDailyIncome')}
+                </Text>
+                <Text
+                  component="dd"
+                  size="xl"
+                  fw={700}
+                  m={0}
+                  c="var(--ot-heading)"
+                  className={classes.economyValue}
+                >
+                  {formatGold(dailyIncome, locale)}
+                </Text>
+              </Box>
+            </Stack>
+            <Text size="xs" c="var(--ot-muted)" mt="xs">
+              {t('bank.incomeProjectionNote')}
+            </Text>
+          </GameCard>
+        </SimpleGrid>
       )}
     </MainArea>
   );

@@ -1,68 +1,43 @@
-import { Badge, Button, Table } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import React from 'react';
 
+import { UpgradeLedger } from '@/components/game/UpgradeLedger';
 import { ArmoryUpgrades } from '@/constants';
-import type { BattleUpgradeProps, Locales } from '@/types/typings';
+import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
-import { toLocale } from '@/utils/numberFormatting';
-import { fortificationName, structureName } from '@/utils/structureNames';
-
-import { StyledTable } from './game/StyledTable';
+import { structureName } from '@/utils/structureNames';
 
 const ArmoryUpgradesTab: React.FC<BattleUpgradeProps> = ({
   userLevel,
   fortLevel,
   forceUpdate,
 }) => {
-  const { t, i18n } = useTranslation(['structures', 'common']);
-  const locale = i18n.language as Locales;
+  const { t } = useTranslation(['structures', 'common']);
 
-  const rows = Object.values(ArmoryUpgrades)
-    .filter((item) => item.level <= fortLevel + 2)
-    .map((item, index) => (
-      <Table.Tr key={`${item.name}_${item.level}`}>
-        <Table.Td>
-          {structureName(t, 'armory', item.level, item.name)}{' '}
-          {item.level === userLevel && (
-            <Badge color="yellow" ml={5}>
-              {t('labels.owned', { ns: 'common' })}
-            </Badge>
-          )}
-        </Table.Td>
-        <Table.Td>{t('upgrades.armoryItems', { level: item.level })}</Table.Td>
-        <Table.Td>
-          {toLocale(item.cost, locale)} {t('currency.gold', { ns: 'common' })}
-        </Table.Td>
-        <Table.Td>
-          {item.level > userLevel && item.fortLevel <= fortLevel ? (
-            <Button onClick={() => buyUpgrade('armory', index, forceUpdate)}>
-              {t('labels.buy', { ns: 'common' })}
-            </Button>
-          ) : (
-            item.level > userLevel && (
-              <span>
-                {t('upgrades.unlockWithFort', {
-                  name: fortificationName(t, item.fortLevel),
-                })}
-              </span>
-            )
-          )}
-        </Table.Td>
-      </Table.Tr>
-    ));
+  // Server rule: requested index === current armory level (default 1).
+  const rows = ArmoryUpgrades.filter((item) => item.level <= fortLevel + 2).map(
+    (item, index) => ({
+      key: `${item.name}_${item.level}`,
+      name: structureName(t, 'armory', item.level, item.name) ?? item.name,
+      position: item.level,
+      purchaseIndex: index,
+      cells: [t('upgrades.armoryItems', { level: item.level })],
+      cost: item.cost,
+      requirement: {
+        type: 'fort' as const,
+        value: item.fortLevel,
+        met: item.fortLevel <= fortLevel,
+      },
+    }),
+  );
 
   return (
-    <StyledTable
-      headers={[
-        t('labels.name', { ns: 'common' }),
-        t('labels.bonus', { ns: 'common' }),
-        t('labels.cost', { ns: 'common' }),
-        t('labels.action', { ns: 'common' }),
-      ]}
-    >
-      {rows}
-    </StyledTable>
+    <UpgradeLedger
+      columns={[t('labels.bonus', { ns: 'common' })]}
+      rows={rows}
+      ownedPosition={userLevel}
+      onBuy={(index) => buyUpgrade('armory', index, forceUpdate)}
+    />
   );
 };
 

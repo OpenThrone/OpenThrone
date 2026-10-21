@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
 import React, { useState } from 'react';
 
+import panelClasses from '@/components/game/Panels.module.css';
 import { Fortifications } from '@/constants';
 import type UserModel from '@/models/Users';
 import { alertService } from '@/services/Alert.service';
@@ -151,15 +152,8 @@ export const FortHealthStatSlot: React.FC<FortHealthStatSlotProps> = ({
       justify="space-between"
       data-testid="stat-slot"
       data-stat="fortHealth"
-      style={{
-        backgroundColor: 'var(--ot-inset)',
-        borderRadius: '6px',
-        border: '1px solid var(--ot-line)',
-        boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-        padding: '12px',
-        alignItems: 'center',
-        minHeight: '66px',
-      }}
+      className={panelClasses.insetRow}
+      mih={66}
     >
       <Link
         href="/structures/repair"
@@ -228,11 +222,10 @@ export const FortHealthStatSlot: React.FC<FortHealthStatSlotProps> = ({
         <Tooltip
           label={
             affordableHp === 0
-              ? t('overview.notEnoughGoldToRepair', 'Not enough gold to repair')
+              ? t('overview.notEnoughGoldToRepair')
               : t('overview.repairMaxTooltip', {
                   hp: maxRepairable,
                   cost: toLocale(repairCost, user.locale),
-                  defaultValue: `Repair ${maxRepairable} HP for ${toLocale(repairCost, user.locale)} gold`,
                 })
           }
           withArrow

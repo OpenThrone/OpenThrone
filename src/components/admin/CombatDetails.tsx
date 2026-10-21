@@ -1,6 +1,7 @@
 import { Code, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import { ItemTypes } from '@/constants';
 import type { adminCombatDetails } from '@/utils/adminCombat';
 
@@ -102,29 +103,27 @@ export default function CombatDetails({
           return (
             <Stack key={side} gap="xs">
               <Title order={3}>{t(side)}</Title>
-              <Table.ScrollContainer minWidth={340}>
-                <Table
-                  striped
-                  withTableBorder
-                  style={{ fontVariantNumeric: 'tabular-nums' }}
-                >
-                  {header}
-                  <Table.Tbody>
-                    {keys
-                      .filter((key) => !ROSTERS.includes(key))
-                      .map((key) => (
-                        <Table.Tr key={key}>
-                          <Table.Td fw={600}>
-                            {t(`metrics.${key}`, { defaultValue: key })}
-                          </Table.Td>
-                          <Table.Td>{display(before[key])}</Table.Td>
-                          <Table.Td>{display(after[key])}</Table.Td>
-                          <Table.Td>{delta(before[key], after[key])}</Table.Td>
-                        </Table.Tr>
-                      ))}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
+              <AdminDataTable
+                size="compact"
+                ariaLabel={t(side)}
+                withTableBorder
+              >
+                {header}
+                <Table.Tbody>
+                  {keys
+                    .filter((key) => !ROSTERS.includes(key))
+                    .map((key) => (
+                      <Table.Tr key={key}>
+                        <Table.Td fw={600}>
+                          {t(`metrics.${key}`, { defaultValue: key })}
+                        </Table.Td>
+                        <Table.Td>{display(before[key])}</Table.Td>
+                        <Table.Td>{display(after[key])}</Table.Td>
+                        <Table.Td>{delta(before[key], after[key])}</Table.Td>
+                      </Table.Tr>
+                    ))}
+                </Table.Tbody>
+              </AdminDataTable>
               {ROSTERS.map((key) => {
                 const start = roster(before[key]);
                 const end = roster(after[key]);
@@ -155,52 +154,50 @@ export default function CombatDetails({
                           : t(key === 'items' ? 'noItems' : 'noUnits')}
                       </Text>
                     ) : (
-                      <Table.ScrollContainer minWidth={340}>
-                        <Table
-                          striped
-                          withTableBorder
-                          style={{ fontVariantNumeric: 'tabular-nums' }}
-                        >
-                          {header}
-                          <Table.Tbody>
-                            {unitKeys.map((unitKey) => {
-                              const a = start.find(
-                                (row) => rosterKey(row) === unitKey,
-                              );
-                              const b = end.find(
-                                (row) => rosterKey(row) === unitKey,
-                              );
-                              const from =
-                                before[key] == null
-                                  ? null
-                                  : (a?.quantity ??
-                                    (details.completeSnapshots ? 0 : null));
-                              const to =
-                                after[key] == null ? null : (b?.quantity ?? 0);
-                              const label = rosterLabel(
-                                a ?? b ?? { type: '', level: 0, quantity: 0 },
-                              );
-                              return (
-                                <Table.Tr key={unitKey}>
-                                  <Table.Td>
-                                    <Text size="sm" fw={600}>
-                                      {label.name}
+                      <AdminDataTable
+                        size="compact"
+                        ariaLabel={`${t(side)}: ${t(`metrics.${key}`)}`}
+                        withTableBorder
+                      >
+                        {header}
+                        <Table.Tbody>
+                          {unitKeys.map((unitKey) => {
+                            const a = start.find(
+                              (row) => rosterKey(row) === unitKey,
+                            );
+                            const b = end.find(
+                              (row) => rosterKey(row) === unitKey,
+                            );
+                            const from =
+                              before[key] == null
+                                ? null
+                                : (a?.quantity ??
+                                  (details.completeSnapshots ? 0 : null));
+                            const to =
+                              after[key] == null ? null : (b?.quantity ?? 0);
+                            const label = rosterLabel(
+                              a ?? b ?? { type: '', level: 0, quantity: 0 },
+                            );
+                            return (
+                              <Table.Tr key={unitKey}>
+                                <Table.Td>
+                                  <Text size="sm" fw={600}>
+                                    {label.name}
+                                  </Text>
+                                  {label.detail && (
+                                    <Text size="xs" c="dimmed">
+                                      {label.detail}
                                     </Text>
-                                    {label.detail && (
-                                      <Text size="xs" c="dimmed">
-                                        {label.detail}
-                                      </Text>
-                                    )}
-                                  </Table.Td>
-                                  <Table.Td>{display(from)}</Table.Td>
-                                  <Table.Td>{display(to)}</Table.Td>
-                                  <Table.Td>{delta(from, to)}</Table.Td>
-                                </Table.Tr>
-                              );
-                            })}
-                          </Table.Tbody>
-                        </Table>
-                      </Table.ScrollContainer>
+                                  )}
+                                </Table.Td>
+                                <Table.Td>{display(from)}</Table.Td>
+                                <Table.Td>{display(to)}</Table.Td>
+                                <Table.Td>{delta(from, to)}</Table.Td>
+                              </Table.Tr>
+                            );
+                          })}
+                        </Table.Tbody>
+                      </AdminDataTable>
                     )}
                   </Stack>
                 );
@@ -210,20 +207,18 @@ export default function CombatDetails({
         })}
       </SimpleGrid>
       <Title order={3}>{t('outcome')}</Title>
-      <Table.ScrollContainer minWidth={360}>
-        <Table striped>
-          <Table.Tbody>
-            {Object.entries(details.outcome).map(([key, value]) => (
-              <Table.Tr key={key}>
-                <Table.Td fw={600}>
-                  {t(`metrics.${key}`, { defaultValue: key })}
-                </Table.Td>
-                <Table.Td>{display(value)}</Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+      <AdminDataTable size="compact" ariaLabel={t('outcome')}>
+        <Table.Tbody>
+          {Object.entries(details.outcome).map(([key, value]) => (
+            <Table.Tr key={key}>
+              <Table.Td fw={600}>
+                {t(`metrics.${key}`, { defaultValue: key })}
+              </Table.Td>
+              <Table.Td>{display(value)}</Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </AdminDataTable>
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         {(['losses', 'wounded'] as const).map((key) => (
           <Stack gap="xs" key={key}>

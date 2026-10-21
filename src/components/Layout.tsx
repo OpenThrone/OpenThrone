@@ -1,6 +1,6 @@
-import { useMediaQuery } from '@mantine/hooks';
+import { useLocalStorage, useMediaQuery } from '@mantine/hooks';
 import Link from 'next/link';
-import router, { useRouter } from 'next/router';
+import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
@@ -8,11 +8,15 @@ import { useEffect, useMemo, useState } from 'react';
 
 import ArtworkPreviewSelector from '@/components/ArtworkPreviewSelector';
 import EraResetNotice from '@/components/EraResetNotice';
-import { ScrollSidebar as SidebarScroll } from '@/components/game/SidebarScroll';
-import { SidebarDark as SidebarTablet } from '@/components/game/SidebarTablet';
 import MobileSidebarContent from '@/components/MobileSidebarContent';
 import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
+import {
+  SHOWCASE_BACKDROP_KEY,
+  SHOWCASE_DEFAULT_VEIL,
+  SHOWCASE_VEIL_KEY,
+  showcaseBackdropSource,
+} from '@/components/showcase/backdrops';
 import Sidebar from '@/components/Sidebar';
 import { useLayout } from '@/context/LayoutContext';
 import { AppConfig } from '@/utils/AppConfig';
@@ -64,6 +68,21 @@ const Layout = (props: IMainProps) => {
       nextRouter.pathname.startsWith('/home/admin') ||
       nextRouter.pathname.startsWith('/home/moderation'),
     [nextRouter.pathname],
+  );
+  // The /test showcase can preview other artwork behind the game shell.
+  const [showcaseBackdrop] = useLocalStorage<string>({
+    key: SHOWCASE_BACKDROP_KEY,
+    defaultValue: 'default',
+  });
+  const [showcaseVeil] = useLocalStorage<number>({
+    key: SHOWCASE_VEIL_KEY,
+    defaultValue: SHOWCASE_DEFAULT_VEIL,
+  });
+  const isShowcase = nextRouter.pathname === '/test';
+  const shellArtSource = resolveArtworkSource(
+    (isShowcase
+      ? showcaseBackdropSource(showcaseBackdrop)
+      : '/assets/header/openthrone-bg.png') ?? '',
   );
   const isMobileSidebar = useMediaQuery('(max-width: 767px)', false, {
     getInitialValueInEffect: true,
@@ -163,29 +182,22 @@ const Layout = (props: IMainProps) => {
                       data-tour-id="sidebar"
                       className={`hidden w-full xl:block xl:w-[260px] xl:pr-4 ${shellClasses.sidebar}`}
                     >
-                      {layoutLoading ? (
-                        <SidebarSkeleton />
-                      ) : router.pathname === '/test' ? (
-                        <>
-                          <SidebarScroll />
-                          <SidebarTablet sidebarData={undefined} />
-                        </>
-                      ) : (
-                        <Sidebar />
-                      )}
+                      {layoutLoading ? <SidebarSkeleton /> : <Sidebar />}
                     </div>
                   )}
                   <div
                     style={
                       {
-                        '--shell-art': resolveArtworkSource(
-                          '/assets/header/openthrone-bg.png',
-                        )
-                          ? `url("${resolveArtworkSource('/assets/header/openthrone-bg.png')}")`
+                        '--shell-art': shellArtSource
+                          ? `url("${shellArtSource}")`
                           : 'none',
+                        ...(isShowcase && {
+                          '--showcase-veil': showcaseVeil / 100,
+                        }),
                       } as React.CSSProperties
                     }
                     data-tour-id="main-area"
+                    data-showcase-backdrop={isShowcase || undefined}
                     className={`w-full ${raceClasses.borderClass} ${authorized ? 'xl:flex-1' : 'xl:w-full'} mainArea-bg min-w-0`}
                   >
                     <ConnectionStatusBanner />

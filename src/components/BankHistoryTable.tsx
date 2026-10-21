@@ -3,8 +3,9 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'next-i18next';
 import React from 'react';
 
+import { EmptyState } from '@/components/game/EmptyState';
 import type { Locales } from '@/types/typings';
-import { toLocale } from '@/utils/numberFormatting';
+import { formatGold } from '@/utils/numberFormatting';
 import { getGoldTxSymbol, getTransactionType } from '@/utils/utilities';
 
 import { StyledTable } from './game/StyledTable';
@@ -56,9 +57,9 @@ export const formatTransactionGold = (
   t: TFunction,
   locale: string,
 ): string =>
-  t('bank.goldAmount', {
-    ns: 'structures',
-    amount: `${getGoldTxSymbol(entry, user)}${toLocale(entry.gold_amount, locale as Locales)}`,
+  t('currency.goldAmount', {
+    ns: 'common',
+    amount: `${getGoldTxSymbol(entry, user)}${formatGold(entry.gold_amount, locale as Locales)}`,
   });
 
 interface BankHistoryTableProps {
@@ -80,7 +81,7 @@ export default function BankHistoryTable({
   onPageChange,
 }: BankHistoryTableProps) {
   const { t, i18n } = useTranslation('structures');
-  const locale = i18n.language;
+  const locale = user?.locale ?? (i18n.language as Locales);
 
   if (message)
     return (
@@ -89,11 +90,7 @@ export default function BankHistoryTable({
       </Text>
     );
   if (!bankHistory || bankHistory.length === 0)
-    return (
-      <Text ta="center" p="md">
-        {t('bank.noRecords')}
-      </Text>
-    );
+    return <EmptyState compact title={t('bank.noRecords')} />;
 
   const rows = bankHistory.map((entry, index) => {
     const displayAmount =
@@ -114,9 +111,7 @@ export default function BankHistoryTable({
 
   return (
     <>
-      <StyledTable
-        headers={[t('bank.date'), t('bank.transactionType'), t('bank.amount')]}
-      >
+      <StyledTable headers={[t('bank.date'), t('bank.type'), t('bank.amount')]}>
         {rows}
       </StyledTable>
       <Group justify="center" mt="md">

@@ -15,7 +15,6 @@ import {
   Grid,
   Group,
   List,
-  Modal,
   PasswordInput,
   Select,
   Space,
@@ -36,6 +35,7 @@ import { useSession } from 'next-auth/react';
 import { Trans, useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
@@ -87,6 +87,7 @@ const Settings = () => {
   const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
   const [isForgetModalOpen, setIsForgetModalOpen] = useState(false);
   const [isVacationModalOpen, setIsVacationModalOpen] = useState(false);
+  const [accountActionBusy, setAccountActionBusy] = useState(false);
   const [vacationAvailability, setVacationAvailability] = useState<{
     limit: number;
     remaining: number;
@@ -380,6 +381,20 @@ const Settings = () => {
     }
   };
 
+  // Locks the account confirmation dialogs while a request is in flight.
+  const runAccountAction = (action: () => Promise<void>) => async () => {
+    if (accountActionBusy) return;
+    setAccountActionBusy(true);
+    try {
+      await action();
+    } catch (error) {
+      logError(error, {}, 'Account action failed');
+      alertService.error(t('settings.unexpectedError'));
+    } finally {
+      setAccountActionBusy(false);
+    }
+  };
+
   const handleVacationMode = async () => {
     const response = await fetch('/api/account/start-vacation', {
       method: 'POST',
@@ -612,14 +627,12 @@ const Settings = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               autoComplete="new-password"
-              error={passwordErrors.confirm}
-              className={!passwordsMatch ? 'bg-red-700' : raceClasses.bgClass}
+              error={
+                passwordErrors.confirm ??
+                (!passwordsMatch ? t('settings.passwordsDontMatch') : undefined)
+              }
+              className={raceClasses.bgClass}
             />
-            {!passwordsMatch && (
-              <Text color="red" size="xs">
-                {t('settings.passwordsDontMatch')}
-              </Text>
-            )}
             <Space h="md" />
             <Button
               onClick={updatePassword}
@@ -815,7 +828,7 @@ const Settings = () => {
                 </Tooltip>
                 <Tooltip label={t('settings.disableAccountTooltip')} withArrow>
                   <Button
-                    color="orange"
+                    color="red"
                     className="rounded px-4 py-2 font-bold"
                     onClick={() => setIsDisableModalOpen(true)}
                   >
@@ -837,121 +850,95 @@ const Settings = () => {
         </Grid.Col>
       </Grid>
 
-      <Modal
-        opened={isVacationModalOpen}
-        onClose={() => setIsVacationModalOpen(false)}
+      <ConfirmationModal
+        isOpen={isVacationModalOpen}
+        onClose={() => !accountActionBusy && setIsVacationModalOpen(false)}
+        onConfirm={runAccountAction(handleVacationMode)}
         title={t('settings.confirmVacationMode')}
-      >
-        <div>
-          <Text>{t('settings.areYouSureStartVacation')}</Text>
-          <Group mt="md">
-            <Button
-              variant="outline"
-              color="gray"
-              onClick={() => setIsVacationModalOpen(false)}
-            >
-              {t('settings.cancel')}
-            </Button>
-            <Button color="blue" onClick={handleVacationMode}>
-              {t('settings.confirmVacation')}
-            </Button>
-          </Group>
-        </div>
-      </Modal>
+        message={t('settings.areYouSureStartVacation')}
+        type="primary"
+        confirmText={t('settings.confirmVacation')}
+        cancelText={t('settings.cancel')}
+        isLoading={accountActionBusy}
+      />
 
-      <Modal
-        opened={isResetModalOpen}
-        onClose={() => setIsResetModalOpen(false)}
+      <ConfirmationModal
+        isOpen={isResetModalOpen}
+        onClose={() => !accountActionBusy && setIsResetModalOpen(false)}
+        onConfirm={runAccountAction(handleResetAccount)}
         title={t('settings.confirmAccountReset')}
+        message={t('settings.areYouSureResetAccount')}
+        type="destructive"
+        confirmText={t('settings.confirmReset')}
+        cancelText={t('settings.cancel')}
+        isLoading={accountActionBusy}
+        confirmDisabled={!resetPassword}
       >
-        <div>
-          <Text>{t('settings.areYouSureResetAccount')}</Text>
-          <TextInput
-            type="password"
-            value={resetPassword}
-            onChange={(e) => setResetPassword(e.target.value)}
-            placeholder={t('settings.enterPasswordConfirm')}
-            className="mt-4 w-full rounded-md border p-2"
-          />
-          <Group align="right" mt="md">
-            <Button
-              variant="outline"
-              color="gray"
-              onClick={() => setIsResetModalOpen(false)}
-            >
-              {t('settings.cancel')}
-            </Button>
-            <Button color="red" onClick={handleResetAccount}>
-              {t('settings.confirmReset')}
-            </Button>
-          </Group>
-        </div>
-      </Modal>
+        <PasswordInput
+          value={resetPassword}
+          onChange={(e) => setResetPassword(e.currentTarget.value)}
+          placeholder={t('settings.enterPasswordConfirm')}
+          aria-label={t('settings.enterPasswordConfirm')}
+          autoComplete="current-password"
+          disabled={accountActionBusy}
+          data-autofocus
+        />
+      </ConfirmationModal>
 
-      <Modal
-        opened={isDisableModalOpen}
-        onClose={() => setIsDisableModalOpen(false)}
+      <ConfirmationModal
+        isOpen={isDisableModalOpen}
+        onClose={() => !accountActionBusy && setIsDisableModalOpen(false)}
+        onConfirm={runAccountAction(handleDisableAccount)}
         title={t('settings.confirmAccountDisable')}
+        message={t('settings.accountWillBeClosed')}
+        type="destructive"
+        confirmText={t('settings.confirmDisable')}
+        cancelText={t('settings.cancel')}
+        isLoading={accountActionBusy}
+        confirmDisabled={!disablePassword}
       >
-        <div>
-          <Text>{t('settings.accountWillBeClosed')}</Text>
-          <TextInput
-            type="password"
-            value={disablePassword}
-            onChange={(e) => setDisablePassword(e.target.value)}
-            placeholder={t('settings.enterPasswordConfirm')}
-            className="mt-4 w-full rounded-md border p-2"
-          />
-          <Group align="right" mt="md">
-            <Button
-              variant="outline"
-              color="gray"
-              onClick={() => setIsDisableModalOpen(false)}
-            >
-              {t('settings.cancel')}
-            </Button>
-            <Button color="orange" onClick={handleDisableAccount}>
-              {t('settings.confirmDisable')}
-            </Button>
-          </Group>
-        </div>
-      </Modal>
+        <PasswordInput
+          value={disablePassword}
+          onChange={(e) => setDisablePassword(e.currentTarget.value)}
+          placeholder={t('settings.enterPasswordConfirm')}
+          aria-label={t('settings.enterPasswordConfirm')}
+          autoComplete="current-password"
+          disabled={accountActionBusy}
+          data-autofocus
+        />
+      </ConfirmationModal>
 
-      <Modal
-        opened={isForgetModalOpen}
-        onClose={() => setIsForgetModalOpen(false)}
+      <ConfirmationModal
+        isOpen={isForgetModalOpen}
+        onClose={() => !accountActionBusy && setIsForgetModalOpen(false)}
+        onConfirm={runAccountAction(handleForgetAccount)}
         title={t('settings.confirmAccountDeletion')}
+        message={t('settings.removeDataWarning')}
+        type="destructive"
+        confirmText={t('settings.confirmDelete')}
+        cancelText={t('settings.cancel')}
+        isLoading={accountActionBusy}
+        confirmDisabled={!forgetPassword}
       >
-        <div>
-          <Text>{t('settings.removeDataWarning')}</Text>
-          <TextInput
-            type="password"
-            value={forgetPassword}
-            onChange={(e) => setForgetPassword(e.target.value)}
-            placeholder={t('settings.enterPasswordConfirm')}
-            className="mt-4 w-full rounded-md border p-2"
-          />
-          <Textarea
-            value={forgetReason}
-            onChange={(e) => setForgetReason(e.target.value)}
-            placeholder={t('settings.optionalReason')}
-            className="mt-4 w-full rounded-md border p-2"
-            minRows={3}
-          />
-          <Group align="right" mt="md">
-            <Button
-              variant="outline"
-              color="gray"
-              onClick={() => setIsForgetModalOpen(false)}
-            >
-              {t('settings.cancel')}
-            </Button>
-            <Button color="red" onClick={handleForgetAccount}>
-              {t('settings.confirmDelete')}
-            </Button>
-          </Group>
-        </div>
-      </Modal>
+        <PasswordInput
+          value={forgetPassword}
+          onChange={(e) => setForgetPassword(e.currentTarget.value)}
+          placeholder={t('settings.enterPasswordConfirm')}
+          aria-label={t('settings.enterPasswordConfirm')}
+          autoComplete="current-password"
+          disabled={accountActionBusy}
+          data-autofocus
+        />
+        <Textarea
+          value={forgetReason}
+          onChange={(e) => setForgetReason(e.currentTarget.value)}
+          placeholder={t('settings.optionalReason')}
+          aria-label={t('settings.optionalReason')}
+          disabled={accountActionBusy}
+          minRows={3}
+          autosize
+        />
+      </ConfirmationModal>
     </MainArea>
   );
 };

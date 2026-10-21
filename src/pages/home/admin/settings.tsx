@@ -2,25 +2,25 @@ import {
   Button,
   Code,
   NumberInput,
-  Paper,
   Stack,
   Switch,
   Table,
   Text,
   Textarea,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import {
   RUNTIME_SETTING_KEYS,
   RUNTIME_SETTING_REGISTRY,
   type RuntimeSettingKey,
 } from '@/constants/runtimeSettings';
+import { alertService } from '@/services/Alert.service';
 
 type SettingRow = {
   id: number;
@@ -105,17 +105,13 @@ const ServerSettingsPage = () => {
         body: JSON.stringify({ key, value }),
       });
       if (!response.ok) throw new Error('save');
-      notifications.show({
+      alertService.notify('success', t('settings.saved'), {
         title: t('saved'),
-        message: t('settings.saved'),
-        color: 'green',
       });
       await fetchSettings();
     } catch {
-      notifications.show({
+      alertService.notify('error', t('settings.saveError'), {
         title: t('error'),
-        message: t('settings.saveError'),
-        color: 'red',
       });
     } finally {
       setSavingKey(null);
@@ -130,17 +126,13 @@ const ServerSettingsPage = () => {
         body: JSON.stringify({ key, revertAuditId: auditId }),
       });
       if (!response.ok) throw new Error('revert');
-      notifications.show({
+      alertService.notify('success', t('settings.reverted'), {
         title: t('saved'),
-        message: t('settings.reverted'),
-        color: 'green',
       });
       await fetchSettings();
     } catch {
-      notifications.show({
+      alertService.notify('error', t('settings.revertError'), {
         title: t('error'),
-        message: t('settings.revertError'),
-        color: 'red',
       });
     }
   };
@@ -154,10 +146,8 @@ const ServerSettingsPage = () => {
       const result: HistoryRow[] = await response.json();
       setHistory((current) => ({ ...current, [key]: result }));
     } catch {
-      notifications.show({
+      alertService.notify('error', t('settings.historyError'), {
         title: t('error'),
-        message: t('settings.historyError'),
-        color: 'red',
       });
     }
   };
@@ -179,187 +169,186 @@ const ServerSettingsPage = () => {
         {loading ? (
           <Text>{t('loading')}</Text>
         ) : (
-          <Paper withBorder p="md">
-            <Table.ScrollContainer minWidth={720}>
-              <Table verticalSpacing="sm">
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>{t('key')}</Table.Th>
-                    <Table.Th>{t('value')}</Table.Th>
-                    <Table.Th>{t('status')}</Table.Th>
-                    <Table.Th>{t('actions')}</Table.Th>
+          <AdminDataTable
+            size="compact"
+            ariaLabel={t('settings.title')}
+            verticalSpacing="sm"
+          >
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>{t('key')}</Table.Th>
+                <Table.Th>{t('value')}</Table.Th>
+                <Table.Th>{t('status')}</Table.Th>
+                <Table.Th>{t('actions')}</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {RUNTIME_SETTING_KEYS.map((key) => {
+                const meta = RUNTIME_SETTING_REGISTRY[key];
+                const row = byKey.get(key);
+                const value = row?.value ?? meta.fallback;
+                return (
+                  <Table.Tr key={key}>
+                    <Table.Td>
+                      {key === 'DISABLE_LOGIN' && (
+                        <Button
+                          component={Link}
+                          href="/home/admin/eras"
+                          variant="subtle"
+                          size="xs"
+                        >
+                          {t('settings.resetBeforeLogin')}
+                        </Button>
+                      )}
+                      <Code>{key}</Code>
+                      <Text size="xs" c="dimmed">
+                        {t(`settings.labels.${key}`)}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      {key === 'ATTACK_LEVEL_RANGE' ? (
+                        <NumberInput
+                          aria-label={t(`settings.labels.${key}`)}
+                          min={1}
+                          max={100}
+                          value={rangeDraft}
+                          disabled={savingKey === key}
+                          onChange={(next) => {
+                            if (typeof next === 'number') setRangeDraft(next);
+                          }}
+                          onBlur={() => save(key, rangeDraft)}
+                        />
+                      ) : key === 'email.outbox.ratePerMinute' ? (
+                        <NumberInput
+                          aria-label={t(`settings.labels.${key}`)}
+                          min={1}
+                          max={600}
+                          value={emailRateDraft}
+                          disabled={savingKey === key}
+                          onChange={(next) => {
+                            if (typeof next === 'number')
+                              setEmailRateDraft(next);
+                          }}
+                          onBlur={() => save(key, emailRateDraft)}
+                        />
+                      ) : key === 'era.protectionDurationDays' ? (
+                        <NumberInput
+                          aria-label={t(`settings.labels.${key}`)}
+                          min={1}
+                          max={60}
+                          allowDecimal={false}
+                          value={protectionDaysDraft}
+                          disabled={savingKey === key}
+                          onChange={(next) => {
+                            if (typeof next === 'number')
+                              setProtectionDaysDraft(next);
+                          }}
+                          onBlur={() => save(key, protectionDaysDraft)}
+                        />
+                      ) : key === 'recruit.dailyCap' ? (
+                        <NumberInput
+                          aria-label={t(`settings.labels.${key}`)}
+                          min={0}
+                          max={1000}
+                          allowDecimal={false}
+                          value={recruitCapDraft}
+                          disabled={savingKey === key}
+                          onChange={(next) => {
+                            if (typeof next === 'number')
+                              setRecruitCapDraft(next);
+                          }}
+                          onBlur={() => save(key, recruitCapDraft)}
+                        />
+                      ) : key === 'MAINTENANCE_MODE' ? (
+                        <Stack gap="xs">
+                          <Switch
+                            aria-label={t('maintenance.enabled')}
+                            checked={maintenanceDraft.enabled}
+                            disabled={savingKey === key}
+                            onChange={(event) => {
+                              const next = {
+                                ...maintenanceDraft,
+                                enabled: event.currentTarget.checked,
+                              };
+                              setMaintenanceDraft(next);
+                              save(key, next);
+                            }}
+                          />
+                          <Textarea
+                            aria-label={t('maintenance.message')}
+                            maxLength={1000}
+                            value={maintenanceDraft.message}
+                            onChange={(event) =>
+                              setMaintenanceDraft((current) => ({
+                                ...current,
+                                message: event.currentTarget.value,
+                              }))
+                            }
+                            onBlur={() => save(key, maintenanceDraft)}
+                          />{' '}
+                        </Stack>
+                      ) : (
+                        <Switch
+                          aria-label={t(`settings.labels.${key}`)}
+                          checked={Boolean(value)}
+                          disabled={savingKey === key}
+                          onChange={(event) =>
+                            save(key, event.currentTarget.checked)
+                          }
+                        />
+                      )}
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm">
+                        {row
+                          ? t('settings.databaseValue')
+                          : t('settings.environmentDefault')}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Button
+                        size="xs"
+                        variant="subtle"
+                        onClick={() => loadHistory(key)}
+                      >
+                        {t('settings.history')}
+                      </Button>
+                      {history[key]?.[0] && (
+                        <Button
+                          size="xs"
+                          variant="default"
+                          onClick={() => revert(key, history[key][0].id)}
+                        >
+                          {t('settings.revertLatest')}
+                        </Button>
+                      )}
+                    </Table.Td>
                   </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {RUNTIME_SETTING_KEYS.map((key) => {
-                    const meta = RUNTIME_SETTING_REGISTRY[key];
-                    const row = byKey.get(key);
-                    const value = row?.value ?? meta.fallback;
-                    return (
-                      <Table.Tr key={key}>
-                        <Table.Td>
-                          {key === 'DISABLE_LOGIN' && (
-                            <Button
-                              component={Link}
-                              href="/home/admin/eras"
-                              variant="subtle"
-                              size="xs"
-                            >
-                              {t('settings.resetBeforeLogin')}
-                            </Button>
-                          )}
-                          <Code>{key}</Code>
-                          <Text size="xs" c="dimmed">
-                            {t(`settings.labels.${key}`)}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>
-                          {key === 'ATTACK_LEVEL_RANGE' ? (
-                            <NumberInput
-                              aria-label={t(`settings.labels.${key}`)}
-                              min={1}
-                              max={100}
-                              value={rangeDraft}
-                              disabled={savingKey === key}
-                              onChange={(next) => {
-                                if (typeof next === 'number')
-                                  setRangeDraft(next);
-                              }}
-                              onBlur={() => save(key, rangeDraft)}
-                            />
-                          ) : key === 'email.outbox.ratePerMinute' ? (
-                            <NumberInput
-                              aria-label={t(`settings.labels.${key}`)}
-                              min={1}
-                              max={600}
-                              value={emailRateDraft}
-                              disabled={savingKey === key}
-                              onChange={(next) => {
-                                if (typeof next === 'number')
-                                  setEmailRateDraft(next);
-                              }}
-                              onBlur={() => save(key, emailRateDraft)}
-                            />
-                          ) : key === 'era.protectionDurationDays' ? (
-                            <NumberInput
-                              aria-label={t(`settings.labels.${key}`)}
-                              min={1}
-                              max={60}
-                              allowDecimal={false}
-                              value={protectionDaysDraft}
-                              disabled={savingKey === key}
-                              onChange={(next) => {
-                                if (typeof next === 'number')
-                                  setProtectionDaysDraft(next);
-                              }}
-                              onBlur={() => save(key, protectionDaysDraft)}
-                            />
-                          ) : key === 'recruit.dailyCap' ? (
-                            <NumberInput
-                              aria-label={t(`settings.labels.${key}`)}
-                              min={0}
-                              max={1000}
-                              allowDecimal={false}
-                              value={recruitCapDraft}
-                              disabled={savingKey === key}
-                              onChange={(next) => {
-                                if (typeof next === 'number')
-                                  setRecruitCapDraft(next);
-                              }}
-                              onBlur={() => save(key, recruitCapDraft)}
-                            />
-                          ) : key === 'MAINTENANCE_MODE' ? (
-                            <Stack gap="xs">
-                              <Switch
-                                aria-label={t('maintenance.enabled')}
-                                checked={maintenanceDraft.enabled}
-                                disabled={savingKey === key}
-                                onChange={(event) => {
-                                  const next = {
-                                    ...maintenanceDraft,
-                                    enabled: event.currentTarget.checked,
-                                  };
-                                  setMaintenanceDraft(next);
-                                  save(key, next);
-                                }}
-                              />
-                              <Textarea
-                                aria-label={t('maintenance.message')}
-                                maxLength={1000}
-                                value={maintenanceDraft.message}
-                                onChange={(event) =>
-                                  setMaintenanceDraft((current) => ({
-                                    ...current,
-                                    message: event.currentTarget.value,
-                                  }))
-                                }
-                                onBlur={() => save(key, maintenanceDraft)}
-                              />{' '}
-                            </Stack>
-                          ) : (
-                            <Switch
-                              aria-label={t(`settings.labels.${key}`)}
-                              checked={Boolean(value)}
-                              disabled={savingKey === key}
-                              onChange={(event) =>
-                                save(key, event.currentTarget.checked)
-                              }
-                            />
-                          )}
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm">
-                            {row
-                              ? t('settings.databaseValue')
-                              : t('settings.environmentDefault')}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Button
-                            size="xs"
-                            variant="subtle"
-                            onClick={() => loadHistory(key)}
-                          >
-                            {t('settings.history')}
-                          </Button>
-                          {history[key]?.[0] && (
-                            <Button
-                              size="xs"
-                              variant="light"
-                              onClick={() => revert(key, history[key][0].id)}
-                            >
-                              {t('settings.revertLatest')}
-                            </Button>
-                          )}
-                        </Table.Td>
-                      </Table.Tr>
-                    );
-                  })}
-                  {rows
-                    .filter(
-                      (row) =>
-                        !RUNTIME_SETTING_KEYS.includes(
-                          row.key as RuntimeSettingKey,
-                        ),
-                    )
-                    .map((row) => (
-                      <Table.Tr key={row.id}>
-                        <Table.Td>
-                          <Code>{row.key}</Code>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm" lineClamp={2}>
-                            {JSON.stringify(row.value)}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>{t('settings.unknownReadOnly')}</Table.Td>
-                        <Table.Td>—</Table.Td>
-                      </Table.Tr>
-                    ))}
-                </Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
-          </Paper>
+                );
+              })}
+              {rows
+                .filter(
+                  (row) =>
+                    !RUNTIME_SETTING_KEYS.includes(
+                      row.key as RuntimeSettingKey,
+                    ),
+                )
+                .map((row) => (
+                  <Table.Tr key={row.id}>
+                    <Table.Td>
+                      <Code>{row.key}</Code>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm" lineClamp={2}>
+                        {JSON.stringify(row.value)}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>{t('settings.unknownReadOnly')}</Table.Td>
+                    <Table.Td>—</Table.Td>
+                  </Table.Tr>
+                ))}
+            </Table.Tbody>
+          </AdminDataTable>
         )}
       </Stack>
     </AdminLayout>

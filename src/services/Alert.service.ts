@@ -7,6 +7,7 @@ import { logDebug } from '@/utils/logger';
 const AlertSchema = z.object({
   type: z.enum(['success', 'error', 'info', 'warn', 'loading']),
   message: z.custom<ReactNode>(),
+  title: z.custom<ReactNode>().optional(),
   timestamp: z.date(),
   showAfterRedirect: z.boolean(),
   showButton: z.boolean(),
@@ -16,6 +17,16 @@ const AlertSchema = z.object({
 
 /** Defines the alert shape used by related workflows. */
 export type AlertType = z.infer<typeof AlertSchema>;
+
+/** Severities a caller can raise; `loading` stays until resolved or cleared. */
+export type AlertSeverity = 'success' | 'error' | 'info' | 'warn';
+
+/** Optional extras for {@link alertService.notify}. */
+export interface AlertOptions {
+  title?: ReactNode;
+  showAfterRedirect?: boolean;
+  timeout?: number | null;
+}
 
 const alertSubject = new BehaviorSubject<AlertType | null>(null);
 let defaultTimeout: number | null = null;
@@ -27,10 +38,12 @@ function showAlert(
   showButton: boolean = false,
   button: ReactNode = '',
   timeout: number | null = defaultTimeout,
+  title?: ReactNode,
 ): void {
   const alert = AlertSchema.parse({
     type,
     message,
+    title,
     timestamp: new Date(),
     showAfterRedirect: showAfterRedirect ?? false,
     showButton: showButton ?? false,
@@ -96,6 +109,16 @@ export const alertService = {
     showAfterRedirect: boolean = false,
     timeout: number | null = defaultTimeout,
   ) => showAlert('warn', message, showAfterRedirect, false, '', timeout),
+  /** Object-style entry point for toasts that need a title. */
+  notify: (
+    type: AlertSeverity,
+    message: ReactNode,
+    {
+      title,
+      showAfterRedirect = false,
+      timeout = defaultTimeout,
+    }: AlertOptions = {},
+  ) => showAlert(type, message, showAfterRedirect, false, '', timeout, title),
   loading: (
     message: ReactNode,
     showAfterRedirect: boolean = false,

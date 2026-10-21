@@ -11,7 +11,6 @@ import {
   Text,
   Textarea,
   TextInput,
-  Title,
   Tooltip,
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
@@ -20,6 +19,8 @@ import useSWR, { mutate as globalMutate } from 'swr';
 
 import { allianceRequest } from '@/components/alliance/allianceStanding';
 import { ConfirmActionModal } from '@/components/alliance/ConfirmActionModal';
+import { GameCard } from '@/components/game/GameCard';
+import { SectionHeading } from '@/components/game/SectionHeading';
 import { alertService } from '@/services/Alert.service';
 
 const TITLE_MAX = 120;
@@ -154,10 +155,9 @@ export const AllianceAnnouncements = ({
   return (
     <Stack gap="md">
       {canPost && (
-        <Card withBorder padding="lg" radius="md">
+        <GameCard title={t('compose.heading')}>
           <form onSubmit={handleSubmit}>
             <Stack gap="sm">
-              <Title order={4}>{t('compose.heading')}</Title>
               <TextInput
                 label={t('compose.titleLabel')}
                 placeholder={t('compose.titlePlaceholder')}
@@ -199,91 +199,98 @@ export const AllianceAnnouncements = ({
               </Group>
             </Stack>
           </form>
-        </Card>
+        </GameCard>
       )}
 
-      {error && (
-        <Text c="red" role="alert">
-          {t('loadError')}
-        </Text>
-      )}
-      {data && data.items.length === 0 && (
-        <Text c="dimmed">{t('list.empty')}</Text>
-      )}
-
-      {data?.items.map((item) => {
-        const canDelete = canPost || item.author_id === viewerId;
-        return (
-          <Card key={item.id} withBorder padding="lg" radius="md">
-            <Group justify="space-between" align="flex-start" wrap="nowrap">
-              <Stack gap={2} style={{ minWidth: 0 }}>
-                <Group gap="xs">
-                  <Title order={4}>{item.title}</Title>
-                  {item.pinned && (
-                    <Badge
-                      color="yellow"
-                      variant="light"
-                      leftSection={<FontAwesomeIcon icon={faThumbtack} />}
-                    >
-                      {t('list.pinned')}
-                    </Badge>
-                  )}
-                </Group>
-                <Text size="xs" c="dimmed">
-                  {t('list.by', {
-                    name: item.author?.display_name ?? t('list.unknownAuthor'),
-                  })}{' '}
-                  · {new Date(item.created_at).toLocaleString()}
-                </Text>
-              </Stack>
-              <Group gap={4} wrap="nowrap">
-                {canPost && (
-                  <Tooltip
-                    label={item.pinned ? t('list.unpin') : t('list.pin')}
-                  >
-                    <ActionIcon
-                      variant={item.pinned ? 'filled' : 'subtle'}
-                      color="yellow"
-                      aria-label={item.pinned ? t('list.unpin') : t('list.pin')}
-                      onClick={() => handlePin(item)}
-                    >
-                      <FontAwesomeIcon icon={faThumbtack} />
-                    </ActionIcon>
-                  </Tooltip>
-                )}
-                {canDelete && (
-                  <Tooltip label={t('list.delete')}>
-                    <ActionIcon
-                      variant="subtle"
-                      color="red"
-                      aria-label={t('list.delete')}
-                      onClick={() => setPendingDelete(item)}
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </ActionIcon>
-                  </Tooltip>
-                )}
-              </Group>
-            </Group>
-            {/* Plain text only: React escapes it; pre-wrap keeps line breaks. */}
-            <Text
-              mt="sm"
-              style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
-            >
-              {item.body}
+      <GameCard title={t('title')}>
+        <Stack gap="md">
+          {error && (
+            <Text c="red" role="alert">
+              {t('loadError')}
             </Text>
-          </Card>
-        );
-      })}
+          )}
+          {data && data.items.length === 0 && (
+            <Text c="dimmed">{t('list.empty')}</Text>
+          )}
 
-      {totalPages > 1 && (
-        <Pagination
-          value={page}
-          onChange={setPage}
-          total={totalPages}
-          aria-label={t('list.pageLabel')}
-        />
-      )}
+          {data?.items.map((item) => {
+            const canDelete = canPost || item.author_id === viewerId;
+            return (
+              <Card key={item.id} withBorder padding="lg" radius="md">
+                <Group justify="space-between" align="flex-start" wrap="nowrap">
+                  <Stack gap={2} style={{ minWidth: 0 }}>
+                    <Group gap="xs">
+                      <SectionHeading>{item.title}</SectionHeading>
+                      {item.pinned && (
+                        <Badge
+                          color="yellow"
+                          variant="light"
+                          leftSection={<FontAwesomeIcon icon={faThumbtack} />}
+                        >
+                          {t('list.pinned')}
+                        </Badge>
+                      )}
+                    </Group>
+                    <Text size="xs" c="dimmed">
+                      {t('list.by', {
+                        name:
+                          item.author?.display_name ?? t('list.unknownAuthor'),
+                      })}{' '}
+                      · {new Date(item.created_at).toLocaleString()}
+                    </Text>
+                  </Stack>
+                  <Group gap={4} wrap="nowrap">
+                    {canPost && (
+                      <Tooltip
+                        label={item.pinned ? t('list.unpin') : t('list.pin')}
+                      >
+                        <ActionIcon
+                          variant={item.pinned ? 'filled' : 'subtle'}
+                          color="yellow"
+                          aria-label={
+                            item.pinned ? t('list.unpin') : t('list.pin')
+                          }
+                          onClick={() => handlePin(item)}
+                        >
+                          <FontAwesomeIcon icon={faThumbtack} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
+                    {canDelete && (
+                      <Tooltip label={t('list.delete')}>
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
+                          aria-label={t('list.delete')}
+                          onClick={() => setPendingDelete(item)}
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
+                  </Group>
+                </Group>
+                {/* Plain text only: React escapes it; pre-wrap keeps line breaks. */}
+                <Text
+                  mt="sm"
+                  style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                >
+                  {item.body}
+                </Text>
+              </Card>
+            );
+          })}
+
+          {totalPages > 1 && (
+            <Pagination
+              value={page}
+              onChange={setPage}
+              total={totalPages}
+              aria-label={t('list.pageLabel')}
+            />
+          )}
+        </Stack>
+      </GameCard>
 
       <ConfirmActionModal
         opened={pendingDelete !== null}

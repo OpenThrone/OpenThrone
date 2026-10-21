@@ -2,7 +2,6 @@ import {
   Alert,
   Button,
   Group,
-  Loader,
   Select,
   SimpleGrid,
   Text,
@@ -15,6 +14,7 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
+import { PageLoading } from '@/components/game/PageLoading';
 import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
@@ -54,7 +54,7 @@ export default function CreateAlliance() {
   if (!user) {
     return (
       <MainArea title={t('create.title')}>
-        <Loader />
+        <PageLoading cardTitle={t('create.title')} lines={4} />
       </MainArea>
     );
   }
@@ -174,7 +174,7 @@ export default function CreateAlliance() {
 
           <Text>{t('create.cost')}</Text>
           <Group mt="md">
-            <Button type="submit" loading={submitting} color="yellow">
+            <Button type="submit" loading={submitting}>
               {t('create.create')}
             </Button>
           </Group>

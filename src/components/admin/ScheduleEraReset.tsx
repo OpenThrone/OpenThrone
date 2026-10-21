@@ -3,7 +3,6 @@ import {
   Button,
   Checkbox,
   Group,
-  Modal,
   Stack,
   Text,
   TextInput,
@@ -12,6 +11,7 @@ import { DatePickerInput } from '@mantine/dates';
 import { useTranslation } from 'next-i18next';
 import { useRef, useState } from 'react';
 
+import ConfirmationModal from '@/components/ConfirmationModal';
 import {
   formatEraResetLocalTime,
   formatEraResetTime,
@@ -47,7 +47,6 @@ export default function ScheduleEraReset({ era, canSchedule }: Props) {
   const [resetDate, setResetDate] = useState<Date | null>(null);
   const [resetTime, setResetTime] = useState('');
   const [enableLogins, setEnableLogins] = useState(true);
-  const [confirmation, setConfirmation] = useState('');
   const [draft, setDraft] = useState<EraStartSettingsDraft>(() =>
     toDraft(resolveEraStartSettings(era.startSettings)),
   );
@@ -79,11 +78,7 @@ export default function ScheduleEraReset({ era, canSchedule }: Props) {
 
   const submit = async (action: 'schedule' | 'cancel') => {
     if (busy.current || !canSchedule) return;
-    if (
-      action === 'schedule' &&
-      (!validDate || confirmation !== phrase || !startSettings)
-    )
-      return;
+    if (action === 'schedule' && (!validDate || !startSettings)) return;
     busy.current = true;
     setPending(true);
     setError(null);
@@ -101,7 +96,8 @@ export default function ScheduleEraReset({ era, canSchedule }: Props) {
                 resetAt: parsedDate?.toISOString(),
                 enableLogins,
                 startSettings,
-                confirmation,
+                // The dialog only enables confirm once the phrase is typed.
+                confirmation: phrase,
                 expectedScheduleId: expectedScheduleId.current,
               },
         ),
@@ -114,7 +110,6 @@ export default function ScheduleEraReset({ era, canSchedule }: Props) {
             : t('eraSchedule.requestError'),
         );
       setOpened(false);
-      setConfirmation('');
       await mutate();
     } catch (requestError) {
       setError(
@@ -138,7 +133,7 @@ export default function ScheduleEraReset({ era, canSchedule }: Props) {
       {loadError && (
         <Alert color="red" role="alert">
           {t('eraSchedule.loadError')}{' '}
-          <Button size="xs" variant="light" onClick={() => mutate()}>
+          <Button size="xs" variant="default" onClick={() => mutate()}>
             {t('retry')}
           </Button>
         </Alert>
@@ -185,7 +180,6 @@ export default function ScheduleEraReset({ era, canSchedule }: Props) {
               );
               setEnableLogins(schedule?.enableLogins ?? true);
               setDraft(toDraft(resolveEraStartSettings(era.startSettings)));
-              setConfirmation('');
               setError(null);
               setOpened(true);
             }}
@@ -203,100 +197,77 @@ export default function ScheduleEraReset({ era, canSchedule }: Props) {
           )}
         </Group>
       )}
-      <Modal
-        opened={opened}
+      <ConfirmationModal
+        isOpen={opened}
         onClose={() => {
           if (!busy.current) setOpened(false);
         }}
+        onConfirm={() => submit('schedule')}
         title={t('eraSchedule.title')}
-        centered
-        closeButtonProps={{ 'aria-label': t('cancel') }}
-        closeOnEscape={!pending}
-        closeOnClickOutside={!pending}
-        withCloseButton={!pending}
+        message={t('eraReset.losses')}
+        type="destructive"
+        confirmText={t('eraSchedule.confirm')}
+        cancelText={t('cancel')}
+        isLoading={pending}
+        confirmDisabled={!validDate || !startSettings}
+        requiredText={phrase}
+        requiredTextLabel={t('eraReset.confirmLabel', { phrase })}
       >
-        <Stack>
-          <Text size="sm">{t('eraReset.losses')}</Text>
-          <Text size="sm" c="dimmed">
-            {t('eraReset.retained')}
-          </Text>
-          <Group grow align="flex-start">
-            <DatePickerInput
-              label={t('eraSchedule.date')}
-              placeholder={t('eraSchedule.datePlaceholder')}
-              value={resetDate}
-              onChange={setResetDate}
-              valueFormat="DD/MM/YYYY"
-              minDate={new Date()}
-              clearable
-              error={dateError}
-              disabled={pending}
-              popoverProps={{ withinPortal: true }}
-            />
-            <TextInput
-              label={t('eraSchedule.time')}
-              placeholder="HH:mm:ss"
-              value={resetTime}
-              onChange={(event) => setResetTime(event.currentTarget.value)}
-              inputMode="numeric"
-              autoComplete="off"
-              error={timeError}
-              disabled={pending}
-            />
-          </Group>
-          <Text size="xs" c="dimmed">
-            {t('eraSchedule.dateHelp')}
-          </Text>
-          {validDate && parsedDate && (
-            <Text size="sm">
-              {t('eraSchedule.preview', {
-                local: formatEraResetLocalTime(parsedDate.toISOString()),
-                utc: formatEraResetTime(parsedDate.toISOString()),
-              })}
-            </Text>
-          )}
-          <EraStartSettingsFields
-            value={draft}
-            onChange={setDraft}
+        <Text size="sm" c="var(--ot-muted)">
+          {t('eraReset.retained')}
+        </Text>
+        <Group grow align="flex-start">
+          <DatePickerInput
+            label={t('eraSchedule.date')}
+            placeholder={t('eraSchedule.datePlaceholder')}
+            value={resetDate}
+            onChange={setResetDate}
+            valueFormat="DD/MM/YYYY"
+            minDate={new Date()}
+            clearable
+            error={dateError}
             disabled={pending}
-          />
-          <Checkbox
-            label={t('eraReset.enableLogins')}
-            checked={enableLogins}
-            onChange={(event) => setEnableLogins(event.currentTarget.checked)}
-            disabled={pending}
+            popoverProps={{ withinPortal: true }}
           />
           <TextInput
-            label={t('eraReset.confirmLabel', { phrase })}
-            value={confirmation}
-            onChange={(event) => setConfirmation(event.currentTarget.value)}
+            label={t('eraSchedule.time')}
+            placeholder="HH:mm:ss"
+            value={resetTime}
+            onChange={(event) => setResetTime(event.currentTarget.value)}
+            inputMode="numeric"
             autoComplete="off"
+            error={timeError}
             disabled={pending}
           />
-          {error && (
-            <Alert color="red" role="alert">
-              {error}
-            </Alert>
-          )}
-          <Group justify="flex-end">
-            <Button
-              variant="default"
-              disabled={pending}
-              onClick={() => setOpened(false)}
-            >
-              {t('cancel')}
-            </Button>
-            <Button
-              color="red"
-              loading={pending}
-              disabled={!validDate || confirmation !== phrase}
-              onClick={() => submit('schedule')}
-            >
-              {t('eraSchedule.confirm')}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        </Group>
+        <Text size="xs" c="var(--ot-muted)">
+          {t('eraSchedule.dateHelp')}
+        </Text>
+        {validDate && parsedDate && (
+          <Text size="sm">
+            {t('eraSchedule.preview', {
+              local: formatEraResetLocalTime(parsedDate.toISOString()),
+              utc: formatEraResetTime(parsedDate.toISOString()),
+            })}
+          </Text>
+        )}
+        <EraStartSettingsFields
+          value={draft}
+          onChange={setDraft}
+          disabled={pending}
+        />
+        <Checkbox
+          label={t('eraReset.enableLogins')}
+          checked={enableLogins}
+          onChange={(event) => setEnableLogins(event.currentTarget.checked)}
+          disabled={pending}
+        />
+        {error && (
+          <Alert color="red" role="alert">
+            {error}
+          </Alert>
+        )}
+      </ConfirmationModal>
     </Stack>
   );
 }

@@ -93,7 +93,8 @@
     "dexterity": "Geschicklichkeit (Spion & Wächter)",
     "charisma": "Charisma (Reduzierte Preise)",
     "saveChanges": "Änderungen speichern",
-    "changesSavedSuccessfully": "Änderungen erfolgreich gespeichert"
+    "changesSavedSuccessfully": "Änderungen erfolgreich gespeichert",
+    "saveFailed": "Änderungen konnten nicht gespeichert werden"
   },
   "profile": {
     "title": "Mein Profil",
@@ -199,6 +200,7 @@
     "accountResetSuccessfully": "Konto erfolgreich zurückgesetzt.",
     "accountDisabledSuccessfully": "Konto erfolgreich deaktiviert.",
     "accountDataRemovedSuccessfully": "Kontodaten erfolgreich entfernt.",
+    "unexpectedError": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
     "userNotLoaded": "Benutzer nicht geladen. Bitte laden Sie die Seite neu.",
     "failedToDisable2FA": "Deaktivierung von 2FA fehlgeschlagen",
     "failedToGenerate2FASecret": "Generierung des 2FA-Geheimnisses fehlgeschlagen",

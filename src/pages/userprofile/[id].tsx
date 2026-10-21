@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AllianceListBadge } from '@/components/alliance/AllianceListBadge';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import FriendCard from '@/components/friendCard';
+import { EmptyState } from '@/components/game/EmptyState';
 import { GameCard } from '@/components/game/GameCard';
 import { GoldRequestModal } from '@/components/GoldRequestModal';
 import { GoldTransferModal } from '@/components/GoldTransferModal';
@@ -89,7 +90,7 @@ const Index = ({
   );
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
-  const [lastActive, setLastActive] = useState('Never logged in');
+  const [lastActive, setLastActive] = useState<string | null>(null);
   const [friends, setFriends] = useState([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
   const socialEnabled = config?.enableSocial === true;
@@ -229,7 +230,7 @@ const Index = ({
 
       if (!rawLastActive) {
         setIsOnline(false);
-        setLastActive('Never logged in');
+        setLastActive(null);
         return;
       }
 
@@ -242,36 +243,22 @@ const Index = ({
         setLastActive(lastActiveDate.toDateString());
       } else {
         setIsOnline(false);
-        setLastActive('Never logged in');
+        setLastActive(null);
       }
     }
   }, [profile, users, user]);
 
-  if (!profile) return <p>User not found</p>;
+  if (!profile) return <p>{t('profileSummary.notFound')}</p>;
 
   const blockedStatuses = ['BANNED', 'SUSPENDED', 'CLOSED', 'TIMEOUT'];
   if (blockedStatuses.includes(userStatus)) {
-    let statusMessage = '';
-    switch (userStatus) {
-      case 'IDLE':
-        statusMessage = 'This account is currently idle.';
-        break;
-      case 'BANNED':
-        statusMessage = 'This account has been banned.';
-        break;
-      case 'SUSPENDED':
-        statusMessage = 'This account is suspended.';
-        break;
-      case 'CLOSED':
-        statusMessage = 'This account has been closed.';
-        break;
-      case 'TIMEOUT':
-        statusMessage = 'This account is in timeout.';
-        break;
-      default:
-        statusMessage = 'This account is unavailable.';
-    }
-    return <p>{statusMessage}</p>;
+    return (
+      <p>
+        {t(`profileSummary.accountStatus.${userStatus}`, {
+          defaultValue: t('profileSummary.accountStatus.unavailable'),
+        })}
+      </p>
+    );
   }
 
   // Friend request handlers
@@ -290,15 +277,17 @@ const Index = ({
       });
 
       if (res.ok) {
-        alertService.success('Friend request sent successfully');
+        alertService.success(t('profileActions.alerts.friendRequestSent'));
         await fetchFriendRelationship();
         forceUpdate();
       } else {
         const error = await res.json();
-        alertService.error(error.error || 'Failed to add friend');
+        alertService.error(
+          error.error || t('profileActions.alerts.addFriendFailed'),
+        );
       }
     } catch {
-      alertService.error('Failed to add friend');
+      alertService.error(t('profileActions.alerts.addFriendFailed'));
     } finally {
       setIsFriendLoading(false);
     }
@@ -319,15 +308,17 @@ const Index = ({
       });
 
       if (res.ok) {
-        alertService.success('Friend request cancelled');
+        alertService.success(t('profileActions.alerts.friendRequestCancelled'));
         await fetchFriendRelationship();
         forceUpdate();
       } else {
         const error = await res.json();
-        alertService.error(error.error || 'Failed to cancel friend request');
+        alertService.error(
+          error.error || t('profileActions.alerts.cancelFriendRequestFailed'),
+        );
       }
     } catch {
-      alertService.error('Failed to cancel friend request');
+      alertService.error(t('profileActions.alerts.cancelFriendRequestFailed'));
     } finally {
       setIsFriendLoading(false);
     }
@@ -354,18 +345,59 @@ const Index = ({
       });
 
       if (res.ok) {
-        alertService.success('Friend removed successfully');
+        alertService.success(t('profileActions.alerts.friendRemoved'));
         await fetchFriendRelationship();
         forceUpdate();
       } else {
         const error = await res.json();
-        alertService.error(error.error || 'Failed to remove friend');
+        alertService.error(
+          error.error || t('profileActions.alerts.removeFriendFailed'),
+        );
       }
     } catch {
-      alertService.error('Failed to remove friend');
+      alertService.error(t('profileActions.alerts.removeFriendFailed'));
     } finally {
       setIsFriendLoading(false);
       setShowConfirmationModal(false);
+    }
+  };
+
+  const respondToFriendRequest = async (action: 'accept' | 'decline') => {
+    if (isFriendLoading) return;
+
+    const failedKey =
+      action === 'accept'
+        ? 'profileActions.alerts.acceptFailed'
+        : 'profileActions.alerts.declineFailed';
+    setIsFriendLoading(true);
+    try {
+      const res = await fetch('/api/social/respond', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId: friendRelationship.id,
+          action,
+        }),
+      });
+
+      if (res.ok) {
+        alertService.success(
+          t(
+            action === 'accept'
+              ? 'profileActions.alerts.friendRequestAccepted'
+              : 'profileActions.alerts.friendRequestDeclined',
+          ),
+        );
+        await fetchFriendRelationship();
+        forceUpdate();
+      } else {
+        const error = await res.json();
+        alertService.error(error.error || t(failedKey));
+      }
+    } catch {
+      alertService.error(t(failedKey));
+    } finally {
+      setIsFriendLoading(false);
     }
   };
 
@@ -391,29 +423,31 @@ const Index = ({
     switch (status) {
       case 'pending_outgoing':
         return {
-          text: 'Friend Request is Pending',
-          button: 'Cancel Friend Request',
+          text: t('profileActions.friendRequestPending'),
+          button: t('profileActions.cancelFriendRequest'),
           action: handleCancelFriendRequest,
           type: 'cancel',
         };
       case 'pending_incoming':
         return {
-          text: `Friend Request from ${profile.displayName}`,
-          button: 'Accept',
+          text: t('profileActions.friendRequestFrom', {
+            name: profile.displayName,
+          }),
+          button: t('profileActions.accept'),
           action: () => {},
           type: 'accept',
         };
       case 'friend':
         return {
-          text: `Friends with ${profile.displayName}`,
-          button: 'Remove Friend',
+          text: t('profileActions.friendsWith', { name: profile.displayName }),
+          button: t('profileActions.removeFriend'),
           action: handleRemoveFriend,
           type: 'remove',
         };
       default:
         return {
           text: '',
-          button: 'Add to Friends List',
+          button: t('profileActions.addFriend'),
           action: handleAddFriend,
           type: 'add',
         };
@@ -468,7 +502,7 @@ const Index = ({
         return <FriendCard key={player.id} player={player} />;
       })
     ) : (
-      <p>No friends found.</p>
+      <EmptyState compact title={t('profileSummary.noFriends')} />
     );
   const kingdomStats: ProfileStat[] = [
     {
@@ -535,7 +569,7 @@ const Index = ({
         rank={users?.rank}
         isOnline={isOnline}
         statusLabel={statusLabel}
-        lastActive={lastActive}
+        lastActive={lastActive ?? t('profileSummary.neverLoggedIn')}
       />
 
       <div className={profileClasses.sections}>
@@ -593,7 +627,7 @@ const Index = ({
                   display: userStatus !== 'ACTIVE' ? 'none' : 'flex',
                 }}
               >
-                Recruit this Player
+                {t('profileActions.recruit')}
               </Button>
               <Button
                 component={Link}
@@ -601,7 +635,7 @@ const Index = ({
                 classNames={actionClassNames}
                 leftSection={<RpgAwesomeIcon icon="castle-flag" />}
               >
-                Join Now
+                {t('profileActions.joinNow')}
               </Button>
             </div>
           ) : (
@@ -638,7 +672,7 @@ const Index = ({
                 data-tone="danger"
                 leftSection={<RpgAwesomeIcon icon="crossed-swords" />}
               >
-                Attack this Player
+                {t('profileActions.attack')}
               </Button>
               {!isOwnProfile && user?.id && (
                 <Button
@@ -646,7 +680,7 @@ const Index = ({
                   href={`/report?userId=${profile?.id}&username=${encodeURIComponent(profile?.display_name ?? '')}`}
                   classNames={actionClassNames}
                   variant="subtle"
-                  leftSection={<RpgAwesomeIcon icon="flag" />}
+                  leftSection={<RpgAwesomeIcon icon="trumpet-flag" />}
                 >
                   {t('profileActions.report', {
                     defaultValue: 'Report player',
@@ -681,7 +715,7 @@ const Index = ({
                 data-tone="arcane"
                 leftSection={<RpgAwesomeIcon icon="hood" />}
               >
-                Spy Missions
+                {t('profileActions.spyMissions')}
               </Button>
               {spyReason && (
                 <Text
@@ -710,7 +744,7 @@ const Index = ({
                     aria-disabled
                     onClick={(event) => event.preventDefault()}
                   >
-                    Recruit this Player
+                    {t('profileActions.recruit')}
                   </Button>
                 </Tooltip>
               ) : (
@@ -720,7 +754,7 @@ const Index = ({
                   classNames={actionClassNames}
                   leftSection={<RpgAwesomeIcon icon="double-team" />}
                 >
-                  Recruit this Player
+                  {t('profileActions.recruit')}
                 </Button>
               )}
               {socialEnabled && (
@@ -739,142 +773,26 @@ const Index = ({
                         {friendStatusDisplay.text}
                       </div>
                       <div className="friend-request-buttons-container">
-                        <UnstyledButton
+                        <Button
                           type="button"
-                          onClick={async () => {
-                            if (isFriendLoading) return;
-
-                            setIsFriendLoading(true);
-                            try {
-                              const res = await fetch('/api/social/respond', {
-                                method: 'PUT',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                  requestId: friendRelationship.id,
-                                  action: 'accept',
-                                }),
-                              });
-
-                              if (res.ok) {
-                                alertService.success('Friend request accepted');
-                                await fetchFriendRelationship();
-                                forceUpdate();
-                              } else {
-                                const error = await res.json();
-                                alertService.error(
-                                  error.error ||
-                                    'Failed to accept friend request',
-                                );
-                              }
-                            } catch {
-                              alertService.error(
-                                'Failed to accept friend request',
-                              );
-                            } finally {
-                              setIsFriendLoading(false);
-                            }
-                          }}
-                          className={`friend-request-button accept ${isFriendLoading ? 'loading' : ''}`}
-                          disabled={isFriendLoading}
+                          onClick={() => respondToFriendRequest('accept')}
+                          loading={isFriendLoading}
+                          classNames={actionClassNames}
+                          data-tone="gold"
+                          fullWidth
                         >
-                          {isFriendLoading ? (
-                            <div className="flex items-center justify-center">
-                              <svg
-                                className="-ml-1 mr-2 size-4 animate-spin text-white"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                              >
-                                <circle
-                                  className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                />
-                                <path
-                                  className="opacity-75"
-                                  fill="currentColor"
-                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                />
-                              </svg>
-                              Accepting...
-                            </div>
-                          ) : (
-                            'Accept'
-                          )}
-                        </UnstyledButton>
-                        <UnstyledButton
+                          {t('profileActions.accept')}
+                        </Button>
+                        <Button
                           type="button"
-                          onClick={async () => {
-                            if (isFriendLoading) return;
-
-                            setIsFriendLoading(true);
-                            try {
-                              const res = await fetch('/api/social/respond', {
-                                method: 'PUT',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                  requestId: friendRelationship.id,
-                                  action: 'decline',
-                                }),
-                              });
-
-                              if (res.ok) {
-                                alertService.success('Friend request declined');
-                                await fetchFriendRelationship();
-                                forceUpdate();
-                              } else {
-                                const error = await res.json();
-                                alertService.error(
-                                  error.error ||
-                                    'Failed to decline friend request',
-                                );
-                              }
-                            } catch {
-                              alertService.error(
-                                'Failed to decline friend request',
-                              );
-                            } finally {
-                              setIsFriendLoading(false);
-                            }
-                          }}
-                          className={`friend-request-button decline ${isFriendLoading ? 'loading' : ''}`}
-                          disabled={isFriendLoading}
+                          onClick={() => respondToFriendRequest('decline')}
+                          loading={isFriendLoading}
+                          classNames={actionClassNames}
+                          data-tone="danger"
+                          fullWidth
                         >
-                          {isFriendLoading ? (
-                            <div className="flex items-center justify-center">
-                              <svg
-                                className="-ml-1 mr-2 size-4 animate-spin text-white"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                              >
-                                <circle
-                                  className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                />
-                                <path
-                                  className="opacity-75"
-                                  fill="currentColor"
-                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                />
-                              </svg>
-                              Declining...
-                            </div>
-                          ) : (
-                            'Decline'
-                          )}
-                        </UnstyledButton>
+                          {t('profileActions.decline')}
+                        </Button>
                       </div>
                     </div>
                   ) : (
@@ -906,7 +824,7 @@ const Index = ({
                         style={{ display: 'block' }}
                         onClick={() => setIsTransferModalOpen(true)}
                       >
-                        Transfer Gold
+                        {t('profileActions.transferGold')}
                       </UnstyledButton>
                       <UnstyledButton
                         type="button"
@@ -914,7 +832,7 @@ const Index = ({
                         style={{ display: 'block' }}
                         onClick={() => setIsRequestModalOpen(true)}
                       >
-                        Request Gold
+                        {t('profileActions.requestGold')}
                       </UnstyledButton>
                     </>
                   )}
@@ -943,8 +861,8 @@ const Index = ({
                       if (res.ok) {
                         alertService.success(
                           enemyRelationship
-                            ? 'Enemy status removed'
-                            : 'Player declared as enemy',
+                            ? t('profileActions.alerts.enemyRemoved')
+                            : t('profileActions.alerts.enemyDeclared'),
                         );
                         await fetchEnemyRelationship();
                         forceUpdate();
@@ -952,12 +870,16 @@ const Index = ({
                         const error = await res.json();
                         alertService.error(
                           error.error ||
-                            `Failed to ${enemyRelationship ? 'remove enemy' : 'declare enemy'}`,
+                            (enemyRelationship
+                              ? t('profileActions.alerts.removeEnemyFailed')
+                              : t('profileActions.alerts.declareEnemyFailed')),
                         );
                       }
                     } catch {
                       alertService.error(
-                        `Failed to ${enemyRelationship ? 'remove enemy' : 'declare enemy'}`,
+                        enemyRelationship
+                          ? t('profileActions.alerts.removeEnemyFailed')
+                          : t('profileActions.alerts.declareEnemyFailed'),
                       );
                     } finally {
                       setIsEnemyLoading(false);
@@ -970,7 +892,9 @@ const Index = ({
                   fullWidth
                   classNames={actionClassNames}
                 >
-                  {enemyRelationship ? 'Remove Enemy' : 'Declare Enemy'}
+                  {enemyRelationship
+                    ? t('profileActions.removeEnemy')
+                    : t('profileActions.declareEnemy')}
                 </Button>
               )}
             </div>
@@ -1011,7 +935,7 @@ const Index = ({
 
         {socialEnabled && isOwnProfile && (
           <GameCard
-            title="Top Friends"
+            title={t('profileSummary.topFriends')}
             icon={<RpgAwesomeIcon icon="two-hearts" />}
           >
             {friendsLoading ? (
@@ -1029,12 +953,13 @@ const Index = ({
         isOpen={showConfirmationModal}
         onClose={() => setShowConfirmationModal(false)}
         onConfirm={handleConfirmRemoveFriend}
-        title="Remove Friend"
-        message={`Are you sure you want to remove ${profile.displayName} from your friends list?`}
-        confirmText="Remove Friend"
-        cancelText="Cancel"
+        title={t('profileActions.removeFriend')}
+        message={t('profileActions.removeFriendConfirm', {
+          name: profile.displayName,
+        })}
+        confirmText={t('profileActions.removeFriend')}
         isLoading={isFriendLoading}
-        type="remove"
+        type="destructive"
       />
 
       {friendStatus === 'friend' && (
@@ -1045,7 +970,7 @@ const Index = ({
           targetUserName={profile.displayName}
           userGold={user.gold}
           onTransferComplete={() => {
-            alertService.success('Gold transfer completed successfully');
+            alertService.success(t('profileActions.alerts.transferComplete'));
             forceUpdate();
           }}
         />
@@ -1058,7 +983,7 @@ const Index = ({
           targetUserId={profile.id}
           targetUserName={profile.displayName}
           onRequestComplete={() => {
-            alertService.success('Gold request sent successfully');
+            alertService.success(t('profileActions.alerts.goldRequestSent'));
             forceUpdate();
           }}
         />
@@ -1192,6 +1117,7 @@ export const getServerSideProps = async ({ query, locale, req, res }) => {
     'navigation',
     'allianceLists',
     'alliances',
+    'social',
   ]);
 
   // Only alliances whose roster is PUBLIC, or that the viewer belongs to.

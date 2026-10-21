@@ -12,12 +12,9 @@ import {
 import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
 import React from 'react';
-import ReactMarkdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
-import remarkGfm from 'remark-gfm';
 
 import { GameCard } from '@/components/game/GameCard';
+import MarkdownArticle from '@/components/news/MarkdownArticle';
 
 interface NewsItem {
   id: number;
@@ -129,17 +126,7 @@ export const StyledNews: React.FC<StyledNewsProps> = ({ news }) => {
                   lineClamp={4}
                   style={{ wordBreak: 'break-word' }}
                 >
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw, rehypeSanitize]}
-                    components={{
-                      p: ({ children }) => <p>{children}</p>,
-                      h1: ({ children }) => <strong>{children}</strong>,
-                      h2: ({ children }) => <strong>{children}</strong>,
-                    }}
-                  >
-                    {item.content}
-                  </ReactMarkdown>
+                  <MarkdownArticle content={item.content} variant="compact" />
                 </Text>
                 <Group justify="flex-end">
                   <Anchor

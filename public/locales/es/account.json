@@ -104,6 +104,7 @@
     "resetPassword": "Restablecer Contraseña",
     "passwordReset": "¡Contraseña restablecida exitosamente!",
     "resetFailed": "Error al restablecer la contraseña. Por favor, inténtalo de nuevo.",
+    "errorTitle": "Error al recuperar la cuenta",
     "passwordTooShort": "La contraseña debe tener al menos 8 caracteres.",
     "passwordSame": "La nueva contraseña debe ser diferente a tu contraseña actual.",
     "enterYourEmail": "Introduce tu correo electrónico",

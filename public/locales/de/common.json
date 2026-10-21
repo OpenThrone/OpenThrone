@@ -45,6 +45,7 @@
     "submit": "Absenden",
     "cancel": "Abbrechen",
     "confirm": "Bestätigen",
+    "typeToConfirm": "Geben Sie „{{text}}“ zur Bestätigung ein",
     "save": "Speichern",
     "delete": "Löschen",
     "edit": "Bearbeiten",
@@ -109,6 +110,7 @@
     "owned": "Besessen",
     "buy": "Kaufen",
     "sell": "Verkaufen",
+    "max": "Max.",
     "player": "Spieler"
   },
   "status": {
@@ -180,6 +182,7 @@
   },
   "currency": {
     "gold": "Gold",
+    "goldAmount": "{{amount}} Gold",
     "goldInBank": "Gold in der Bank",
     "totalGold": "Gesamtgold"
   },
@@ -267,7 +270,9 @@
     "again": "Erneut rekrutieren",
     "blockedPair": "Sie haben heute {{used}} von {{limit}} Mal mit {{name}} rekrutiert. Zurücksetzung um {{time}}.",
     "blockedRecruiter": "Sie haben alle {{limit}} täglichen Rekrutierungen verbraucht. Zurücksetzung um {{time}}.",
-    "blockedTarget": "{{name}} hat das tägliche Limit von {{limit}} Rekrutierungen erreicht. Zurücksetzung um {{time}}."
+    "blockedTarget": "{{name}} hat das tägliche Limit von {{limit}} Rekrutierungen erreicht. Zurücksetzung um {{time}}.",
+    "targetTitle": "Rekrutierungsziel",
+    "targetSummary": "{{name}} ist ein {{race}} {{class}} der Stufe {{level}}."
   },
   "ariaLabels": {
     "closeAlert": "Alarm schließen",
@@ -312,7 +317,19 @@
     "networkErrorDuringRecruitment": "Netzwerkfehler während der Rekrutierung. Bitte versuchen Sie es erneut.",
     "errorVerifyingSession": "Fehler beim Überprüfen der Sitzung.",
     "errorStartingSession": "Fehler beim Starten der Rekrutierungssitzung.",
-    "sessionInvalid": "Ungültige Sitzung. Bitte starten Sie eine neue Sitzung."
+    "sessionInvalid": "Ungültige Sitzung. Bitte starten Sie eine neue Sitzung.",
+    "sessions": {
+      "title": "Aktive Sitzungen",
+      "refreshingIn": "Aktualisierung in {{count}} s",
+      "enableAutoRefresh": "Automatisch aktualisieren",
+      "sessionId": "Sitzungs-ID",
+      "createdAt": "Erstellt am",
+      "lastActivity": "Letzte Aktivität",
+      "empty": "Keine aktiven Sitzungen.",
+      "fetchFailed": "Sitzungen konnten nicht geladen werden",
+      "endFailed": "Sitzung konnte nicht beendet werden.",
+      "endNetworkError": "Netzwerkfehler: Sitzung konnte nicht beendet werden."
+    }
   },
   "connection": {
     "banner": {
@@ -396,7 +413,42 @@
     "attackingDisabled": "Angriffe sind derzeit vom Server deaktiviert.",
     "spyDisabled": "Alle Spionagemissionen sind derzeit vom Server deaktiviert.",
     "report": "Spieler melden",
-    "message": "Diesem Spieler schreiben"
+    "message": "Diesem Spieler schreiben",
+    "recruit": "Diesen Spieler rekrutieren",
+    "joinNow": "Jetzt beitreten",
+    "attack": "Diesen Spieler angreifen",
+    "spyMissions": "Spionagemissionen",
+    "transferGold": "Gold übertragen",
+    "requestGold": "Gold anfragen",
+    "accept": "Annehmen",
+    "decline": "Ablehnen",
+    "friendRequestPending": "Freundschaftsanfrage ausstehend",
+    "cancelFriendRequest": "Freundschaftsanfrage zurückziehen",
+    "friendRequestFrom": "Freundschaftsanfrage von {{name}}",
+    "friendsWith": "Befreundet mit {{name}}",
+    "addFriend": "Zur Freundesliste hinzufügen",
+    "removeFriend": "Freund entfernen",
+    "removeFriendConfirm": "Möchten Sie {{name}} wirklich aus Ihrer Freundesliste entfernen?",
+    "declareEnemy": "Zum Feind erklären",
+    "removeEnemy": "Feindschaft beenden",
+    "alerts": {
+      "friendRequestSent": "Freundschaftsanfrage erfolgreich gesendet",
+      "addFriendFailed": "Freund konnte nicht hinzugefügt werden",
+      "friendRequestCancelled": "Freundschaftsanfrage zurückgezogen",
+      "cancelFriendRequestFailed": "Freundschaftsanfrage konnte nicht zurückgezogen werden",
+      "friendRemoved": "Freund erfolgreich entfernt",
+      "removeFriendFailed": "Freund konnte nicht entfernt werden",
+      "friendRequestAccepted": "Freundschaftsanfrage angenommen",
+      "acceptFailed": "Freundschaftsanfrage konnte nicht angenommen werden",
+      "friendRequestDeclined": "Freundschaftsanfrage abgelehnt",
+      "declineFailed": "Freundschaftsanfrage konnte nicht abgelehnt werden",
+      "enemyDeclared": "Spieler zum Feind erklärt",
+      "enemyRemoved": "Feindschaft beendet",
+      "declareEnemyFailed": "Spieler konnte nicht zum Feind erklärt werden",
+      "removeEnemyFailed": "Feindschaft konnte nicht beendet werden",
+      "transferComplete": "Goldübertragung erfolgreich abgeschlossen",
+      "goldRequestSent": "Goldanfrage erfolgreich gesendet"
+    }
   },
   "profileSummary": {
     "level": "Stufe",
@@ -417,7 +469,35 @@
     "gold": "Gold",
     "kingdom": "Königreichsstatistik",
     "actions": "Aktionen",
-    "biography": "Biografie"
+    "biography": "Biografie",
+    "notFound": "Benutzer nicht gefunden",
+    "neverLoggedIn": "Nie angemeldet",
+    "topFriends": "Beste Freunde",
+    "noFriends": "Keine Freunde gefunden.",
+    "accountStatus": {
+      "BANNED": "Dieses Konto wurde gesperrt.",
+      "SUSPENDED": "Dieses Konto ist vorübergehend gesperrt.",
+      "CLOSED": "Dieses Konto wurde geschlossen.",
+      "TIMEOUT": "Dieses Konto befindet sich in einer Auszeit.",
+      "unavailable": "Dieses Konto ist nicht verfügbar."
+    }
+  },
+  "goldRequestInbox": {
+    "title": "Goldanfragen",
+    "incoming": "Eingehende Anfragen",
+    "outgoing": "Ihre Anfragen",
+    "empty": "Keine Goldanfragen",
+    "expires": "Läuft ab: {{time}}",
+    "expired": "Abgelaufen",
+    "loading": "Wird geladen...",
+    "daysHoursLeft": "noch {{days}} T. {{hours}} Std.",
+    "hoursMinutesLeft": "noch {{hours}} Std. {{minutes}} Min.",
+    "minutesLeft": "noch {{minutes}} Min.",
+    "sent": "Gesendet: {{date}}",
+    "accept": "Annehmen",
+    "decline": "Ablehnen",
+    "loadFailed": "Anfragen konnten nicht geladen werden",
+    "responseFailed": "Antwort fehlgeschlagen"
   },
   "walkthrough": {
     "offer": {
@@ -458,6 +538,9 @@
       "title": "Wählen Sie Ihr erstes Ziel",
       "body": "Sie sind bereit, das Schlachtfeld zu erkunden. Vergleichen Sie Level, Gold und Risiko, bevor Sie Angriffsrunden ausgeben."
     }
+  },
+  "player": {
+    "you": "Sie"
   },
   "classes": {
     "FIGHTER": "Kämpfer",

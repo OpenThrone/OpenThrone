@@ -16,7 +16,7 @@ import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useState } from 'react';
 
-import tableClasses from '@/components/admin/AdminDataTable.module.css';
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import DateSortHeader from '@/components/admin/DateSortHeader';
 import TablePagination from '@/components/admin/TablePagination';
 import { logError } from '@/utils/logger';
@@ -229,7 +229,10 @@ export default function PlayerActivity({ days }: { days: string }) {
       {error && (
         <Alert color="red" role="alert">
           {t('loadError')}{' '}
-          <Button onClick={() => setRetry((value) => value + 1)}>
+          <Button
+            variant="default"
+            onClick={() => setRetry((value) => value + 1)}
+          >
             {t('retry')}
           </Button>
         </Alert>
@@ -245,92 +248,83 @@ export default function PlayerActivity({ days }: { days: string }) {
                 players: data.activePlayers.toLocaleString(),
               })}
             </Text>
-            <Table.ScrollContainer minWidth={400}>
-              <Table
-                className={tableClasses.table}
-                striped
-                highlightOnHover
-                withTableBorder
-              >
-                <Table.Thead>
-                  <Table.Tr>
-                    {['category', 'actionsCount', 'players'].map((key) => (
-                      <Table.Th key={key}>{t(key)}</Table.Th>
-                    ))}
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {data.breakdown.map((row) => (
-                    <Table.Tr key={row.category}>
-                      <Table.Th>{t(`categories.${row.category}`)}</Table.Th>
-                      <Table.Td>{row.actions.toLocaleString()}</Table.Td>
-                      <Table.Td>{row.players.toLocaleString()}</Table.Td>
-                    </Table.Tr>
+            <AdminDataTable
+              size="compact"
+              ariaLabel={t('playerActivity')}
+              withTableBorder
+            >
+              <Table.Thead>
+                <Table.Tr>
+                  {['category', 'actionsCount', 'players'].map((key) => (
+                    <Table.Th key={key}>{t(key)}</Table.Th>
                   ))}
-                </Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {data.breakdown.map((row) => (
+                  <Table.Tr key={row.category}>
+                    <Table.Th>{t(`categories.${row.category}`)}</Table.Th>
+                    <Table.Td>{row.actions.toLocaleString()}</Table.Td>
+                    <Table.Td>{row.players.toLocaleString()}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </AdminDataTable>
             <Title order={3}>{t('playerBreakdown')}</Title>
             <Text size="sm" c="dimmed">
               {t('topPlayersNote')}
             </Text>
-            <Table.ScrollContainer minWidth={1000}>
-              <Table
-                className={tableClasses.table}
-                striped
-                highlightOnHover
-                withTableBorder
-                style={{ fontVariantNumeric: 'tabular-nums' }}
-              >
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>{t('player')}</Table.Th>
-                    <DateSortHeader
-                      label={t('lastActivity')}
-                      direction={playerSortDirection}
-                      onToggle={() => {
-                        setPlayerSortDirection((value) =>
-                          value === 'asc' ? 'desc' : 'asc',
-                        );
-                        setPlayerPage(1);
-                      }}
-                    />
-                    {CATEGORIES.map((key) => (
-                      <Table.Th key={key}>{t(`categories.${key}`)}</Table.Th>
-                    ))}
-                    <Table.Th>{t('total')}</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {players.map((row) => (
-                    <Table.Tr key={row.id}>
-                      <Table.Td>
-                        <Button
-                          variant="subtle"
-                          size="compact-sm"
-                          onClick={() => {
-                            setPlayer(String(row.id));
-                            setPlayerId(String(row.id));
-                            setPage(1);
-                          }}
-                        >
-                          {row.name} (#{row.id})
-                        </Button>
-                      </Table.Td>
-                      <Table.Td>
-                        {new Date(row.lastAt).toLocaleString()}
-                      </Table.Td>
-                      {CATEGORIES.map((key) => (
-                        <Table.Td key={key}>
-                          {(row.counts[key] ?? 0).toLocaleString()}
-                        </Table.Td>
-                      ))}
-                      <Table.Td>{row.total.toLocaleString()}</Table.Td>
-                    </Table.Tr>
+            <AdminDataTable
+              size="wide"
+              ariaLabel={t('playerBreakdown')}
+              withTableBorder
+            >
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{t('player')}</Table.Th>
+                  <DateSortHeader
+                    label={t('lastActivity')}
+                    direction={playerSortDirection}
+                    onToggle={() => {
+                      setPlayerSortDirection((value) =>
+                        value === 'asc' ? 'desc' : 'asc',
+                      );
+                      setPlayerPage(1);
+                    }}
+                  />
+                  {CATEGORIES.map((key) => (
+                    <Table.Th key={key}>{t(`categories.${key}`)}</Table.Th>
                   ))}
-                </Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
+                  <Table.Th>{t('total')}</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {players.map((row) => (
+                  <Table.Tr key={row.id}>
+                    <Table.Td>
+                      <Button
+                        variant="subtle"
+                        size="compact-sm"
+                        onClick={() => {
+                          setPlayer(String(row.id));
+                          setPlayerId(String(row.id));
+                          setPage(1);
+                        }}
+                      >
+                        {row.name} (#{row.id})
+                      </Button>
+                    </Table.Td>
+                    <Table.Td>{new Date(row.lastAt).toLocaleString()}</Table.Td>
+                    {CATEGORIES.map((key) => (
+                      <Table.Td key={key}>
+                        {(row.counts[key] ?? 0).toLocaleString()}
+                      </Table.Td>
+                    ))}
+                    <Table.Td>{row.total.toLocaleString()}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </AdminDataTable>
             <TablePagination
               label={t('playerBreakdown')}
               page={playerPage}
@@ -354,67 +348,60 @@ export default function PlayerActivity({ days }: { days: string }) {
                 setPage(1);
               }}
             />
-            <Table.ScrollContainer minWidth={850}>
-              <Table
-                className={tableClasses.table}
-                striped
-                highlightOnHover
-                withTableBorder
-              >
-                <Table.Thead>
-                  <Table.Tr>
-                    <DateSortHeader
-                      label={t('time')}
-                      direction={sortDirection}
-                      onToggle={() => {
-                        setSortDirection((value) =>
-                          value === 'asc' ? 'desc' : 'asc',
-                        );
-                        setPage(1);
-                      }}
-                    />
-                    {[
-                      'player',
-                      'category',
-                      'action',
-                      'gold',
-                      'target',
-                      'details',
-                    ].map((key) => (
-                      <Table.Th key={key}>{t(key)}</Table.Th>
-                    ))}
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {data.recent.map((row) => (
-                    <Table.Tr key={row.key}>
-                      <Table.Td>{new Date(row.at).toLocaleString()}</Table.Td>
-                      <Table.Td>
-                        {row.display_name} (#{row.actor})
-                      </Table.Td>
-                      <Table.Td>{t(`categories.${row.category}`)}</Table.Td>
-                      <Table.Td>
-                        {t(`actions.${row.action}`, {
-                          defaultValue: row.action,
-                        })}
-                      </Table.Td>
-                      <Table.Td>{row.gold ?? '—'}</Table.Td>
-                      <Table.Td>{row.target ? `#${row.target}` : '—'}</Table.Td>
-                      <Table.Td>
-                        {row.attack_id && (
-                          <Anchor
-                            component={Link}
-                            href={`/home/admin/attacks?attackId=${row.attack_id}`}
-                          >
-                            {t('attackNumber', { id: row.attack_id })}
-                          </Anchor>
-                        )}
-                      </Table.Td>
-                    </Table.Tr>
+            <AdminDataTable ariaLabel={t('timeline')} withTableBorder>
+              <Table.Thead>
+                <Table.Tr>
+                  <DateSortHeader
+                    label={t('time')}
+                    direction={sortDirection}
+                    onToggle={() => {
+                      setSortDirection((value) =>
+                        value === 'asc' ? 'desc' : 'asc',
+                      );
+                      setPage(1);
+                    }}
+                  />
+                  {[
+                    'player',
+                    'category',
+                    'action',
+                    'gold',
+                    'target',
+                    'details',
+                  ].map((key) => (
+                    <Table.Th key={key}>{t(key)}</Table.Th>
                   ))}
-                </Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {data.recent.map((row) => (
+                  <Table.Tr key={row.key}>
+                    <Table.Td>{new Date(row.at).toLocaleString()}</Table.Td>
+                    <Table.Td>
+                      {row.display_name} (#{row.actor})
+                    </Table.Td>
+                    <Table.Td>{t(`categories.${row.category}`)}</Table.Td>
+                    <Table.Td>
+                      {t(`actions.${row.action}`, {
+                        defaultValue: row.action,
+                      })}
+                    </Table.Td>
+                    <Table.Td>{row.gold ?? '—'}</Table.Td>
+                    <Table.Td>{row.target ? `#${row.target}` : '—'}</Table.Td>
+                    <Table.Td>
+                      {row.attack_id && (
+                        <Anchor
+                          component={Link}
+                          href={`/home/admin/attacks?attackId=${row.attack_id}`}
+                        >
+                          {t('attackNumber', { id: row.attack_id })}
+                        </Anchor>
+                      )}
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </AdminDataTable>
             {!data.total && <Text c="dimmed">{t('empty')}</Text>}
           </>
         )

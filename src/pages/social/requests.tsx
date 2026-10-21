@@ -1,22 +1,18 @@
-import {
-  Avatar,
-  Badge,
-  Button,
-  Group,
-  Indicator,
-  Loader,
-  Table,
-  Text,
-} from '@mantine/core';
+import { faEnvelopeOpen } from '@fortawesome/free-solid-svg-icons';
+import { Avatar, Button, Group, Table, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import React, { useEffect, useState } from 'react';
 
 import ConfirmationModal from '@/components/ConfirmationModal';
+import { EmptyState } from '@/components/game/EmptyState';
 import { GameCard } from '@/components/game/GameCard';
+import { PageLoading } from '@/components/game/PageLoading';
 import { StyledTable } from '@/components/game/StyledTable';
 import MainArea from '@/components/MainArea';
+import OnlineIndicator from '@/components/player/OnlineIndicator';
+import PlayerIdentityLine from '@/components/player/PlayerIdentityLine';
+import YouBadge from '@/components/player/YouBadge';
 import { useUser } from '@/context/users';
-import { usePlayerIdentity } from '@/hooks/usePlayerIdentity';
 import UserModel from '@/models/Users';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
@@ -44,7 +40,6 @@ type RequestAction = 'accept' | 'decline' | 'cancel';
 const Requests = () => {
   const { t } = useTranslation('social');
   const [requests, setRequests] = useState<SocialRequest[]>([]);
-  const { raceName, className } = usePlayerIdentity();
   const [loading, setLoading] = useState(true);
   const [actionState, setActionState] = useState<{
     id: number;
@@ -69,9 +64,7 @@ const Requests = () => {
   if (loading) {
     return (
       <MainArea title={t('requests.title')}>
-        <GameCard title={t('requests.title')}>
-          <Loader />
-        </GameCard>
+        <PageLoading cardTitle={t('requests.incomingRequests')} block={false} />
       </MainArea>
     );
   }
@@ -148,16 +141,6 @@ const Requests = () => {
   };
 
   const renderRows = (requestsList, requestType: 'incoming' | 'outgoing') => {
-    if (requestsList.length === 0) {
-      return (
-        <Table.Tr style={{ background: '#0f141a' }}>
-          <Table.Td colSpan={4} style={{ borderColor: '#1f2b3b' }}>
-            {t('requests.noRequestsFound')}
-          </Table.Td>
-        </Table.Tr>
-      );
-    }
-
     return requestsList.map((request) => {
       const player = new UserModel(request.friend, true, false);
       const statusLabel =
@@ -168,32 +151,29 @@ const Requests = () => {
         actionState?.id === request.id && actionState?.action === action;
 
       return (
-        <Table.Tr key={request.id} style={{ background: '#0f141a' }}>
-          <Table.Td style={{ borderColor: '#1f2b3b' }}>
+        <Table.Tr key={request.id}>
+          <Table.Td>
             <Group gap="sm" className="text-justify">
-              <Indicator color={player.is_online ? 'teal' : 'red'}>
+              <OnlineIndicator online={!!player.is_online}>
                 <Avatar src={player.avatar} size={40} radius={40} />
-              </Indicator>
+              </OnlineIndicator>
               <div>
-                <Text fz="md" fw={500}>
-                  {player.displayName || t('requests.unknownPlayer')}
-                  {player.is_player && (
-                    <Badge color="blue" ml={5}>
-                      {t('friends.you')}
-                    </Badge>
-                  )}
-                </Text>
-                <Text fz="xs" c="dimmed">
-                  {raceName(player.race)} {className(player.class)}
-                </Text>
+                <Group gap={5}>
+                  <Text component="div" fz="md" fw={500}>
+                    {player.displayName || t('requests.unknownPlayer')}
+                  </Text>
+                  {player.is_player && <YouBadge />}
+                </Group>
+                <PlayerIdentityLine
+                  race={player.race}
+                  playerClass={player.class}
+                />
               </div>
             </Group>
           </Table.Td>
-          <Table.Td style={{ borderColor: '#1f2b3b' }}>
-            {formatDate(request.requestDate)}
-          </Table.Td>
-          <Table.Td style={{ borderColor: '#1f2b3b' }}>{statusLabel}</Table.Td>
-          <Table.Td style={{ borderColor: '#1f2b3b' }}>
+          <Table.Td>{formatDate(request.requestDate)}</Table.Td>
+          <Table.Td>{statusLabel}</Table.Td>
+          <Table.Td>
             {requestType === 'incoming' ? (
               <Group gap="xs">
                 <Button
@@ -236,29 +216,45 @@ const Requests = () => {
   return (
     <MainArea title={t('requests.title')}>
       <GameCard title={t('requests.incomingRequests')}>
-        <StyledTable
-          headers={[
-            t('requests.player'),
-            t('requests.dateTime'),
-            t('requests.status'),
-            t('requests.actions'),
-          ]}
-        >
-          {renderRows(incomingRequests, 'incoming')}
-        </StyledTable>
+        {incomingRequests.length === 0 ? (
+          <EmptyState
+            compact
+            icon={faEnvelopeOpen}
+            title={t('requests.noRequestsFound')}
+          />
+        ) : (
+          <StyledTable
+            headers={[
+              t('requests.player'),
+              t('requests.dateTime'),
+              t('requests.status'),
+              t('requests.actions'),
+            ]}
+          >
+            {renderRows(incomingRequests, 'incoming')}
+          </StyledTable>
+        )}
       </GameCard>
 
       <GameCard title={t('requests.outgoingRequests')} mt="md">
-        <StyledTable
-          headers={[
-            t('requests.player'),
-            t('requests.dateTime'),
-            t('requests.status'),
-            t('requests.actions'),
-          ]}
-        >
-          {renderRows(outgoingRequests, 'outgoing')}
-        </StyledTable>
+        {outgoingRequests.length === 0 ? (
+          <EmptyState
+            compact
+            icon={faEnvelopeOpen}
+            title={t('requests.noRequestsFound')}
+          />
+        ) : (
+          <StyledTable
+            headers={[
+              t('requests.player'),
+              t('requests.dateTime'),
+              t('requests.status'),
+              t('requests.actions'),
+            ]}
+          >
+            {renderRows(outgoingRequests, 'outgoing')}
+          </StyledTable>
+        )}
       </GameCard>
       <ConfirmationModal
         isOpen={declineTarget !== null}

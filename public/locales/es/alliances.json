@@ -217,7 +217,6 @@
   },
   "bank": {
     "totalBalance": "Tesoro total de la alianza",
-    "goldAmount": "{{amount}} de oro",
     "historyTitle": "Historial de transacciones",
     "date": "Fecha",
     "user": "Miembro",

@@ -101,6 +101,7 @@ Keep the existing identity when refining a surface. These guidelines describe a 
 | Illustrated public heroes | [PublicHero.tsx](src/components/public/PublicHero.tsx) |
 | Shared public authentication layout | [PublicAuthLayout.tsx](src/components/public/PublicAuthLayout.tsx) |
 | Public chronicle layouts | [PublicPages.module.css](src/components/public/PublicPages.module.css) |
+| Visual guide: every component with mock data (`/test`, dev only) | [test.tsx](src/pages/test.tsx), [showcase/](src/components/showcase/) |
 
 The implementation contains overlapping Mantine, Tailwind, CSS-variable, and legacy styles. They are not interchangeable, and their presence is not approval to extend every pattern. Prefer the existing component used on the target surface; avoid another parallel styling system.
 
@@ -126,6 +127,7 @@ Legacy Bootstrap-dark colors, parchment imagery, and isolated social gradients r
 
 - Use Chomsky for prominent page titles and short section headings where it remains readable. Several section headings may appear on one screen; avoid turning every label into a display treatment.
 - Use Inter for body copy, resource values, dense tables, instructions, and longer explanations. MedievalSharp may mark short in-world headings or labels where existing components already use it.
+- Headings inside a card use `SectionHeading` (MedievalSharp, the card-title face one step down), not Mantine `Title`, which renders Chomsky. Chomsky stays on page titles and hero lines.
 - Keep ornate type out of dense data and long instructions. Do not force a font overhaul into a local change.
 - Use Mantine's type scale and the existing surface hierarchy rather than copying fixed sizes from this document.
 - Allow translated headings to wrap. Preserve the distinction between title, description, value, and supporting label without relying on uppercase or letter spacing alone.
@@ -165,12 +167,12 @@ Use Mantine primitives where available, styled through the existing theme and co
 
 | Surface | Guidance |
 | --- | --- |
-| Cards | Keep title, optional header action, and content distinct. Render children once; preserve caller props and styles. |
+| Cards | Keep title, optional header action, and content distinct. Render children once; preserve caller props and styles. The page title appears once, in `MainArea`; card titles are one section level below it and never repeat it. `goldAccent` (the default) marks a page's primary, standalone or actionable card and a report's outcome card; supporting panels use `goldAccent={false}`. Do not toggle it to show which side won. |
 | Buttons | Name the action. Distinguish primary, secondary, and destructive actions through wording and established variants. Prevent double submission and show pending state. |
 | Inputs | Keep visible labels, relevant units, and accessible validation. Do not rely on placeholders to explain a field. Preserve entered values after recoverable errors. |
 | Tables and reports | Explain quantities, costs, losses, and uncertainty. Distinguish unknown information from zero, especially in spy reports. |
-| Alerts | State the problem or result and the useful next step. Avoid using ornament to compete with the message. |
-| Navigation | Show the current location and provide a clear keyboard focus state. Keep essential actions reachable on small screens. |
+| Alerts | State the problem or result and the useful next step. Avoid using ornament to compete with the message. Public and account error alerts use a filled red `Alert` with a title and `role="alert"`. |
+| Navigation | Show the current location and provide a clear keyboard focus state. Keep essential actions reachable on small screens. Routed in-page tabs use `game/TabBar`. |
 | Destructive flows | State what will be lost and what persists. Use a confirmation step for consequential irreversible actions; follow existing authentication and authorization policy. |
 
 ## States and Accessibility
@@ -187,6 +189,8 @@ Use Mantine primitives where available, styled through the existing theme and co
 This document records visual identity, current sources, and preferred guidance. It is not a claim that the existing UI passes every accessibility or responsive check.
 
 For each change, inspect the target's current implementation and verify the affected states and screen sizes. Update source references and guidance when a shared pattern changes. Keep exact color ramps, shadow recipes, breakpoint behavior, and component APIs in their runtime sources to reduce drift.
+
+The `/test` visual guide is where identity changes are proposed and reviewed: change it first, check it across race themes and backdrops, then apply the change to game pages. Adding or removing a component updates the guide in the same change (see [AGENTS.md](AGENTS.md), "Visual Guide").
 
 ### Public action and reading hierarchy
 

@@ -2,6 +2,7 @@ import { useTranslation } from 'next-i18next';
 
 import Image from '@/components/ArtworkImage';
 import frameClasses from '@/components/game/FantasyFrame.module.css';
+import PlayerIdentityLine from '@/components/player/PlayerIdentityLine';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 
 import classes from './Profile.module.css';
@@ -75,7 +76,13 @@ export function ProfileHero({
               className={classes.factIcon}
               style={{ fontSize: '1.375rem' }}
             />
-            <span>{`${race ?? ''} ${playerClass ?? ''}`.trim()}</span>
+            <PlayerIdentityLine
+              component="span"
+              race={race}
+              playerClass={playerClass}
+              inherit
+              c="var(--ot-body)"
+            />
           </div>
 
           <dl className={classes.facts}>

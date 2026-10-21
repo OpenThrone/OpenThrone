@@ -15,7 +15,7 @@ export default function AdminRequestState({
     <Alert color="red" role="alert" title={t('request.loadTitle')}>
       <Group justify="space-between" align="center">
         <span>{message}</span>
-        <Button variant="light" onClick={onRetry}>
+        <Button variant="default" onClick={onRetry}>
           {t('request.retry')}
         </Button>
       </Group>

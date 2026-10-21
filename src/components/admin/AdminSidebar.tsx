@@ -270,6 +270,7 @@ export const AdminMobileNav = () => {
         closeButtonProps={{
           icon: <FontAwesomeIcon icon={faXmark} />,
           'aria-label': tCommon('buttons.close'),
+          size: 'lg',
         }}
         scrollAreaComponent={ScrollArea.Autosize}
       >

@@ -2,7 +2,6 @@ import {
   Alert,
   Button,
   Group,
-  Modal,
   Paper,
   Select,
   Stack,
@@ -10,16 +9,18 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import type { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { alertService } from '@/services/Alert.service';
 import { isAdmin, isImpersonatedSession } from '@/utils/authorization';
 
 interface BotEntry {
@@ -122,12 +123,11 @@ const BotsPage = ({ canManageBots }: BotsPageProps) => {
       }
       setActionResult(data);
       setPendingAction(null);
-      notifications.show({
-        title: t('bots.actionComplete'),
-        message:
-          typeof data.message === 'string' ? data.message : t('bots.saved'),
-        color: 'green',
-      });
+      alertService.notify(
+        'success',
+        typeof data.message === 'string' ? data.message : t('bots.saved'),
+        { title: t('bots.actionComplete') },
+      );
       await loadStatus();
     } catch (error) {
       setActionError(
@@ -169,7 +169,7 @@ const BotsPage = ({ canManageBots }: BotsPageProps) => {
                 <Text size="sm">{loadError}</Text>
                 <Button
                   size="xs"
-                  variant="light"
+                  variant="default"
                   onClick={() => loadStatus().catch(() => undefined)}
                 >
                   {t('bots.retry')}
@@ -186,45 +186,43 @@ const BotsPage = ({ canManageBots }: BotsPageProps) => {
                 <Text size="sm" mb="sm">
                   {t('bots.total', { count: report.total })}
                 </Text>
-                <div style={{ overflowX: 'auto' }}>
-                  <Table striped highlightOnHover miw={680}>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Th>{t('bots.columns.id')}</Table.Th>
-                        <Table.Th>{t('bots.columns.name')}</Table.Th>
-                        <Table.Th>{t('bots.columns.raceClass')}</Table.Th>
-                        <Table.Th>{t('bots.columns.persona')}</Table.Th>
-                        <Table.Th>{t('bots.columns.lastRun')}</Table.Th>
-                        <Table.Th>{t('bots.columns.gold')}</Table.Th>
+                <AdminDataTable ariaLabel={t('bots.rosterTitle')}>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>{t('bots.columns.id')}</Table.Th>
+                      <Table.Th>{t('bots.columns.name')}</Table.Th>
+                      <Table.Th>{t('bots.columns.raceClass')}</Table.Th>
+                      <Table.Th>{t('bots.columns.persona')}</Table.Th>
+                      <Table.Th>{t('bots.columns.lastRun')}</Table.Th>
+                      <Table.Th>{t('bots.columns.gold')}</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {report.bots.map((bot) => (
+                      <Table.Tr key={bot.id}>
+                        <Table.Td>{bot.id}</Table.Td>
+                        <Table.Td style={{ overflowWrap: 'anywhere' }}>
+                          {bot.display_name}
+                        </Table.Td>
+                        <Table.Td>
+                          {bot.race} / {bot.class}
+                        </Table.Td>
+                        <Table.Td>{bot.botPersona ?? '—'}</Table.Td>
+                        <Table.Td>
+                          {bot.botLastRunAt
+                            ? new Intl.DateTimeFormat(undefined, {
+                                dateStyle: 'medium',
+                                timeStyle: 'short',
+                              }).format(new Date(bot.botLastRunAt))
+                            : t('bots.neverRun')}
+                        </Table.Td>
+                        <Table.Td>
+                          {new Intl.NumberFormat().format(Number(bot.gold))}
+                        </Table.Td>
                       </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {report.bots.map((bot) => (
-                        <Table.Tr key={bot.id}>
-                          <Table.Td>{bot.id}</Table.Td>
-                          <Table.Td style={{ overflowWrap: 'anywhere' }}>
-                            {bot.display_name}
-                          </Table.Td>
-                          <Table.Td>
-                            {bot.race} / {bot.class}
-                          </Table.Td>
-                          <Table.Td>{bot.botPersona ?? '—'}</Table.Td>
-                          <Table.Td>
-                            {bot.botLastRunAt
-                              ? new Intl.DateTimeFormat(undefined, {
-                                  dateStyle: 'medium',
-                                  timeStyle: 'short',
-                                }).format(new Date(bot.botLastRunAt))
-                              : t('bots.neverRun')}
-                          </Table.Td>
-                          <Table.Td>
-                            {new Intl.NumberFormat().format(Number(bot.gold))}
-                          </Table.Td>
-                        </Table.Tr>
-                      ))}
-                    </Table.Tbody>
-                  </Table>
-                </div>
+                    ))}
+                  </Table.Tbody>
+                </AdminDataTable>
               </>
             ) : (
               <Text c="dimmed">
@@ -240,7 +238,7 @@ const BotsPage = ({ canManageBots }: BotsPageProps) => {
           )}
           {actionResult !== null && (
             <Paper withBorder p="md">
-              <Title order={4} mb="xs">
+              <Title order={3} mb="xs">
                 {t('bots.resultTitle')}
               </Title>
               <pre
@@ -315,47 +313,29 @@ const BotsPage = ({ canManageBots }: BotsPageProps) => {
         </Stack>
       )}
 
-      <Modal
-        opened={pendingAction !== null}
+      <ConfirmationModal
+        isOpen={pendingAction !== null}
         onClose={closeConfirmation}
-        centered
+        onConfirm={() => {
+          if (pendingAction) submitAction(pendingAction).catch(() => undefined);
+        }}
         title={
           pendingAction === 'provision'
             ? t('bots.confirmProvisionTitle')
             : t('bots.confirmRunTitle')
         }
-        closeOnClickOutside={!pending}
-        closeOnEscape={!pending}
-      >
-        <Stack>
-          <Text size="sm">
-            {pendingAction === 'provision'
-              ? t('bots.confirmProvisionMessage', { manifest })
-              : t('bots.confirmRunMessage', { schedule })}
-          </Text>
-          <Group justify="flex-end">
-            <Button
-              variant="default"
-              onClick={closeConfirmation}
-              disabled={pending}
-            >
-              {t('user.cancel')}
-            </Button>
-            <Button
-              color="red"
-              loading={pending}
-              onClick={() =>
-                pendingAction &&
-                submitAction(pendingAction).catch(() => undefined)
-              }
-            >
-              {pendingAction === 'provision'
-                ? t('bots.provision')
-                : t('bots.runNow')}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        message={
+          pendingAction === 'provision'
+            ? t('bots.confirmProvisionMessage', { manifest })
+            : t('bots.confirmRunMessage', { schedule })
+        }
+        type="destructive"
+        confirmText={
+          pendingAction === 'provision' ? t('bots.provision') : t('bots.runNow')
+        }
+        cancelText={t('user.cancel')}
+        isLoading={pending}
+      />
     </AdminLayout>
   );
 };

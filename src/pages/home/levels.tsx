@@ -21,6 +21,7 @@ import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
+import panelClasses from '@/components/game/Panels.module.css';
 import MainArea from '@/components/MainArea';
 import { DefaultLevelBonus } from '@/constants';
 import { useUser } from '@/context/users';
@@ -39,15 +40,7 @@ const StatCard = ({
   const { t } = useTranslation('home');
   return (
     <GameCard title={title} icon={icon}>
-      <Box
-        style={{
-          backgroundColor: '#0f141a',
-          borderRadius: '6px',
-          border: '1px solid #1f2b3b',
-          boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-          padding: '12px',
-        }}
-      >
+      <Box className={panelClasses.insetRow}>
         <Group justify="space-between">
           <Text size="xs" c="dimmed" fw={700} tt="uppercase">
             {t('levels.currentBonus')}
@@ -73,7 +66,7 @@ const StatCard = ({
         >
           <FontAwesomeIcon icon={faMinus} />
         </Button>
-        <Button onClick={onAdd} disabled={!canAdd} size="xs" color="yellow">
+        <Button onClick={onAdd} disabled={!canAdd} size="xs">
           <FontAwesomeIcon icon={faPlus} />
         </Button>
       </Group>
@@ -144,7 +137,7 @@ const Levels = () => {
         body: JSON.stringify({ changeQueue }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to save changes');
+      if (!response.ok) throw new Error(data.error || t('levels.saveFailed'));
 
       const updated = readUpdatedBonusPoints(data);
       if (updated) setLevels(updated);

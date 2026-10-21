@@ -24,7 +24,6 @@ import {
   Center,
   CopyButton,
   Group,
-  Loader,
   Popover,
   SimpleGrid,
   Space,
@@ -32,6 +31,7 @@ import {
   Text,
   ThemeIcon,
   Tooltip,
+  UnstyledButton,
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import Link from 'next/link';
@@ -39,6 +39,8 @@ import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
+import { PageLoading } from '@/components/game/PageLoading';
+import panelClasses from '@/components/game/Panels.module.css';
 import { StyledNews } from '@/components/game/StyledNews';
 import { StyledTable } from '@/components/game/StyledTable';
 import HeroBanner from '@/components/HeroBanner';
@@ -48,11 +50,12 @@ import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import StatCard from '@/components/StatCard';
 import { useUser } from '@/context/users';
 import { usePlayerIdentity } from '@/hooks/usePlayerIdentity';
+import type { Locales } from '@/types/typings';
 import { logError } from '@/utils/logger';
-import { toLocale } from '@/utils/numberFormatting';
+import { formatGold, toLocale } from '@/utils/numberFormatting';
 
 const Overview = () => {
-  const { t } = useTranslation('home');
+  const { t, i18n } = useTranslation('home');
   const { raceName, className } = usePlayerIdentity();
   const [getNews, setNews] = useState([]);
 
@@ -74,6 +77,7 @@ const Overview = () => {
   }, []);
 
   const { user, forceUpdate } = useUser();
+  const locale = user?.locale ?? (i18n.language as Locales);
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [siteOrigin, setSiteOrigin] = useState(
     process.env.NEXT_PUBLIC_URL_ROOT ?? '',
@@ -101,9 +105,7 @@ const Overview = () => {
   if (!user) {
     return (
       <MainArea title={t('overview.title')}>
-        <Center style={{ height: '50vh' }}>
-          <Loader data-testid="loading-spinner" />
-        </Center>
+        <PageLoading stats={4} lines={4} />
       </MainArea>
     );
   }
@@ -152,7 +154,7 @@ const Overview = () => {
     {
       icon: faUsers,
       label: t('overview.population'),
-      value: toLocale(user.population, user.locale),
+      value: toLocale(user.population, locale),
       href: '/battle/training',
     },
     {
@@ -167,42 +169,42 @@ const Overview = () => {
     {
       icon: faUserShield,
       label: t('overview.armySize'),
-      value: toLocale(user.armySize, user.locale),
+      value: toLocale(user.armySize, locale),
       href: '/battle/training',
     },
     {
       icon: faCoins,
       label: t('overview.gold'),
-      value: toLocale(user.gold, user.locale),
+      value: formatGold(user.gold, locale),
       href: '/structures/bank',
     },
     {
       icon: faLevelUpAlt,
       label: t('overview.level'),
-      value: toLocale(user.level, user.locale),
+      value: toLocale(user.level, locale),
       href: '/community/stats',
     },
     {
       icon: faSyncAlt,
       label: t('overview.goldPerTurn'),
-      value: toLocale(user.goldPerTurn, user.locale),
+      value: formatGold(user.goldPerTurn, locale),
       href: '/structures/bank',
     },
     {
       icon: faStar,
       label: t('overview.xpToNextLevel'),
-      value: toLocale(user.xpToNextLevel, user.locale),
+      value: toLocale(user.xpToNextLevel, locale),
     },
     {
       icon: faPiggyBank,
       label: t('overview.goldInBank'),
-      value: toLocale(user.goldInBank, user.locale),
+      value: formatGold(user.goldInBank, locale),
       href: '/structures/bank',
     },
     {
       icon: faMoneyBills,
       label: t('overview.netWorth'),
-      value: toLocale(user.netWorth, user.locale),
+      value: toLocale(user.netWorth, locale),
       href: '/community/stats',
     },
   ];
@@ -280,22 +282,22 @@ const Overview = () => {
       >
         <StatCard
           title={t('overview.gold')}
-          value={toLocale(user.gold, user.locale)}
+          value={formatGold(user.gold, locale)}
           icon={<FontAwesomeIcon icon={faCoins} />}
           variant="highlight"
           href="/structures/bank"
         />
         <StatCard
           title={t('overview.armySize')}
-          value={toLocale(user.armySize, user.locale)}
+          value={toLocale(user.armySize, locale)}
           icon={<FontAwesomeIcon icon={faUsers} />}
           href="/battle/training"
         />
         <StatCard
           title={t('overview.level')}
-          value={toLocale(user.level, user.locale)}
+          value={toLocale(user.level, locale)}
           icon={<FontAwesomeIcon icon={faLevelUpAlt} />}
-          subtext={`${t('overview.xpToNextLevel')}: ${toLocale(user.xpToNextLevel, user.locale)}`}
+          subtext={`${t('overview.xpToNextLevel')}: ${toLocale(user.xpToNextLevel, locale)}`}
           href="/community/stats"
         />
       </SimpleGrid>
@@ -321,13 +323,8 @@ const Overview = () => {
                 gap="sm"
                 wrap="nowrap"
                 data-testid="stat-slot"
+                className={panelClasses.insetRow}
                 style={{
-                  backgroundColor: 'var(--ot-inset)',
-                  borderRadius: '6px',
-                  border: '1px solid var(--ot-line)',
-                  boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-                  padding: '12px',
-                  alignItems: 'center',
                   cursor: stat.href ? 'pointer' : 'default',
                   transition: stat.href ? 'border-color 0.15s ease' : undefined,
                 }}
@@ -389,47 +386,47 @@ const Overview = () => {
             {
               icon: <RpgAwesomeIcon icon="crossed-swords" fw />,
               label: t('overview.offense'),
-              value: toLocale(user.getArmyStat('OFFENSE')),
+              value: toLocale(user.getArmyStat('OFFENSE'), locale),
               detail: t('overview.viewBreakdown'),
               withPopover: true,
             },
             {
               icon: <FontAwesomeIcon icon={faTrophy} />,
               label: t('overview.attacksWon'),
-              value: `${toLocale(user.statistics('OFFENSE', 'WON'))} / ${toLocale(user.statistics('OFFENSE', 'WON') + user.statistics('OFFENSE', 'LOST'))}`,
+              value: `${toLocale(user.statistics('OFFENSE', 'WON'), locale)} / ${toLocale(user.statistics('OFFENSE', 'WON') + user.statistics('OFFENSE', 'LOST'), locale)}`,
               href: '/battle/history',
             },
             {
               icon: <FontAwesomeIcon icon={faShieldAlt} />,
               label: t('overview.defense'),
-              value: toLocale(user.defense),
+              value: toLocale(user.defense, locale),
             },
             {
               icon: <FontAwesomeIcon icon={faMedal} />,
               label: t('overview.defendsWon'),
-              value: toLocale(user.statistics('DEFENSE', 'WON')),
+              value: toLocale(user.statistics('DEFENSE', 'WON'), locale),
               href: '/battle/history',
             },
             {
               icon: <FontAwesomeIcon icon={faUserSecret} />,
               label: t('overview.spyOffense'),
-              value: toLocale(user.spy),
+              value: toLocale(user.spy, locale),
             },
             {
               icon: <FontAwesomeIcon icon={faCrown} />,
               label: t('overview.spyVictories'),
-              value: `${toLocale(user.statistics('SPY', 'WON'))} / ${toLocale(user.statistics('SPY', 'WON') + user.statistics('SPY', 'LOST'))}`,
+              value: `${toLocale(user.statistics('SPY', 'WON'), locale)} / ${toLocale(user.statistics('SPY', 'WON') + user.statistics('SPY', 'LOST'), locale)}`,
               href: '/battle/history',
             },
             {
               icon: <FontAwesomeIcon icon={faEye} />,
               label: t('overview.spyDefense'),
-              value: toLocale(user.sentry),
+              value: toLocale(user.sentry, locale),
             },
             {
               icon: <FontAwesomeIcon icon={faShieldVirus} />,
               label: t('overview.sentryVictories'),
-              value: toLocale(user.statistics('SENTRY', 'WON')),
+              value: toLocale(user.statistics('SENTRY', 'WON'), locale),
               href: '/battle/history',
             },
           ].map((stat) => {
@@ -439,13 +436,8 @@ const Overview = () => {
                 gap="sm"
                 wrap="nowrap"
                 data-testid="stat-slot"
+                className={panelClasses.insetRow}
                 style={{
-                  backgroundColor: 'var(--ot-inset)',
-                  borderRadius: '6px',
-                  border: '1px solid var(--ot-line)',
-                  boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-                  padding: '12px',
-                  alignItems: 'center',
                   cursor: (stat as any).href ? 'pointer' : 'default',
                   transition: (stat as any).href
                     ? 'border-color 0.15s ease'
@@ -472,21 +464,19 @@ const Overview = () => {
                       position="bottom"
                       withArrow
                       shadow="md"
-                      opened={undefined}
                     >
                       <Popover.Target>
-                        <Text
-                          size="sm"
+                        <UnstyledButton
+                          fz="sm"
                           fw={700}
                           style={{
                             color: 'var(--ot-accent)',
-                            cursor: 'pointer',
                             textDecoration: 'underline dotted',
                           }}
                           data-testid="stat-value"
                         >
                           {stat.value}
-                        </Text>
+                        </UnstyledButton>
                       </Popover.Target>
                       <Popover.Dropdown>
                         {(() => {
@@ -506,7 +496,7 @@ const Overview = () => {
                               <Text>{t('overview.noBreakdownAvailable')}</Text>
                             );
                           return (
-                            <div style={{ maxHeight: 350, overflowY: 'auto' }}>
+                            <div>
                               <strong>{t('overview.offenseBreakdown')}</strong>
                               {units.length > 0 && (
                                 <>
@@ -527,11 +517,13 @@ const Overview = () => {
                                       >
                                         <Table.Td>{u.name}</Table.Td>
                                         <Table.Td>
-                                          {toLocale(u.quantity)}
+                                          {toLocale(u.quantity, locale)}
                                         </Table.Td>
-                                        <Table.Td>{toLocale(u.bonus)}</Table.Td>
                                         <Table.Td>
-                                          {toLocale(u.subtotal)}
+                                          {toLocale(u.bonus, locale)}
+                                        </Table.Td>
+                                        <Table.Td>
+                                          {toLocale(u.subtotal, locale)}
                                         </Table.Td>
                                       </Table.Tr>
                                     ))}
@@ -540,19 +532,20 @@ const Overview = () => {
                               )}
                               <div style={{ fontSize: 13, marginTop: 8 }}>
                                 <strong>{t('overview.equation')}</strong>
-                                <br />({toLocale(unitsTotal)}{' '}
+                                <br />({toLocale(unitsTotal, locale)}{' '}
                                 {t('overview.units')}
                                 {itemsTotal
-                                  ? ` + ${toLocale(itemsTotal)} ${t('overview.items')}`
+                                  ? ` + ${toLocale(itemsTotal, locale)} ${t('overview.items')}`
                                   : ''}
                                 {upgradesTotal
-                                  ? ` + ${toLocale(upgradesTotal)} ${t('overview.upgrades')}`
+                                  ? ` + ${toLocale(upgradesTotal, locale)} ${t('overview.upgrades')}`
                                   : ''}
                                 )
                                 {Math.abs(bonusAmount) >= 1
                                   ? ` × ${multiplier.toFixed(2)} ${t('overview.bonuses')}`
                                   : ''}
-                                = <strong>{toLocale(finalTotal)}</strong>
+                                ={' '}
+                                <strong>{toLocale(finalTotal, locale)}</strong>
                               </div>
                             </div>
                           );

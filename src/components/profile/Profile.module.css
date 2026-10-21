@@ -196,17 +196,18 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #6b7280;
+  background: var(--ot-muted);
   box-shadow: 0 0 0 2px rgba(0, 0, 0, .5);
 }
 
+/* Same presence colours as OnlineIndicator: teal online, muted offline. */
 .dot[data-state='online'] {
-  background: #3ddc6a;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, .5), 0 0 10px #3ddc6a;
+  background: var(--mantine-color-teal-5);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, .5), 0 0 10px var(--mantine-color-teal-5);
 }
 
 .dot[data-state='offline'] {
-  background: #2f9e57;
+  background: var(--ot-muted);
 }
 
 .lastSeen {

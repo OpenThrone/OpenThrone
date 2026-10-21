@@ -14,13 +14,16 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { notifications } from '@mantine/notifications';
+import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { PermissionType } from '@/lib/prisma-browser-exports';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
 type ApiClientType = 'USER' | 'SYSTEM' | 'SERVICE';
@@ -46,6 +49,7 @@ interface IssuedApiToken {
 }
 
 const ApiTokensPage = () => {
+  const { t } = useTranslation('admin-content');
   const [tokens, setTokens] = useState<ApiTokenRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -70,9 +74,7 @@ const ApiTokensPage = () => {
       setLoadError(null);
     } catch (err) {
       logError('Failed to load tokens:', err);
-      setLoadError(
-        'Token list could not be loaded. Check your access or connection and retry.',
-      );
+      setLoadError(t('apiTokens.loadError'));
     } finally {
       setLoading(false);
     }
@@ -97,21 +99,19 @@ const ApiTokensPage = () => {
       });
       if (!res.ok) throw new Error(`Request failed (${res.status})`);
       {
-        notifications.show({
-          title: 'Revoked',
-          message: 'Token revoked.',
-          color: 'green',
+        alertService.notify('success', t('apiTokens.revokedMessage'), {
+          title: t('apiTokens.revokedTitle'),
         });
         revokeModal.close();
         setPendingRevokeId(null);
         fetchTokens();
       }
     } catch (err) {
-      notifications.show({
-        title: 'Error',
-        message: err instanceof Error ? err.message : 'Failed to revoke token.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        err instanceof Error ? err.message : t('apiTokens.revokeFailed'),
+        { title: t('apiTokens.errorTitle') },
+      );
     } finally {
       setRevokingId(null);
     }
@@ -131,10 +131,8 @@ const ApiTokensPage = () => {
       .filter(Boolean);
 
     if (tokenName.trim().length < 3 || scopes.length === 0) {
-      notifications.show({
-        title: 'Missing details',
-        message: 'Token name and at least one scope are required.',
-        color: 'red',
+      alertService.notify('error', t('apiTokens.missingDetails'), {
+        title: t('apiTokens.missingDetailsTitle'),
       });
       return;
     }
@@ -159,17 +157,13 @@ const ApiTokensPage = () => {
       resetCreateForm();
       close();
       fetchTokens();
-      notifications.show({
-        title: 'Token issued',
-        message: 'Copy the token now; it will not be shown again.',
-        color: 'green',
+      alertService.notify('success', t('apiTokens.issuedMessage'), {
+        title: t('apiTokens.issuedTitle'),
       });
     } catch (err) {
       logError('Failed to create token:', err);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to issue token.',
-        color: 'red',
+      alertService.notify('error', t('apiTokens.issueFailed'), {
+        title: t('apiTokens.errorTitle'),
       });
     } finally {
       setCreating(false);
@@ -178,34 +172,35 @@ const ApiTokensPage = () => {
 
   return (
     <AdminLayout
-      title="System: API Tokens"
+      title={t('apiTokens.pageTitle')}
       permissions={[PermissionType.MANAGE_API_TOKENS]}
     >
       <Stack gap="md">
         <Group justify="space-between" align="flex-start">
           <Text size="sm" c="dimmed">
-            Manage OAuth-style API tokens for service integrations. Newly issued
-            secrets are shown once, then only their prefix remains visible.
+            {t('apiTokens.intro')}
           </Text>
-          <Button onClick={open}>+ Issue Token</Button>
+          <Button onClick={open}>{t('apiTokens.issueNew')}</Button>
         </Group>
 
         {issuedToken && (
           <Paper withBorder p="md">
             <Stack gap="xs">
               <Group justify="space-between">
-                <Text fw={700}>One-time token secret</Text>
+                <Text fw={700}>{t('apiTokens.secretTitle')}</Text>
                 <Button
                   size="xs"
                   variant="subtle"
                   onClick={() => setIssuedToken(null)}
                 >
-                  Dismiss
+                  {t('apiTokens.dismiss')}
                 </Button>
               </Group>
               <Text size="sm" c="dimmed">
-                Token #{issuedToken.tokenId} for client #{issuedToken.clientId};
-                copy this value before leaving the page.
+                {t('apiTokens.secretNote', {
+                  tokenId: issuedToken.tokenId,
+                  clientId: issuedToken.clientId,
+                })}
               </Text>
               <Code block>{issuedToken.token}</Code>
             </Stack>
@@ -213,7 +208,9 @@ const ApiTokensPage = () => {
         )}
 
         <GameCard
-          title={`Active Tokens (${tokens.filter((token) => !token.revokedAt).length})`}
+          title={t('apiTokens.activeTitle', {
+            count: tokens.filter((token) => !token.revokedAt).length,
+          })}
         >
           {loading ? (
             <Group justify="center" py="xl">
@@ -224,150 +221,158 @@ const ApiTokensPage = () => {
               <Text c="red" role="alert">
                 {loadError}
               </Text>
-              <Button variant="light" onClick={fetchTokens}>
-                Retry
+              <Button variant="default" onClick={fetchTokens}>
+                {t('request.retry')}
               </Button>
             </Stack>
           ) : tokens.length === 0 ? (
             <Text c="dimmed" ta="center" py="md">
-              No API tokens.
+              {t('apiTokens.empty')}
             </Text>
           ) : (
-            <Paper withBorder>
-              <Table>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>ID</Table.Th>
-                    <Table.Th>Prefix</Table.Th>
-                    <Table.Th>Client</Table.Th>
-                    <Table.Th>Scopes</Table.Th>
-                    <Table.Th>Status</Table.Th>
-                    <Table.Th>Last Used</Table.Th>
-                    <Table.Th>Actions</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {tokens.map((t) => (
-                    <Table.Tr key={t.id}>
-                      <Table.Td>{t.id}</Table.Td>
-                      <Table.Td>
-                        <code>{t.tokenPrefix}</code>
-                      </Table.Td>
-                      <Table.Td>
-                        <Stack gap={2}>
-                          <Text size="sm">{t.client?.name || '—'}</Text>
-                          {t.client?.clientType && (
-                            <Text size="xs" c="dimmed">
-                              {t.client.clientType}
-                            </Text>
-                          )}
-                        </Stack>
-                      </Table.Td>
-                      <Table.Td>
-                        {Array.isArray(t.scopes) ? t.scopes.join(', ') : '—'}
-                      </Table.Td>
-                      <Table.Td>
-                        {t.revokedAt ? (
-                          <Badge color="red">Revoked</Badge>
-                        ) : t.expiresAt &&
-                          new Date(t.expiresAt).getTime() <= Date.now() ? (
-                          <Badge color="gray">Expired</Badge>
-                        ) : (
-                          <Badge color="green">Active</Badge>
+            <AdminDataTable ariaLabel={t('apiTokens.tableLabel')}>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{t('apiTokens.colId')}</Table.Th>
+                  <Table.Th>{t('apiTokens.colPrefix')}</Table.Th>
+                  <Table.Th>{t('apiTokens.colClient')}</Table.Th>
+                  <Table.Th>{t('apiTokens.colScopes')}</Table.Th>
+                  <Table.Th>{t('apiTokens.colStatus')}</Table.Th>
+                  <Table.Th>{t('apiTokens.colLastUsed')}</Table.Th>
+                  <Table.Th>{t('apiTokens.colActions')}</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {tokens.map((token) => (
+                  <Table.Tr key={token.id}>
+                    <Table.Td>{token.id}</Table.Td>
+                    <Table.Td>
+                      <code>{token.tokenPrefix}</code>
+                    </Table.Td>
+                    <Table.Td>
+                      <Stack gap={2}>
+                        <Text size="sm">{token.client?.name || '—'}</Text>
+                        {token.client?.clientType && (
+                          <Text size="xs" c="dimmed">
+                            {token.client.clientType}
+                          </Text>
                         )}
-                      </Table.Td>
-                      <Table.Td>
-                        {t.lastUsedAt
-                          ? new Date(t.lastUsedAt).toLocaleString()
-                          : 'Never'}
-                      </Table.Td>
-                      <Table.Td>
-                        {!t.revokedAt &&
-                          (!t.expiresAt ||
-                            new Date(t.expiresAt).getTime() > Date.now()) && (
-                            <Button
-                              size="xs"
-                              color="red"
-                              variant="outline"
-                              onClick={() => openRevoke(t.id)}
-                              loading={revokingId === t.id}
-                            >
-                              Revoke
-                            </Button>
-                          )}
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Paper>
+                      </Stack>
+                    </Table.Td>
+                    <Table.Td>
+                      {Array.isArray(token.scopes)
+                        ? token.scopes.join(', ')
+                        : '—'}
+                    </Table.Td>
+                    <Table.Td>
+                      {token.revokedAt ? (
+                        <Badge color="red">
+                          {t('apiTokens.statusRevoked')}
+                        </Badge>
+                      ) : token.expiresAt &&
+                        new Date(token.expiresAt).getTime() <= Date.now() ? (
+                        <Badge color="gray">
+                          {t('apiTokens.statusExpired')}
+                        </Badge>
+                      ) : (
+                        <Badge color="green">
+                          {t('apiTokens.statusActive')}
+                        </Badge>
+                      )}
+                    </Table.Td>
+                    <Table.Td>
+                      {token.lastUsedAt
+                        ? new Date(token.lastUsedAt).toLocaleString()
+                        : t('apiTokens.never')}
+                    </Table.Td>
+                    <Table.Td>
+                      {!token.revokedAt &&
+                        (!token.expiresAt ||
+                          new Date(token.expiresAt).getTime() > Date.now()) && (
+                          <Button
+                            size="xs"
+                            color="red"
+                            onClick={() => openRevoke(token.id)}
+                            loading={revokingId === token.id}
+                          >
+                            {t('apiTokens.revoke')}
+                          </Button>
+                        )}
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </AdminDataTable>
           )}
         </GameCard>
       </Stack>
 
-      <Modal opened={opened} onClose={close} title="Issue API Token">
+      <Modal
+        opened={opened}
+        onClose={() => {
+          if (!creating) close();
+        }}
+        title={t('apiTokens.issueTitle')}
+        centered
+        closeOnClickOutside={!creating}
+        closeOnEscape={!creating}
+        withCloseButton={!creating}
+      >
         <Stack>
           <TextInput
-            label="Client name"
-            description="Human-readable owner, integration, or service name."
+            label={t('apiTokens.clientName')}
+            description={t('apiTokens.clientNameHint')}
             value={tokenName}
             onChange={(event) => setTokenName(event.currentTarget.value)}
           />
           <Select
-            label="Client type"
+            label={t('apiTokens.clientType')}
             data={[
-              { value: 'SYSTEM', label: 'System' },
-              { value: 'SERVICE', label: 'Service' },
-              { value: 'USER', label: 'User' },
+              { value: 'SYSTEM', label: t('apiTokens.clientTypes.SYSTEM') },
+              { value: 'SERVICE', label: t('apiTokens.clientTypes.SERVICE') },
+              { value: 'USER', label: t('apiTokens.clientTypes.USER') },
             ]}
             value={clientType}
             onChange={(value) => value && setClientType(value as ApiClientType)}
           />
           <Textarea
-            label="Scopes"
-            description="Separate scopes with commas or new lines."
+            label={t('apiTokens.colScopes')}
+            description={t('apiTokens.scopesHint')}
             minRows={3}
             value={scopesText}
             onChange={(event) => setScopesText(event.currentTarget.value)}
           />
           <TextInput
-            label="Expires at"
-            description="Optional expiration date/time."
+            label={t('apiTokens.expiresAt')}
+            description={t('apiTokens.expiresAtHint')}
             type="datetime-local"
             value={expiresAt}
             onChange={(event) => setExpiresAt(event.currentTarget.value)}
           />
           <Group justify="flex-end">
-            <Button variant="outline" onClick={close}>
-              Cancel
+            <Button variant="default" onClick={close} disabled={creating}>
+              {t('apiTokens.cancel')}
             </Button>
             <Button onClick={createToken} loading={creating}>
-              Issue Token
+              {t('apiTokens.issueConfirm')}
             </Button>
           </Group>
         </Stack>
       </Modal>
 
-      <Modal
-        opened={revokeOpened}
-        onClose={revokeModal.close}
-        title="Revoke API Token"
-      >
-        <Stack>
-          <Text size="sm" c="dimmed">
-            This immediately disables token #{pendingRevokeId}. Existing
-            integrations using it will stop authenticating.
-          </Text>
-          <Group justify="flex-end">
-            <Button variant="outline" onClick={revokeModal.close}>
-              Cancel
-            </Button>
-            <Button color="red" onClick={revoke} loading={!!revokingId}>
-              Revoke Token
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+      <ConfirmationModal
+        isOpen={revokeOpened}
+        onClose={() => {
+          if (!revokingId) revokeModal.close();
+        }}
+        onConfirm={revoke}
+        title={t('apiTokens.revokeTitle')}
+        message={t('apiTokens.revokeMessage', { id: pendingRevokeId })}
+        type="destructive"
+        confirmText={t('apiTokens.revokeConfirm')}
+        cancelText={t('apiTokens.cancel')}
+        isLoading={!!revokingId}
+      />
     </AdminLayout>
   );
 };

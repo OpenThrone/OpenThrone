@@ -75,6 +75,10 @@ When active:
 - Type check: `bun run check-types`
 - Tests: `bun run test` (= `test:bun`, the default)
 - Single test: `bun test <path/to/test-file>`
+- Integration tests: `bun run test:integration` — starts a throwaway
+  PostgreSQL container (podman/docker), applies migrations, and runs
+  `test/integration` against it (era rollover, concurrent attacks). It refuses
+  any database except that container; never point it at staging or production.
 - Jest-native DOM suites: `bun run test:jest -- <path/to/test-file>` — only
   `src/lib/socket.test.ts`, `src/components/sidebar/SidebarShared.test.tsx`,
   and `src/__tests__/app-shell.test.tsx` need jsdom; `test:bun` excludes them
@@ -274,7 +278,35 @@ When reports come in for UI defects, styling discrepancies, broken layouts, or v
 
 ---
 
-## 12) “Done” Checklist
+## 12) Visual Guide (`/test`)
+
+`/test` (`src/pages/test.tsx`, sections in `src/components/showcase/`) is the
+visual guide: every in-game component rendered with mock data and mock actions,
+switchable by race theme, page backdrop, veil and artwork source. It is
+developer-only and returns 404 in production builds.
+
+- **Visual identity changes start in the guide.** Before changing shared
+  tokens, typography, surfaces, framing, backdrops or a shared component's
+  look, make the change visible in `/test` first, review it there across race
+  themes and backdrops, then roll it out to game pages.
+- **Adding or removing a component updates the guide.** A new shared or
+  player-facing component gets a `Specimen` in the matching section (with
+  `usedOn` paths and mock data); a removed one is removed from the guide in the
+  same change. Components that only load their own live data are listed in
+  their section's live-only note instead.
+- **Specimens sit in the game's own frame.** `Specimen` seats its component in
+  a real `GameCard` (MedievalSharp title, ornate corners), so primitives are
+  judged where players see them. Pass `framed={false}` for components that
+  bring their own frame (cards, reports, banners, heroes) so they sit on the
+  backdrop as they do on a page. Never style guide chrome in plain UI fonts.
+- **Reference the guide when building UI.** Reuse the patterns shown there
+  before inventing new ones.
+- Buttons in the guide must never reach the API: use `mockAction`, or wrap
+  real components in `MockClicks` for buttons that open live dialogs.
+
+---
+
+## 13) “Done” Checklist
 
 A change is complete only if:
 
@@ -285,6 +317,7 @@ A change is complete only if:
 - [ ] Performance impact considered
 - [ ] Imports sorted and aliases used
 - [ ] Works across race themes
+- [ ] Visual guide (`/test`) updated for added, removed or restyled components
 - [ ] Visual evidence provided (before and after screenshots) for any UI/styling bug resolutions
 
 

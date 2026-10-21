@@ -1,16 +1,8 @@
-import {
-  Alert,
-  Button,
-  Checkbox,
-  Group,
-  Modal,
-  Stack,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { Alert, Button, Checkbox, Group, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import { useRef, useState } from 'react';
 
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { resolveEraStartSettings } from '@/utils/eraStartSettings';
 
@@ -40,7 +32,6 @@ const ResetCurrentEra = ({ era, canReset, onReset }: ResetCurrentEraProps) => {
     mutate: mutateRuntimeConfig,
   } = useRuntimeConfig();
   const [opened, setOpened] = useState(false);
-  const [confirmation, setConfirmation] = useState('');
   const [enableLogins, setEnableLogins] = useState(true);
   const [draft, setDraft] = useState<EraStartSettingsDraft>(() =>
     toDraft(resolveEraStartSettings(era.startSettings)),
@@ -56,18 +47,11 @@ const ResetCurrentEra = ({ era, canReset, onReset }: ResetCurrentEraProps) => {
   const close = () => {
     if (pendingRef.current) return;
     setOpened(false);
-    setConfirmation('');
     setError(null);
   };
 
   const resetEra = async () => {
-    if (
-      !canOpenReset ||
-      pendingRef.current ||
-      confirmation !== confirmationPhrase ||
-      !startSettings
-    )
-      return;
+    if (!canOpenReset || pendingRef.current || !startSettings) return;
     pendingRef.current = true;
     setPending(true);
     setError(null);
@@ -94,7 +78,6 @@ const ResetCurrentEra = ({ era, canReset, onReset }: ResetCurrentEraProps) => {
       await mutateRuntimeConfig();
       await onReset();
       setOpened(false);
-      setConfirmation('');
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -128,7 +111,7 @@ const ResetCurrentEra = ({ era, canReset, onReset }: ResetCurrentEraProps) => {
               <Text size="sm">{runtimeConfigError}</Text>
               <Button
                 size="xs"
-                variant="light"
+                variant="default"
                 onClick={() => mutateRuntimeConfig()}
               >
                 {t('retry')}
@@ -156,72 +139,54 @@ const ResetCurrentEra = ({ era, canReset, onReset }: ResetCurrentEraProps) => {
         </Button>
       </Stack>
 
-      <Modal
-        opened={opened}
+      <ConfirmationModal
+        isOpen={opened}
         onClose={close}
+        onConfirm={resetEra}
         title={t('eraReset.modalTitle')}
-        centered
-        closeOnClickOutside={!pending}
-        closeOnEscape={!pending}
-        trapFocus
+        message={t('eraReset.losses')}
+        type="destructive"
+        confirmText={
+          enableLogins
+            ? t('eraReset.confirmCombined')
+            : t('eraReset.confirmResetOnly')
+        }
+        cancelText={t('cancel')}
+        isLoading={pending}
+        confirmDisabled={!canOpenReset || !startSettings}
+        requiredText={confirmationPhrase}
+        requiredTextLabel={t('eraReset.confirmLabel', {
+          phrase: confirmationPhrase,
+        })}
       >
-        <Stack>
-          <Text size="sm">{t('eraReset.losses')}</Text>
-          <Text size="sm">{t('eraReset.automaticClosure')}</Text>
-          <Text size="sm" c="dimmed">
-            {t('eraReset.retained')}
-          </Text>
-          <EraStartSettingsFields
-            value={draft}
-            onChange={setDraft}
-            disabled={pending}
-          />
-          <Text size="sm" c="dimmed">
-            {t('eraReset.baseline')}
-          </Text>
-          {config?.maintenance.enabled && (
-            <Alert color="yellow">{t('eraReset.maintenanceNote')}</Alert>
-          )}
-          <Checkbox
-            label={t('eraReset.enableLogins')}
-            description={t('eraReset.enableLoginsDescription')}
-            checked={enableLogins}
-            disabled={pending}
-            onChange={(event) => setEnableLogins(event.currentTarget.checked)}
-          />
-          <TextInput
-            label={t('eraReset.confirmLabel', { phrase: confirmationPhrase })}
-            value={confirmation}
-            onChange={(event) => setConfirmation(event.currentTarget.value)}
-            disabled={pending}
-            autoComplete="off"
-          />
-          {error && (
-            <Alert color="red" role="alert" title={t('eraReset.errorTitle')}>
-              {error}
-            </Alert>
-          )}
-          <Group justify="flex-end">
-            <Button variant="default" onClick={close} disabled={pending}>
-              {t('cancel')}
-            </Button>
-            <Button
-              color="red"
-              onClick={resetEra}
-              loading={pending}
-              disabled={
-                !canOpenReset ||
-                confirmation !== confirmationPhrase ||
-                !startSettings
-              }
-            >
-              {enableLogins
-                ? t('eraReset.confirmCombined')
-                : t('eraReset.confirmResetOnly')}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        <Text size="sm">{t('eraReset.automaticClosure')}</Text>
+        <Text size="sm" c="var(--ot-muted)">
+          {t('eraReset.retained')}
+        </Text>
+        <EraStartSettingsFields
+          value={draft}
+          onChange={setDraft}
+          disabled={pending}
+        />
+        <Text size="sm" c="var(--ot-muted)">
+          {t('eraReset.baseline')}
+        </Text>
+        {config?.maintenance.enabled && (
+          <Alert color="yellow">{t('eraReset.maintenanceNote')}</Alert>
+        )}
+        <Checkbox
+          label={t('eraReset.enableLogins')}
+          description={t('eraReset.enableLoginsDescription')}
+          checked={enableLogins}
+          disabled={pending}
+          onChange={(event) => setEnableLogins(event.currentTarget.checked)}
+        />
+        {error && (
+          <Alert color="red" role="alert" title={t('eraReset.errorTitle')}>
+            {error}
+          </Alert>
+        )}
+      </ConfirmationModal>
     </>
   );
 };

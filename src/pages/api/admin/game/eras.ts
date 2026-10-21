@@ -3,7 +3,7 @@ import type { NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { PermissionType } from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
-import { startNewEra } from '@/services/Era.service';
+import { StaleEraError, startNewEra } from '@/services/Era.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp, logAction, logActionStrict } from '@/utils/auditLogger';
 import { parseStartEraBody } from '@/utils/eraStartSettings';
@@ -64,12 +64,17 @@ const guardedStart = withApiGuard({
   }
 
   try {
-    const newEra = await startNewEra(parsed.settings);
+    const newEra = await startNewEra(parsed.settings, {
+      expectedEraId: parsed.expectedEraId,
+    });
     await logAction(adminUserId, 'ADMIN_ERA_START', ip, {
       newEraId: newEra.id,
     });
     return res.status(200).json(newEra);
   } catch (err) {
+    if (err instanceof StaleEraError) {
+      return res.status(409).json({ error: err.message });
+    }
     logError('Failed to start new era:', err);
     await logAction(adminUserId, 'ADMIN_ERA_START_FAILED', ip, {});
     return res.status(500).json({ error: 'Failed to start new era' });

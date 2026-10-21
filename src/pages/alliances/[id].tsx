@@ -3,7 +3,6 @@ import {
   Box,
   Center,
   Group,
-  Loader,
   Paper,
   Stack,
   Tabs,
@@ -31,6 +30,7 @@ import { AllianceRanks } from '@/components/alliance/AllianceRanks';
 import { AllianceSettings } from '@/components/alliance/AllianceSettings';
 import { getAllianceStanding } from '@/components/alliance/allianceStanding';
 import { AllianceWar } from '@/components/alliance/AllianceWar';
+import { PageLoading } from '@/components/game/PageLoading';
 import MainArea from '@/components/MainArea';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { AllianceService } from '@/services';
@@ -90,12 +90,7 @@ const AlliancePage = ({
     return (
       <Text c="red">{t('index.loadError', 'Failed to load alliance')}</Text>
     );
-  if (!alliance)
-    return (
-      <Center h={300}>
-        <Loader />
-      </Center>
-    );
+  if (!alliance) return <PageLoading lines={4} />;
 
   return (
     <MainArea title={alliance.name}>

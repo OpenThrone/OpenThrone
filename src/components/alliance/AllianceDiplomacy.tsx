@@ -3,11 +3,9 @@ import {
   Button,
   Group,
   Loader,
-  Paper,
   Select,
   Stack,
   Text,
-  Title,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { useTranslation } from 'next-i18next';
@@ -19,6 +17,8 @@ import {
   getAllianceStanding,
 } from '@/components/alliance/allianceStanding';
 import { ConfirmActionModal } from '@/components/alliance/ConfirmActionModal';
+import { GameCard } from '@/components/game/GameCard';
+import { SectionHeading } from '@/components/game/SectionHeading';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
 
@@ -167,7 +167,7 @@ export const AllianceDiplomacy = ({
     actions: (rel: RelationRow) => React.ReactNode,
   ) => (
     <Stack gap="xs">
-      <Title order={5}>{title}</Title>
+      <SectionHeading>{title}</SectionHeading>
       {rows.length === 0 ? (
         <Text size="sm" c="dimmed">
           {empty}
@@ -188,10 +188,8 @@ export const AllianceDiplomacy = ({
   if (!data) return <Loader />;
 
   return (
-    <Paper p="md" radius="md" withBorder>
+    <GameCard title={t('diplomacy.title', 'Diplomacy')}>
       <Stack gap="lg">
-        <Title order={3}>{t('diplomacy.title', 'Diplomacy')}</Title>
-
         {section(
           t('diplomacy.allies', 'Allies'),
           t('diplomacy.noAllies', 'No active alliances.'),
@@ -278,9 +276,9 @@ export const AllianceDiplomacy = ({
 
         {canManage ? (
           <Stack gap="xs">
-            <Title order={5}>
+            <SectionHeading>
               {t('diplomacy.requestTitle', 'Request an alliance')}
-            </Title>
+            </SectionHeading>
             <Group align="flex-end">
               <Select
                 label={t('diplomacy.searchLabel', 'Alliance')}
@@ -351,6 +349,6 @@ export const AllianceDiplomacy = ({
           )
         }
       />
-    </Paper>
+    </GameCard>
   );
 };

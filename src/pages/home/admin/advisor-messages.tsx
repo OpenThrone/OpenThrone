@@ -7,7 +7,6 @@ import {
   Group,
   Loader,
   Modal,
-  Paper,
   Stack,
   Switch,
   Table,
@@ -15,18 +14,21 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { notifications } from '@mantine/notifications';
+import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { PermissionType } from '@/lib/prisma-browser-exports';
+import { alertService } from '@/services/Alert.service';
 import { getAdminRequestError } from '@/utils/adminRequests';
 import { logError } from '@/utils/logger';
 
 const AdvisorMessagesPage = () => {
+  const { t } = useTranslation('admin-content');
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -76,10 +78,8 @@ const AdvisorMessagesPage = () => {
 
   const handleSubmit = async () => {
     if (!messageText.trim()) {
-      notifications.show({
-        title: 'Error',
-        message: 'Message is required.',
-        color: 'red',
+      alertService.notify('error', t('advisorMessages.required'), {
+        title: t('advisorMessages.errorTitle'),
       });
       return;
     }
@@ -99,11 +99,15 @@ const AdvisorMessagesPage = () => {
         }),
       });
       if (res.ok) {
-        notifications.show({
-          title: editId ? 'Updated' : 'Created',
-          message: `Advisor message ${editId ? 'updated' : 'created'}.`,
-          color: 'green',
-        });
+        alertService.notify(
+          'success',
+          editId ? t('advisorMessages.updated') : t('advisorMessages.created'),
+          {
+            title: editId
+              ? t('advisorMessages.updatedTitle')
+              : t('advisorMessages.createdTitle'),
+          },
+        );
         close();
         fetchMessages();
       } else {
@@ -111,11 +115,11 @@ const AdvisorMessagesPage = () => {
       }
     } catch (err) {
       logError('Failed to save advisor message:', err);
-      notifications.show({
-        title: 'Error',
-        message: err instanceof Error ? err.message : 'Failed to save.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        err instanceof Error ? err.message : t('advisorMessages.saveFailed'),
+        { title: t('advisorMessages.errorTitle') },
+      );
     } finally {
       setSubmitting(false);
     }
@@ -133,11 +137,11 @@ const AdvisorMessagesPage = () => {
       if (!res.ok) throw new Error(await getAdminRequestError(res));
       await fetchMessages();
     } catch (err) {
-      notifications.show({
-        title: 'Error',
-        message: err instanceof Error ? err.message : 'Failed to update.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        err instanceof Error ? err.message : t('advisorMessages.updateFailed'),
+        { title: t('advisorMessages.errorTitle') },
+      );
     } finally {
       setSubmitting(false);
     }
@@ -153,18 +157,16 @@ const AdvisorMessagesPage = () => {
       if (!res.ok) throw new Error(await getAdminRequestError(res));
       {
         await fetchMessages();
-        notifications.show({
-          title: 'Deleted',
-          message: 'Message removed.',
-          color: 'green',
+        alertService.notify('success', t('advisorMessages.removed'), {
+          title: t('advisorMessages.deletedTitle'),
         });
       }
     } catch (err) {
-      notifications.show({
-        title: 'Error',
-        message: err instanceof Error ? err.message : 'Failed to delete.',
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        err instanceof Error ? err.message : t('advisorMessages.deleteFailed'),
+        { title: t('advisorMessages.errorTitle') },
+      );
     } finally {
       setSubmitting(false);
     }
@@ -172,23 +174,21 @@ const AdvisorMessagesPage = () => {
 
   return (
     <AdminLayout
-      title="Content: Advisor Messages"
+      title={t('advisorMessages.pageTitle')}
       permissions={[PermissionType.MANAGE_CONTENT]}
     >
       <Stack gap="md">
         <GameCard
-          title="Advisor Messages"
+          title={t('advisorMessages.cardTitle')}
           icon={faChessQueen}
           action={
-            <Button size="xs" color="yellow" onClick={openCreate}>
-              + New Message
+            <Button size="xs" onClick={openCreate}>
+              {t('advisorMessages.new')}
             </Button>
           }
         >
           <Text size="sm" c="gray.3" lh={1.7} mb="md">
-            These messages rotate in the sidebar advisor panel that all players
-            see. Use sort order to control the sequence. Inactive messages are
-            hidden from players but retained for reactivation.
+            {t('advisorMessages.intro')}
           </Text>
 
           {loading ? (
@@ -197,117 +197,138 @@ const AdvisorMessagesPage = () => {
             </Group>
           ) : loadError ? (
             <Alert color="red" role="alert">
-              Advisor messages could not be loaded.{' '}
-              <Button variant="light" onClick={fetchMessages}>
-                Retry
+              {t('advisorMessages.loadError')}{' '}
+              <Button variant="default" onClick={fetchMessages}>
+                {t('advisorMessages.retry')}
               </Button>
             </Alert>
           ) : messages.length === 0 ? (
-            <Alert color="blue">
-              No advisor messages in the database yet. The sidebar currently
-              shows hard-coded fallback tips. Add messages here to make them
-              admin-managed.
-            </Alert>
+            <Alert color="blue">{t('advisorMessages.empty')}</Alert>
           ) : (
-            <Paper withBorder style={{ overflow: 'hidden' }}>
-              <Table>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th w={40}>#</Table.Th>
-                    <Table.Th>Message</Table.Th>
-                    <Table.Th w={80}>Active</Table.Th>
-                    <Table.Th w={100}>Actions</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {messages.map((msg) => (
-                    <Table.Tr key={msg.id} opacity={msg.is_active ? 1 : 0.5}>
-                      <Table.Td>
-                        <Text size="xs" c="dimmed">
-                          {msg.sort_order}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" lineClamp={2}>
-                          {msg.message}
-                        </Text>
-                        <Text size="xs" c="dimmed" mt={4}>
-                          by {msg.createdBy?.display_name ?? 'Unknown'} &middot;{' '}
-                          {new Date(msg.created_at).toLocaleDateString()}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Switch
-                          size="xs"
-                          checked={msg.is_active}
+            <AdminDataTable
+              size="compact"
+              ariaLabel={t('advisorMessages.cardTitle')}
+            >
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th w={40}>#</Table.Th>
+                  <Table.Th>{t('advisorMessages.colMessage')}</Table.Th>
+                  <Table.Th w={80}>{t('advisorMessages.colActive')}</Table.Th>
+                  <Table.Th w={100}>{t('advisorMessages.colActions')}</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {messages.map((msg) => (
+                  <Table.Tr key={msg.id} opacity={msg.is_active ? 1 : 0.5}>
+                    <Table.Td>
+                      <Text size="xs" c="dimmed">
+                        {msg.sort_order}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm" lineClamp={2}>
+                        {msg.message}
+                      </Text>
+                      <Text size="xs" c="dimmed" mt={4}>
+                        {t('advisorMessages.byline', {
+                          name:
+                            msg.createdBy?.display_name ??
+                            t('advisorMessages.unknownAuthor'),
+                          date: new Date(msg.created_at).toLocaleDateString(),
+                        })}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Switch
+                        size="xs"
+                        checked={msg.is_active}
+                        disabled={submitting}
+                        onChange={() => toggleActive(msg.id, msg.is_active)}
+                        aria-label={
+                          msg.is_active
+                            ? t('advisorMessages.setInactive', { id: msg.id })
+                            : t('advisorMessages.setActive', { id: msg.id })
+                        }
+                      />
+                    </Table.Td>
+                    <Table.Td>
+                      <Group gap="xs" wrap="nowrap">
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          color="gray"
+                          onClick={() => openEdit(msg)}
                           disabled={submitting}
-                          onChange={() => toggleActive(msg.id, msg.is_active)}
-                        />
-                      </Table.Td>
-                      <Table.Td>
-                        <Group gap="xs" wrap="nowrap">
-                          <ActionIcon
-                            size="sm"
-                            variant="subtle"
-                            color="gray"
-                            onClick={() => openEdit(msg)}
-                            disabled={submitting}
-                            aria-label="Edit"
-                          >
-                            <FontAwesomeIcon icon={faChessQueen} size="xs" />
-                          </ActionIcon>
-                          <Button
-                            size="xs"
-                            color="red"
-                            variant="subtle"
-                            onClick={() => setDeleteTarget(msg.id)}
-                            disabled={submitting}
-                          >
-                            Delete
-                          </Button>
-                        </Group>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Paper>
+                          aria-label={t('advisorMessages.editAria', {
+                            id: msg.id,
+                          })}
+                        >
+                          <FontAwesomeIcon icon={faChessQueen} size="xs" />
+                        </ActionIcon>
+                        <Button
+                          size="xs"
+                          color="red"
+                          variant="subtle"
+                          onClick={() => setDeleteTarget(msg.id)}
+                          disabled={submitting}
+                          aria-label={t('advisorMessages.deleteAria', {
+                            id: msg.id,
+                          })}
+                        >
+                          {t('advisorMessages.delete')}
+                        </Button>
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </AdminDataTable>
           )}
         </GameCard>
       </Stack>
 
       <Modal
         opened={opened}
-        onClose={close}
-        title={editId ? 'Edit Advisor Message' : 'New Advisor Message'}
+        onClose={() => !submitting && close()}
+        title={
+          editId
+            ? t('advisorMessages.editTitle')
+            : t('advisorMessages.newTitle')
+        }
         size="lg"
+        centered
+        closeOnClickOutside={!submitting}
+        closeOnEscape={!submitting}
+        withCloseButton={!submitting}
       >
         <Stack gap="md">
           <TextInput
-            label="Message"
-            placeholder="A wise advisor tip for players..."
+            label={t('advisorMessages.colMessage')}
+            placeholder={t('advisorMessages.placeholder')}
             value={messageText}
             onChange={(e) => setMessageText(e.currentTarget.value)}
             maxLength={500}
           />
           <TextInput
-            label="Sort Order"
-            description="Lower numbers appear first in rotation"
+            label={t('advisorMessages.sortOrder')}
+            description={t('advisorMessages.sortOrderHint')}
             type="number"
             value={sortOrder}
             onChange={(e) => setSortOrder(Number(e.currentTarget.value))}
           />
           <Switch
-            label="Active (visible to players)"
+            label={t('advisorMessages.activeLabel')}
             checked={isActive}
             onChange={(e) => setIsActive(e.currentTarget.checked)}
           />
           <Group justify="flex-end">
-            <Button variant="outline" onClick={close} disabled={submitting}>
-              Cancel
+            <Button variant="default" onClick={close} disabled={submitting}>
+              {t('advisorMessages.cancel')}
             </Button>
             <Button onClick={handleSubmit} loading={submitting}>
-              {editId ? 'Update' : 'Create'}
+              {editId
+                ? t('advisorMessages.update')
+                : t('advisorMessages.create')}
             </Button>
           </Group>
         </Stack>
@@ -319,11 +340,11 @@ const AdvisorMessagesPage = () => {
           if (deleteTarget !== null) handleDelete(deleteTarget);
           setDeleteTarget(null);
         }}
-        title="Confirm deletion"
-        message="Are you sure you want to permanently delete this message?"
-        confirmText="Delete"
-        cancelText="Cancel"
-        type="remove"
+        title={t('advisorMessages.deleteConfirmTitle')}
+        message={t('advisorMessages.deleteConfirmMessage')}
+        confirmText={t('advisorMessages.delete')}
+        cancelText={t('advisorMessages.cancel')}
+        type="destructive"
       />
     </AdminLayout>
   );

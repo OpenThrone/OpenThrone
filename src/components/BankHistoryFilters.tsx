@@ -16,12 +16,8 @@ const FILTERS: { key: string; label: string }[] = [
   { key: 'daily', label: 'dailyRewards' },
 ];
 
-/** Bank history filters. */
-export default function BankHistoryFilters({
-  colorScheme,
-  filters,
-  setFilters,
-}) {
+/** Bank history filters, tinted by the race theme's `brand` palette. */
+export default function BankHistoryFilters({ filters, setFilters }) {
   const { t } = useTranslation('structures');
   const toggleFilter = (key) => {
     setFilters({
@@ -29,15 +25,6 @@ export default function BankHistoryFilters({
       [key]: !filters[key],
     });
   };
-
-  const color =
-    colorScheme === 'ELF'
-      ? 'green'
-      : colorScheme === 'GOBLIN'
-        ? 'red'
-        : colorScheme === 'UNDEAD'
-          ? 'gray'
-          : 'blue';
 
   return (
     <Group>
@@ -47,7 +34,7 @@ export default function BankHistoryFilters({
           variant="filled"
           checked={filters[key]}
           onChange={() => toggleFilter(key)}
-          color={color}
+          color="brand"
         >
           {t(`bank.filters.${label}`)}
         </Chip>

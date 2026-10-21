@@ -1,4 +1,4 @@
-import { Center, Grid, Group, Loader, Paper, Table, Text } from '@mantine/core';
+import { Box, Grid, Group, Table, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import useSWR from 'swr';
@@ -11,9 +11,13 @@ import { GoldRequestQueue } from '@/components/alliance/treasury/GoldRequestQueu
 import { LoanSection } from '@/components/alliance/treasury/LoanSection';
 import { TransferForm } from '@/components/alliance/treasury/TransferForm';
 import { GameCard } from '@/components/game/GameCard';
+import { PageLoading } from '@/components/game/PageLoading';
+import panelClasses from '@/components/game/Panels.module.css';
+import { StyledTable } from '@/components/game/StyledTable';
 import { useUser } from '@/context/users';
 import type { AllianceInfo } from '@/services/Alliance.service';
-import { toLocale } from '@/utils/numberFormatting';
+import type { Locales } from '@/types/typings';
+import { formatGold } from '@/utils/numberFormatting';
 
 interface AllianceBankProps {
   alliance: AllianceInfo;
@@ -26,6 +30,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export const AllianceBank = ({ alliance, onUpdate }: AllianceBankProps) => {
   const { t, i18n } = useTranslation('alliances');
   const { user } = useUser();
+  const locale = user?.locale ?? (i18n.language as Locales);
   const [requestsKey, setRequestsKey] = useState(0);
 
   const standing = getAllianceStanding(alliance, user?.id ?? null);
@@ -46,18 +51,19 @@ export const AllianceBank = ({ alliance, onUpdate }: AllianceBankProps) => {
   return (
     <Grid>
       <Grid.Col span={12}>
-        <Paper p="md" radius="md" withBorder bg="dark.8">
+        <Box className={panelClasses.insetRow} p="md">
           <Group justify="space-between">
-            <Text size="lg" fw={700} c="dimmed">
+            <Text size="lg" fw={700} c="var(--ot-muted)">
               {t('bank.totalBalance', 'Total Alliance Treasury')}
             </Text>
-            <Text size="xl" fw={700} c="yellow">
-              {t('bank.goldAmount', '{{amount}} Gold', {
-                amount: toLocale(alliance.gold_in_bank, user?.locale),
+            <Text size="xl" fw={700} c="var(--ot-heading)">
+              {t('currency.goldAmount', {
+                ns: 'common',
+                amount: formatGold(alliance.gold_in_bank, locale),
               })}
             </Text>
           </Group>
-        </Paper>
+        </Box>
       </Grid.Col>
 
       <Grid.Col span={{ base: 12, md: 6 }}>
@@ -99,57 +105,53 @@ export const AllianceBank = ({ alliance, onUpdate }: AllianceBankProps) => {
       <Grid.Col span={12}>
         <GameCard title={t('bank.historyTitle', 'Transaction History')}>
           {!history ? (
-            <Center p="xl">
-              <Loader />
-            </Center>
+            <PageLoading block={false} />
           ) : (
-            <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t('bank.date', 'Date')}</Table.Th>
-                  <Table.Th>{t('bank.user', 'User')}</Table.Th>
-                  <Table.Th>{t('bank.type', 'Type')}</Table.Th>
-                  <Table.Th>{t('bank.amount', 'Amount')}</Table.Th>
+            <StyledTable
+              ariaLabel={t('bank.historyTitle', 'Transaction History')}
+              headers={[
+                t('bank.date', 'Date'),
+                t('bank.user', 'User'),
+                t('bank.type', 'Type'),
+                t('bank.amount', 'Amount'),
+              ]}
+            >
+              {history.map((entry: any) => (
+                <Table.Tr key={entry.id}>
+                  <Table.Td>
+                    {new Date(entry.created_at).toLocaleString(locale)}
+                  </Table.Td>
+                  <Table.Td>
+                    {entry.performed_by_user?.display_name ||
+                      t('bank.unknownUser', 'Unknown')}
+                  </Table.Td>
+                  <Table.Td>
+                    <Text
+                      c={
+                        ['DEPOSIT', 'LOAN_REPAYMENT'].includes(
+                          entry.transaction_type,
+                        )
+                          ? 'green'
+                          : 'red'
+                      }
+                      fw={500}
+                    >
+                      {transactionTypeLabel(t, entry.transaction_type)}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>{formatGold(entry.amount, locale)}</Table.Td>
                 </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {history.map((entry: any) => (
-                  <Table.Tr key={entry.id}>
-                    <Table.Td>
-                      {new Date(entry.created_at).toLocaleString(i18n.language)}
-                    </Table.Td>
-                    <Table.Td>
-                      {entry.performed_by_user?.display_name ||
-                        t('bank.unknownUser', 'Unknown')}
-                    </Table.Td>
-                    <Table.Td>
-                      <Text
-                        c={
-                          ['DEPOSIT', 'LOAN_REPAYMENT'].includes(
-                            entry.transaction_type,
-                          )
-                            ? 'green'
-                            : 'red'
-                        }
-                        fw={500}
-                      >
-                        {transactionTypeLabel(t, entry.transaction_type)}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>{toLocale(entry.amount, user?.locale)}</Table.Td>
-                  </Table.Tr>
-                ))}
-                {history.length === 0 && (
-                  <Table.Tr>
-                    <Table.Td colSpan={4} align="center">
-                      <Text c="dimmed">
-                        {t('bank.noTransactions', 'No transactions found')}
-                      </Text>
-                    </Table.Td>
-                  </Table.Tr>
-                )}
-              </Table.Tbody>
-            </Table>
+              ))}
+              {history.length === 0 && (
+                <Table.Tr>
+                  <Table.Td colSpan={4} align="center">
+                    <Text c="dimmed">
+                      {t('bank.noTransactions', 'No transactions found')}
+                    </Text>
+                  </Table.Td>
+                </Table.Tr>
+              )}
+            </StyledTable>
           )}
         </GameCard>
       </Grid.Col>

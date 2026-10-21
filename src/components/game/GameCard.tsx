@@ -13,6 +13,8 @@ export interface GameCardProps extends PaperProps {
   children: React.ReactNode;
   action?: React.ReactNode;
   goldAccent?: boolean; // Emphasizes the header and frame with the theme accent.
+  /** Heading level of the title; 3 when the card sits under a page section heading. */
+  titleOrder?: 2 | 3;
 }
 
 /** A single, race-aware frame for game content and its header actions. */
@@ -22,6 +24,7 @@ export const GameCard: React.FC<GameCardProps> = ({
   children,
   action,
   goldAccent = true,
+  titleOrder = 2,
   style,
   className,
   m,
@@ -89,7 +92,7 @@ export const GameCard: React.FC<GameCardProps> = ({
               </Box>
             )}
             <Text
-              component="h2"
+              component={`h${titleOrder}`}
               size="lg"
               className={`${classes.title} ${classes.cardTitle}`}
               data-testid="card-title"

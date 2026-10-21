@@ -2,7 +2,6 @@ import {
   Button,
   Group,
   Loader,
-  Modal,
   Pagination,
   Paper,
   Select,
@@ -10,13 +9,14 @@ import {
   Text,
   Textarea,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
 const AppealsReviewPage = () => {
@@ -65,10 +65,8 @@ const AppealsReviewPage = () => {
   const decide = async (appealId: number) => {
     const decision = decisions[appealId];
     if (!decision?.status) {
-      notifications.show({
+      alertService.notify('error', 'Select a decision first.', {
         title: 'Error',
-        message: 'Select a decision first.',
-        color: 'red',
       });
       return;
     }
@@ -83,19 +81,17 @@ const AppealsReviewPage = () => {
         const result = await res.json().catch(() => ({}));
         throw new Error(result.error || `HTTP ${res.status}`);
       }
-      notifications.show({
+      alertService.notify('success', t('decisionRecorded'), {
         title: t('success'),
-        message: t('decisionRecorded'),
-        color: 'green',
       });
       setPendingAcceptance(null);
       await fetchAppeals();
     } catch (error) {
-      notifications.show({
-        title: t('error'),
-        message: error instanceof Error ? error.message : t('requestFailed'),
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        error instanceof Error ? error.message : t('requestFailed'),
+        { title: t('error') },
+      );
     } finally {
       setDecidingId(null);
     }
@@ -176,7 +172,6 @@ const AppealsReviewPage = () => {
                       style={{ flex: 1 }}
                     />
                     <Button
-                      color="blue"
                       onClick={() =>
                         decisions[a.id]?.status === 'ACCEPTED'
                           ? setPendingAcceptance(a.id)
@@ -208,32 +203,23 @@ const AppealsReviewPage = () => {
           />
         )}
       </Stack>
-      <Modal
-        opened={pendingAcceptance !== null}
-        onClose={() => setPendingAcceptance(null)}
+      <ConfirmationModal
+        isOpen={pendingAcceptance !== null}
+        onClose={() => {
+          if (decidingId === null) setPendingAcceptance(null);
+        }}
+        onConfirm={() => {
+          if (pendingAcceptance !== null) decide(pendingAcceptance);
+        }}
         title={t('confirmAcceptance')}
-      >
-        <Stack>
-          <Text>{t('acceptanceLiftsPenalty')}</Text>
-          <Group justify="flex-end">
-            <Button
-              variant="outline"
-              onClick={() => setPendingAcceptance(null)}
-            >
-              {t('cancel')}
-            </Button>
-            <Button
-              color="green"
-              loading={decidingId === pendingAcceptance}
-              onClick={() =>
-                pendingAcceptance !== null && decide(pendingAcceptance)
-              }
-            >
-              {t('acceptAppeal')}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        message={t('acceptanceLiftsPenalty')}
+        type="positive"
+        confirmText={t('acceptAppeal')}
+        cancelText={t('cancel')}
+        isLoading={
+          pendingAcceptance !== null && decidingId === pendingAcceptance
+        }
+      />
     </AdminLayout>
   );
 };

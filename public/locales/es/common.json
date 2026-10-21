@@ -45,6 +45,7 @@
     "submit": "Enviar",
     "cancel": "Cancelar",
     "confirm": "Confirmar",
+    "typeToConfirm": "Escribe \"{{text}}\" para confirmar",
     "save": "Guardar",
     "delete": "Eliminar",
     "edit": "Editar",
@@ -109,6 +110,7 @@
     "owned": "Poseído",
     "buy": "Comprar",
     "sell": "Vender",
+    "max": "Máx.",
     "player": "Jugador"
   },
   "status": {
@@ -180,6 +182,7 @@
   },
   "currency": {
     "gold": "Oro",
+    "goldAmount": "{{amount}} de oro",
     "goldInBank": "Oro en el banco",
     "totalGold": "Oro total"
   },
@@ -267,7 +270,9 @@
     "again": "Reclutar de nuevo",
     "blockedPair": "Hoy has reclutado con {{name}} {{used}} de {{limit}} veces. Se restablece a las {{time}}.",
     "blockedRecruiter": "Has usado los {{limit}} reclutamientos diarios. Se restablece a las {{time}}.",
-    "blockedTarget": "{{name}} alcanzó su límite diario de {{limit}} reclutamientos. Se restablece a las {{time}}."
+    "blockedTarget": "{{name}} alcanzó su límite diario de {{limit}} reclutamientos. Se restablece a las {{time}}.",
+    "targetTitle": "Objetivo de reclutamiento",
+    "targetSummary": "{{name}} es un {{race}} {{class}} de nivel {{level}}."
   },
   "ariaLabels": {
     "closeAlert": "Cerrar alerta",
@@ -312,7 +317,19 @@
     "networkErrorDuringRecruitment": "Error de red durante el reclutamiento. Por favor intenta de nuevo.",
     "errorVerifyingSession": "Error al verificar la sesión.",
     "errorStartingSession": "Error al iniciar la sesión de reclutamiento.",
-    "sessionInvalid": "Sesión inválida. Por favor inicia una nueva sesión."
+    "sessionInvalid": "Sesión inválida. Por favor inicia una nueva sesión.",
+    "sessions": {
+      "title": "Sesiones activas",
+      "refreshingIn": "Actualizando en {{count}} s",
+      "enableAutoRefresh": "Activar actualización automática",
+      "sessionId": "ID de sesión",
+      "createdAt": "Creada el",
+      "lastActivity": "Última actividad",
+      "empty": "No hay sesiones activas.",
+      "fetchFailed": "No se pudieron cargar las sesiones",
+      "endFailed": "No se pudo finalizar la sesión.",
+      "endNetworkError": "Error de red: no se pudo finalizar la sesión."
+    }
   },
   "connection": {
     "banner": {
@@ -396,7 +413,42 @@
     "attackingDisabled": "El servidor ha desactivado los ataques.",
     "spyDisabled": "El servidor ha desactivado todos los tipos de misiones de espionaje.",
     "report": "Denunciar jugador",
-    "message": "Enviar mensaje a este jugador"
+    "message": "Enviar mensaje a este jugador",
+    "recruit": "Reclutar a este jugador",
+    "joinNow": "Únete ahora",
+    "attack": "Atacar a este jugador",
+    "spyMissions": "Misiones de espionaje",
+    "transferGold": "Transferir oro",
+    "requestGold": "Solicitar oro",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "friendRequestPending": "Solicitud de amistad pendiente",
+    "cancelFriendRequest": "Cancelar solicitud de amistad",
+    "friendRequestFrom": "Solicitud de amistad de {{name}}",
+    "friendsWith": "Amigo de {{name}}",
+    "addFriend": "Añadir a la lista de amigos",
+    "removeFriend": "Eliminar amigo",
+    "removeFriendConfirm": "¿Seguro que quieres eliminar a {{name}} de tu lista de amigos?",
+    "declareEnemy": "Declarar enemigo",
+    "removeEnemy": "Quitar enemigo",
+    "alerts": {
+      "friendRequestSent": "Solicitud de amistad enviada",
+      "addFriendFailed": "No se pudo añadir al amigo",
+      "friendRequestCancelled": "Solicitud de amistad cancelada",
+      "cancelFriendRequestFailed": "No se pudo cancelar la solicitud de amistad",
+      "friendRemoved": "Amigo eliminado",
+      "removeFriendFailed": "No se pudo eliminar al amigo",
+      "friendRequestAccepted": "Solicitud de amistad aceptada",
+      "acceptFailed": "No se pudo aceptar la solicitud de amistad",
+      "friendRequestDeclined": "Solicitud de amistad rechazada",
+      "declineFailed": "No se pudo rechazar la solicitud de amistad",
+      "enemyDeclared": "Jugador declarado enemigo",
+      "enemyRemoved": "Estado de enemigo eliminado",
+      "declareEnemyFailed": "No se pudo declarar enemigo",
+      "removeEnemyFailed": "No se pudo quitar al enemigo",
+      "transferComplete": "Transferencia de oro completada",
+      "goldRequestSent": "Solicitud de oro enviada"
+    }
   },
   "profileSummary": {
     "level": "Nivel",
@@ -417,7 +469,35 @@
     "gold": "Oro",
     "kingdom": "Estadísticas del reino",
     "actions": "Acciones",
-    "biography": "Biografía"
+    "biography": "Biografía",
+    "notFound": "Usuario no encontrado",
+    "neverLoggedIn": "Nunca ha iniciado sesión",
+    "topFriends": "Mejores amigos",
+    "noFriends": "No se encontraron amigos.",
+    "accountStatus": {
+      "BANNED": "Esta cuenta ha sido baneada.",
+      "SUSPENDED": "Esta cuenta está suspendida.",
+      "CLOSED": "Esta cuenta ha sido cerrada.",
+      "TIMEOUT": "Esta cuenta está en tiempo de espera.",
+      "unavailable": "Esta cuenta no está disponible."
+    }
+  },
+  "goldRequestInbox": {
+    "title": "Solicitudes de oro",
+    "incoming": "Solicitudes recibidas",
+    "outgoing": "Tus solicitudes",
+    "empty": "No hay solicitudes de oro",
+    "expires": "Caduca: {{time}}",
+    "expired": "Caducada",
+    "loading": "Cargando...",
+    "daysHoursLeft": "quedan {{days}} d {{hours}} h",
+    "hoursMinutesLeft": "quedan {{hours}} h {{minutes}} min",
+    "minutesLeft": "quedan {{minutes}} min",
+    "sent": "Enviada: {{date}}",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "loadFailed": "No se pudieron cargar las solicitudes",
+    "responseFailed": "No se pudo enviar la respuesta"
   },
   "walkthrough": {
     "offer": {
@@ -458,6 +538,9 @@
       "title": "Elige tu primer objetivo",
       "body": "Estás listo para explorar el campo de batalla. Compara niveles, oro y riesgo antes de gastar turnos de ataque."
     }
+  },
+  "player": {
+    "you": "Tú"
   },
   "classes": {
     "FIGHTER": "Luchador",

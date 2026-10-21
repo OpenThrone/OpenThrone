@@ -1,6 +1,6 @@
-import { Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useState } from 'react';
+
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 interface ConfirmActionModalProps {
   opened: boolean;
@@ -14,7 +14,7 @@ interface ConfirmActionModalProps {
   onClose: () => void;
 }
 
-/** Confirmation dialog for destructive alliance actions. */
+/** Destructive alliance confirmation: a thin wrapper over ConfirmationModal. */
 export const ConfirmActionModal = ({
   opened,
   title,
@@ -26,42 +26,26 @@ export const ConfirmActionModal = ({
   onClose,
 }: ConfirmActionModalProps) => {
   const { t } = useTranslation('alliances');
-  const [typed, setTyped] = useState('');
-
-  useEffect(() => {
-    if (!opened) setTyped('');
-  }, [opened]);
-
-  const blocked = requiredText !== undefined && typed !== requiredText;
 
   return (
-    <Modal opened={opened} onClose={onClose} title={title} centered>
-      <Stack gap="md">
-        <Text size="sm">{message}</Text>
-        {requiredText !== undefined && (
-          <TextInput
-            label={t('manage.typeToConfirm', 'Type "{{text}}" to confirm', {
+    <ConfirmationModal
+      isOpen={opened}
+      onClose={onClose}
+      onConfirm={onConfirm}
+      title={title}
+      message={message}
+      type="destructive"
+      confirmText={confirmLabel}
+      cancelText={t('manage.cancel', 'Cancel')}
+      isLoading={loading}
+      requiredText={requiredText}
+      requiredTextLabel={
+        requiredText === undefined
+          ? undefined
+          : t('manage.typeToConfirm', 'Type "{{text}}" to confirm', {
               text: requiredText,
-            })}
-            value={typed}
-            onChange={(event) => setTyped(event.currentTarget.value)}
-            data-autofocus
-          />
-        )}
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose} disabled={loading}>
-            {t('manage.cancel', 'Cancel')}
-          </Button>
-          <Button
-            color="red"
-            onClick={onConfirm}
-            loading={loading}
-            disabled={blocked}
-          >
-            {confirmLabel}
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
+            })
+      }
+    />
   );
 };

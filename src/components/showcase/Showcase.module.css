@@ -1,0 +1,87 @@
+.section {
+  scroll-margin-top: 140px;
+  padding-block: var(--mantine-spacing-xl);
+  border-top: 1px solid var(--ot-line);
+}
+
+.section:first-of-type {
+  border-top: 0;
+}
+
+.sectionTitle {
+  color: var(--ot-heading);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: var(--mantine-spacing-lg);
+  align-items: start;
+}
+
+.specimen {
+  min-width: 0;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+/* Label row above a self-framed specimen; framed ones use the card header. */
+.specimenHeader {
+  padding-bottom: var(--mantine-spacing-xs);
+  margin-bottom: var(--mantine-spacing-sm);
+  border-bottom: 1px solid var(--ot-line);
+}
+
+.path {
+  text-transform: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--ot-muted);
+}
+
+.stage {
+  min-width: 0;
+}
+
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin-inline: calc(var(--mantine-spacing-md) * -1);
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  background: color-mix(in srgb, var(--ot-surface) 92%, transparent);
+  border-bottom: 1px solid var(--ot-border);
+  backdrop-filter: blur(6px);
+}
+
+.contents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: var(--mantine-spacing-xs);
+}
+
+.contents a {
+  font-size: var(--mantine-font-size-xs);
+  color: var(--ot-muted);
+  text-decoration: none;
+}
+
+.contents a:hover,
+.contents a:focus-visible {
+  color: var(--ot-accent);
+  text-decoration: underline;
+}
+
+.swatch {
+  height: 44px;
+  border-radius: var(--mantine-radius-sm);
+  border: 1px solid var(--ot-line);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .section {
+    scroll-behavior: smooth;
+  }
+}

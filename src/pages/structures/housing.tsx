@@ -19,6 +19,8 @@ import { useTranslation } from 'next-i18next';
 import { type ReactNode, useEffect, useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
+import { PageLoading } from '@/components/game/PageLoading';
+import panelClasses from '@/components/game/Panels.module.css';
 import { StatGrid } from '@/components/game/StatGrid';
 import MainArea from '@/components/MainArea';
 import { HouseUpgrades } from '@/constants';
@@ -83,7 +85,7 @@ const Housing: React.FC = () => {
   if (!mounted || !user)
     return (
       <MainArea title={t('housing.title')}>
-        <Text>{t('housing.loading')}</Text>
+        <PageLoading label={t('housing.loading')} stats={4} />
       </MainArea>
     );
 
@@ -141,17 +143,8 @@ const Housing: React.FC = () => {
     value: ReactNode,
     highlight?: boolean,
   ) => (
-    <Group
-      justify="space-between"
-      style={{
-        backgroundColor: '#0f141a',
-        borderRadius: '6px',
-        border: '1px solid #1f2b3b',
-        boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-        padding: '12px',
-      }}
-    >
-      <Text size="sm" c="dimmed">
+    <Group justify="space-between" className={panelClasses.insetRow}>
+      <Text size="sm" c="var(--ot-muted)">
         {label}
       </Text>
       <Text fw={600} c={highlight ? 'red' : 'inherit'}>
@@ -180,7 +173,7 @@ const Housing: React.FC = () => {
               ) ?? t('housing.notAvailable')}
             </Text>
 
-            <Text size="sm" c="dimmed" ta="center">
+            <Text size="sm" c="var(--ot-muted)" ta="center">
               {t('housing.citizensNote')}
             </Text>
 
@@ -189,7 +182,7 @@ const Housing: React.FC = () => {
               toLocale(houseUpgrade?.citizensDaily ?? 0, locale),
             )}
 
-            <Text size="xs" c="dimmed" className="text-center italic">
+            <Text size="xs" c="var(--ot-muted)" className="text-center italic">
               {t('housing.midnightNote')}
             </Text>
           </Stack>
@@ -211,7 +204,7 @@ const Housing: React.FC = () => {
                 )}
               </Text>
 
-              <Text size="sm" c="dimmed" ta="center">
+              <Text size="sm" c="var(--ot-muted)" ta="center">
                 {t('housing.upgradeNote')}
               </Text>
 
@@ -241,7 +234,6 @@ const Housing: React.FC = () => {
               >
                 <Box>
                   <Button
-                    color="yellow"
                     fullWidth
                     onClick={handleBuyUpgrade}
                     loading={isUpgrading}

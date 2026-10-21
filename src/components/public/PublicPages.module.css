@@ -279,6 +279,19 @@
 .articleBody > :last-child { margin-bottom: 0; }
 .emptyNews { padding-block: 40px; }
 
+/* Compact excerpt (overview dispatches): inherits the card's size and colour. */
+.articlePreview { min-width: 0; overflow-wrap: anywhere; }
+.articlePreview :is(h1, h2, h3, h4, h5, h6) { font-family: inherit; font-size: 1em; font-weight: 600; line-height: inherit; color: var(--ot-body); margin: .4em 0 .2em; }
+.articlePreview p { margin: .4em 0; }
+.articlePreview :is(ul, ol) { padding-inline-start: 1.4em; margin: .4em 0; }
+.articlePreview ul { list-style-type: disc; }
+.articlePreview ol { list-style-type: decimal; }
+.articlePreview blockquote { margin: .4em 0; padding-inline-start: .75em; border-inline-start: 1px solid var(--ot-accent); }
+.articlePreview code { font-family: var(--mantine-font-family-monospace); font-size: .9em; }
+.articlePreview :is(img, pre, table) { max-width: 100%; }
+.articlePreview > :first-child { margin-top: 0; }
+.articlePreview > :last-child { margin-bottom: 0; }
+
 .newsComposer { padding: clamp(20px, 3vw, 32px); margin-bottom: 32px; background: var(--ot-panel); }
 .composerHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
 .composerHeader h2 { margin: 0; }

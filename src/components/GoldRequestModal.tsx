@@ -4,11 +4,13 @@ import {
   Button,
   Group,
   Modal,
+  Paper,
   Stack,
   Text,
   Textarea,
   TextInput,
 } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -16,6 +18,8 @@ import { FRIEND_TRANSFER_NOTE_MAX_LENGTH } from '@/constants/FriendTransfer';
 import { useUser } from '@/context/users';
 import { GoldRequestSchema } from '@/lib/validation';
 import { getCompleteFriendTransferConfig } from '@/services/Config.service';
+import type { Locales } from '@/types/typings';
+import { toLocale } from '@/utils/numberFormatting';
 
 interface GoldRequestModalProps {
   isOpen: boolean;
@@ -33,6 +37,8 @@ export function GoldRequestModal({
   targetUserName,
   onRequestComplete,
 }: GoldRequestModalProps) {
+  const { t, i18n } = useTranslation('social');
+  const locale = i18n.language as Locales;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { forceUpdate } = useUser();
@@ -71,28 +77,26 @@ export function GoldRequestModal({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Request failed');
+        throw new Error(errorData.error || t('goldRequests.requestFailed'));
       }
 
       forceUpdate();
       onRequestComplete();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Request failed');
+      setError(
+        err instanceof Error ? err.message : t('goldRequests.requestFailed'),
+      );
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatNumber = (num: bigint): string => {
-    return num.toLocaleString();
   };
 
   return (
     <Modal
       opened={isOpen}
       onClose={onClose}
-      title={`Request Gold from ${targetUserName}`}
+      title={t('goldRequests.modalTitle', { player: targetUserName })}
       size="md"
     >
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -104,8 +108,8 @@ export function GoldRequestModal({
 
         <Stack gap="md">
           <TextInput
-            label="Request Amount"
-            placeholder="Enter amount"
+            label={t('goldRequests.amountLabel')}
+            placeholder={t('goldRequests.amountPlaceholder')}
             {...register('amount')}
             type="number"
             min={1000}
@@ -114,32 +118,33 @@ export function GoldRequestModal({
             required
           />
           {errors.amount && (
-            <Text color="red" size="sm">
+            <Text c="red" size="sm">
               {errors.amount.message}
             </Text>
           )}
 
-          {/* Request Information */}
-          <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
-            <Text size="sm" mb="xs" className="text-gray-400">
-              Request Information
+          <Paper withBorder radius="md" p="md" bg="var(--ot-inset)">
+            <Text size="sm" mb="xs" c="var(--ot-muted)">
+              {t('goldRequests.infoTitle')}
             </Text>
             <Stack gap="xs">
-              <Text size="xs" color="dimmed">
-                Maximum request: {formatNumber(config.maxAmount)} gold
+              <Text size="xs" c="dimmed">
+                {t('goldRequests.maxRequest', {
+                  amount: toLocale(config.maxAmount, locale),
+                })}
               </Text>
-              <Text size="xs" color="dimmed">
-                The recipient can choose to accept or decline this request
+              <Text size="xs" c="dimmed">
+                {t('goldRequests.recipientChoice')}
               </Text>
-              <Text size="xs" color="dimmed">
-                Requests expire after 7 days
+              <Text size="xs" c="dimmed">
+                {t('goldRequests.expiryNotice')}
               </Text>
             </Stack>
-          </div>
+          </Paper>
 
           <Textarea
-            label="Reason (Optional)"
-            placeholder="Why are you requesting gold?"
+            label={t('goldRequests.reasonLabel')}
+            placeholder={t('goldRequests.reasonPlaceholder')}
             {...register('notes')}
             minRows={2}
             maxRows={3}
@@ -147,7 +152,7 @@ export function GoldRequestModal({
             resize="vertical"
           />
           {errors.notes && (
-            <Text color="red" size="sm">
+            <Text c="red" size="sm">
               {errors.notes.message}
             </Text>
           )}
@@ -155,11 +160,11 @@ export function GoldRequestModal({
           <Group justify="flex-end" mt="md">
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               onClick={onClose}
               disabled={loading}
             >
-              Cancel
+              {t('goldRequests.cancel')}
             </Button>
             <Button
               type="submit"
@@ -170,7 +175,7 @@ export function GoldRequestModal({
                 !config.enabled
               }
             >
-              Send Request
+              {t('goldRequests.sendRequest')}
             </Button>
           </Group>
         </Stack>

@@ -1,15 +1,9 @@
-import {
-  Button,
-  NumberInput,
-  Paper,
-  SimpleGrid,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Button, NumberInput, SimpleGrid, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
 import { allianceRequest } from '@/components/alliance/allianceStanding';
+import { GameCard } from '@/components/game/GameCard';
 import {
   LOAN_INTEREST_PCT_DEFAULT,
   LOAN_INTEREST_PCT_MAX,
@@ -85,10 +79,7 @@ export const TreasurySettingsCard = ({
   };
 
   return (
-    <Paper p="md" radius="md" withBorder>
-      <Title order={4} mb="xs">
-        {t('settings.title')}
-      </Title>
+    <GameCard title={t('settings.title')}>
       <Text size="sm" c="dimmed" mb="md">
         {t('settings.help')}
       </Text>
@@ -130,6 +121,6 @@ export const TreasurySettingsCard = ({
       >
         {t('settings.save')}
       </Button>
-    </Paper>
+    </GameCard>
   );
 };

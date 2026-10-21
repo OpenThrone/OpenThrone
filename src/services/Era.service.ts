@@ -1,9 +1,12 @@
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
-import type { Prisma } from '@/lib/prisma-exports';
+import { Prisma } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
-import { lockEraLifecycle } from '@/utils/eraLifecycleLock';
+import {
+  ERA_TRANSACTION_OPTIONS,
+  lockEraLifecycle,
+} from '@/utils/eraLifecycleLock';
 import {
   DEFAULT_ERA_START_SETTINGS,
   type EraStartSettings,
@@ -130,13 +133,35 @@ export const getActiveEraStartSettings = async (
   return resolveEraStartSettings(activeEra.startSettings);
 };
 
+/** Thrown when the era to end is no longer the active one (a repeated or stale request). */
+export class StaleEraError extends Error {
+  constructor() {
+    super('The active era changed; reload before starting a new era.');
+    this.name = 'StaleEraError';
+  }
+}
+
 /** Start new era. */
-export const startNewEra = async (settings?: EraStartSettings) => {
+export const startNewEra = async (
+  settings?: EraStartSettings,
+  options: { expectedEraId?: number } = {},
+) => {
   const resolved = settings ?? DEFAULT_ERA_START_SETTINGS;
 
   return prisma.$transaction(async (tx) => {
     await lockEraLifecycle(tx);
+    // Battles lock their two players in id order; taking every player the
+    // same way lets an in-flight battle finish before its players reset.
+    await tx.$queryRaw`SELECT id FROM users WHERE id > 0 ORDER BY id FOR UPDATE`;
     const currentEra = await getActiveEra(tx);
+    // Checked under the lock: a retried request queued behind a rollover
+    // must not end the era that rollover just started.
+    if (
+      options.expectedEraId !== undefined &&
+      currentEra?.id !== options.expectedEraId
+    ) {
+      throw new StaleEraError();
+    }
     let previousEraId: number | null = null;
 
     if (currentEra) {
@@ -166,6 +191,29 @@ export const startNewEra = async (settings?: EraStartSettings) => {
     const allUsers = await getUsersWithRelations({}, tx);
     const users = allUsers.filter((u) => u.id > 0);
 
+    // Era wins per player in two grouped scans instead of two counts per player.
+    const window = currentEra
+      ? Prisma.sql`AND timestamp >= ${currentEra.startDate} AND timestamp < ${newEra.startDate}`
+      : Prisma.empty;
+    const [attackWinRows, defendWinRows] = await Promise.all([
+      tx.$queryRaw<{ id: number; wins: number }[]>`
+        SELECT attacker_id AS id, count(*)::int AS wins FROM attack_log
+        WHERE type = 'attack' AND winner = attacker_id ${window}
+        GROUP BY attacker_id`,
+      tx.$queryRaw<{ id: number; wins: number }[]>`
+        SELECT defender_id AS id, count(*)::int AS wins FROM attack_log
+        WHERE type = 'attack' AND winner = defender_id ${window}
+        GROUP BY defender_id`,
+    ]);
+    const attackWins = new Map<number, number>(
+      attackWinRows.map((r) => [r.id, r.wins]),
+    );
+    const defendWins = new Map<number, number>(
+      defendWinRows.map((r) => [r.id, r.wins]),
+    );
+    const validatedNewEraId = EraIdSchema.parse(newEra.id);
+    const snapshots: Prisma.UserEraCreateManyInput[] = [];
+
     for (const u of users) {
       const userModel = new UserModel(
         u,
@@ -180,58 +228,41 @@ export const startNewEra = async (settings?: EraStartSettings) => {
         true,
       );
 
-      const eraAttackFilter = {
-        type: 'attack',
-        ...(currentEra
-          ? { timestamp: { gte: currentEra.startDate, lt: newEra.startDate } }
-          : {}),
-      };
-      const [attacksWon, defendsWon] = await Promise.all([
-        tx.attack_log.count({
-          where: { ...eraAttackFilter, attacker_id: u.id, winner: u.id },
-        }),
-        tx.attack_log.count({
-          where: { ...eraAttackFilter, defender_id: u.id, winner: u.id },
-        }),
-      ]);
-
       const eraAchievements = {
         maxLevelReached: userModel.level,
-        totalAttacksWon: attacksWon,
-        totalDefendsWon: defendsWon,
+        totalAttacksWon: attackWins.get(u.id) ?? 0,
+        totalDefendsWon: defendWins.get(u.id) ?? 0,
       };
 
       if (previousEraId) {
         const validatedUserId = UserIdSchema.parse(u.id);
         const validatedPreviousEraId = EraIdSchema.parse(previousEraId);
-        await tx.userEra.create({
-          data: {
-            userId: validatedUserId,
-            eraId: validatedPreviousEraId,
-            levelAtStart: userModel.level,
-            unitsAtStart: userModel.units,
-            achievements: eraAchievements,
-            rankAtEnd: u.rank ?? null,
-            goldAtEnd: u.gold ?? null,
-            goldInBankAtEnd: u.gold_in_bank ?? null,
-            offenseAtEnd: u.offense ?? null,
-            defenseAtEnd: u.defense ?? null,
-            spyAtEnd: u.spy ?? null,
-            sentryAtEnd: u.sentry ?? null,
-            fortLevelAtEnd: u.fort_level ?? null,
-            houseLevelAtEnd: u.house_level ?? null,
-            economyLevelAtEnd: u.economy_level ?? null,
-            levelAtEnd: userModel.level,
-            snapshotAtEnd: {
-              experience: u.experience,
-              stats: u.stats,
-              units: u.UserUnit,
-              items: u.UserItem,
-              structureUpgrades: u.UserStructureUpgrade,
-              battleUpgrades: u.UserBattleUpgrade,
-              bonusPoints: u.UserBonusPoints,
-            } as Prisma.InputJsonValue,
-          },
+        snapshots.push({
+          userId: validatedUserId,
+          eraId: validatedPreviousEraId,
+          levelAtStart: userModel.level,
+          unitsAtStart: userModel.units,
+          achievements: eraAchievements,
+          rankAtEnd: u.rank ?? null,
+          goldAtEnd: u.gold ?? null,
+          goldInBankAtEnd: u.gold_in_bank ?? null,
+          offenseAtEnd: u.offense ?? null,
+          defenseAtEnd: u.defense ?? null,
+          spyAtEnd: u.spy ?? null,
+          sentryAtEnd: u.sentry ?? null,
+          fortLevelAtEnd: u.fort_level ?? null,
+          houseLevelAtEnd: u.house_level ?? null,
+          economyLevelAtEnd: u.economy_level ?? null,
+          levelAtEnd: userModel.level,
+          snapshotAtEnd: {
+            experience: u.experience,
+            stats: u.stats,
+            units: u.UserUnit,
+            items: u.UserItem,
+            structureUpgrades: u.UserStructureUpgrade,
+            battleUpgrades: u.UserBattleUpgrade,
+            bonusPoints: u.UserBonusPoints,
+          } as Prisma.InputJsonValue,
         });
       }
 
@@ -239,7 +270,6 @@ export const startNewEra = async (settings?: EraStartSettings) => {
         u.achievements,
         eraAchievements,
       );
-      const validatedNewEraId = EraIdSchema.parse(newEra.id);
       await resetUserState(
         tx,
         u.id,
@@ -249,13 +279,14 @@ export const startNewEra = async (settings?: EraStartSettings) => {
       );
     }
 
+    if (snapshots.length > 0) await tx.userEra.createMany({ data: snapshots });
+
     // Ensure all users are associated to the newly created era even if a reset was skipped
-    const validatedNewEraId = EraIdSchema.parse(newEra.id);
     await tx.users.updateMany({
       where: {},
       data: { currentEraId: validatedNewEraId },
     });
 
     return newEra;
-  });
+  }, ERA_TRANSACTION_OPTIONS);
 };

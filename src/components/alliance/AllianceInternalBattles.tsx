@@ -14,6 +14,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 
 import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
 import { toLocale } from '@/utils/numberFormatting';
 
 interface BattlePlayer {
@@ -86,74 +87,63 @@ export const AllianceInternalBattles = ({
         <Text c="dimmed">{t('internalBattles.empty')}</Text>
       ) : (
         <>
-          <Table.ScrollContainer minWidth={560}>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t('internalBattles.date')}</Table.Th>
-                  <Table.Th>{t('internalBattles.attacker')}</Table.Th>
-                  <Table.Th>{t('internalBattles.defender')}</Table.Th>
-                  <Table.Th>{t('internalBattles.winner')}</Table.Th>
-                  <Table.Th ta="right">{t('internalBattles.gold')}</Table.Th>
-                  <Table.Th>
-                    <span className="sr-only">
-                      {t('internalBattles.report')}
-                    </span>
-                  </Table.Th>
+          <StyledTable
+            ariaLabel={t('internalBattles.title')}
+            tableProps={{ striped: true, highlightOnHover: true }}
+            headers={[
+              t('internalBattles.date'),
+              t('internalBattles.attacker'),
+              t('internalBattles.defender'),
+              t('internalBattles.winner'),
+              <Table.Th key="gold" ta="right">
+                {t('internalBattles.gold')}
+              </Table.Th>,
+              <Table.Th key="report">
+                <span className="sr-only">{t('internalBattles.report')}</span>
+              </Table.Th>,
+            ]}
+          >
+            {items.map((battle) => {
+              const attackerWon =
+                Number(battle.winner) === Number(battle.attacker.id);
+              const winner = attackerWon ? battle.attacker : battle.defender;
+              return (
+                <Table.Tr key={battle.id}>
+                  <Table.Td>
+                    {battle.timestamp
+                      ? new Date(battle.timestamp).toLocaleString(i18n.language)
+                      : '-'}
+                  </Table.Td>
+                  <Table.Td>{playerLink(battle.attacker)}</Table.Td>
+                  <Table.Td>{playerLink(battle.defender)}</Table.Td>
+                  <Table.Td>
+                    <Group gap={6} wrap="nowrap">
+                      <Text size="sm">
+                        {winner.display_name ?? `#${winner.id}`}
+                      </Text>
+                      <Badge size="xs" variant="light" color="brand">
+                        {attackerWon
+                          ? t('internalBattles.attackerWon')
+                          : t('internalBattles.defenderWon')}
+                      </Badge>
+                    </Group>
+                  </Table.Td>
+                  <Table.Td ta="right">
+                    {toLocale(battle.pillaged_gold)}
+                  </Table.Td>
+                  <Table.Td>
+                    <Anchor
+                      component={Link}
+                      href={`/battle/results/${battle.id}`}
+                      size="sm"
+                    >
+                      {t('internalBattles.viewReport')}
+                    </Anchor>
+                  </Table.Td>
                 </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {items.map((battle) => {
-                  const attackerWon =
-                    Number(battle.winner) === Number(battle.attacker.id);
-                  const winner = attackerWon
-                    ? battle.attacker
-                    : battle.defender;
-                  return (
-                    <Table.Tr key={battle.id}>
-                      <Table.Td>
-                        {battle.timestamp
-                          ? new Date(battle.timestamp).toLocaleString(
-                              i18n.language,
-                            )
-                          : '-'}
-                      </Table.Td>
-                      <Table.Td>{playerLink(battle.attacker)}</Table.Td>
-                      <Table.Td>{playerLink(battle.defender)}</Table.Td>
-                      <Table.Td>
-                        <Group gap={6} wrap="nowrap">
-                          <Text size="sm">
-                            {winner.display_name ?? `#${winner.id}`}
-                          </Text>
-                          <Badge
-                            size="xs"
-                            variant="light"
-                            color={attackerWon ? 'red' : 'blue'}
-                          >
-                            {attackerWon
-                              ? t('internalBattles.attackerWon')
-                              : t('internalBattles.defenderWon')}
-                          </Badge>
-                        </Group>
-                      </Table.Td>
-                      <Table.Td ta="right">
-                        {toLocale(battle.pillaged_gold)}
-                      </Table.Td>
-                      <Table.Td>
-                        <Anchor
-                          component={Link}
-                          href={`/battle/results/${battle.id}`}
-                          size="sm"
-                        >
-                          {t('internalBattles.viewReport')}
-                        </Anchor>
-                      </Table.Td>
-                    </Table.Tr>
-                  );
-                })}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
+              );
+            })}
+          </StyledTable>
           {totalPages > 1 && (
             <Group justify="center" mt="md">
               <Pagination

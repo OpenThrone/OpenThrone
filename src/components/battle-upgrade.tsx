@@ -1,16 +1,10 @@
 import { faHammer } from '@fortawesome/free-solid-svg-icons';
-import {
-  Box,
-  Button,
-  Grid,
-  Group,
-  NumberInput,
-  Text,
-  useMantineTheme,
-} from '@mantine/core';
+import { Box, Button, Grid, Group, Text, useMantineTheme } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import React, { useEffect, useState } from 'react';
 
+import QuantityInput from '@/components/battle/QuantityInput';
+import panelClasses from '@/components/game/Panels.module.css';
 import { alertService } from '@/services/Alert.service';
 import type { UnitProps, UnitSectionProps } from '@/types/typings';
 import { getBattleUpgradeStructure } from '@/utils/battleUpgradeStructure';
@@ -55,19 +49,7 @@ const UpgradeSlot = ({
 
   if (!item.enabled) {
     return (
-      <Box
-        style={{
-          backgroundColor: 'var(--ot-inset)',
-          borderRadius: '6px',
-          border: '1px solid var(--ot-line)',
-          boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-          padding: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: 0.5,
-        }}
-      >
+      <Box className={panelClasses.insetRow} data-disabled ta="center">
         <Text c="dimmed">
           {t('upgrades.unlockedWith', {
             item: itemName,
@@ -86,17 +68,10 @@ const UpgradeSlot = ({
   }
 
   return (
-    <Box
-      style={{
-        backgroundColor: 'var(--ot-inset)',
-        borderRadius: '6px',
-        border: '1px solid var(--ot-line)',
-        boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-        padding: '12px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}
+    <Group
+      className={panelClasses.insetRow}
+      justify="space-between"
+      wrap="nowrap"
     >
       <Box style={{ flex: 1 }}>
         <Text
@@ -147,32 +122,16 @@ const UpgradeSlot = ({
           </Text>
         </Group>
       </Box>
-      <Group gap="xs">
-        <NumberInput
-          aria-label={t('upgrades.quantityFor', { item: itemName })}
-          name={`${item.type}_${item.level}`}
-          min={0}
-          styles={{
-            input: {
-              backgroundColor: 'var(--ot-inset)',
-              border: '1px solid var(--ot-line)',
-              color: accent,
-              fontFamily: 'var(--mantine-font-family)',
-              fontVariantNumeric: 'tabular-nums',
-              fontWeight: 700,
-              width: '80px',
-              textAlign: 'center',
-              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
-            },
-          }}
-          value={itemsToEquip[`${item.type}_${item.level}`] || 0}
-          onChange={(value: number | undefined) =>
-            handleInputChange(`${item.type}_${item.level}`, value)
-          }
-          allowNegative={false}
-        />
-      </Group>
-    </Box>
+      <QuantityInput
+        label={t('upgrades.quantityFor', { item: itemName })}
+        hideLabel
+        name={`${item.type}_${item.level}`}
+        value={itemsToEquip[`${item.type}_${item.level}`] || 0}
+        onChange={(value) =>
+          handleInputChange(`${item.type}_${item.level}`, value)
+        }
+      />
+    </Group>
   );
 };
 
@@ -190,7 +149,6 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   const theme = useMantineTheme();
   const secondary = theme.colors.secondary ?? theme.colors.yellow;
   const accent = secondary[1] ?? '#e5c55a';
-  const accentDark = secondary[6] ?? accent;
 
   useEffect(() => {
     if (items) {
@@ -340,32 +298,19 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
           </Text>
           <Group>
             <Button
-              variant="filled"
-              color="yellow"
               size="sm"
-              style={{
-                background: `linear-gradient(180deg, ${accent} 0%, ${accentDark} 100%)`,
-                color: '#000',
-                border: `1px solid ${accent}`,
-                boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-              }}
               disabled={!sectionEnabled}
               onClick={async () => handleEquip('buy')}
             >
-              {t('upgrades.buy')}
+              {t('labels.buy', { ns: 'common' })}
             </Button>
             <Button
               variant="default"
               size="sm"
-              style={{
-                backgroundColor: 'var(--ot-surface-2)',
-                borderColor: 'var(--ot-line)',
-                color: 'var(--ot-muted)',
-              }}
               disabled={!sectionEnabled}
               onClick={async () => handleEquip('sell')}
             >
-              {t('upgrades.sell')}
+              {t('labels.sell', { ns: 'common' })}
             </Button>
           </Group>
         </Group>

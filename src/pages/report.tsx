@@ -11,7 +11,6 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDebouncedCallback } from '@mantine/hooks';
-import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -20,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import { ReportCategory } from '@/lib/prisma-browser-exports';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
 const ReportPage = () => {
@@ -93,26 +93,20 @@ const ReportPage = () => {
 
   const handleSubmit = async () => {
     if (!selectedUserId) {
-      notifications.show({
+      alertService.notify('error', t('report.selectUser'), {
         title: t('report.errorTitle'),
-        message: t('report.selectUser'),
-        color: 'red',
       });
       return;
     }
     if (!category) {
-      notifications.show({
+      alertService.notify('error', t('report.selectCategory'), {
         title: t('report.errorTitle'),
-        message: t('report.selectCategory'),
-        color: 'red',
       });
       return;
     }
     if (description.length < 10) {
-      notifications.show({
+      alertService.notify('error', t('report.descriptionTooShort'), {
         title: t('report.errorTitle'),
-        message: t('report.descriptionTooShort'),
-        color: 'red',
       });
       return;
     }
@@ -134,19 +128,15 @@ const ReportPage = () => {
         throw new Error('Failed to submit report');
       }
 
-      notifications.show({
+      alertService.notify('success', t('report.submitted'), {
         title: t('report.successTitle'),
-        message: t('report.submitted'),
-        color: 'green',
       });
 
       router.push('/home/overview');
     } catch (error) {
       logError('Failed to submit report:', error);
-      notifications.show({
+      alertService.notify('error', t('report.submitFailed'), {
         title: t('report.errorTitle'),
-        message: t('report.submitFailed'),
-        color: 'red',
       });
     } finally {
       setSubmitting(false);

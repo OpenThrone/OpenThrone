@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import { useUser } from '@/context/users';
 import type { InvestigationReport } from '@/types/investigation';
 import { INVESTIGATION_TYPES } from '@/types/investigation';
@@ -99,7 +100,7 @@ export default function InvestigationSignals() {
             { value: '7', label: t('days7') },
             { value: '30', label: t('days30') },
           ]}
-          w={160}
+          w={{ base: '100%', sm: 160 }}
         />
         <Select
           label={t('type')}
@@ -126,7 +127,7 @@ export default function InvestigationSignals() {
             setPage(1);
             setSelected(null);
           }}
-          w={140}
+          w={{ base: '100%', sm: 140 }}
         />
         <Button
           variant="default"
@@ -174,66 +175,64 @@ export default function InvestigationSignals() {
               </Alert>
             )}
             <Text>{t('findingCount', { count: findings.length })}</Text>
-            <Table.ScrollContainer minWidth={850}>
-              <Table striped highlightOnHover withTableBorder>
-                <Table.Thead>
-                  <Table.Tr>
-                    {['type', 'players', 'events', 'lastSeen', 'evidence'].map(
-                      (key) => (
-                        <Table.Th key={key}>{t(key)}</Table.Th>
-                      ),
-                    )}
+            <AdminDataTable ariaLabel={t('readOnlyTitle')} withTableBorder>
+              <Table.Thead>
+                <Table.Tr>
+                  {['type', 'players', 'events', 'lastSeen', 'evidence'].map(
+                    (key) => (
+                      <Table.Th key={key}>{t(key)}</Table.Th>
+                    ),
+                  )}
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {findings.slice((page - 1) * 25, page * 25).map((finding) => (
+                  <Table.Tr key={finding.key}>
+                    <Table.Td>
+                      <Text fw={600}>{t(`types.${finding.type}`)}</Text>
+                      <Badge
+                        variant="light"
+                        color={
+                          finding.type === 'COMBAT_ACCOUNTING'
+                            ? 'yellow'
+                            : 'gray'
+                        }
+                      >
+                        {t(
+                          finding.type === 'COMBAT_ACCOUNTING'
+                            ? 'accountingReview'
+                            : 'patternReview',
+                        )}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      {finding.players.map((p) => (
+                        <Text key={p.id} size="sm">
+                          {p.name} (#{p.id})
+                        </Text>
+                      ))}
+                    </Table.Td>
+                    <Table.Td>{finding.count.toLocaleString()}</Table.Td>
+                    <Table.Td>
+                      {new Date(finding.lastSeen).toLocaleString()}
+                    </Table.Td>
+                    <Table.Td>
+                      <Button
+                        size="xs"
+                        variant="default"
+                        aria-label={t('viewEvidence', {
+                          type: t(`types.${finding.type}`),
+                          id: finding.players[0]?.id,
+                        })}
+                        onClick={() => setSelected(finding.key)}
+                      >
+                        {t('evidence')}
+                      </Button>
+                    </Table.Td>
                   </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {findings.slice((page - 1) * 25, page * 25).map((finding) => (
-                    <Table.Tr key={finding.key}>
-                      <Table.Td>
-                        <Text fw={600}>{t(`types.${finding.type}`)}</Text>
-                        <Badge
-                          variant="light"
-                          color={
-                            finding.type === 'COMBAT_ACCOUNTING'
-                              ? 'yellow'
-                              : 'gray'
-                          }
-                        >
-                          {t(
-                            finding.type === 'COMBAT_ACCOUNTING'
-                              ? 'accountingReview'
-                              : 'patternReview',
-                          )}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        {finding.players.map((p) => (
-                          <Text key={p.id} size="sm">
-                            {p.name} (#{p.id})
-                          </Text>
-                        ))}
-                      </Table.Td>
-                      <Table.Td>{finding.count.toLocaleString()}</Table.Td>
-                      <Table.Td>
-                        {new Date(finding.lastSeen).toLocaleString()}
-                      </Table.Td>
-                      <Table.Td>
-                        <Button
-                          size="xs"
-                          variant="light"
-                          aria-label={t('viewEvidence', {
-                            type: t(`types.${finding.type}`),
-                            id: finding.players[0]?.id,
-                          })}
-                          onClick={() => setSelected(finding.key)}
-                        >
-                          {t('evidence')}
-                        </Button>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
+                ))}
+              </Table.Tbody>
+            </AdminDataTable>
             {!findings.length && <Text c="dimmed">{t('empty')}</Text>}
             {findings.length > 25 && (
               <Pagination
@@ -263,91 +262,92 @@ export default function InvestigationSignals() {
                       last: new Date(detail.lastSeen).toLocaleString(),
                     })}
                   </Text>
-                  <Table.ScrollContainer minWidth={360}>
-                    <Table striped withTableBorder>
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th>{t('metric')}</Table.Th>
-                          <Table.Th>{t('value')}</Table.Th>
+                  <AdminDataTable
+                    size="compact"
+                    ariaLabel={t('metric')}
+                    withTableBorder
+                  >
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>{t('metric')}</Table.Th>
+                        <Table.Th>{t('value')}</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {Object.entries(detail.metrics).map(([key, value]) => (
+                        <Table.Tr key={key}>
+                          <Table.Th>
+                            {t(`metrics.${key}`, { defaultValue: key })}
+                          </Table.Th>
+                          <Table.Td>
+                            {typeof value === 'boolean'
+                              ? t(value ? 'yes' : 'no')
+                              : String(value)}
+                          </Table.Td>
                         </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {Object.entries(detail.metrics).map(([key, value]) => (
-                          <Table.Tr key={key}>
-                            <Table.Th>
-                              {t(`metrics.${key}`, { defaultValue: key })}
-                            </Table.Th>
-                            <Table.Td>
-                              {typeof value === 'boolean'
-                                ? t(value ? 'yes' : 'no')
-                                : String(value)}
-                            </Table.Td>
-                          </Table.Tr>
-                        ))}
-                      </Table.Tbody>
-                    </Table>
-                  </Table.ScrollContainer>
+                      ))}
+                    </Table.Tbody>
+                  </AdminDataTable>
                   <Title order={3}>{t('sampleRecords')}</Title>
                   <Text size="sm" c="dimmed">
                     {t('sampleNote')}
                   </Text>
-                  <Table.ScrollContainer minWidth={700}>
-                    <Table striped withTableBorder>
-                      <Table.Thead>
-                        <Table.Tr>
-                          {['source', 'id', 'time', 'from', 'to', 'gold'].map(
-                            (key) => (
-                              <Table.Th key={key}>{t(key)}</Table.Th>
-                            ),
-                          )}
+                  <AdminDataTable
+                    ariaLabel={t('sampleRecords')}
+                    withTableBorder
+                  >
+                    <Table.Thead>
+                      <Table.Tr>
+                        {['source', 'id', 'time', 'from', 'to', 'gold'].map(
+                          (key) => (
+                            <Table.Th key={key}>{t(key)}</Table.Th>
+                          ),
+                        )}
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {detail.evidence.map((record, index) => (
+                        <Table.Tr key={`${record.kind}:${record.id}:${index}`}>
+                          <Table.Td>{t(`sources.${record.kind}`)}</Table.Td>
+                          <Table.Td>
+                            {record.kind === 'attack' && canViewAnalytics ? (
+                              <Anchor
+                                component={Link}
+                                href={`/home/admin/attacks?attackId=${record.id}`}
+                              >
+                                #{record.id}
+                              </Anchor>
+                            ) : (
+                              `#${record.id}`
+                            )}
+                          </Table.Td>
+                          <Table.Td>
+                            {record.at
+                              ? new Date(record.at).toLocaleString()
+                              : t('notAvailable')}
+                          </Table.Td>
+                          <Table.Td>
+                            {record.from
+                              ? `${playerLabel(record.from)} (#${record.from})`
+                              : '—'}
+                          </Table.Td>
+                          <Table.Td>
+                            {record.to
+                              ? `${playerLabel(record.to)} (#${record.to})`
+                              : '—'}
+                          </Table.Td>
+                          <Table.Td>{record.gold ?? '—'}</Table.Td>
                         </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {detail.evidence.map((record, index) => (
-                          <Table.Tr
-                            key={`${record.kind}:${record.id}:${index}`}
-                          >
-                            <Table.Td>{t(`sources.${record.kind}`)}</Table.Td>
-                            <Table.Td>
-                              {record.kind === 'attack' && canViewAnalytics ? (
-                                <Anchor
-                                  component={Link}
-                                  href={`/home/admin/attacks?attackId=${record.id}`}
-                                >
-                                  #{record.id}
-                                </Anchor>
-                              ) : (
-                                `#${record.id}`
-                              )}
-                            </Table.Td>
-                            <Table.Td>
-                              {record.at
-                                ? new Date(record.at).toLocaleString()
-                                : t('notAvailable')}
-                            </Table.Td>
-                            <Table.Td>
-                              {record.from
-                                ? `${playerLabel(record.from)} (#${record.from})`
-                                : '—'}
-                            </Table.Td>
-                            <Table.Td>
-                              {record.to
-                                ? `${playerLabel(record.to)} (#${record.to})`
-                                : '—'}
-                            </Table.Td>
-                            <Table.Td>{record.gold ?? '—'}</Table.Td>
-                          </Table.Tr>
-                        ))}
-                      </Table.Tbody>
-                    </Table>
-                  </Table.ScrollContainer>
+                      ))}
+                    </Table.Tbody>
+                  </AdminDataTable>
                   {canViewAnalytics && (
                     <Group>
                       {detail.players.map((p) => (
                         <Button
                           key={p.id}
                           component={Link}
-                          variant="outline"
+                          variant="default"
                           href={`/home/admin/analytics?playerId=${p.id}&days=${days}`}
                         >
                           {t('playerTimeline', { name: p.name })}

@@ -10,13 +10,10 @@ import {
   Button,
   Checkbox,
   Group,
-  Paper,
-  ScrollArea,
   Stack,
   Table,
   Text,
   TextInput,
-  Title,
   Tooltip,
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
@@ -27,6 +24,8 @@ import {
   getAllianceStanding,
 } from '@/components/alliance/allianceStanding';
 import { ConfirmActionModal } from '@/components/alliance/ConfirmActionModal';
+import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
 import type { AlliancePermissionKey } from '@/constants/alliancePermissions';
 import {
   ALLIANCE_PERMISSION_KEYS,
@@ -214,152 +213,148 @@ export const AllianceRanks = ({
   };
 
   return (
-    <Paper p="md" radius="md" withBorder>
+    <GameCard title={t('ranks.title', 'Ranks')}>
       <Stack gap="md">
-        <div>
-          <Title order={4}>{t('ranks.title', 'Ranks')}</Title>
-          <Text size="sm" c="dimmed">
-            {t(
-              'ranks.help',
-              'Higher ranks are listed first. You can only edit ranks below your own and grant permissions you hold.',
-            )}
-          </Text>
-        </div>
+        <Text size="sm" c="dimmed">
+          {t(
+            'ranks.help',
+            'Higher ranks are listed first. You can only edit ranks below your own and grant permissions you hold.',
+          )}
+        </Text>
 
-        <ScrollArea type="auto">
-          <Table verticalSpacing="xs" withColumnBorders miw={1250}>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t('ranks.order', 'Order')}</Table.Th>
-                <Table.Th miw={180}>{t('ranks.name', 'Rank')}</Table.Th>
-                {ALLIANCE_PERMISSION_KEYS.map((key) => (
-                  <Table.Th key={key} ta="center">
-                    <Text size="xs" fw={600}>
-                      {label(key)}
-                    </Text>
-                  </Table.Th>
-                ))}
-                <Table.Th>
-                  <Text component="span" className="sr-only">
-                    {t('ranks.delete', 'Delete rank')}
-                  </Text>
-                </Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              <Table.Tr>
-                <Table.Td />
+        <StyledTable
+          ariaLabel={t('ranks.title', 'Ranks')}
+          tableProps={{ verticalSpacing: 'xs', withColumnBorders: true }}
+          headers={[
+            t('ranks.order', 'Order'),
+            <Table.Th key="name" miw={180}>
+              {t('ranks.name', 'Rank')}
+            </Table.Th>,
+            ...ALLIANCE_PERMISSION_KEYS.map((key) => (
+              <Table.Th key={key} ta="center">
+                <Text size="xs" fw={600}>
+                  {label(key)}
+                </Text>
+              </Table.Th>
+            )),
+            <Table.Th key="delete">
+              <Text component="span" className="sr-only">
+                {t('ranks.delete', 'Delete rank')}
+              </Text>
+            </Table.Th>,
+          ]}
+        >
+          <Table.Tr>
+            <Table.Td />
+            <Table.Td>
+              <Badge color="yellow" variant="light">
+                {t('index.allianceLeader', 'Alliance Leader')}
+              </Badge>
+            </Table.Td>
+            {ALLIANCE_PERMISSION_KEYS.map((key) => (
+              <Table.Td key={key} ta="center">
+                <Checkbox
+                  checked
+                  disabled
+                  readOnly
+                  aria-label={label(key)}
+                  styles={{ body: { justifyContent: 'center' } }}
+                />
+              </Table.Td>
+            ))}
+            <Table.Td />
+          </Table.Tr>
+          {draft.map((rank, index) => {
+            const canEdit = editable(rank);
+            const members = memberCounts.get(rank.id) ?? 0;
+            return (
+              <Table.Tr key={rank.id}>
                 <Table.Td>
-                  <Badge color="yellow" variant="light">
-                    {t('index.allianceLeader', 'Alliance Leader')}
-                  </Badge>
+                  <Group gap={4} wrap="nowrap">
+                    <ActionIcon
+                      variant="subtle"
+                      size="sm"
+                      disabled={!canMove(index, -1) || saving}
+                      onClick={() => move(index, -1)}
+                      aria-label={t('ranks.moveUp', 'Move rank up')}
+                    >
+                      <FontAwesomeIcon icon={faArrowUp} />
+                    </ActionIcon>
+                    <ActionIcon
+                      variant="subtle"
+                      size="sm"
+                      disabled={!canMove(index, 1) || saving}
+                      onClick={() => move(index, 1)}
+                      aria-label={t('ranks.moveDown', 'Move rank down')}
+                    >
+                      <FontAwesomeIcon icon={faArrowDown} />
+                    </ActionIcon>
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <TextInput
+                    size="xs"
+                    miw={160}
+                    value={rank.name}
+                    maxLength={50}
+                    disabled={!canEdit || isDefault(rank) || saving}
+                    aria-label={t('ranks.name', 'Rank')}
+                    onChange={(event) =>
+                      update(rank.id, { name: event.currentTarget.value })
+                    }
+                  />
                 </Table.Td>
                 {ALLIANCE_PERMISSION_KEYS.map((key) => (
                   <Table.Td key={key} ta="center">
                     <Checkbox
-                      checked
-                      disabled
-                      readOnly
-                      aria-label={label(key)}
+                      checked={!!rank.permissions[key]}
+                      disabled={
+                        !canEdit ||
+                        saving ||
+                        (!standing.can(key) && !rank.permissions[key])
+                      }
+                      aria-label={`${rank.name}: ${label(key)}`}
                       styles={{ body: { justifyContent: 'center' } }}
+                      onChange={(event) =>
+                        update(rank.id, {
+                          permissions: {
+                            ...rank.permissions,
+                            [key]: event.currentTarget.checked,
+                          },
+                        })
+                      }
                     />
                   </Table.Td>
                 ))}
-                <Table.Td />
+                <Table.Td>
+                  {canEdit && !isDefault(rank) && (
+                    <Tooltip
+                      label={
+                        members > 0
+                          ? t(
+                              'ranks.inUse',
+                              'Move its members to another rank first',
+                            )
+                          : t('ranks.delete', 'Delete rank')
+                      }
+                    >
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        size="sm"
+                        disabled={members > 0 || saving}
+                        onClick={() => setDeleting(rank)}
+                        aria-label={t('ranks.delete', 'Delete rank')}
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
+                </Table.Td>
               </Table.Tr>
-              {draft.map((rank, index) => {
-                const canEdit = editable(rank);
-                const members = memberCounts.get(rank.id) ?? 0;
-                return (
-                  <Table.Tr key={rank.id}>
-                    <Table.Td>
-                      <Group gap={4} wrap="nowrap">
-                        <ActionIcon
-                          variant="subtle"
-                          size="sm"
-                          disabled={!canMove(index, -1) || saving}
-                          onClick={() => move(index, -1)}
-                          aria-label={t('ranks.moveUp', 'Move rank up')}
-                        >
-                          <FontAwesomeIcon icon={faArrowUp} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="subtle"
-                          size="sm"
-                          disabled={!canMove(index, 1) || saving}
-                          onClick={() => move(index, 1)}
-                          aria-label={t('ranks.moveDown', 'Move rank down')}
-                        >
-                          <FontAwesomeIcon icon={faArrowDown} />
-                        </ActionIcon>
-                      </Group>
-                    </Table.Td>
-                    <Table.Td>
-                      <TextInput
-                        size="xs"
-                        miw={160}
-                        value={rank.name}
-                        maxLength={50}
-                        disabled={!canEdit || isDefault(rank) || saving}
-                        aria-label={t('ranks.name', 'Rank')}
-                        onChange={(event) =>
-                          update(rank.id, { name: event.currentTarget.value })
-                        }
-                      />
-                    </Table.Td>
-                    {ALLIANCE_PERMISSION_KEYS.map((key) => (
-                      <Table.Td key={key} ta="center">
-                        <Checkbox
-                          checked={!!rank.permissions[key]}
-                          disabled={
-                            !canEdit ||
-                            saving ||
-                            (!standing.can(key) && !rank.permissions[key])
-                          }
-                          aria-label={`${rank.name}: ${label(key)}`}
-                          styles={{ body: { justifyContent: 'center' } }}
-                          onChange={(event) =>
-                            update(rank.id, {
-                              permissions: {
-                                ...rank.permissions,
-                                [key]: event.currentTarget.checked,
-                              },
-                            })
-                          }
-                        />
-                      </Table.Td>
-                    ))}
-                    <Table.Td>
-                      {canEdit && !isDefault(rank) && (
-                        <Tooltip
-                          label={
-                            members > 0
-                              ? t(
-                                  'ranks.inUse',
-                                  'Move its members to another rank first',
-                                )
-                              : t('ranks.delete', 'Delete rank')
-                          }
-                        >
-                          <ActionIcon
-                            variant="subtle"
-                            color="red"
-                            size="sm"
-                            disabled={members > 0 || saving}
-                            onClick={() => setDeleting(rank)}
-                            aria-label={t('ranks.delete', 'Delete rank')}
-                          >
-                            <FontAwesomeIcon icon={faTrash} />
-                          </ActionIcon>
-                        </Tooltip>
-                      )}
-                    </Table.Td>
-                  </Table.Tr>
-                );
-              })}
-            </Table.Tbody>
-          </Table>
-        </ScrollArea>
+            );
+          })}
+        </StyledTable>
 
         <Group justify="space-between" align="flex-end">
           <Group align="flex-end" gap="xs">
@@ -395,6 +390,6 @@ export const AllianceRanks = ({
         onClose={() => setDeleting(null)}
         onConfirm={handleDelete}
       />
-    </Paper>
+    </GameCard>
   );
 };

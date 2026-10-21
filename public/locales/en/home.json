@@ -93,7 +93,8 @@
     "dexterity": "Dexterity (Spy & Sentry)",
     "charisma": "Charisma (Reduced Prices)",
     "saveChanges": "Save Changes",
-    "changesSavedSuccessfully": "Changes saved successfully"
+    "changesSavedSuccessfully": "Changes saved successfully",
+    "saveFailed": "Failed to save changes"
   },
   "profile": {
     "title": "My Profile",
@@ -199,6 +200,7 @@
     "accountResetSuccessfully": "Account reset successfully.",
     "accountDisabledSuccessfully": "Account disabled successfully.",
     "accountDataRemovedSuccessfully": "Account data removed successfully.",
+    "unexpectedError": "Something went wrong. Please try again.",
     "userNotLoaded": "User not loaded. Please refresh the page.",
     "failedToDisable2FA": "Failed to disable 2FA",
     "failedToGenerate2FASecret": "Failed to generate 2FA secret",

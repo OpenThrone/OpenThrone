@@ -1,6 +1,8 @@
 import { Badge, Box, Group, Text } from '@mantine/core';
 import React from 'react';
 
+import classes from '@/components/game/Panels.module.css';
+
 import { GameCard } from './GameCard';
 
 interface StyledContentProps {
@@ -17,15 +19,7 @@ export const StyledContent: React.FC<StyledContentProps> = ({
 }) => {
   return (
     <GameCard title={title}>
-      <Box
-        p="md"
-        style={{
-          backgroundColor: 'var(--ot-inset)',
-          border: '1px solid var(--ot-line)',
-          borderRadius: 'var(--mantine-radius-sm)',
-          boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-        }}
-      >
+      <Box p="md" className={classes.insetRow}>
         <Group justify="space-between" mb="xs">
           <Text size="sm" fw={700} c="gray.2">
             {title}

@@ -3,7 +3,6 @@ import {
   Button,
   Group,
   Loader,
-  Modal,
   NumberInput,
   Pagination,
   Select,
@@ -12,14 +11,15 @@ import {
   Text,
   Textarea,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { PermissionType } from '@/lib/prisma-browser-exports';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
 const BansDashboardPage = () => {
@@ -87,20 +87,18 @@ const BansDashboardPage = () => {
         throw new Error(result.error || `HTTP ${response.status}`);
       }
 
-      notifications.show({
+      alertService.notify('success', t('actionCompleted'), {
         title: t('success'),
-        message: t('actionCompleted'),
-        color: 'green',
       });
       setPendingAction(null);
       await fetchBans();
     } catch (error) {
       logError('Failed to update account status:', error);
-      notifications.show({
-        title: t('error'),
-        message: error instanceof Error ? error.message : t('requestFailed'),
-        color: 'red',
-      });
+      alertService.notify(
+        'error',
+        error instanceof Error ? error.message : t('requestFailed'),
+        { title: t('error') },
+      );
     } finally {
       setSavingAction(false);
       setUnbanningId(null);
@@ -265,40 +263,26 @@ const BansDashboardPage = () => {
           )}
         </GameCard>
       </Stack>
-      <Modal
-        opened={!!pendingAction}
+      <ConfirmationModal
+        isOpen={!!pendingAction}
         onClose={() => !savingAction && setPendingAction(null)}
+        onConfirm={handleAccountAction}
         title={t('confirmAccountAction')}
-      >
-        <Stack>
-          <Text>
-            {pendingAction?.action === 'ACTIVE'
-              ? t('confirmLift', { userId: pendingAction.userId })
-              : t('confirmPenalty', {
-                  action: pendingAction?.action,
-                  userId: pendingAction?.userId,
-                  duration: pendingAction?.duration,
-                  count: Number(pendingAction?.duration) || 0,
-                })}
-          </Text>
-          <Group justify="flex-end">
-            <Button
-              variant="outline"
-              disabled={savingAction}
-              onClick={() => setPendingAction(null)}
-            >
-              {t('cancel')}
-            </Button>
-            <Button
-              color={pendingAction?.action === 'ACTIVE' ? 'green' : 'red'}
-              loading={savingAction}
-              onClick={handleAccountAction}
-            >
-              {t('confirm')}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        message={
+          pendingAction?.action === 'ACTIVE'
+            ? t('confirmLift', { userId: pendingAction.userId })
+            : t('confirmPenalty', {
+                action: pendingAction?.action,
+                userId: pendingAction?.userId,
+                duration: pendingAction?.duration,
+                count: Number(pendingAction?.duration) || 0,
+              })
+        }
+        type={pendingAction?.action === 'ACTIVE' ? 'positive' : 'destructive'}
+        confirmText={t('confirm')}
+        cancelText={t('cancel')}
+        isLoading={savingAction}
+      />
     </AdminLayout>
   );
 };

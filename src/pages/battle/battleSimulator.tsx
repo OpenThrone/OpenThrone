@@ -1,5 +1,5 @@
-import { faCopy, faPlay, faRedo } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCopy, faPlay, faRedo } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   Alert,
   Badge,
@@ -9,21 +9,19 @@ import {
   Loader,
   NumberInput,
   Paper,
-  SimpleGrid,
   Stack,
   Text,
-  Title,
-} from "@mantine/core";
-import { useClipboard, useLocalStorage } from "@mantine/hooks";
-import type { NextPage } from "next";
-import { useRouter } from "next/router";
-import { useTranslation } from "next-i18next";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+} from '@mantine/core';
+import { useClipboard, useLocalStorage } from '@mantine/hooks';
+import type { NextPage } from 'next';
+import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import ArmyInputForm from "@/components/ArmyInputForm";
-import BattleResults from "@/components/BattleTestResults";
-import { GameCard } from "@/components/game/GameCard";
-import MainArea from "@/components/MainArea";
+import ArmyInputForm from '@/components/ArmyInputForm';
+import BattleResults from '@/components/BattleTestResults';
+import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
 import type {
   PlayerBattleUpgrade,
   PlayerItem,
@@ -32,10 +30,10 @@ import type {
   ShareableArmyData,
   StructureUpgrade,
   User,
-} from "@/types/typings";
-import { decodeBattleData, encodeBattleData } from "@/utils/battleEncoding";
-import MockUserGenerator from "@/utils/MockUserGenerator";
-import { stringifyObj } from "@/utils/numberFormatting";
+} from '@/types/typings';
+import { decodeBattleData, encodeBattleData } from '@/utils/battleEncoding';
+import MockUserGenerator from '@/utils/MockUserGenerator';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 type SimulatorUser = User & {
   UserUnit?: PlayerUnit[];
@@ -52,11 +50,11 @@ type SimulatorResponse = {
 };
 
 const numberValue = (value: string | number): number =>
-  typeof value === "number" && Number.isFinite(value) ? value : 1;
+  typeof value === 'number' && Number.isFinite(value) ? value : 1;
 
 const parseStoredUser = (value: string): SimulatorUser =>
   JSON.parse(value, (_key, parsedValue) => {
-    if (typeof parsedValue === "string" && /^\d+n$/.test(parsedValue)) {
+    if (typeof parsedValue === 'string' && /^\d+n$/.test(parsedValue)) {
       return BigInt(parsedValue.slice(0, -1));
     }
     return parsedValue;
@@ -74,31 +72,37 @@ const toShareableArmy = (user: SimulatorUser): ShareableArmyData => ({
 });
 
 const BattleSimulator: NextPage = () => {
-  const { t } = useTranslation("battle");
+  const { t } = useTranslation('battle');
   const router = useRouter();
   const defenderGenerator = useMemo(
-    () => new MockUserGenerator().setBasicInfo({ display_name: "Defender" }),
-    [],
+    () =>
+      new MockUserGenerator().setBasicInfo({
+        display_name: t('battleSimulator.defender'),
+      }),
+    [t],
   );
   const attackerGenerator = useMemo(
-    () => new MockUserGenerator().setBasicInfo({ display_name: "Attacker" }),
-    [],
+    () =>
+      new MockUserGenerator().setBasicInfo({
+        display_name: t('battleSimulator.attacker'),
+      }),
+    [t],
   );
 
   const [attacker, setAttacker] = useLocalStorage<SimulatorUser>({
-    key: "battle-sim-attacker",
+    key: 'battle-sim-attacker',
     defaultValue: attackerGenerator.getUser(),
     serialize: (v) => JSON.stringify(stringifyObj(v)),
     deserialize: parseStoredUser,
   });
   const [defender, setDefender] = useLocalStorage<SimulatorUser>({
-    key: "battle-sim-defender",
+    key: 'battle-sim-defender',
     defaultValue: defenderGenerator.getUser(),
     serialize: (v) => JSON.stringify(stringifyObj(v)),
     deserialize: parseStoredUser,
   });
   const [turns, setTurns] = useLocalStorage<number>({
-    key: "battle-sim-turns",
+    key: 'battle-sim-turns',
     defaultValue: 1,
   });
 
@@ -118,9 +122,9 @@ const BattleSimulator: NextPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/attack/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/attack/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           attacker: JSON.stringify(stringifyObj(updatedAttacker)),
           defender: JSON.stringify(stringifyObj(updatedDefender)),
@@ -129,11 +133,11 @@ const BattleSimulator: NextPage = () => {
       });
       const data = (await response.json()) as SimulatorResponse;
       if (!response.ok) {
-        throw new Error(data.message ?? t("battleSimulator.error"));
+        throw new Error(data.message ?? t('battleSimulator.error'));
       }
       setResults(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("battleSimulator.error"));
+      setError(err instanceof Error ? err.message : t('battleSimulator.error'));
     } finally {
       setLoading(false);
     }
@@ -153,7 +157,7 @@ const BattleSimulator: NextPage = () => {
       turns,
     );
     if (!encoded) {
-      setError(t("battleSimulator.error"));
+      setError(t('battleSimulator.error'));
       return;
     }
     const origin = process.env.NEXT_PUBLIC_URL_ROOT ?? window.location.origin;
@@ -204,49 +208,55 @@ const BattleSimulator: NextPage = () => {
   ]);
 
   return (
-    <MainArea title={t("battleSimulator.title")}>
+    <MainArea title={t('battleSimulator.title')}>
       <Stack gap="md">
-        <GameCard title={t("battleSimulator.title")} goldAccent>
+        <GameCard title={t('battleSimulator.heading')}>
           <Grid align="center">
             <Grid.Col span={{ base: 12, md: 8 }}>
-              <Title order={2}>War table simulator</Title>
-              <Text c="dimmed" maw={760}>
-                Build two complete armies, tune equipment and fortress doctrine,
-                then run the live combat engine without spending turns or gold.
+              <Text c="var(--ot-muted)" maw={760}>
+                {t('battleSimulator.intro')}
               </Text>
               <Group mt="sm" gap="xs">
-                <Badge variant="light">Public sandbox</Badge>
-                <Badge variant="light">Shareable loadouts</Badge>
-                <Badge variant="light">Live battle rules</Badge>
+                <Badge variant="light">
+                  {t('battleSimulator.badgeSandbox')}
+                </Badge>
+                <Badge variant="light">
+                  {t('battleSimulator.badgeShareable')}
+                </Badge>
+                <Badge variant="light">
+                  {t('battleSimulator.badgeLiveRules')}
+                </Badge>
               </Group>
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Paper withBorder p="md">
                 <NumberInput
-                  label={t("battleSimulator.turns")}
+                  label={t('battleSimulator.turns')}
                   value={turns}
                   min={1}
                   max={50}
                   onChange={(val) => setTurns(numberValue(val))}
                 />
-                <SimpleGrid cols={2} mt="md">
+                <Stack gap="xs" mt="md">
                   <Button
+                    fullWidth
                     onClick={handleCopy}
                     variant="outline"
                     leftSection={<FontAwesomeIcon icon={faCopy} />}
                   >
                     {clipboard.copied
-                      ? t("battleSimulator.linkCopied")
-                      : t("battleSimulator.copyLink")}
+                      ? t('battleSimulator.linkCopied')
+                      : t('battleSimulator.copyLink')}
                   </Button>
                   <Button
+                    fullWidth
                     loading={loading}
                     onClick={handleRunSimulation}
                     leftSection={<FontAwesomeIcon icon={faPlay} />}
                   >
-                    {t("battleSimulator.runSimulation")}
+                    {t('battleSimulator.runSimulation')}
                   </Button>
-                </SimpleGrid>
+                </Stack>
               </Paper>
             </Grid.Col>
           </Grid>
@@ -260,10 +270,10 @@ const BattleSimulator: NextPage = () => {
 
         <Grid>
           <Grid.Col span={{ base: 12, xl: 6 }}>
-            <GameCard title={t("battleSimulator.attacker")}>
+            <GameCard title={t('battleSimulator.attacker')}>
               <ArmyInputForm
                 ref={attackerFormRef}
-                title={t("battleSimulator.attacker")}
+                title={t('battleSimulator.attacker')}
                 armyData={attacker}
                 attacker
                 key={`attacker-form-${attacker.id}`}
@@ -271,10 +281,10 @@ const BattleSimulator: NextPage = () => {
             </GameCard>
           </Grid.Col>
           <Grid.Col span={{ base: 12, xl: 6 }}>
-            <GameCard title={t("battleSimulator.defender")}>
+            <GameCard title={t('battleSimulator.defender')}>
               <ArmyInputForm
                 ref={defenderFormRef}
-                title={t("battleSimulator.defender")}
+                title={t('battleSimulator.defender')}
                 armyData={defender}
                 attacker={false}
                 key={`defender-form-${defender.id}`}
@@ -289,7 +299,7 @@ const BattleSimulator: NextPage = () => {
             onClick={handleReset}
             leftSection={<FontAwesomeIcon icon={faRedo} />}
           >
-            {t("battleSimulator.reset")}
+            {t('battleSimulator.reset')}
           </Button>
         )}
 
