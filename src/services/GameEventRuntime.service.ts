@@ -6,6 +6,7 @@ import {
   parseEventEffects,
 } from '@/constants/gameEvents';
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@/lib/prisma-exports';
 import { GameEventType } from '@/lib/prisma-exports';
 import { logError } from '@/utils/logger';
 
@@ -38,18 +39,22 @@ export function invalidateGameEventModifiers(): void {
 /**
  * Events running right now: ACTIVE, inside their time window, and, when bound
  * to an era, only while that era is still open.
+ * A transaction reader bypasses process caches to avoid waiting for another pool connection.
  */
-export async function getRunningGameEvents(): Promise<RunningGameEvent[]> {
+export async function getRunningGameEvents(
+  db?: Pick<Prisma.TransactionClient, 'gameEvent'>,
+): Promise<RunningGameEvent[]> {
+  const useCache = !db;
   const nowMs = Date.now();
-  if (cached && cached.expiresAt > nowMs) return cached.value;
-  if (pending && pendingEpoch === cacheEpoch) return pending;
+  if (useCache && cached && cached.expiresAt > nowMs) return cached.value;
+  if (useCache && pending && pendingEpoch === cacheEpoch) return pending;
 
   const requestEpoch = cacheEpoch;
   let request: Promise<RunningGameEvent[]>;
   request = (async () => {
     try {
       const now = new Date();
-      const rows = await prisma.gameEvent.findMany({
+      const rows = await (db ?? prisma).gameEvent.findMany({
         where: {
           status: 'ACTIVE',
           startsAt: { lte: now },
@@ -80,26 +85,30 @@ export async function getRunningGameEvents(): Promise<RunningGameEvent[]> {
         eraBound: row.eraId != null,
         effects: parseEventEffects(row.config),
       }));
-      if (requestEpoch === cacheEpoch)
+      if (useCache && requestEpoch === cacheEpoch)
         cached = { value: result, expiresAt: Date.now() + CACHE_TTL_MS };
       return result;
     } catch (error) {
       logError('Failed to load active game events:', error);
-      if (requestEpoch === cacheEpoch)
+      if (useCache && requestEpoch === cacheEpoch)
         cached = { value: [], expiresAt: Date.now() + CACHE_TTL_MS };
       return [];
     } finally {
       if (pending === request) pending = null;
     }
   })();
-  pending = request;
-  pendingEpoch = requestEpoch;
+  if (useCache) {
+    pending = request;
+    pendingEpoch = requestEpoch;
+  }
   return request;
 }
 
 /** Returns the combined modifiers from events active in their configured time window. */
-export async function getGameEventModifiers(): Promise<GameEventModifiers> {
-  const events = await getRunningGameEvents();
+export async function getGameEventModifiers(
+  db?: Pick<Prisma.TransactionClient, 'gameEvent'>,
+): Promise<GameEventModifiers> {
+  const events = await getRunningGameEvents(db);
   if (!events.length)
     return { ...DEFAULT_GAME_EVENT_MODIFIERS, dailyCitizenGrants: [] };
   return combineEventEffects(

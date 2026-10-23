@@ -332,12 +332,15 @@ model users {
   era_joined_at                         DateTime?                @db.Timestamptz(3)
   /// Era in which the player forfeited protection by attacking a non-protected player.
   /// Citizens this era from timed citizen events and citizen multipliers (#89); added to the protection population limit.
-  event_citizens_received Int @default(0)
+  event_citizens_received               Int                      @default(0)
   protection_forfeited_era_id           Int?
-  achievements                         Json?                    @default("{}")
+  achievements                          Json?                    @default("{}")
   currentEra                            Era?                     @relation("CurrentUserEra", fields: [currentEraId], references: [id])
 
   // New relations to structured data
+  forceObligations     ForceObligation[]
+  forceContracts       ForceContract[]
+  forceEvents          ForceEvent[]
   UserUnit             UserUnit[]
   UserItem             UserItem[]
   UserStructureUpgrade UserStructureUpgrade[]
@@ -524,7 +527,13 @@ model bank_history {
   @@index([from_user_id, to_user_id, date_time])
 }
 
+enum RecruitmentSource {
+  INTERNAL
+  EXTERNAL
+}
+
 model recruit_history {
+  source RecruitmentSource @default(INTERNAL)
   id           Int       @id @default(autoincrement())
   from_user    Int?
   to_user      Int
@@ -536,6 +545,9 @@ model recruit_history {
   users        users?    @relation(fields: [usersId], references: [id])
 
   @@index([to_user, from_user, timestamp])
+  @@index([source, to_user, timestamp])
+  @@index([source, to_user, ip_addr, timestamp])
+  @@index([source, ip_addr, timestamp])
 }
 
 model blog_posts {
@@ -609,6 +621,12 @@ model alliances {
   updated_at        DateTime?              @default(now()) @updatedAt @db.Timestamptz(6)
   bannerimg         String?                @db.VarChar
   slug              String?
+  forceObligations  ForceObligation[]
+  forceDuesRules    ForceDuesRule[]
+  forceReserves     ForceReserve[]
+  forceContracts    ForceContract[]
+  forceEvents       ForceEvent[]
+  forcePolicies     AllianceForcePolicy[]
   members           alliance_memberships[]
   alliance_roles    alliance_roles[]
   leader            users                  @relation("AllianceLeader", fields: [leader_id], references: [id])
@@ -902,13 +920,13 @@ model ApiTokenAudit {
 }
 
 model Era {
-  id            Int       @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   name          String
-  startDate     DateTime  @default(now()) @db.Timestamptz(3)
-  endDate       DateTime? @db.Timestamptz(3)
+  startDate     DateTime    @default(now()) @db.Timestamptz(3)
+  endDate       DateTime?   @db.Timestamptz(3)
   startSettings Json?
-  users         users[]   @relation("CurrentUserEra")
-  userEras      UserEra[] @relation("UserEraEras")
+  users         users[]     @relation("CurrentUserEra")
+  userEras      UserEra[]   @relation("UserEraEras")
   gameEvents    GameEvent[]
 
   @@index([startDate])
@@ -1202,21 +1220,21 @@ model alliance_gold_requests {
 
 /// Treasury loans to members (#66 phase 3). interest_pct and amount_owed are fixed when the loan is requested (the quoted terms).
 model alliance_loans {
-  id            Int                @id @default(autoincrement())
-  alliance_id   Int
-  borrower_id   Int
-  principal     BigInt
-  interest_pct  Int
-  amount_owed   BigInt
-  amount_repaid BigInt             @default(0)
-  pending_treasury_credit BigInt @default(0)
-  status        AllianceLoanStatus @default(REQUESTED)
-  reason        String?            @db.VarChar(200)
-  decided_by    Int?
-  approved_at   DateTime?          @db.Timestamptz(3)
-  due_at        DateTime?          @db.Timestamptz(3)
-  closed_at     DateTime?          @db.Timestamptz(3)
-  created_at    DateTime           @default(now()) @db.Timestamptz(3)
+  id                      Int                @id @default(autoincrement())
+  alliance_id             Int
+  borrower_id             Int
+  principal               BigInt
+  interest_pct            Int
+  amount_owed             BigInt
+  amount_repaid           BigInt             @default(0)
+  pending_treasury_credit BigInt             @default(0)
+  status                  AllianceLoanStatus @default(REQUESTED)
+  reason                  String?            @db.VarChar(200)
+  decided_by              Int?
+  approved_at             DateTime?          @db.Timestamptz(3)
+  due_at                  DateTime?          @db.Timestamptz(3)
+  closed_at               DateTime?          @db.Timestamptz(3)
+  created_at              DateTime           @default(now()) @db.Timestamptz(3)
 
   alliance alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
   borrower users     @relation("LoanBorrower", fields: [borrower_id], references: [id], onDelete: Cascade)
@@ -1771,4 +1789,164 @@ model alliance_intel_shares {
   @@unique([alliance_id, attack_log_id], name: "unique_alliance_intel_share")
   @@index([alliance_id, created_at], map: "idx_alliance_intel_feed")
   @@index([call_id], map: "idx_alliance_intel_call")
+}
+
+// Temporary forces (#10). Ownership ledger only until combat/lifecycle adapters
+// are enabled; these rows must never be copied into permanent UserUnit holdings.
+enum ForceContractKind {
+  MERCENARY
+  ALLIANCE
+}
+
+enum ForceContractStatus {
+  REQUESTED
+  ACTIVE
+  EXPIRED
+  RECALLED
+  DISMISSED
+  DEPLETED
+  CANCELLED
+}
+
+model ForceReserve {
+  id              Int             @id @default(autoincrement())
+  allianceId      Int
+  type            UnitType
+  level           Int
+  loadoutKey      String          @db.VarChar(64)
+  equipment       Json
+  available       Int             @default(0)
+  eraId           Int?
+  woundedQuantity Int             @default(0)
+  lastHealedAt    DateTime        @default(now()) @db.Timestamptz(3)
+  createdAt       DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime        @updatedAt @db.Timestamptz(3)
+  alliance        alliances       @relation(fields: [allianceId], references: [id], onDelete: Restrict)
+  contracts       ForceContract[]
+
+  @@unique([allianceId, type, level, loadoutKey])
+  @@unique([id, allianceId])
+}
+
+model ForceContract {
+  id                     Int                  @id @default(autoincrement())
+  kind                   ForceContractKind
+  status                 ForceContractStatus  @default(REQUESTED)
+  userId                 Int
+  allianceId             Int?
+  reserveId              Int?
+  type                   UnitType
+  level                  Int
+  equipment              Json
+  eraId                  Int?
+  requestedExtensionDays Int?
+  initialQuantity        Int
+  survivingQuantity      Int
+  termDays               Int
+  startsAt               DateTime?            @db.Timestamptz(3)
+  expiresAt              DateTime?            @db.Timestamptz(3)
+  closedAt               DateTime?            @db.Timestamptz(3)
+  pillageRateBps         Int                  @default(0)
+  unitPriceGold          BigInt               @default(0)
+  policyVersion          Int?
+  createdAt              DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime             @updatedAt @db.Timestamptz(3)
+  user                   users                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  alliance               alliances?           @relation(fields: [allianceId], references: [id], onDelete: Restrict)
+  reserve                ForceReserve?        @relation(fields: [reserveId, allianceId], references: [id, allianceId], onDelete: Restrict)
+  events                 ForceEvent[]
+  policy                 AllianceForcePolicy? @relation(fields: [allianceId, policyVersion], references: [allianceId, version], onDelete: Restrict, map: "ForceContract_policy_fkey")
+
+  @@index([userId, status, expiresAt])
+  @@index([allianceId, status])
+  @@index([status, expiresAt])
+}
+
+model ForceEvent {
+  id           Int            @id @default(autoincrement())
+  operationKey String         @unique @db.VarChar(128)
+  allianceId   Int?
+  contractId   Int?
+  actorId      Int?
+  action       String         @db.VarChar(40)
+  quantity     Int            @default(0)
+  gold         BigInt         @default(0)
+  details      Json
+  createdAt    DateTime       @default(now()) @db.Timestamptz(3)
+  alliance     alliances?     @relation(fields: [allianceId], references: [id], onDelete: Restrict)
+  contract     ForceContract? @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  actor        users?         @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([allianceId, createdAt])
+  @@index([contractId, createdAt])
+}
+
+// Immutable snapshots: edits append a version; accepted loans keep their terms.
+model AllianceForcePolicy {
+  id         Int             @id @default(autoincrement())
+  allianceId Int
+  version    Int
+  settings   Json
+  contracts  ForceContract[]
+  createdAt  DateTime        @default(now()) @db.Timestamptz(3)
+  alliance   alliances       @relation(fields: [allianceId], references: [id], onDelete: Restrict)
+
+  @@unique([allianceId, version])
+}
+
+model ForceLedgerArchive {
+  id         Int      @id @default(autoincrement())
+  allianceId Int
+  snapshot   Json
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([allianceId])
+}
+
+model ForceObligation {
+  id                  Int       @id @default(autoincrement())
+  allianceId          Int
+  userId              Int
+  eraId               Int?
+  enforcement         Json      @default("{}")
+  alliance            alliances @relation(fields: [allianceId], references: [id], onDelete: Cascade)
+  user                users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceKey           String    @unique @db.VarChar(128)
+  title               String    @db.VarChar(120)
+  amountGold          BigInt    @default(0)
+  paidGold            BigInt    @default(0)
+  quantity            Int       @default(0)
+  paidQuantity        Int       @default(0)
+  type                UnitType?
+  level               Int?
+  dueAt               DateTime  @db.Timestamptz(3)
+  fineGold            BigInt    @default(0)
+  paidFineGold        BigInt    @default(0)
+  fineAssessedAt      DateTime? @db.Timestamptz(3)
+  reminderAt          DateTime? @db.Timestamptz(3)
+  cancelledAt         DateTime? @db.Timestamptz(3)
+  collectionUnitId    Int?
+  collectionEquipment Json?
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([allianceId, userId, dueAt])
+}
+
+model ForceDuesRule {
+  id           Int       @id @default(autoincrement())
+  allianceId   Int
+  alliance     alliances @relation(fields: [allianceId], references: [id], onDelete: Cascade)
+  roleId       Int
+  minLevel     Int       @default(1)
+  amountGold   BigInt    @default(0)
+  quantity     Int       @default(0)
+  type         UnitType?
+  level        Int?
+  intervalDays Int       @default(7)
+  dueDays      Int       @default(3)
+  nextIssueAt  DateTime  @default(now()) @db.Timestamptz(3)
+  enabled      Boolean   @default(true)
+
+  @@unique([allianceId, roleId, minLevel])
+  @@index([nextIssueAt, enabled])
 }

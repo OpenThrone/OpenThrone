@@ -26,12 +26,10 @@ export const AllianceOverview = ({
     <Grid>
       <Grid.Col span={{ base: 12, md: 8 }}>
         {isMember && onViewAnnouncements && (
-          <div style={{ marginBottom: 'var(--mantine-spacing-md)' }}>
-            <AllianceLatestAnnouncement
-              allianceId={alliance.id}
-              onViewAll={onViewAnnouncements}
-            />
-          </div>
+          <AllianceLatestAnnouncement
+            allianceId={alliance.id}
+            onViewAll={onViewAnnouncements}
+          />
         )}
         <GameCard title={t('overview.about', 'About Us')}>
           <Text style={{ whiteSpace: 'pre-line' }}>

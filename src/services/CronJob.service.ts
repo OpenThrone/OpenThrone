@@ -14,6 +14,7 @@ import {
 import { ensureActiveEra } from '@/services/Era.service';
 import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
 import { pruneLoginTelemetry } from '@/services/LoginTelemetry.service';
+import { MercenaryService } from '@/services/Mercenary.service';
 import { getUpdatedStatus } from '@/services/User.service';
 import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { logError } from '@/utils/logger';
@@ -43,6 +44,7 @@ const USER_MODEL_INCLUDE = {
 } as const;
 
 type WoundedGroup = {
+  forceContractId?: number;
   type?: string;
   level?: number;
   quantity?: number;
@@ -51,6 +53,7 @@ type WoundedGroup = {
 };
 
 type HealedUnit = {
+  forceContractId?: number;
   type: UnitType;
   level: number;
   isMercenary: boolean;
@@ -97,7 +100,15 @@ export const computeWoundedHealing = (
     const unhealed = quantity - healed;
 
     if (healed > 0) {
-      healedUnits.push({ type, level, isMercenary, healed });
+      healedUnits.push({
+        type,
+        level,
+        isMercenary,
+        healed,
+        ...(group.forceContractId
+          ? { forceContractId: group.forceContractId }
+          : {}),
+      });
     }
     if (unhealed > 0) {
       remaining.push({ ...group, quantity: unhealed });
@@ -542,16 +553,29 @@ export class CronJobService {
           },
         });
         if (!row || !this.isEraParticipant(row, eraToken)) return 'stale';
+        await MercenaryService.expireInTx(tx, userId);
 
         if (!Array.isArray(row.wounded_units) || !row.wounded_units.length) {
           return 'continue';
         }
 
+        const activeContracts = await tx.forceContract.findMany({
+          where: { userId, status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          select: { id: true },
+        });
+        const activeIds = new Set(
+          activeContracts.map((contract) => contract.id),
+        );
         const { healedUnits, remaining } = computeWoundedHealing(
-          row.wounded_units,
+          (row.wounded_units as WoundedGroup[]).filter(
+            (wound) =>
+              !wound.forceContractId || activeIds.has(wound.forceContractId),
+          ),
         );
 
         for (const unit of healedUnits) {
+          // Contract healing only removes wounds; roster projection restores duty.
+          if (unit.forceContractId) continue;
           await tx.userUnit.upsert({
             where: {
               userId_type_level_isMercenary: {

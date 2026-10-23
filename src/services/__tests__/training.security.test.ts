@@ -20,6 +20,7 @@ type FakeUnit = {
   level: number;
   quantity: number;
   isMercenary?: boolean;
+  forceContractId?: number;
 };
 type FakeDb = {
   gold: bigint;
@@ -78,6 +79,16 @@ beforeEach(() => {
         db.units = [];
       }),
       create: mock(async ({ data }: any) => {
+        if (
+          db.units.some(
+            (unit) =>
+              unit.type === data.type &&
+              unit.level === data.level &&
+              Boolean(unit.isMercenary) === data.isMercenary,
+          )
+        ) {
+          throw new Error('Unique constraint failed: UserUnit');
+        }
         db.units.push({
           type: data.type,
           level: data.level,
@@ -314,6 +325,53 @@ describe('TrainingService.convertUnits fort gate', () => {
 });
 
 describe('regular training keeps mercenary stacks isolated', () => {
+  it.each(['train', 'untrain', 'convert'] as const)(
+    '%s never persists projected contract troops as permanent units',
+    async (action) => {
+      db.fort_level = 4;
+      db.units.push(
+        { type: 'OFFENSE', level: 1, quantity: 10 },
+        { type: 'OFFENSE', level: 1, quantity: 3, isMercenary: true },
+        {
+          type: 'OFFENSE',
+          level: 1,
+          quantity: 5,
+          isMercenary: true,
+          forceContractId: 101,
+        },
+        {
+          type: 'OFFENSE',
+          level: 1,
+          quantity: 7,
+          isMercenary: true,
+          forceContractId: 102,
+        },
+      );
+      if (action === 'convert') {
+        await convertUnits({
+          userId: 7,
+          fromUnit: { type: 'OFFENSE', level: 1 },
+          toUnit: { type: 'OFFENSE', level: 2 },
+          conversionAmount: 1,
+        });
+      } else {
+        await (action === 'train' ? trainUnits : untrainUnits)({
+          userId: 7,
+          units: [{ type: 'OFFENSE', level: 1, quantity: 1 }],
+        });
+      }
+      expect(db.units.filter((unit) => unit.isMercenary)).toEqual([
+        { type: 'OFFENSE', level: 1, quantity: 3, isMercenary: true },
+      ]);
+      expect(
+        db.units.find(
+          (unit) =>
+            unit.type === 'OFFENSE' && unit.level === 1 && !unit.isMercenary,
+        )?.quantity,
+      ).toBe(action === 'train' ? 11 : 9);
+    },
+  );
+
   it('cannot cash out mercenary units as regular troops', async () => {
     db.units = [{ type: 'OFFENSE', level: 1, quantity: 10, isMercenary: true }];
     await expect(

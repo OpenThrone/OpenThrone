@@ -1,19 +1,15 @@
-import { Button, Divider, Group, Loader, Space, Text } from '@mantine/core';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 
-import Image from '@/components/ArtworkImage';
-import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
+import RecruitmentFlowView from '@/components/RecruitmentFlowView';
 import { useUser } from '@/context/users';
 import { useRecruitmentStatus } from '@/hooks/useRecruitmentStatus';
 import { alertService } from '@/services/Alert.service';
-import type { PlayerRace } from '@/types/typings';
 import { logError } from '@/utils/logger';
 import { formatResetTime, recruitsLeftFor } from '@/utils/recruitmentStatus';
-import { getAssetPath } from '@/utils/utilities';
 
 interface RecruitProps {
   id: string;
@@ -45,6 +41,8 @@ const ERROR_CODE_KEYS: Record<string, string> = {
   RECRUITER_DAILY_CAP_REACHED: 'recruit.recruiterCapReached',
   TARGET_DAILY_CAP_REACHED: 'recruit.targetCapReached',
   PAIR_LIMIT_REACHED: 'recruit.pairLimitReached',
+  EXTERNAL_DAILY_CAP_REACHED: 'recruit.externalCapReached',
+  IP_DAILY_CAP_REACHED: 'recruit.ipCapReached',
   NO_RECRUITABLE_USERS_FOUND: 'recruit.noMoreTargets',
 };
 
@@ -63,12 +61,18 @@ const requestJson = async (
   return { ok: response.ok, status: response.status, data: data ?? {} };
 };
 
+const allowanceNumber = (value: unknown): number | undefined =>
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : undefined;
+
 const firstQueryValue = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] : value;
 
 /** Recruit. */
 export default function RecruitmentFlow({
   recruitLink,
+  mode = 'internal',
   embedded = false,
   onBusyChange,
   targetId,
@@ -76,6 +80,7 @@ export default function RecruitmentFlow({
   onRecruited,
 }: {
   recruitLink?: string;
+  mode?: 'internal' | 'external';
   embedded?: boolean;
   onBusyChange?: (busy: boolean) => void;
   /** Player behind the link; enables the daily recruit counter after a success. */
@@ -86,12 +91,22 @@ export default function RecruitmentFlow({
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const autoRecruitParams = firstQueryValue(router.query.auto_recruit);
-  const isAutoRecruit = !embedded && autoRecruitParams === '1';
+  const isExternal = mode === 'external';
+  const isAutoRecruit = !isExternal && !embedded && autoRecruitParams === '1';
   const skips = Math.max(0, Number(firstQueryValue(router.query.skips)) || 0);
   const id = recruitLink ?? firstQueryValue(router.query.id);
   const [succeeded, setSucceeded] = useState(false);
   const [retry, setRetry] = useState(0);
   const [showCaptcha, setShowCaptcha] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [allowance, setAllowance] = useState<{
+    dailyCap?: number;
+    perIpCap?: number;
+    remaining?: number;
+    perIpRemaining?: number;
+  }>({});
+  const [submitting, setSubmitting] = useState(false);
+
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const submittingRef = React.useRef(false);
   const [userInfo, setUserInfo] = useState<RecruitProps | null>(null);
@@ -104,7 +119,13 @@ export default function RecruitmentFlow({
   const messageFor = useCallback(
     (result: RecruitApiResult) => {
       const key = result.data.code ? ERROR_CODE_KEYS[result.data.code] : null;
-      if (key) return t(key);
+      if (key)
+        return t(key, {
+          limit:
+            result.data.code === 'IP_DAILY_CAP_REACHED'
+              ? result.data.perIpCap
+              : result.data.dailyCap,
+        });
       if (result.status >= 500) return t('recruit.temporaryError');
       return result.data.error ?? t('recruit.temporaryError');
     },
@@ -155,7 +176,7 @@ export default function RecruitmentFlow({
         const link = encodeURIComponent(result.data.recruit_link);
         // Delay for 1 second before navigating to the next recruitment link
         setTimeout(() => {
-          window.location.href = `/recruit/${link}?auto_recruit=1&skips=${nextSkips}`;
+          window.location.href = `/recruit/${link}?mode=internal&auto_recruit=1&skips=${nextSkips}`;
         }, 1000);
         return;
       }
@@ -183,15 +204,25 @@ export default function RecruitmentFlow({
     setError(null);
     setShowCaptcha(false);
     setSucceeded(false);
+    setReady(false);
+    setAllowance({});
+    setUserInfo(null);
 
     const checkRecruitmentHistory = async () => {
       try {
         const result = await requestJson(
-          `/api/recruit/${encodeURIComponent(id)}`,
+          `/api/recruit/${isExternal ? 'external/' : ''}${encodeURIComponent(id)}`,
         );
         if (cancelled) return;
-        if (result.ok && result.data.showCaptcha) {
-          setShowCaptcha(true);
+        if (result.ok && !result.data.code && result.data.eligible !== false) {
+          setAllowance({
+            dailyCap: allowanceNumber(result.data.dailyCap),
+            perIpCap: allowanceNumber(result.data.perIpCap),
+            remaining: allowanceNumber(result.data.remaining),
+            perIpRemaining: allowanceNumber(result.data.perIpRemaining),
+          });
+          setReady(true);
+          setShowCaptcha(Boolean(result.data.showCaptcha));
           return;
         }
         await handleRefusal(result);
@@ -222,7 +253,7 @@ export default function RecruitmentFlow({
     return () => {
       cancelled = true;
     };
-  }, [handleRefusal, id, retry, stopWith, t]);
+  }, [handleRefusal, id, isExternal, retry, stopWith, t]);
 
   const handleCaptchaSuccess = async (
     event?: React.FormEvent,
@@ -231,38 +262,38 @@ export default function RecruitmentFlow({
     event?.preventDefault();
     if (formRef.current === null || submittingRef.current) return;
     submittingRef.current = true;
+    setSubmitting(true);
     onBusyChange?.(true);
     try {
       const formData = new FormData(formRef.current);
       const token = captchaToken ?? formData.get('cf-turnstile-response');
 
-      const captcha = await requestJson('/api/captcha/verify', {
-        method: 'POST',
-        body: JSON.stringify({ token }),
-        headers: {
-          'content-type': 'application/json',
+      const result = await requestJson(
+        isExternal
+          ? `/api/recruit/external/${encodeURIComponent(id ?? '')}`
+          : '/api/recruit/handleRecruitment',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            recruitedUserId: id,
+            selfRecruit: false,
+            captchaToken: token,
+          }),
         },
-      });
-      if (!captcha.ok || !captcha.data.success) {
-        stopWith(messageFor(captcha));
-        return;
-      }
-
-      const result = await requestJson('/api/recruit/handleRecruitment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          recruitedUserId: id,
-          selfRecruit: false,
-        }),
-      });
+      );
 
       if (result.ok && result.data.success) {
-        alertService.success(t('recruit.completed'), true);
+        alertService.success(
+          t(isExternal ? 'recruit.externalCompleted' : 'recruit.completed', {
+            name: userInfo?.display_name ?? targetName ?? '',
+          }),
+          true,
+        );
         // Reload user data like the sidebar refresh button
-        forceUpdate();
+        if (user) forceUpdate();
         if (embedded) {
           // Show the updated daily count, not the one from before this recruit.
           await refreshStatus().catch((statusError) =>
@@ -284,158 +315,62 @@ export default function RecruitmentFlow({
       stopWith(t('recruit.temporaryError'));
     } finally {
       submittingRef.current = false;
+      setSubmitting(false);
       onBusyChange?.(false);
     }
   };
 
+  const captchaSlot = showCaptcha ? (
+    <Turnstile
+      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
+      onSuccess={(token) => {
+        return handleCaptchaSuccess(undefined, token);
+      }}
+      onExpire={() => stopWith(t('recruit.verificationExpired'))}
+      onError={() => stopWith(t('recruit.verificationFailed'))}
+    />
+  ) : null;
+
+  const pairLeft =
+    targetId && recruitStatus
+      ? (recruitsLeftFor(recruitStatus, targetId) ?? 0)
+      : null;
+  const pairProgress =
+    targetId && recruitStatus && pairLeft !== null
+      ? {
+          name: targetName ?? '',
+          used: recruitStatus.targets[String(targetId)]?.pairUsed ?? 0,
+          limit: recruitStatus.pairLimit,
+          left: pairLeft,
+          resetsAt: formatResetTime(recruitStatus.resetsAt),
+        }
+      : null;
+
+  const view = (
+    <RecruitmentFlowView
+      isExternal={isExternal}
+      signedIn={Boolean(user)}
+      embedded={embedded}
+      submitting={submitting}
+      error={error}
+      succeeded={succeeded}
+      ready={ready}
+      showCaptcha={showCaptcha}
+      allowance={allowance}
+      userInfo={userInfo}
+      targetName={targetName}
+      pairProgress={pairProgress}
+      formRef={formRef}
+      captchaSlot={captchaSlot}
+      onSubmit={handleCaptchaSuccess}
+      onRetry={() => setRetry((value) => value + 1)}
+      onRegister={() => router.push(`/account/register`)}
+    />
+  );
+
   if (embedded) {
-    return (
-      <div>
-        {!succeeded && (
-          <Text mb="md">
-            {t(user ? 'recruit.forYourKingdom' : 'recruit.signInToRecruit')}
-          </Text>
-        )}
-        {succeeded ? (
-          <>
-            <Text role="status" c="green.3">
-              {t('recruit.completed')}
-            </Text>
-            {targetId && recruitStatus ? (
-              <>
-                <Text size="sm" mt="xs">
-                  {t('recruit.pairProgress', {
-                    name: targetName ?? '',
-                    used:
-                      recruitStatus.targets[String(targetId)]?.pairUsed ?? 0,
-                    limit: recruitStatus.pairLimit,
-                  })}
-                </Text>
-                <Text size="sm" c="dimmed" data-testid="recruits-left">
-                  {t('recruit.recruitsLeft', {
-                    count: recruitsLeftFor(recruitStatus, targetId) ?? 0,
-                    time: formatResetTime(recruitStatus.resetsAt),
-                  })}
-                </Text>
-                {(recruitsLeftFor(recruitStatus, targetId) ?? 0) > 0 && (
-                  <Button
-                    mt="md"
-                    onClick={() => setRetry((value) => value + 1)}
-                  >
-                    {t('recruit.again')}
-                  </Button>
-                )}
-              </>
-            ) : null}
-          </>
-        ) : error ? (
-          <>
-            <Text role="alert" mb="md">
-              {error}
-            </Text>
-            <Button onClick={() => setRetry((value) => value + 1)}>
-              {t('recruit.retry')}
-            </Button>
-          </>
-        ) : showCaptcha ? (
-          <form ref={formRef} onSubmit={handleCaptchaSuccess}>
-            <Turnstile
-              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
-              onSuccess={(token) => {
-                return handleCaptchaSuccess(undefined, token);
-              }}
-              onExpire={() => {
-                setShowCaptcha(false);
-                setError(t('recruit.verificationExpired'));
-              }}
-              onError={() => {
-                setShowCaptcha(false);
-                setError(t('recruit.verificationFailed'));
-              }}
-            />
-          </form>
-        ) : (
-          <Loader size="sm" aria-label={t('recruit.checkingEligibility')} />
-        )}
-      </div>
-    );
+    return view;
   }
 
-  return (
-    <MainArea title={t('recruit.title')}>
-      {userInfo && (
-        <div className="mb-5 items-center text-center">
-          <div>
-            <Text size="xl">
-              {t('recruit.linkFrom', { name: userInfo.display_name })}
-            </Text>
-            {!error && (
-              <Text mb="sm">
-                {t(user ? 'recruit.forYourKingdom' : 'recruit.signInToRecruit')}
-              </Text>
-            )}
-            {t('recruit.level', { level: userInfo.level })}{' '}
-            {t('recruit.race', { race: userInfo.race, class: userInfo.class })}.
-            <Group justify="center" mt="md">
-              <Image
-                src={getAssetPath(
-                  'shields',
-                  '150x150',
-                  userInfo.race as PlayerRace,
-                )}
-                width="150"
-                height="150"
-                alt=""
-              />
-            </Group>
-            {/* Only while the captcha is actually pending (not next to a refusal). */}
-            {showCaptcha && !error && (
-              <Text size="md">{t('recruit.pleaseWaitCaptcha')}</Text>
-            )}
-          </div>
-        </div>
-      )}
-      <div className="flex items-center justify-center">
-        <div className="container mx-auto text-center">
-          {error ? (
-            <Text role="alert">{error}</Text>
-          ) : (
-            showCaptcha && (
-              <form
-                id="recruitForm"
-                ref={formRef}
-                onSubmit={handleCaptchaSuccess}
-              >
-                <div className="flex items-center justify-center">
-                  <Turnstile
-                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
-                    onSuccess={(token) => {
-                      return handleCaptchaSuccess(undefined, token);
-                    }}
-                  />
-                </div>
-              </form>
-            )
-          )}
-          {!user && (
-            <>
-              <Space h="md" />
-              <Text size="md">{t('recruit.dontHaveAccount')}</Text>
-              <Button onClick={() => router.push(`/account/register`)}>
-                {t('buttons.register')}
-              </Button>
-            </>
-          )}
-          <Space h="md" />
-          <Divider />
-          <Space h="md" />
-          <GameCard title={t('recruit.antiSpamPolicyTitle')}>
-            <Text size="sm">{t('recruit.antiSpamPolicy')}</Text>
-            <Space h="md" />
-            <Text size="sm">{t('recruit.captchaPolicy')}</Text>
-          </GameCard>
-        </div>
-      </div>
-    </MainArea>
-  );
+  return <MainArea title={t('recruit.title')}>{view}</MainArea>;
 }

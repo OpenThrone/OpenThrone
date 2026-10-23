@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto';
+
 import { HouseUpgrades, UnitTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
@@ -19,6 +21,8 @@ import {
   applyProtectionContext,
   loadProtectionContext,
 } from '@/services/BattleProtection.service';
+import { hasForbiddenForceTarget } from '@/services/ForceLifecycle.service';
+import { divertForcePillageInTx } from '@/services/ForcePillage.service';
 import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { combatSnapshot } from '@/utils/adminCombat';
@@ -46,6 +50,7 @@ import {
   captureCombatUser,
   sealCombatReplay,
 } from '@/utils/combatReplay';
+import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
 import { logDebug, logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { createCombatRandom } from '@/utils/serverRandom';
@@ -160,6 +165,7 @@ export const AttackService = {
       try {
         const outcome = await prisma.$transaction(
           async (tx) => {
+            await lockEraLifecycleShared(tx);
             // Lock both rows in id order so opposing missions cannot deadlock.
             const firstId = Math.min(attackerId, defenderId);
             const secondId = Math.max(attackerId, defenderId);
@@ -186,6 +192,13 @@ export const AttackService = {
               };
             }
 
+            if (await hasForbiddenForceTarget(tx, attackerId, defenderId))
+              return {
+                status: 'failed',
+                message:
+                  'Return alliance troops before targeting a member of their alliance.',
+                code: 'ALLIANCE_FORCE_TARGET_FORBIDDEN',
+              };
             const attacker = new BattleUser(attackerUser);
             const defender = new BattleUser(defenderUser);
             // One shared protection rule (utils/battleProtection.ts) for both sides.
@@ -476,6 +489,20 @@ export const AttackService = {
               throw new Error('Battle pillage violates the captured treasury');
             }
 
+            const forcePillageKey = randomUUID();
+            const forceContribution = await divertForcePillageInTx(
+              tx,
+              attackerId,
+              pillage,
+              forcePillageKey,
+            );
+            const loanRepayment = await divertIncomeToLoans(
+              tx,
+              attackerId,
+              pillage - forceContribution,
+              'pillage',
+            );
+
             // Logs, outcome economics and bank history share the engine's amount.
             const attackerLossesTotal =
               resolvedBattle.Losses.Attacker.total +
@@ -547,6 +574,14 @@ export const AttackService = {
                   defensePointsAtEnd: DefensePlayer.defense,
                   // Convert BigInt to string for JSON compatibility
                   pillagedGold: resolvedBattle.pillagedGold.toString(),
+                  forcePillageContribution: forceContribution.toString(),
+                  goldLoanRepayment: loanRepayment.toString(),
+                  netPillageGold: (
+                    pillage -
+                    forceContribution -
+                    loanRepayment
+                  ).toString(),
+                  forcePillageKey,
                   forthpAtStart: fortHpAtStart,
                   forthpAtEnd: fortHpAtEnd,
                   // Stringify potentially complex objects within stats
@@ -627,24 +662,6 @@ export const AttackService = {
               );
             }
 
-            // Persist updated unit counts for both players
-            await updateUserUnits(
-              attackerId,
-              [
-                ...AttackPlayer.getUnitsForDbUpdate(),
-                ...AttackPlayer.getMercenariesForDbUpdate(),
-              ],
-              tx,
-            );
-            await updateUserUnits(
-              defenderId,
-              [
-                ...DefensePlayer.getUnitsForDbUpdate(),
-                ...DefensePlayer.getMercenariesForDbUpdate(),
-              ],
-              tx,
-            );
-
             // Move wounded units (removed from rosters by the battle) into the
             // recovering pool; daily cron healing returns them to active duty.
             const persistWounded = async (
@@ -654,6 +671,7 @@ export const AttackService = {
                     type: string;
                     level: number;
                     quantity: number;
+                    forceContractId?: number;
                     isMercenary: boolean;
                   }>
                 | undefined,
@@ -668,6 +686,7 @@ export const AttackService = {
                     type?: string;
                     level?: number;
                     quantity?: number;
+                    forceContractId?: number;
                     isMercenary?: boolean;
                     woundedAt?: string;
                   }>)
@@ -678,7 +697,8 @@ export const AttackService = {
                   (m) =>
                     m?.type === group.type &&
                     m?.level === group.level &&
-                    !!m?.isMercenary === !!group.isMercenary,
+                    !!m?.isMercenary === !!group.isMercenary &&
+                    m.forceContractId === group.forceContractId,
                 );
                 if (match) {
                   match.quantity = Number(match.quantity ?? 0) + group.quantity;
@@ -701,6 +721,24 @@ export const AttackService = {
             await persistWounded(
               defenderId,
               (resolvedBattle as any).wounded?.defender,
+            );
+
+            // Persist updated unit counts for both players
+            await updateUserUnits(
+              attackerId,
+              [
+                ...AttackPlayer.getUnitsForDbUpdate(),
+                ...AttackPlayer.getMercenariesForDbUpdate(),
+              ],
+              tx,
+            );
+            await updateUserUnits(
+              defenderId,
+              [
+                ...DefensePlayer.getUnitsForDbUpdate(),
+                ...DefensePlayer.getMercenariesForDbUpdate(),
+              ],
+              tx,
             );
 
             // Increment stats for both users
@@ -736,18 +774,13 @@ export const AttackService = {
 
             // An attacker with an open alliance loan sends a share of the
             // pillage to the treasury; the attacker row is locked above.
-            const loanRepayment = await divertIncomeToLoans(
-              tx,
-              attackerId,
-              pillage,
-              'pillage',
-            );
-
             // Gold, turns and stamina are relative to the locked row, never absolute.
             await updateUser(
               attackerId,
               {
-                gold: { increment: pillage - loanRepayment },
+                gold: {
+                  increment: pillage - forceContribution - loanRepayment,
+                },
                 attack_turns: { decrement: committedTurns },
                 stamina: { decrement: committedTurns },
                 experience: Math.ceil(AttackPlayer.experience),

@@ -50,6 +50,7 @@ const installSerializedTransactions = (tx: Record<string, unknown>) => {
           ...values: number[]
         ) => {
           const sql = strings.join('?');
+          if (sql.includes('pg_advisory_xact_lock_shared')) return [];
           expect(sql).toContain('FOR UPDATE');
           txLocks.push(`${/FROM (\w+)/.exec(sql)?.[1]}:${values[0]}`);
           if (!waited) {

@@ -40,12 +40,28 @@ export const RUNTIME_SETTING_REGISTRY = {
   },
   'recruit.dailyCap': {
     type: 'NUMBER',
-    label: 'Daily recruiting cap',
+    label: 'External daily recruiting cap',
     isPublic: true,
     schema: z.number().int().min(0).max(1000),
     env: undefined,
-    // Citizens a player can gain per day by recruiting (one per recruit).
+    // Legacy setting key retained for external link recruitment.
     fallback: 25,
+  },
+  'recruit.internalDailyCap': {
+    type: 'NUMBER',
+    label: 'Internal daily recruiting cap',
+    isPublic: true,
+    schema: z.number().int().min(0).max(1000),
+    env: undefined,
+    fallback: 250,
+  },
+  'recruit.externalIpDailyCap': {
+    type: 'NUMBER',
+    label: 'External per-IP daily recruiting cap',
+    isPublic: true,
+    schema: z.number().int().min(0).max(1000),
+    env: undefined,
+    fallback: 5,
   },
   'era.protectionDurationDays': {
     type: 'NUMBER',

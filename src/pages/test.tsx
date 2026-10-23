@@ -2,6 +2,7 @@ import { Text } from '@mantine/core';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import MainArea from '@/components/MainArea';
+import AllianceForcesSection from '@/components/showcase/sections/AllianceForcesSection';
 import AllianceSection from '@/components/showcase/sections/AllianceSection';
 import BannersSection from '@/components/showcase/sections/BannersSection';
 import BattleReportsSection from '@/components/showcase/sections/BattleReportsSection';
@@ -10,17 +11,21 @@ import ChatSection from '@/components/showcase/sections/ChatSection';
 import FeedbackSection from '@/components/showcase/sections/FeedbackSection';
 import FormsSection from '@/components/showcase/sections/FormsSection';
 import FoundationsSection from '@/components/showcase/sections/FoundationsSection';
+import MercenariesSection from '@/components/showcase/sections/MercenariesSection';
 import ModalsSection from '@/components/showcase/sections/ModalsSection';
 import NewsSection from '@/components/showcase/sections/NewsSection';
 import ProfileMediaSection from '@/components/showcase/sections/ProfileMediaSection';
+import RecruitmentSection from '@/components/showcase/sections/RecruitmentSection';
 import TablesSection from '@/components/showcase/sections/TablesSection';
 import ShowcaseControls from '@/components/showcase/ShowcaseControls';
 
 const SECTIONS = [
+  { id: 'mercenaries', title: 'Mercenaries', Component: MercenariesSection },
   { id: 'foundations', title: 'Foundations', Component: FoundationsSection },
   { id: 'cards', title: 'Cards & stats', Component: CardsSection },
   { id: 'tables', title: 'Tables & lists', Component: TablesSection },
   { id: 'forms', title: 'Forms & orders', Component: FormsSection },
+  { id: 'recruitment', title: 'Recruiting', Component: RecruitmentSection },
   {
     id: 'battle',
     title: 'Battle & spy reports',
@@ -32,6 +37,11 @@ const SECTIONS = [
   { id: 'news', title: 'News & articles', Component: NewsSection },
   { id: 'chat', title: 'Chat & messaging', Component: ChatSection },
   { id: 'alliance', title: 'Alliances', Component: AllianceSection },
+  {
+    id: 'allianceForces',
+    title: 'Alliance troops & dues',
+    Component: AllianceForcesSection,
+  },
   { id: 'feedback', title: 'Loading & feedback', Component: FeedbackSection },
 ];
 
@@ -62,6 +72,8 @@ export const getServerSideProps = async (context: { locale?: string }) =>
     : {
         props: {
           ...(await serverSideTranslations(context.locale ?? 'en', [
+            'mercenaries',
+            'allianceForces',
             'common',
             'battle',
             'home',

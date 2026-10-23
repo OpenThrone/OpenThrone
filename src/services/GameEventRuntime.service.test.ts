@@ -31,6 +31,30 @@ describe('getGameEventModifiers', () => {
     mockPrisma.gameEvent = { findMany: vi.fn().mockResolvedValue([]) };
   });
 
+  it('transaction readers bypass global pending work and do not publish uncommitted effects', async () => {
+    let finishGlobal: (rows: unknown[]) => void = () => undefined;
+    mockPrisma.gameEvent.findMany.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishGlobal = resolve;
+        }),
+    );
+    const pendingGlobal = getGameEventModifiers();
+    const tx = {
+      gameEvent: {
+        findMany: vi.fn(async () => [
+          row({ citizenMultiplier: 2, citizenMultiplierScope: 'RECRUITING' }),
+        ]),
+      },
+    };
+    expect(
+      (await getGameEventModifiers(tx as any)).recruitCitizenMultiplier,
+    ).toBe(2);
+    finishGlobal([]);
+    expect((await pendingGlobal).recruitCitizenMultiplier).toBe(1);
+    expect((await getGameEventModifiers()).recruitCitizenMultiplier).toBe(1);
+  });
+
   it('combines running events and caps multipliers at ten', async () => {
     mockPrisma.gameEvent.findMany.mockResolvedValue([
       row({ goldMultiplier: 4 }),

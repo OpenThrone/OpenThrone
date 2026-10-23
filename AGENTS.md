@@ -83,6 +83,8 @@ When active:
   `src/lib/socket.test.ts`, `src/components/sidebar/SidebarShared.test.tsx`,
   and `src/__tests__/app-shell.test.tsx` need jsdom; `test:bun` excludes them
   because they use `jest.*` globals and cannot run without a DOM.
+- Design file: `bun run design:sync` — rebuilds `design/openthrone.figcraft`
+  from alpha (`design:extract`, then `design:build`). See section 13.
 
 Do **not** introduce additional package managers, build tools, or test frameworks.
 
@@ -306,7 +308,33 @@ developer-only and returns 404 in production builds.
 
 ---
 
-## 13) “Done” Checklist
+## 13) Design File (FigCraft)
+
+`design/openthrone.figcraft` is an editable FigCraft (open-source Figma) file of
+the public site and the logged-in game. It is rebuilt from the live alpha site:
+every element becomes a real frame, text, vector or image layer. It is
+generated, not committed. `design/README.md` covers setup.
+
+- **Re-sync after visual changes land on alpha.** When a PR that changes what
+  players see (components, styles, layout, artwork, copy) is merged into
+  `alpha` and alpha is deployed, run `bun run design:sync` and check the result
+  in FigCraft. Sync from alpha, not after the release to `master`: alpha already
+  carries the change, and syncing there avoids a second pass per release.
+- **Adding or removing a page updates the page list.** A new or removed
+  player-facing page updates `scripts/design/pages.ts` in the same PR, as it
+  does the `/test` guide.
+- **Never point it at production.** The extractor refuses `openthrone.dev`. It
+  logs in with a disposable alpha test account (`OT_DESIGN_EMAIL` /
+  `OT_DESIGN_PASSWORD` or `--creds <file>`); never commit or print those values.
+- **Keep the load light.** It drives one headless browser, one page at a time.
+  Alpha shares its host with other services; don't run it in parallel with
+  other heavy jobs.
+- **Close the file in FigCraft before rebuilding.** The build replaces the file
+  on disk; reopen it afterwards.
+
+---
+
+## 14) “Done” Checklist
 
 A change is complete only if:
 
@@ -319,6 +347,7 @@ A change is complete only if:
 - [ ] Works across race themes
 - [ ] Visual guide (`/test`) updated for added, removed or restyled components
 - [ ] Visual evidence provided (before and after screenshots) for any UI/styling bug resolutions
+- [ ] Design file re-synced (`bun run design:sync`) once a visual change is merged and deployed to alpha
 
 
 ## Environments and deployment

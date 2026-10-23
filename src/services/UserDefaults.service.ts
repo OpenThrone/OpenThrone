@@ -7,6 +7,7 @@ import type {
   Prisma,
   StructureUpgradeType,
 } from '@/lib/prisma-exports';
+import { returnForceInTx } from '@/services/ForceLifecycle.service';
 import type { UnitType } from '@/types/typings';
 import type { EraStartSettings } from '@/utils/eraStartSettings';
 
@@ -114,8 +115,23 @@ export const resetUserRelations = async (
   tx: Tx,
   userId: number,
   settings?: EraStartSettings,
+  reason: 'ERA' | 'ACCOUNT' = 'ERA',
 ) => {
   const citizenQuantity = settings?.citizens ?? 50;
+  if (reason === 'ERA')
+    await tx.forceObligation.updateMany({
+      where: { userId, cancelledAt: null },
+      data: { cancelledAt: new Date() },
+    });
+  const forceContracts = await tx.forceContract.findMany({
+    where: { userId, status: 'ACTIVE' },
+  });
+  for (const contract of forceContracts)
+    await returnForceInTx(tx, contract, 'DISMISSED');
+  await tx.forceContract.updateMany({
+    where: { userId, status: 'REQUESTED' },
+    data: { status: 'CANCELLED', closedAt: new Date() },
+  });
 
   await Promise.all([
     tx.userUnit.deleteMany({ where: { userId } }),

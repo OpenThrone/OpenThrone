@@ -254,6 +254,7 @@ beforeEach(() => {
   };
   alliances = {};
   mockPrisma.alliance_memberships = {
+    findMany: vi.fn(async () => []),
     findFirst: vi.fn(
       async ({
         where,

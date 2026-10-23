@@ -6,6 +6,12 @@ import {
 } from 'test/utils/mockPrisma';
 
 installMockPrisma(vi);
+vi.mock('@/services/RecruitmentCaptcha.service', () => ({
+  verifyRecruitmentCaptcha: vi.fn(
+    async (token: unknown) => token !== 'invalid',
+  ),
+  isRecruitmentCaptchaRequired: () => true,
+}));
 vi.mock('@/middleware/auth', () => ({
   withAuth: (handler: unknown) => handler,
 }));
@@ -96,6 +102,7 @@ describe('recruit link route', () => {
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
+      eligible: false,
       showCaptcha: false,
       code: 'LOGIN_REQUIRED',
     });
@@ -118,11 +125,14 @@ describe('recruit link route', () => {
   });
 
   it('shows the captcha below every limit', async () => {
-    setCounts({ recruiter: 24, target: 24, pair: 4 });
+    setCounts({ recruiter: 249, target: 24, pair: 4 });
     const res = await get(session);
 
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({ showCaptcha: true });
+    expect(res.json).toHaveBeenCalledWith({
+      eligible: true,
+      showCaptcha: true,
+    });
   });
 
   it('counts the pair limit as link owner -> recruiter, like the reward path', async () => {
@@ -136,7 +146,7 @@ describe('recruit link route', () => {
   });
 
   it('refuses before the captcha when the recruiter is at the daily cap', async () => {
-    setCounts({ recruiter: 25 });
+    setCounts({ recruiter: 250 });
     const res = await get(session);
 
     expect(res.status).toHaveBeenCalledWith(409);
@@ -146,13 +156,14 @@ describe('recruit link route', () => {
     });
   });
 
-  it('refuses before the captcha when the link owner is at the daily cap', async () => {
+  it('does not apply an external owner cap to internal recruits', async () => {
     setCounts({ target: 25 });
     const res = await get(session);
 
-    expect(res.status).toHaveBeenCalledWith(409);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ code: 'TARGET_DAILY_CAP_REACHED' }),
-    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      eligible: true,
+      showCaptcha: true,
+    });
   });
 });

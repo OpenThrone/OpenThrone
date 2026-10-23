@@ -143,6 +143,9 @@ function removeUnits(
         unit.quantity -= removed;
         remaining -= removed;
         losses.push({
+          ...(unit.forceContractId
+            ? { forceContractId: unit.forceContractId }
+            : {}),
           type: unit.type,
           level: unit.level,
           quantity: removed,

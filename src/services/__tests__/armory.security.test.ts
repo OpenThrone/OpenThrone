@@ -286,27 +286,19 @@ describe('ArmoryService.convertItems rules (F-01)', () => {
   });
 });
 
-describe('mercenary discounted resale', () => {
-  it('refunds half the discounted hire price rather than the list price', async () => {
-    db.priceBonus = 1000;
-    const initialGold = db.gold;
-    await ArmoryService.hireMercenary({
-      userId: 7,
-      unitType: 'OFFENSE',
-      level: 1,
-      quantity: 1,
-    });
-    const paid = initialGold - db.gold;
-    expect(paid).toBeGreaterThan(0n);
-    expect(paid).toBeLessThan(1500n);
-    await ArmoryService.dismissMercenary({
-      userId: 7,
-      unitType: 'OFFENSE',
-      level: 1,
-      quantity: 1,
-    });
-    expect(db.gold).toBe(initialGold - paid + paid / 2n);
-    expect(db.mercenaries).toEqual([]);
+describe('mercenary contract dismissal', () => {
+  it('rejects the retired aggregate refund path without crediting gold', async () => {
+    const before = db.gold;
+    await expect(
+      ArmoryService.dismissMercenary({
+        userId: 7,
+        unitType: 'OFFENSE',
+        level: 1,
+        quantity: 1,
+      }),
+    ).rejects.toThrow('specific contract');
+    expect(db.gold).toBe(before);
+    expect(tx.users.update).not.toHaveBeenCalled();
   });
 });
 

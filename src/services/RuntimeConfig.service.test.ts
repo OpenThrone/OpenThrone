@@ -63,7 +63,24 @@ describe('runtime config snapshot', () => {
     expect(config.disableLogin).toBe(true);
     expect(mockPrisma.featureFlag.findMany).not.toHaveBeenCalled();
     expect(config.maintenance).toEqual({ enabled: true, message: 'Planned' });
+    expect(config.recruitDailyCap).toBe(250);
+    expect(config.externalRecruitDailyCap).toBe(25);
+    expect(config.externalRecruitIpDailyCap).toBe(5);
     expect(config).not.toHaveProperty('DATABASE_URL');
+  });
+
+  it('loads recruitment allowances independently from stored settings', async () => {
+    mockPrisma.serverSetting.findMany.mockResolvedValue([
+      { key: 'recruit.internalDailyCap', value: 400 },
+      { key: 'recruit.dailyCap', value: 30 },
+      { key: 'recruit.externalIpDailyCap', value: 3 },
+    ]);
+
+    const config = await getRuntimeConfig();
+
+    expect(config.recruitDailyCap).toBe(400);
+    expect(config.externalRecruitDailyCap).toBe(30);
+    expect(config.externalRecruitIpDailyCap).toBe(3);
   });
 
   it('caches for five seconds and reloads after explicit invalidation', async () => {
@@ -135,6 +152,30 @@ describe('runtime config snapshot', () => {
     resolveOld([{ key: 'ENABLE_ATTACKING', value: true }]);
     await oldRead;
     expect((await getRuntimeConfig()).enableAttacking).toBe(false);
+  });
+
+  it('transaction readers bypass global pending work without replacing its cache', async () => {
+    let finishGlobal: (rows: unknown[]) => void = () => undefined;
+    mockPrisma.serverSetting.findMany.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishGlobal = resolve;
+        }),
+    );
+    const pendingGlobal = getRuntimeConfig();
+    const tx = {
+      serverSetting: {
+        findMany: vi.fn(async () => [
+          { key: 'recruit.internalDailyCap', value: 12 },
+        ]),
+      },
+    };
+    const transactionConfig = await getRuntimeConfig(tx as any);
+    expect(transactionConfig.recruitDailyCap).toBe(12);
+    expect(tx.serverSetting.findMany).toHaveBeenCalledTimes(1);
+    finishGlobal([{ key: 'recruit.internalDailyCap', value: 250 }]);
+    expect((await pendingGlobal).recruitDailyCap).toBe(250);
+    expect((await getRuntimeConfig()).recruitDailyCap).toBe(250);
   });
 
   it('deduplicates reads that share a cache epoch', async () => {

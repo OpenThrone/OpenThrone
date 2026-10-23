@@ -33,6 +33,9 @@ export interface BattleFormation {
   /** Per-unit combat stats (base + items + upgrades) */
   perUnitStats: PerUnitCombatStats;
   /** Whether this formation represents mercenary units */
+  forceContractId?: number;
+  forceKind?: 'MERCENARY' | 'ALLIANCE';
+  forceEquipment?: Array<{ type: string; level: number }>;
   isMercenary: boolean;
 }
 

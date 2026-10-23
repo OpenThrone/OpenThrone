@@ -8,6 +8,7 @@ import {
   getUserByRecruitLink,
   RECRUITMENT_BLOCK_ERRORS,
 } from '@/services/Recruitment.service';
+import { isRecruitmentCaptchaRequired } from '@/services/RecruitmentCaptcha.service';
 import type { AuthenticatedRequest } from '@/types/api';
 
 const RecruitQuerySchema = z.object({
@@ -39,7 +40,9 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
 
   const recruiterId = Number(req.session?.user?.id ?? 0);
   if (!Number.isSafeInteger(recruiterId) || recruiterId <= 0) {
-    return res.status(200).json({ showCaptcha: false, code: 'LOGIN_REQUIRED' });
+    return res
+      .status(200)
+      .json({ eligible: false, showCaptcha: false, code: 'LOGIN_REQUIRED' });
   }
 
   if (recruitedUser.id === recruiterId) {
@@ -60,7 +63,9 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       .json({ error: RECRUITMENT_BLOCK_ERRORS[block], code: block });
   }
 
-  return res.status(200).json({ showCaptcha: true });
+  return res
+    .status(200)
+    .json({ eligible: true, showCaptcha: isRecruitmentCaptchaRequired() });
 };
 
 // Anonymous visitors may load the page; they are told to sign in instead.

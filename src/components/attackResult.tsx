@@ -287,6 +287,18 @@ const AttackResults = ({ battle, viewerID }) => {
           ]}
         />
 
+        {isViewerAttacker && stats.netPillageGold !== undefined && (
+          <Text size="sm" ta="center" mt="sm">
+            {t('battleReport.pillageDeductions', {
+              contribution: formatGold(
+                stats.forcePillageContribution ?? 0,
+                locale,
+              ),
+              repayment: formatGold(stats.goldLoanRepayment ?? 0, locale),
+              net: formatGold(stats.netPillageGold, locale),
+            })}
+          </Text>
+        )}
         {isViewerDefender && (
           <Box mt="md">
             <DefenseAdvisory

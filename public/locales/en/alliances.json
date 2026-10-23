@@ -74,7 +74,8 @@
     "settings": "Settings",
     "loadError": "Failed to load alliance",
     "bannerAlt": "Alliance banner",
-    "infighting": "Infighting"
+    "infighting": "Infighting",
+    "troops": "Alliance troops"
   },
   "mine": {
     "title": "My Alliances",

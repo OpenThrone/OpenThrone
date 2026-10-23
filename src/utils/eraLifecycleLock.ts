@@ -17,3 +17,10 @@ export const ERA_TRANSACTION_OPTIONS = {
   timeout: 300_000,
   isolationLevel: 'ReadCommitted',
 } as const;
+
+/** Gameplay takes a shared lock before player/alliance locks; resets take the exclusive lock. */
+export async function lockEraLifecycleShared(
+  tx: Prisma.TransactionClient,
+): Promise<void> {
+  await tx.$queryRaw`SELECT pg_advisory_xact_lock_shared(684731920)::text`;
+}

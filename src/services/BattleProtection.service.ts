@@ -33,10 +33,9 @@ export async function loadProtectionContext(
       durationDays: normalizeProtectionDurationDays(
         config.protectionDurationDays,
       ),
-      recruitDailyCap: Math.max(
-        0,
-        Math.floor(Number(config.recruitDailyCap ?? 25)),
-      ),
+      recruitDailyCap:
+        Math.max(0, Math.floor(Number(config.recruitDailyCap ?? 250))) +
+        Math.max(0, Math.floor(Number(config.externalRecruitDailyCap ?? 25))),
     },
   };
 }

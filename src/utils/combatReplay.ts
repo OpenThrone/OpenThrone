@@ -12,6 +12,7 @@ import type {
   StructureUpgrade,
   UnitType,
 } from '@/types/typings';
+import { forceCombatIdentity } from '@/utils/forceCombatIdentity';
 import type { CombatRandomReplay } from '@/utils/serverRandom';
 import {
   decryptCombatReplayInputs,
@@ -88,21 +89,23 @@ export function captureCombatUser(
     spyPressureDate: user.spyPressureDate
       ? new Date(user.spyPressureDate).toISOString()
       : null,
-    units: units.map(({ id, type, level, quantity }) => ({
-      id,
+    units: units.map((unit) => ({
+      id: unit.id,
       userId: user.id,
-      type,
-      level,
-      quantity,
+      type: unit.type,
+      level: unit.level,
+      quantity: unit.quantity,
       isMercenary: false,
+      ...forceCombatIdentity(unit),
     })),
-    mercenaries: mercenaries.map(({ id, type, level, quantity }) => ({
-      id,
+    mercenaries: mercenaries.map((unit) => ({
+      id: unit.id,
       userId: user.id,
-      type,
-      level,
-      quantity,
+      type: unit.type,
+      level: unit.level,
+      quantity: unit.quantity,
       isMercenary: true,
+      ...forceCombatIdentity(unit),
     })),
     items: user.items.map(({ id, type, level, usage, quantity }) => ({
       id,
@@ -215,6 +218,13 @@ const userSnapshotSchema = z.object({
       level,
       quantity,
       isMercenary: z.boolean(),
+      forceContractId: z.number().int().positive().optional(),
+      forceKind: z.enum(['MERCENARY', 'ALLIANCE']).optional(),
+      forceEquipment: z
+        .array(
+          z.object({ type: z.string(), level: z.number().int().positive() }),
+        )
+        .optional(),
     }),
   ),
   mercenaries: z.array(
@@ -224,6 +234,13 @@ const userSnapshotSchema = z.object({
       level,
       quantity,
       isMercenary: z.boolean(),
+      forceContractId: z.number().int().positive().optional(),
+      forceKind: z.enum(['MERCENARY', 'ALLIANCE']).optional(),
+      forceEquipment: z
+        .array(
+          z.object({ type: z.string(), level: z.number().int().positive() }),
+        )
+        .optional(),
     }),
   ),
   items: z.array(

@@ -15,10 +15,10 @@
     "cannotAttackTooWeak": "This player is too weak for you to attack.",
     "turnsQuestion": "How many turns?",
     "turnsDescription": "Choose how many attack turns to spend.",
-    "submitting": "Submitting…",
+    "submitting": "Submitting\u2026",
     "invalidTurns": "Enter between 1 and {{max}} turns.",
     "untrainTitle": "Confirm Untrain",
-    "untrainMessage": "Untraining refunds only 75% of the gold spent — you will lose {{gold}} gold. This cannot be undone.",
+    "untrainMessage": "Untraining refunds only 75% of the gold spent \u2014 you will lose {{gold}} gold. This cannot be undone.",
     "confirm": "Confirm",
     "allianceAttackTitle": "This player is your ally",
     "allianceAttackWarning": "This player is a fellow member of your alliance \"{{alliance}}\". Do you really want to attack them?",
@@ -39,12 +39,12 @@
     "spiesLabel": "Spies to send",
     "infiltratorsLabel": "Infiltrators to send",
     "assassinsLabel": "Assassins to send",
-    "availableUnits": "{{count}} trained · maximum {{max}} per mission.",
+    "availableUnits": "{{count}} trained \u00b7 maximum {{max}} per mission.",
     "noUnits": "No trained units are available for this mission.",
     "noTurns": "You have no attack turns available.",
     "notEnoughTurns_one": "This mission requires at least {{count}} attack turn.",
     "notEnoughTurns_other": "This mission requires at least {{count}} attack turns.",
-    "unitsAndTurns": "{{units}} · {{turns}}",
+    "unitsAndTurns": "{{units}} \u00b7 {{turns}}",
     "turnCount_one": "{{count}} turn",
     "turnCount_other": "{{count}} turns",
     "spyCount_one": "{{count}} spy",
@@ -179,12 +179,12 @@
       "fortLevel": "Fort level",
       "fortHitpoints": "Fort hitpoints",
       "attackTurns": "Attack turns",
-      "unitLabel": "{{name}} · {{type}} L{{level}}",
-      "itemLabel": "{{name}} · L{{level}}",
+      "unitLabel": "{{name}} \u00b7 {{type}} L{{level}}",
+      "itemLabel": "{{name}} \u00b7 L{{level}}",
       "unitRequires": "Requires player level {{level}} and fort {{fort}}+",
-      "unitInfo": "HP {{hp}} · fort {{fort}}+",
+      "unitInfo": "HP {{hp}} \u00b7 fort {{fort}}+",
       "itemRequires": "Requires level {{level}}, armory {{armory}}, {{race}}",
-      "itemInfo": "Armory {{armory}} · {{race}}",
+      "itemInfo": "Armory {{armory}} \u00b7 {{race}}",
       "anyRace": "any race",
       "allRaces": "all races",
       "itemGroups": {
@@ -387,7 +387,7 @@
   },
   "discountSummary": {
     "showDetails": "Show discount details",
-    "breakdown": "Discount breakdown — total {{percent}}%",
+    "breakdown": "Discount breakdown \u2014 total {{percent}}%",
     "noSources": "No individual sources (total shown)",
     "original": "Original",
     "discounted": "Discounted",
@@ -401,7 +401,7 @@
     "attackerLost": "Attacker lost",
     "defenderLost": "Defender lost",
     "attackLine": "Attacking force: {{soldiers}} soldiers.",
-    "counterLine": "{{player}}’s counter killed {{dead}} attackers.",
+    "counterLine": "{{player}}\u2019s counter killed {{dead}} attackers.",
     "lossLine": "{{player}} lost {{dead}} soldiers.",
     "victory": "Victory",
     "defeat": "Defeat",
@@ -467,7 +467,8 @@
     "gold": "Gold",
     "attackerXp": "Attacker XP",
     "defenderXp": "Defender XP",
-    "casualties": "Casualties"
+    "casualties": "Casualties",
+    "pillageDeductions": "Alliance contribution: {{contribution}} \u00b7 Gold-loan repayment: {{repayment}} \u00b7 Gold brought home: {{net}}"
   },
   "timeline": {
     "battleId": "Battle ID: {{id}}",
@@ -493,7 +494,7 @@
   "losses": {
     "units_one": "{{total}} Unit",
     "units_other": "{{total}} Units",
-    "unitLine": "{{quantity}}× Lv {{level}} {{unit}}"
+    "unitLine": "{{quantity}}\u00d7 Lv {{level}} {{unit}}"
   },
   "unitTypes": {
     "CITIZEN": "Citizen",
@@ -592,7 +593,7 @@
       "conflicting": "Recent evidence is conflicting",
       "stale": "Gather fresh intelligence first",
       "insufficient": "Not enough evidence for a recommendation",
-      "loading": "Reviewing readable reports…",
+      "loading": "Reviewing readable reports\u2026",
       "unavailable": "Recommendation temporarily unavailable",
       "favorable": "Conditions look favorable for another attack"
     },
@@ -619,8 +620,8 @@
     },
     "gatherIntel": "Gather new spy intelligence or review your recent battle reports. You can still choose your attack manually.",
     "age": {
-      "intel": "Intel · {{count}} min ago",
-      "battle": "Battle · {{count}} min ago"
+      "intel": "Intel \u00b7 {{count}} min ago",
+      "battle": "Battle \u00b7 {{count}} min ago"
     },
     "activity": {
       "online": "Defender is online. Evidence confidence declines faster.",

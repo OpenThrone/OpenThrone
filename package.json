@@ -1,6 +1,6 @@
 {
   "name": "openthrone",
-  "version": "0.6.0",
+  "version": "0.7.1",
   "scripts": {
     "dev": "bun run src/server/index.ts",
     "era-reset-worker": "bun scripts/run-era-reset-worker.ts",
@@ -41,7 +41,10 @@
     "ai:check": "bun run check-types && bun run lint && bun run map:unused && bun run map:circular",
     "docs:api": "typedoc",
     "docs:api:json": "typedoc --json docs/api.json --emit none",
-    "docs:commit": "bun run docs:api && bun run docs:api:json"
+    "docs:commit": "bun run docs:api && bun run docs:api:json",
+    "design:extract": "bun --no-env-file scripts/design/extract-dom.ts",
+    "design:build": "bun --no-env-file scripts/design/build-figcraft.ts",
+    "design:sync": "bun run design:extract && bun run design:build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.985.0",

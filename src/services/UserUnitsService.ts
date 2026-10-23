@@ -117,7 +117,10 @@ export class UserUnitsService {
   }
 
   getPopulation(): number {
-    const allUnits = [...this.units, ...this.mercenaries];
+    const allUnits = [...this.units, ...this.mercenaries].filter(
+      (unit) =>
+        !(unit as UserUnit & { forceContractId?: number }).forceContractId,
+    );
     return allUnits.reduce((acc, unit) => acc + (unit.quantity || 0), 0);
   }
 
