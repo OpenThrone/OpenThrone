@@ -43,7 +43,7 @@ export interface ProtectionEraInput {
 /** Admin-tunable inputs (see RuntimeConfig). */
 export interface ProtectionSettings {
   durationDays: number;
-  /** Citizens a player can gain per day by recruiting (admin setting recruit.dailyCap). */
+  /** Combined daily internal and external recruitment allowance. */
   recruitDailyCap: number;
 }
 
@@ -84,12 +84,12 @@ export function normalizeProtectionDurationDays(value: unknown): number {
 /**
  * Population threshold that ends protection (#97):
  *
- *   starting citizens + days x (housing citizens per day + recruiting cap per day)
+ *   starting citizens + days x (housing citizens per day + internal and external recruit allowances)
  *
  * Housing growth is `HouseUpgrades[houseLevel].citizensDaily` (the value the
  * daily cron grants); the recruiting cap is the most a player can gain per day
- * by recruiting (admin setting recruit.dailyCap). The era's starting citizens
- * are a baseline every player gets. Citizens handed out by game events are
+ * by internal and external recruiting. The era's starting citizens are a
+ * baseline every player gets. Citizens handed out by game events are
  * not part of this formula: getProtectionStatus adds the player's
  * event_citizens_received on top, so no event can end protection.
  * Pass `startingPopulation: 0` for the literal formula.

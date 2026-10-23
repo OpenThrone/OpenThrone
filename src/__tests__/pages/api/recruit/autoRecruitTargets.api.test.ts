@@ -83,19 +83,20 @@ beforeEach(() => {
 });
 
 describe('recruitment target selection', () => {
-  it('excludes targets at the per-target cap or the per-pair limit', async () => {
+  it('excludes only targets at the pair limit, regardless of other visitors', async () => {
     setup();
     const result = await getValidUsersForRecruitment(RECRUITER_ID);
 
     expect(result.recruiterCapReached).toBe(false);
     expect(result.usersLeft.map((entry) => entry.user.id)).toEqual([
       OPEN_TARGET,
+      CAPPED_TARGET,
     ]);
     expect(result.usersLeft[0].remainingRecruits).toBe(4);
   });
 
   it('bounds remaining recruits by what the recruiter has left today', async () => {
-    setup({ recruiterTotal: 23 });
+    setup({ recruiterTotal: 248 });
     const result = await getValidUsersForRecruitment(RECRUITER_ID);
 
     expect(result.recruiterRemaining).toBe(2);
@@ -103,7 +104,7 @@ describe('recruitment target selection', () => {
   });
 
   it('offers no targets once the recruiter is capped', async () => {
-    setup({ recruiterTotal: 25 });
+    setup({ recruiterTotal: 250 });
     const result = await getValidUsersForRecruitment(RECRUITER_ID);
 
     expect(result.recruiterCapReached).toBe(true);
@@ -122,13 +123,13 @@ describe('auto-recruit next-link route', () => {
     );
 
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({
-      recruit_link: `link-${OPEN_TARGET}`,
-    });
+    expect([`link-${OPEN_TARGET}`, `link-${CAPPED_TARGET}`]).toContain(
+      res.json.mock.calls[0][0].recruit_link,
+    );
   });
 
   it('returns a cap-reached refusal instead of another link', async () => {
-    setup({ recruiterTotal: 25 });
+    setup({ recruiterTotal: 250 });
     const res = makeRes();
     await loadRoute()(
       { method: 'GET', session: { user: { id: RECRUITER_ID } } },

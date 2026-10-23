@@ -4,6 +4,35 @@ OpenThrone follows [Semantic Versioning](https://semver.org/) on the 0.x line:
 each production release raises the minor version and hotfixes raise the patch
 version. Alpha builds carry the next version with an `-alpha` suffix.
 
+## v0.7.1 (2026-10-23)
+
+### Fixed
+- Training, untraining and converting regular units no longer fail when the
+  army includes matching temporary mercenary or alliance contract troops.
+  Temporary troops remain attached to their contracts instead of being saved
+  as permanent units.
+
+## v0.7.0 (2026-10-22)
+
+### Added
+- **Mercenaries:** hire equipped specialists for timed contracts, send them
+  into attacks and spy missions, renew or dismiss them, and settle their own
+  casualties and wounds.
+- **Alliance armies:** contribute permanent troops and equipment to an alliance
+  reserve, lend forces under manual approval or role allowances, extend or
+  recall deployments, and return wounded survivors when membership ends.
+- **Alliance dues and war levies:** configure recurring dues and dated levies,
+  pay with gold or equipped units, review treasury history, and apply reminders,
+  suspensions and configured overdue actions.
+- **Recruitment limits:** signed-in recruitment and external recruitment links
+  now have separate daily limits, including per-IP and global connection caps
+  for external claims.
+
+### Fixed
+- Alliance overview cards now align when there is no latest announcement.
+- Alpha startup no longer waits indefinitely for an unreachable Next.js
+  advisory endpoint.
+
 ## v0.6.0 (2026-10-20)
 
 ### Changed

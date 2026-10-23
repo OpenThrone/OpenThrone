@@ -48,6 +48,8 @@ const ServerSettingsPage = () => {
   const [emailRateDraft, setEmailRateDraft] = useState(60);
   const [protectionDaysDraft, setProtectionDaysDraft] = useState(14);
   const [recruitCapDraft, setRecruitCapDraft] = useState(25);
+  const [internalRecruitCapDraft, setInternalRecruitCapDraft] = useState(250);
+  const [externalIpRecruitCapDraft, setExternalIpRecruitCapDraft] = useState(5);
   const [maintenanceDraft, setMaintenanceDraft] = useState({
     enabled: false,
     message: '',
@@ -71,6 +73,22 @@ const ServerSettingsPage = () => {
       const recruitCap = nextRows.find((row) => row.key === 'recruit.dailyCap');
       setRecruitCapDraft(
         typeof recruitCap?.value === 'number' ? recruitCap.value : 25,
+      );
+      const internalRecruitCap = nextRows.find(
+        (row) => row.key === 'recruit.internalDailyCap',
+      );
+      setInternalRecruitCapDraft(
+        typeof internalRecruitCap?.value === 'number'
+          ? internalRecruitCap.value
+          : 250,
+      );
+      const externalIpRecruitCap = nextRows.find(
+        (row) => row.key === 'recruit.externalIpDailyCap',
+      );
+      setExternalIpRecruitCapDraft(
+        typeof externalIpRecruitCap?.value === 'number'
+          ? externalIpRecruitCap.value
+          : 5,
       );
       const emailRate = nextRows.find(
         (row) => row.key === 'email.outbox.ratePerMinute',
@@ -258,6 +276,34 @@ const ServerSettingsPage = () => {
                               setRecruitCapDraft(next);
                           }}
                           onBlur={() => save(key, recruitCapDraft)}
+                        />
+                      ) : key === 'recruit.internalDailyCap' ? (
+                        <NumberInput
+                          aria-label={t(`settings.labels.${key}`)}
+                          min={0}
+                          max={1000}
+                          allowDecimal={false}
+                          value={internalRecruitCapDraft}
+                          disabled={savingKey === key}
+                          onChange={(next) => {
+                            if (typeof next === 'number')
+                              setInternalRecruitCapDraft(next);
+                          }}
+                          onBlur={() => save(key, internalRecruitCapDraft)}
+                        />
+                      ) : key === 'recruit.externalIpDailyCap' ? (
+                        <NumberInput
+                          aria-label={t(`settings.labels.${key}`)}
+                          min={0}
+                          max={1000}
+                          allowDecimal={false}
+                          value={externalIpRecruitCapDraft}
+                          disabled={savingKey === key}
+                          onChange={(next) => {
+                            if (typeof next === 'number')
+                              setExternalIpRecruitCapDraft(next);
+                          }}
+                          onBlur={() => save(key, externalIpRecruitCapDraft)}
                         />
                       ) : key === 'MAINTENANCE_MODE' ? (
                         <Stack gap="xs">

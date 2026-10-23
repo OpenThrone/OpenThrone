@@ -287,6 +287,19 @@ export const startNewEra = async (
       data: { currentEraId: validatedNewEraId },
     });
 
+    await tx.forceReserve.updateMany({
+      data: {
+        available: 0,
+        woundedQuantity: 0,
+        eraId: validatedNewEraId,
+        lastHealedAt: new Date(),
+      },
+    });
+    await tx.forceEvent.updateMany({
+      where: { action: 'PILLAGE_PENDING' },
+      data: { action: 'PILLAGE_CANCELLED' },
+    });
+    await tx.forceDuesRule.updateMany({ data: { nextIssueAt: new Date() } });
     return newEra;
   }, ERA_TRANSACTION_OPTIONS);
 };

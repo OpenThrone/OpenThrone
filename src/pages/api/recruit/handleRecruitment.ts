@@ -10,7 +10,9 @@ import {
   getUserByRecruitLink,
   performRecruitmentWithSessionValidation,
   recruitmentBlockCodeForError,
+  resolveRecruitmentContext,
 } from '@/services/Recruitment.service';
+import { verifyRecruitmentCaptcha } from '@/services/RecruitmentCaptcha.service';
 import { parseRecruitmentSessionId } from '@/services/recruitmentGuards';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logAction } from '@/utils/auditLogger';
@@ -88,16 +90,24 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     }
 
     const ipAddress = getIpAddress(req);
+    if (!(await verifyRecruitmentCaptcha(data.captchaToken, ipAddress))) {
+      return res.status(400).json({
+        error: 'Captcha verification failed.',
+        code: 'CAPTCHA_FAILED',
+      });
+    }
     // The link owner is the sender; the signed-in recruiter receives the reward.
     const fromUser = targetUserId;
     const toUser = recruiterUserId;
     const userIdToLock = toUser;
     const delayMs = mtrand(5, 17) * 100;
 
+    const context = await resolveRecruitmentContext();
     const result = await prisma.$transaction(
       (tx) =>
         performRecruitmentWithSessionValidation({
           tx,
+          context,
           fromUser,
           toUser,
           userIdToUpdate: userIdToLock,

@@ -138,6 +138,9 @@ export const updateUserAndBankHistory = async (
     // Create new UserUnit records from updatedData if any
     if (updatedData && updatedData.length > 0) {
       for (const unit of updatedData) {
+        // Contract troops are roster projections owned by ForceContract, not
+        // permanent UserUnit rows. Keep them in stat calculations only.
+        if (unit.forceContractId) continue;
         if (unit.type && unit.level && unit.quantity !== undefined) {
           await prismaInstance.userUnit.create({
             data: {

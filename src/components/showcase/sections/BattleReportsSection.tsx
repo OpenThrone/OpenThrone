@@ -66,6 +66,9 @@ const ATTACK_VICTORY: RedactedAttackLog = {
     defenderDamageDealt: 9120,
     xpEarned: JSON.stringify({ attacker: 1840, defender: 620 }),
     pillagedGold: '2450000',
+    forcePillageContribution: '122500',
+    goldLoanRepayment: '0',
+    netPillageGold: '2327500',
     fortDamage: 38,
     attacker_losses: {
       total: 87,

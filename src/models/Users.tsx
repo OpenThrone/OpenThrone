@@ -874,6 +874,7 @@ class UserModel {
     // Get raw units for service reconstruction
     const allUnits = [...this.units, ...this.mercenaries];
     const rawUnits = allUnits.map((bu) => ({
+      ...bu,
       id: bu.id || 0,
       userId: bu.userId || this.id,
       type: bu.type as any,

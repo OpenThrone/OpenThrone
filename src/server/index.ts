@@ -5,6 +5,8 @@ import next from 'next';
 import { initializeSocket } from '@/lib/socket';
 import { startEmailOutboxWorker } from '@/server/emailOutboxWorker';
 import { startEraResetWorker } from '@/server/eraResetWorker';
+import { prepareNextApp } from '@/server/nextStartup';
+import { startTemporaryForceWorker } from '@/server/temporaryForceWorker';
 import { missingEmailSecrets } from '@/utils/emailSecrets';
 import { logError, logInfo } from '@/utils/logger';
 
@@ -24,7 +26,7 @@ const app = next({
 const handle = app.getRequestHandler();
 
 (async () => {
-  await app.prepare();
+  await prepareNextApp(app);
 
   const httpServer = createServer((req, res) => {
     handle(req, res);
@@ -34,6 +36,8 @@ const handle = app.getRequestHandler();
   initializeSocket(httpServer);
   const stopEraResetWorker = startEraResetWorker();
   httpServer.once('close', stopEraResetWorker);
+  const stopTemporaryForceWorker = startTemporaryForceWorker();
+  httpServer.once('close', stopTemporaryForceWorker);
   const missing = missingEmailSecrets();
   if (missing.length)
     logError(`Email configuration missing: ${missing.join(', ')}`);

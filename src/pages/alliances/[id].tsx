@@ -1,6 +1,7 @@
 import {
   Avatar,
   Box,
+  Button,
   Center,
   Group,
   Paper,
@@ -11,6 +12,7 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import type { GetServerSideProps } from 'next';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { getServerSession } from 'next-auth';
 import { useTranslation } from 'next-i18next';
@@ -135,6 +137,15 @@ const AlliancePage = ({
           </Box>
         </Paper>
 
+        {isMember && (
+          <Button
+            component={Link}
+            href={`/alliances/${alliance.id}/forces`}
+            variant="default"
+          >
+            {t('index.troops')}
+          </Button>
+        )}
         <Tabs value={activeTab} onChange={setActiveTab} variant="outline">
           <Tabs.List>
             <Tabs.Tab value="overview">

@@ -11,6 +11,7 @@ import { resolveEraStartSettings } from '@/utils/eraStartSettings';
 import { logDebug } from '@/utils/logger';
 import { canAccessGame } from '@/utils/loginPolicy';
 
+import { contractRoster } from './Mercenary.service';
 import {
   buildDefaultUserUpdate,
   buildEraStartOverrides,
@@ -219,6 +220,17 @@ export class UserDataService {
       depositHistory.length > 0
         ? this.getDepositCountdown(depositHistory[0].date_time.toString())
         : 0;
+
+    const contracts = await prisma.forceContract.findMany({
+      where: { userId, status: 'ACTIVE', expiresAt: { gt: new Date() } },
+    });
+    user.UserUnit = [
+      ...user.UserUnit,
+      ...contractRoster(
+        contracts.filter((contract) => contract.eraId === user.currentEraId),
+        user.wounded_units,
+      ),
+    ];
 
     // 3. Rich Data Composition using other services
     const statsService = new UserStatsService({

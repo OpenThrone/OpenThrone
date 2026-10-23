@@ -50,6 +50,7 @@ import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import StatCard from '@/components/StatCard';
 import { useUser } from '@/context/users';
 import { usePlayerIdentity } from '@/hooks/usePlayerIdentity';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import type { Locales } from '@/types/typings';
 import { logError } from '@/utils/logger';
 import { formatGold, toLocale } from '@/utils/numberFormatting';
@@ -57,6 +58,7 @@ import { formatGold, toLocale } from '@/utils/numberFormatting';
 const Overview = () => {
   const { t, i18n } = useTranslation('home');
   const { raceName, className } = usePlayerIdentity();
+  const { config: runtimeConfig } = useRuntimeConfig();
   const [getNews, setNews] = useState([]);
 
   useEffect(() => {
@@ -232,7 +234,12 @@ const Overview = () => {
           subtitle={
             recruitLink ? (
               <>
-                {t('overview.shareRecruitLink')} {recruitLinkNode}
+                {runtimeConfig
+                  ? t('overview.shareRecruitLink', {
+                      count: runtimeConfig.externalRecruitDailyCap,
+                    })
+                  : t('overview.shareRecruitLinkIntro')}{' '}
+                {recruitLinkNode}
               </>
             ) : undefined
           }
@@ -267,7 +274,12 @@ const Overview = () => {
             </Text>
             {recruitLink ? (
               <Text size="sm" c="var(--ot-muted)" mt="sm">
-                {t('overview.shareRecruitLink')} {recruitLinkNode}
+                {runtimeConfig
+                  ? t('overview.shareRecruitLink', {
+                      count: runtimeConfig.externalRecruitDailyCap,
+                    })
+                  : t('overview.shareRecruitLinkIntro')}{' '}
+                {recruitLinkNode}
               </Text>
             ) : null}
           </GameCard>

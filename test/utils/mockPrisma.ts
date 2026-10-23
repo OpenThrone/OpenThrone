@@ -25,6 +25,29 @@ export function installMockPrisma(vi: any) {
     findMany: vi.fn(async () => []),
     findUnique: vi.fn(async () => null),
   };
+  mockPrisma.forceContract = {
+    findMany: vi.fn(async () => []),
+    findFirst: vi.fn(async () => null),
+    updateMany: vi.fn(async () => ({ count: 0 })),
+    deleteMany: vi.fn(async () => ({ count: 0 })),
+  };
+  mockPrisma.forceObligation = {
+    findMany: vi.fn(async () => []),
+    updateMany: vi.fn(async () => ({ count: 0 })),
+  };
+  mockPrisma.forceEvent = {
+    findMany: vi.fn(async () => []),
+    updateMany: vi.fn(async () => ({ count: 0 })),
+  };
+  mockPrisma.forceReserve = {
+    findMany: vi.fn(async () => []),
+    updateMany: vi.fn(async () => ({ count: 0 })),
+  };
+  mockPrisma.allianceForcePolicy = { findMany: vi.fn(async () => []) };
+  mockPrisma.forceDuesRule = {
+    findMany: vi.fn(async () => []),
+    updateMany: vi.fn(async () => ({ count: 0 })),
+  };
   mockPrisma.featureFlag = { findMany: vi.fn(async () => []) };
   mockPrisma.gameEvent = { findMany: vi.fn(async () => []) };
 

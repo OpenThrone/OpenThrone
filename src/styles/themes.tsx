@@ -1,3 +1,5 @@
+import { faCheck, faMinus } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { CSSVariablesResolver } from '@mantine/core';
 import {
   ActionIcon,
@@ -14,6 +16,7 @@ import {
   NavLink,
   Paper,
   Popover,
+  Switch,
   Table,
   Tabs,
 } from '@mantine/core';
@@ -72,6 +75,19 @@ const BUTTON_TONES: Record<string, { fill: string; border: string }> = {
 };
 
 const rpgComponentOverrides = {
+  Switch: Switch.extend({
+    defaultProps: {
+      size: 'md',
+      onLabel: <FontAwesomeIcon icon={faCheck} aria-hidden="true" />,
+      offLabel: <FontAwesomeIcon icon={faMinus} aria-hidden="true" />,
+    },
+    classNames: {
+      input: classes.switchInput,
+      track: classes.switchTrack,
+      thumb: classes.switchThumb,
+      trackLabel: classes.switchTrackLabel,
+    },
+  }),
   Paper: Paper.extend({
     defaultProps: { radius: 'sm' },
     styles: { root: panelStyles },

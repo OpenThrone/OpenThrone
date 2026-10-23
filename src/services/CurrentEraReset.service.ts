@@ -200,6 +200,14 @@ export async function resetCurrentEraInTransaction(
   });
 
   // Alliance identity, roster, roles, and membership persist; era progression returns to baseline.
+  await tx.forceDuesRule.updateMany({ data: { nextIssueAt: new Date() } });
+  await tx.forceReserve.updateMany({
+    data: { available: 0, woundedQuantity: 0, lastHealedAt: new Date() },
+  });
+  await tx.forceEvent.updateMany({
+    where: { action: 'PILLAGE_PENDING' },
+    data: { action: 'PILLAGE_CANCELLED' },
+  });
   await tx.alliances.updateMany({ data: { gold_in_bank: 0n } });
   await tx.alliance_xp.deleteMany();
   await tx.alliance_upgrades.deleteMany();

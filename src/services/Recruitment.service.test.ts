@@ -7,6 +7,13 @@ import { getOTStartDate } from '@/utils/timefunctions';
 
 installMockPrisma(vi);
 
+const TEST_CONTEXT = {
+  internalDailyCap: 250,
+  externalDailyCap: 25,
+  externalIpDailyCap: 5,
+  recruitCitizenMultiplier: 1,
+};
+
 const {
   getRecruitmentBlock,
   getRecruitmentStatus,
@@ -80,6 +87,7 @@ describe('recruitment history transaction ordering', () => {
         }
       };
       const paramsFor = (owner: string) => ({
+        context: TEST_CONTEXT,
         tx: makeTx(owner),
         fromUser: 17,
         toUser: 42,
@@ -127,6 +135,7 @@ describe('recruitment history transaction ordering', () => {
 
     await expect(
       performRecruitment({
+        context: TEST_CONTEXT,
         tx,
         fromUser: 987654,
         toUser: 42,
@@ -184,7 +193,7 @@ describe('recruitment history transaction ordering', () => {
     });
 
     expect(result).toBeNull();
-    expect(seenWindows).toHaveLength(3);
+    expect(seenWindows).toHaveLength(2);
     expect(
       seenWindows.every((date) => date.getTime() === eraStart.getTime()),
     ).toBe(true);
@@ -213,7 +222,7 @@ describe('recruitment history transaction ordering', () => {
     });
 
     expect(result).toBeNull();
-    expect(seenWindows).toHaveLength(3);
+    expect(seenWindows).toHaveLength(2);
     expect(
       seenWindows.every((date) => date.getTime() === todayStart.getTime()),
     ).toBe(true);
@@ -247,10 +256,10 @@ describe('getRecruitmentStatus', () => {
 
     expect(status.recruiterUsed).toBe(7);
     expect(status.pairLimit).toBe(5);
-    expect(status.targets['42']).toEqual({ pairUsed: 5, targetUsed: 9 });
-    expect(status.targets['43']).toEqual({ pairUsed: 0, targetUsed: 2 });
+    expect(status.targets['42']).toEqual({ pairUsed: 5, targetUsed: 0 });
+    expect(status.targets['43']).toEqual({ pairUsed: 0, targetUsed: 0 });
     expect(status.resetsAt).toBe(getOTStartDate(1).toISOString());
-    expect(seen).toHaveLength(2);
+    expect(seen).toHaveLength(1);
   });
 
   it('skips the grouped queries when no targets are requested', async () => {

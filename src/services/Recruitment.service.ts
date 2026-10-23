@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 import { multiplyCount } from '@/constants/gameEvents';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
@@ -10,119 +8,37 @@ import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import type { RecruitmentStatus } from '@/utils/recruitmentStatus';
 import { getOTStartDate } from '@/utils/timefunctions';
 
-const CreateRecruitmentRecordSchema = z.object({
-  fromUser: z.number().int(),
-  toUser: z.number().int(),
-  ipAddress: z.string().ip(),
-});
-
-const HasExceededRecruitmentLimitSchema = z.object({
-  fromUser: z.number().int(),
-  toUser: z.number().int(),
-  ipAddress: z.string().ip(),
-  recruiterUserId: z.number().int(),
-});
-
-const UpdateUserAfterRecruitmentSchema = z.object({
-  userId: z.number().int().positive(),
-});
-
-const CreateBankHistoryRecordSchema = z.object({
-  userId: z.number().int().positive(),
-});
-
-async function createRecruitmentRecord({
-  fromUser,
-  toUser,
-  ipAddress,
-}: {
-  fromUser: number;
-  toUser: number;
-  ipAddress: string;
-}) {
-  const validatedData = CreateRecruitmentRecordSchema.parse({
-    fromUser,
-    toUser,
-    ipAddress,
-  });
-  return prisma.recruit_history.create({
-    data: {
-      from_user: validatedData.fromUser,
-      to_user: validatedData.toUser,
-      ip_addr: validatedData.ipAddress,
-      timestamp: new Date(),
-    },
-  });
-}
-
-async function hasExceededRecruitmentLimit({
-  fromUser,
-  toUser,
-  ipAddress,
-  recruiterUserId,
-}: {
-  fromUser: number;
-  toUser: number;
-  ipAddress: string;
-  recruiterUserId: number;
-}) {
-  const validatedData = HasExceededRecruitmentLimitSchema.parse({
-    fromUser,
-    toUser,
-    ipAddress,
-    recruiterUserId,
-  });
-  const windowStart = await getRecruitmentWindowStart(prisma);
-  const recruitments = await prisma.recruit_history.findMany({
-    where: {
-      from_user: validatedData.fromUser,
-      to_user: validatedData.toUser,
-      timestamp: { gte: windowStart },
-      ...(validatedData.recruiterUserId === 0 && {
-        ip_addr: validatedData.ipAddress,
-      }),
-    },
-  });
-  return recruitments.length >= 5;
-}
-
-async function updateUserAfterRecruitment(userId: number) {
-  const validatedData = UpdateUserAfterRecruitmentSchema.parse({ userId });
-  // Add 250 gold to the user
-  await prisma.users.update({
-    where: { id: validatedData.userId },
-    data: {
-      gold: { increment: 250 },
-    },
-  });
-}
-
-async function createBankHistoryRecord(userId: number) {
-  const validatedData = CreateBankHistoryRecordSchema.parse({ userId });
-  await prisma.bank_history.create({
-    data: {
-      from_user_id: 0,
-      to_user_id: validatedData.userId,
-      to_user_account_type: 'HAND',
-      from_user_account_type: 'BANK',
-      date_time: new Date(),
-      gold_amount: 250,
-      history_type: 'RECRUITMENT',
-    },
-  });
-}
-
 type RecruitmentLimitStrategy = 'standard' | 'linkBased';
 type PrismaClientOrTx = Prisma.TransactionClient | typeof prisma;
 
-/**
- * Daily recruitment totals, reusing the existing 25-per-day allowance
- * (src/pages/api/recruit/[id].ts). Per-recruiter caps the recruiter's gold
- * claims across all targets; per-target caps the link owner's recruits across
- * all recruiters. The per-pair limit of 5 is enforced by ensureRecruitmentLimit.
- */
-/** Default daily recruiting cap; the live value is the admin setting recruit.dailyCap. */
-export const RECRUITER_DAILY_CAP = 25;
+/** Default internal claims per day; configured by recruit.internalDailyCap. */
+export const RECRUITER_DAILY_CAP = 250;
+
+export interface RecruitmentContext {
+  internalDailyCap: number;
+  externalDailyCap: number;
+  externalIpDailyCap: number;
+  recruitCitizenMultiplier: number;
+}
+const validCap = (value: unknown, fallback: number) => {
+  const cap = Number(value);
+  return Number.isFinite(cap) && cap >= 0 ? Math.floor(cap) : fallback;
+};
+/** Resolve outside API transactions; direct service callers use their own tx connection. */
+export async function resolveRecruitmentContext(
+  tx?: Prisma.TransactionClient,
+): Promise<RecruitmentContext> {
+  const [config, modifiers] = await Promise.all([
+    getRuntimeConfig(tx),
+    getGameEventModifiers(tx),
+  ]);
+  return {
+    internalDailyCap: validCap(config.recruitDailyCap, 250),
+    externalDailyCap: validCap(config.externalRecruitDailyCap, 25),
+    externalIpDailyCap: validCap(config.externalRecruitIpDailyCap, 5),
+    recruitCitizenMultiplier: modifiers.recruitCitizenMultiplier,
+  };
+}
 
 /** Citizens a player can gain per day by recruiting (admin setting). */
 export async function getRecruiterDailyCap(): Promise<number> {
@@ -134,12 +50,17 @@ export async function getRecruiterDailyCap(): Promise<number> {
 }
 /** Default for citizens a player can receive per day through their recruit link. */
 export const TARGET_DAILY_CAP = 25;
-/**
- * The same admin setting governs both sides: recruits a player can make per
- * day and citizens a player can receive per day (the latter also feeds the
- * new-player protection limit).
- */
-export const getTargetDailyCap = getRecruiterDailyCap;
+/** External owner allowance; independent of the internal recruiting quota. */
+export async function getTargetDailyCap(): Promise<number> {
+  const config = await getRuntimeConfig();
+  const cap = Number(config.externalRecruitDailyCap);
+  return Number.isFinite(cap) && cap >= 0 ? Math.floor(cap) : TARGET_DAILY_CAP;
+}
+export async function getExternalRecruitIpDailyCap(): Promise<number> {
+  const config = await getRuntimeConfig();
+  const cap = Number(config.externalRecruitIpDailyCap);
+  return Number.isFinite(cap) && cap >= 0 ? Math.floor(cap) : 5;
+}
 
 export const RECRUITER_DAILY_CAP_ERROR =
   'You have reached the daily recruitment limit.';
@@ -215,22 +136,27 @@ export const getRecruitmentBlock = async ({
   const client = resolveDb(db);
   const windowStart = await getRecruitmentWindowStart(client, since);
   const timestamp = { gte: windowStart };
-  const [recruiterTotal, targetTotal, pairTotal] = await Promise.all([
+  const [recruiterTotal, pairTotal] = await Promise.all([
     client.recruit_history.count({
-      where: { to_user: recruiterId, from_user: { not: 0 }, timestamp },
+      where: {
+        source: 'INTERNAL',
+        to_user: recruiterId,
+        from_user: { not: 0 },
+        timestamp,
+      },
     }),
     client.recruit_history.count({
-      where: { from_user: targetId, timestamp },
-    }),
-    client.recruit_history.count({
-      where: { from_user: targetId, to_user: recruiterId, timestamp },
+      where: {
+        source: 'INTERNAL',
+        from_user: targetId,
+        to_user: recruiterId,
+        timestamp,
+      },
     }),
   ]);
   if (recruiterTotal >= (await getRecruiterDailyCap())) {
     return 'RECRUITER_DAILY_CAP_REACHED';
   }
-  if (targetTotal >= (await getTargetDailyCap()))
-    return 'TARGET_DAILY_CAP_REACHED';
   if (pairTotal >= RECRUIT_PAIR_DAILY_LIMIT) return 'PAIR_LIMIT_REACHED';
   return null;
 };
@@ -252,25 +178,24 @@ export const getRecruitmentStatus = async ({
   const client = resolveDb(db);
   const windowStart = await getRecruitmentWindowStart(client);
   const timestamp = { gte: windowStart };
-  const [recruiterUsed, pairRows, targetRows] = await Promise.all([
+  const [recruiterUsed, pairRows] = await Promise.all([
     client.recruit_history.count({
-      where: { to_user: recruiterId, from_user: { not: 0 }, timestamp },
+      where: {
+        source: 'INTERNAL',
+        to_user: recruiterId,
+        from_user: { not: 0 },
+        timestamp,
+      },
     }),
     targetIds.length
       ? client.recruit_history.groupBy({
           by: ['from_user'],
           where: {
+            source: 'INTERNAL',
             from_user: { in: targetIds },
             to_user: recruiterId,
             timestamp,
           },
-          _count: { _all: true },
-        })
-      : [],
-    targetIds.length
-      ? client.recruit_history.groupBy({
-          by: ['from_user'],
-          where: { from_user: { in: targetIds }, timestamp },
           _count: { _all: true },
         })
       : [],
@@ -279,11 +204,10 @@ export const getRecruitmentStatus = async ({
     rows: { from_user: number | null; _count: { _all: number } }[],
   ) => new Map(rows.map((row) => [row.from_user, row._count._all]));
   const pairUsed = toCounts(pairRows);
-  const targetUsed = toCounts(targetRows);
   return {
     pairLimit: RECRUIT_PAIR_DAILY_LIMIT,
     recruiterCap: await getRecruiterDailyCap(),
-    targetCap: await getTargetDailyCap(),
+    targetCap: Number.MAX_SAFE_INTEGER,
     recruiterUsed,
     resetsAt: getOTStartDate(1).toISOString(),
     targets: Object.fromEntries(
@@ -291,7 +215,7 @@ export const getRecruitmentStatus = async ({
         String(id),
         {
           pairUsed: pairUsed.get(id) ?? 0,
-          targetUsed: targetUsed.get(id) ?? 0,
+          targetUsed: 0,
         },
       ]),
     ),
@@ -320,6 +244,7 @@ const ensureRecruitmentLimit = async ({
   if (strategy === 'linkBased') {
     const history = await tx.recruit_history.count({
       where: {
+        source: 'INTERNAL',
         OR: [
           {
             AND: [
@@ -348,6 +273,7 @@ const ensureRecruitmentLimit = async ({
 
   const recruitmentCount = await tx.recruit_history.count({
     where: {
+      source: 'INTERNAL',
       from_user: fromUser,
       to_user: toUser,
       timestamp: baseTimeConstraint,
@@ -371,6 +297,7 @@ export const performRecruitment = async ({
   goldReward = 250,
   delayMs,
   sessionUpdate,
+  context,
 }: {
   tx: Prisma.TransactionClient;
   fromUser: number;
@@ -381,7 +308,9 @@ export const performRecruitment = async ({
   goldReward?: number;
   delayMs?: number;
   sessionUpdate?: { sessionId: number; recruiterUserId: number } | null;
+  context?: RecruitmentContext;
 }) => {
+  const resolvedContext = context ?? (await resolveRecruitmentContext(tx));
   // The limits depend on history, so concurrent requests must wait before reading it.
   // Lock both the recruiter and the target. Locks are taken in ascending ID order so
   // two opposite recruitments cannot deadlock each other.
@@ -424,25 +353,19 @@ export const performRecruitment = async ({
   // Daily totals across all counterparties, checked inside the advisory locks.
   const recruiterTotal = await tx.recruit_history.count({
     where: {
+      source: 'INTERNAL',
       to_user: toUser,
       from_user: { not: 0 },
       timestamp: { gte: since },
     },
   });
-  if (recruiterTotal >= (await getRecruiterDailyCap())) {
+  if (recruiterTotal >= resolvedContext.internalDailyCap) {
     throw new Error(RECRUITER_DAILY_CAP_ERROR);
-  }
-  if (fromUser !== 0) {
-    const targetTotal = await tx.recruit_history.count({
-      where: { from_user: fromUser, timestamp: { gte: since } },
-    });
-    if (targetTotal >= (await getTargetDailyCap())) {
-      throw new Error(TARGET_DAILY_CAP_ERROR);
-    }
   }
 
   await tx.recruit_history.create({
     data: {
+      source: 'INTERNAL',
       from_user: fromUser,
       to_user: toUser,
       ip_addr: ipAddress,
@@ -454,65 +377,12 @@ export const performRecruitment = async ({
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
 
-  // A running citizen event (#86) can multiply the one citizen per recruit;
-  // the extra citizens raise the protection population limit (#89).
-  const { recruitCitizenMultiplier } = await getGameEventModifiers();
-  const citizensGranted = multiplyCount(1, recruitCitizenMultiplier);
-  const eventCitizens = Math.max(0, citizensGranted - 1);
-
-  await tx.users.update({
-    where: { id: userIdToUpdate },
-    data: {
-      gold: { increment: goldReward },
-      ...(eventCitizens > 0
-        ? { event_citizens_received: { increment: eventCitizens } }
-        : {}),
-    },
-  });
-
-  if (citizensGranted > 0) {
-    await tx.userUnit.upsert({
-      where: {
-        userId_type_level_isMercenary: {
-          userId: userIdToUpdate,
-          type: 'CITIZEN',
-          level: 1,
-          isMercenary: false,
-        },
-      },
-      update: {
-        quantity: { increment: citizensGranted },
-        level: 1,
-      },
-      create: {
-        userId: userIdToUpdate,
-        type: 'CITIZEN',
-        level: 1,
-        quantity: citizensGranted,
-        isMercenary: false,
-      },
-    });
-  }
-
-  await tx.bank_history.create({
-    data: {
-      from_user_id: 0,
-      to_user_id: userIdToUpdate,
-      to_user_account_type: 'HAND',
-      from_user_account_type: 'BANK',
-      date_time: new Date(),
-      gold_amount: BigInt(goldReward),
-      history_type: 'RECRUITMENT',
-      ...(recruitCitizenMultiplier !== 1
-        ? {
-            stats: {
-              citizensGranted,
-              eventCitizenMultiplier: recruitCitizenMultiplier,
-            },
-          }
-        : {}),
-    },
-  });
+  await grantRecruitmentReward(
+    tx,
+    userIdToUpdate,
+    goldReward,
+    resolvedContext.recruitCitizenMultiplier,
+  );
 
   if (sessionUpdate?.sessionId) {
     await tx.autoRecruitSession.update({
@@ -539,6 +409,7 @@ export const performRecruitmentWithSessionValidation = async ({
   delayMs,
   sessionId,
   recruiterUserId,
+  context,
 }: {
   tx: Prisma.TransactionClient;
   fromUser: number;
@@ -550,6 +421,7 @@ export const performRecruitmentWithSessionValidation = async ({
   delayMs?: number;
   sessionId?: number | null;
   recruiterUserId: number;
+  context?: RecruitmentContext;
 }) => {
   // Validate session inside transaction if present
   if (sessionId) {
@@ -579,13 +451,14 @@ export const performRecruitmentWithSessionValidation = async ({
     strategy,
     goldReward,
     delayMs,
+    context,
     sessionUpdate: sessionId ? { sessionId, recruiterUserId } : null,
   });
 };
 
 /**
- * Returns the targets a signed-in recruiter can still recruit today, honouring
- * the per-pair limit, each target's daily cap and the recruiter's own daily cap.
+ * Returns targets a signed-in recruiter can still recruit, honoring the
+ * per-pair limit and the recruiter's aggregate internal daily cap.
  * When the recruiter is capped, usersLeft is empty and recruiterCapReached is set.
  */
 export async function getValidUsersForRecruitment(recruiterID: number) {
@@ -620,6 +493,7 @@ export async function getValidUsersForRecruitment(recruiterID: number) {
 
   const recruiterTotal = await prisma.recruit_history.count({
     where: {
+      source: 'INTERNAL',
       to_user: recruiterID,
       from_user: { not: 0 },
       timestamp: { gte: since },
@@ -642,41 +516,26 @@ export async function getValidUsersForRecruitment(recruiterID: number) {
 
   const userIds = activeUsers.map((user) => user.id);
 
-  // Recruits this recruiter already took from each target, and each target's
-  // total across all recruiters, in one query each.
-  const targetCap = await getTargetDailyCap();
-  const [pairCounts, targetCounts] = await Promise.all([
-    prisma.recruit_history.groupBy({
-      by: ['from_user'],
-      where: {
-        to_user: recruiterID,
-        from_user: { in: userIds },
-        timestamp: { gte: since },
-      },
-      _count: { _all: true },
-    }),
-    prisma.recruit_history.groupBy({
-      by: ['from_user'],
-      where: {
-        from_user: { in: userIds },
-        timestamp: { gte: since },
-      },
-      _count: { _all: true },
-    }),
-  ]);
+  // Other recruiters do not consume this actor's per-target allowance.
+  const pairCounts = await prisma.recruit_history.groupBy({
+    by: ['from_user'],
+    where: {
+      source: 'INTERNAL',
+      to_user: recruiterID,
+      from_user: { in: userIds },
+      timestamp: { gte: since },
+    },
+    _count: { _all: true },
+  });
 
   const pairMap = new Map<number, number>(
     pairCounts.map((row) => [row.from_user, row._count._all]),
-  );
-  const targetMap = new Map<number, number>(
-    targetCounts.map((row) => [row.from_user, row._count._all]),
   );
 
   const validUsers = activeUsers
     .map((user) => {
       const remainingRecruits = Math.min(
         RECRUIT_PAIR_DAILY_LIMIT - (pairMap.get(user.id) ?? 0),
-        targetCap - (targetMap.get(user.id) ?? 0),
         recruiterRemaining,
       );
       return remainingRecruits > 0 ? { user, remainingRecruits } : null;
@@ -700,6 +559,7 @@ export async function getRecruitmentRecords(
   const recruitmentRecords = await prisma.recruit_history.findMany({
     where: {
       from_user: { not: { in: [0, recruiterID] } },
+      source: 'INTERNAL',
       to_user: recruiterID,
       timestamp: {
         gte: startDate,
@@ -787,13 +647,172 @@ export async function getRandomAutoRecruitUser(
   return { recruit_link: user.recruit_link, id: user.id };
 }
 
-function increaseCitizens(units: any[]) {
-  if (!Array.isArray(units)) return units;
-  const citizen = units.find((u) => u.type === 'CITIZEN');
-  if (citizen) {
-    citizen.quantity = (citizen.quantity ?? 0) + 1;
-  } else {
-    units.push({ type: 'CITIZEN', level: 1, quantity: 1 });
+/** Shared event-aware reward math; external visits deliberately grant no gold. */
+async function grantRecruitmentReward(
+  tx: Prisma.TransactionClient,
+  userIdToUpdate: number,
+  goldReward: number,
+  recruitCitizenMultiplier: number,
+) {
+  // A running citizen event (#86) can multiply the one citizen per recruit;
+  // the extra citizens raise the protection population limit (#89).
+  const citizensGranted = multiplyCount(1, recruitCitizenMultiplier);
+  const eventCitizens = Math.max(0, citizensGranted - 1);
+
+  await tx.users.update({
+    where: { id: userIdToUpdate },
+    data: {
+      gold: { increment: goldReward },
+      ...(eventCitizens > 0
+        ? { event_citizens_received: { increment: eventCitizens } }
+        : {}),
+    },
+  });
+
+  if (citizensGranted > 0) {
+    await tx.userUnit.upsert({
+      where: {
+        userId_type_level_isMercenary: {
+          userId: userIdToUpdate,
+          type: 'CITIZEN',
+          level: 1,
+          isMercenary: false,
+        },
+      },
+      update: {
+        quantity: { increment: citizensGranted },
+        level: 1,
+      },
+      create: {
+        userId: userIdToUpdate,
+        type: 'CITIZEN',
+        level: 1,
+        quantity: citizensGranted,
+        isMercenary: false,
+      },
+    });
   }
-  return units;
+
+  await tx.bank_history.create({
+    data: {
+      from_user_id: 0,
+      to_user_id: userIdToUpdate,
+      to_user_account_type: 'HAND',
+      from_user_account_type: 'BANK',
+      date_time: new Date(),
+      gold_amount: BigInt(goldReward),
+      history_type: 'RECRUITMENT',
+      ...(recruitCitizenMultiplier !== 1
+        ? {
+            stats: {
+              citizensGranted,
+              eventCitizenMultiplier: recruitCitizenMultiplier,
+            },
+          }
+        : {}),
+    },
+  });
+}
+
+export const EXTERNAL_DAILY_CAP_ERROR =
+  'This player has reached the daily external recruitment limit.';
+export const IP_DAILY_CAP_ERROR =
+  'You have reached the daily recruitment limit for this link.';
+
+export async function getExternalRecruitmentStatus({
+  db,
+  ownerId,
+  ipAddress,
+  context,
+}: {
+  db?: PrismaClientOrTx;
+  ownerId: number;
+  ipAddress: string;
+  context?: RecruitmentContext;
+}) {
+  const client = resolveDb(db);
+  const since = await getRecruitmentWindowStart(client);
+  const ownerWhere = {
+    source: 'EXTERNAL' as const,
+    to_user: ownerId,
+    timestamp: { gte: since },
+  };
+  const config = context ? null : await getRuntimeConfig(db);
+  const dailyCap =
+    context?.externalDailyCap ?? validCap(config?.externalRecruitDailyCap, 25);
+  const perIpCap =
+    context?.externalIpDailyCap ??
+    validCap(config?.externalRecruitIpDailyCap, 5);
+  const [used, ipUsed] = await Promise.all([
+    client.recruit_history.count({ where: ownerWhere }),
+    client.recruit_history.count({
+      where: { ...ownerWhere, ip_addr: ipAddress },
+    }),
+  ]);
+  const remaining = Math.max(0, dailyCap - used);
+  const perIpRemaining = Math.max(0, Math.min(remaining, perIpCap - ipUsed));
+  const code =
+    remaining === 0
+      ? 'EXTERNAL_DAILY_CAP_REACHED'
+      : perIpRemaining === 0
+        ? 'IP_DAILY_CAP_REACHED'
+        : null;
+  return {
+    showCaptcha: code === null,
+    code,
+    remaining,
+    perIpRemaining,
+    dailyCap,
+    perIpCap,
+    resetsAt: getOTStartDate(1).toISOString(),
+  };
+}
+
+/** Public link visit: identity never changes the IP quota or reward recipient. */
+export async function performExternalRecruitment({
+  tx,
+  ownerId,
+  ipAddress,
+  context,
+}: {
+  tx: Prisma.TransactionClient;
+  ownerId: number;
+  ipAddress: string;
+  context?: RecruitmentContext;
+}) {
+  const resolvedContext = context ?? (await resolveRecruitmentContext(tx));
+  // This lock serializes the owner's total and per-IP allowances while keeping
+  // the same connection independent across different players' links.
+  await lockRecruitmentRecipient(tx, ownerId);
+  const owner = await tx.users.findUnique({
+    where: { id: ownerId },
+    select: { id: true },
+  });
+  if (!owner) throw new Error('User not found');
+  const status = await getExternalRecruitmentStatus({
+    db: tx,
+    context: resolvedContext,
+    ownerId,
+    ipAddress,
+  });
+  if (status.code === 'EXTERNAL_DAILY_CAP_REACHED')
+    throw new Error(EXTERNAL_DAILY_CAP_ERROR);
+  if (status.code === 'IP_DAILY_CAP_REACHED')
+    throw new Error(IP_DAILY_CAP_ERROR);
+  await tx.recruit_history.create({
+    data: {
+      source: 'EXTERNAL',
+      from_user: null,
+      to_user: ownerId,
+      ip_addr: ipAddress,
+      timestamp: new Date(),
+    },
+  });
+  await grantRecruitmentReward(
+    tx,
+    ownerId,
+    0,
+    resolvedContext.recruitCitizenMultiplier,
+  );
+  return { success: true };
 }

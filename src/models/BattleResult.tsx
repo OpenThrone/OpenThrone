@@ -60,7 +60,7 @@ function captureBattleActor(user: BattleActorInput): BattleActorSnapshot {
     spyBonus: user.spyBonus,
     sentryBonus: user.sentryBonus,
     units: (user.units ?? []).map(
-      ({ id, userId, type, level, quantity, isMercenary, currentHP }) => ({
+      ({
         id,
         userId,
         type,
@@ -68,10 +68,31 @@ function captureBattleActor(user: BattleActorInput): BattleActorSnapshot {
         quantity,
         isMercenary,
         currentHP,
+        forceContractId,
+        forceKind,
+        forceEquipment,
+      }) => ({
+        id,
+        userId,
+        type,
+        level,
+        quantity,
+        isMercenary,
+        currentHP,
+        ...(forceContractId
+          ? {
+              forceContractId,
+              forceKind,
+              forceEquipment: forceEquipment?.map(({ type, level }) => ({
+                type,
+                level,
+              })),
+            }
+          : {}),
       }),
     ),
     mercenaries: (user.mercenaries ?? []).map(
-      ({ id, userId, type, level, quantity, isMercenary, currentHP }) => ({
+      ({
         id,
         userId,
         type,
@@ -79,6 +100,27 @@ function captureBattleActor(user: BattleActorInput): BattleActorSnapshot {
         quantity,
         isMercenary,
         currentHP,
+        forceContractId,
+        forceKind,
+        forceEquipment,
+      }) => ({
+        id,
+        userId,
+        type,
+        level,
+        quantity,
+        isMercenary,
+        currentHP,
+        ...(forceContractId
+          ? {
+              forceContractId,
+              forceKind,
+              forceEquipment: forceEquipment?.map(({ type, level }) => ({
+                type,
+                level,
+              })),
+            }
+          : {}),
       }),
     ),
   };
@@ -86,6 +128,7 @@ function captureBattleActor(user: BattleActorInput): BattleActorSnapshot {
 
 /** A group of recovering units of one type/level. */
 interface WoundedUnitGroup {
+  forceContractId?: number;
   type: string;
   level: number;
   quantity: number;

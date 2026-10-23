@@ -44,6 +44,9 @@ export type PlayerUnit = {
   level: number;
   type: UnitType;
   quantity: number;
+  forceContractId?: number;
+  forceKind?: 'MERCENARY' | 'ALLIANCE';
+  forceEquipment?: Array<{ type: string; level: number }>;
   isMercenary: boolean;
 };
 
@@ -92,6 +95,9 @@ export type BattleUnits = {
   type: UnitType | string;
   level: number; // Required for PlayerUnit, so make it required here
   quantity: number;
+  forceContractId?: number;
+  forceKind?: 'MERCENARY' | 'ALLIANCE';
+  forceEquipment?: Array<{ type: string; level: number }>;
   isMercenary: boolean; // From UserUnit
   currentHP?: number; // Add current HP for tracking during battle
 };

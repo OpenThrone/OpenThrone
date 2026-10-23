@@ -364,7 +364,11 @@ function initializeBattleState(
         (info) => info.type === unit.type && info.level === unit.level,
       );
       unit.isMercenary = isMercenary;
-      unit.currentHP = unit.currentHP ?? unitInfo?.hp ?? 1;
+      unit.currentHP =
+        unit.currentHP ??
+        (unit.forceKind === 'MERCENARY'
+          ? (unitInfo?.hp ?? 1) * 0.8
+          : (unitInfo?.hp ?? 1));
     }
     return units || [];
   };
@@ -1362,7 +1366,8 @@ export async function distributeCasualties(params: {
         (u) =>
           u.type === unit.type &&
           u.level === unit.level &&
-          u.isMercenary === unit.isMercenary,
+          u.isMercenary === unit.isMercenary &&
+          u.forceContractId === unit.forceContractId,
       );
       const alreadyLost = lossEntry?.quantity ?? 0;
 
@@ -1374,7 +1379,8 @@ export async function distributeCasualties(params: {
             (entry) =>
               entry.type === unit.type &&
               entry.level === unit.level &&
-              entry.isMercenary === unit.isMercenary,
+              entry.isMercenary === unit.isMercenary &&
+              entry.forceContractId === unit.forceContractId,
           )
           .reduce((sum, entry) => sum + entry.quantity, 0) + alreadyLost;
       // Tiny stacks still bleed: the share cap never rounds below one unit,
@@ -1405,6 +1411,7 @@ export async function distributeCasualties(params: {
             lossEntry.quantity++;
           } else {
             lossEntry = {
+              forceContractId: unit.forceContractId,
               id: unit.id ?? 0,
               userId: unit.userId ?? 0,
               type: unit.type,
@@ -1414,7 +1421,8 @@ export async function distributeCasualties(params: {
             };
             result.Losses[side].units.push(lossEntry);
           }
-          unitHP = unitInfo.hp; // Reset HP for the next unit of the same type
+          unitHP =
+            unit.forceKind === 'MERCENARY' ? unitInfo.hp * 0.8 : unitInfo.hp; // Reset HP for the next unit of the same type
         } else {
           unitHP -= remainingDamage;
           remainingDamage = 0;
@@ -1730,12 +1738,14 @@ function finalizeBattleResult(state: BattleState): void {
     type: string;
     level: number;
     quantity: number;
+    forceContractId?: number;
     isMercenary: boolean;
   }> => {
     const wounded: Array<{
       type: string;
       level: number;
       quantity: number;
+      forceContractId?: number;
       isMercenary: boolean;
     }> = [];
     for (const entry of battleResult.Losses[side].units) {
@@ -1746,6 +1756,7 @@ function finalizeBattleResult(state: BattleState): void {
       entry.quantity -= woundedQty;
       battleResult.Losses[side].total -= woundedQty;
       wounded.push({
+        forceContractId: entry.forceContractId,
         type: entry.type,
         level: entry.level ?? 1,
         quantity: woundedQty,

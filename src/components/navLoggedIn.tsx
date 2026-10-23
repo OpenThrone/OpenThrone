@@ -51,6 +51,11 @@ const subMenus: Record<string, NavItem[]> = {
   battle: [
     { key: 'attack', href: '/battle/users', labelKey: 'battle.attack' },
     { key: 'training', href: '/battle/training', labelKey: 'battle.training' },
+    {
+      key: 'mercenaries',
+      href: '/battle/mercenaries',
+      labelKey: 'battle.mercenaries',
+    },
     { key: 'upgrades', href: '/battle/upgrades', labelKey: 'battle.upgrades' },
     {
       key: 'warHistory',

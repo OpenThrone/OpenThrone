@@ -247,3 +247,53 @@
 :global(body.reduced-motion) :is(.button, .actionIcon, .tab, .tabList) {
   transition: none;
 }
+
+/* Selection stays legible even when a race's brand palette is near-black. */
+.switchTrack.switchTrack {
+  background-color: var(--ot-surface-2);
+  border-color: var(--ot-muted);
+  color: var(--ot-body);
+  cursor: pointer;
+}
+
+.switchInput:checked + .switchTrack {
+  background-color: var(--ot-accent);
+  border-color: var(--ot-accent);
+  color: var(--ot-inset);
+}
+
+.switchThumb.switchThumb {
+  background-color: var(--ot-body);
+  border-color: var(--ot-body);
+}
+
+.switchInput:checked + .switchTrack .switchThumb {
+  background-color: var(--ot-inset);
+  border-color: var(--ot-inset);
+}
+
+.switchTrackLabel {
+  font-size: 10px;
+}
+
+.switchInput:focus-visible + .switchTrack {
+  outline: 2px solid var(--ot-accent);
+  outline-offset: 3px;
+}
+
+.switchInput:disabled + .switchTrack,
+.switchInput[data-disabled] + .switchTrack {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switchTrack,
+  .switchThumb {
+    transition: none;
+  }
+}
+
+:global(body.reduced-motion) :is(.switchTrack, .switchThumb) {
+  transition: none;
+}

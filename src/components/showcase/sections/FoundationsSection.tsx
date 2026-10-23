@@ -391,6 +391,10 @@ export default function FoundationsSection() {
               checked={agree}
               onChange={(event) => setAgree(event.currentTarget.checked)}
             />
+            <Switch label="Enabled switch" checked readOnly />
+            <Switch label="Off switch" checked={false} readOnly />
+            <Switch label="Unavailable switch (on)" checked disabled />
+            <Switch label="Unavailable switch (off)" checked={false} disabled />
             <Switch
               label="Vacation mode"
               checked={vacation}

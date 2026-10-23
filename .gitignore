@@ -20,6 +20,11 @@ cypress/snapshots/actual
 .cypress-cache/
 cypress-run.log
 
+# FigCraft design file and its captures (regenerated with `bun run design:sync`)
+/design/*.figcraft
+/design/exports/
+/design/openthrone*/
+
 # visual audit screenshots
 .ui-audit/screenshots/
 .ui-audit/eval-crops/

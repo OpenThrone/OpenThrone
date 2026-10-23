@@ -35,9 +35,12 @@ export const AllianceLatestAnnouncement = ({
   const latest = data?.items?.[0];
   if (!latest) return null;
 
+  // Keep the gap on the card itself: a wrapper around this null state would
+  // still push the Overview's About Us card down when there is no announcement.
   return (
     <GameCard
       title={t('overview.heading')}
+      mb="md"
       action={
         latest.pinned && (
           <Badge

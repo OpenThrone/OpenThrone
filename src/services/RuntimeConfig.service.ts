@@ -3,14 +3,20 @@ import {
   RUNTIME_SETTING_REGISTRY,
 } from '@/constants/runtimeSettings';
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@/lib/prisma-exports';
 
 export interface RuntimeConfig {
   inactivityRemindersEnabled?: boolean;
   inactivityAutoAnonymizeEnabled?: boolean;
   emailOutboxEnabled?: boolean;
   emailOutboxRatePerMinute?: number;
-  /** Citizens a player can gain per day by recruiting (one per recruit). */
+  /** Internal daily recruitment allowance (legacy consumer property name). */
   recruitDailyCap: number;
+  /** External link recruit attempts a player may receive per day. */
+  externalRecruitDailyCap: number;
+  /** External link recruit attempts allowed per IP and link owner per day. */
+  externalRecruitIpDailyCap: number;
+  /** External attempts one IP may make across all link owners per day. */
   /** Days of new-player battle protection after joining an era (1-60). */
   protectionDurationDays: number;
   enableAttacking: boolean;
@@ -54,9 +60,13 @@ export function invalidateRuntimeConfigCache() {
   cached = null;
 }
 
-export async function getRuntimeConfig(): Promise<RuntimeConfig> {
-  if (cached && cached.expiresAt > Date.now()) return cached.value;
-  if (pending && pendingEpoch === cacheEpoch) return pending;
+/** Transaction readers use their existing connection and never share or publish cached work. */
+export async function getRuntimeConfig(
+  db?: Pick<Prisma.TransactionClient, 'serverSetting'>,
+): Promise<RuntimeConfig> {
+  const useCache = !db;
+  if (useCache && cached && cached.expiresAt > Date.now()) return cached.value;
+  if (useCache && pending && pendingEpoch === cacheEpoch) return pending;
 
   const requestEpoch = cacheEpoch;
   let request: Promise<RuntimeConfig>;
@@ -64,7 +74,7 @@ export async function getRuntimeConfig(): Promise<RuntimeConfig> {
     try {
       // Server settings are the only stored source; feature flag rows were
       // folded into them (migration 20261019010000_feature_flags_into_settings).
-      const rows = await prisma.serverSetting.findMany({
+      const rows = await (db ?? prisma).serverSetting.findMany({
         where: {
           key: { in: [...RUNTIME_SETTING_KEYS, 'ERA_RESET_SCHEDULE'] },
         },
@@ -101,7 +111,11 @@ export async function getRuntimeConfig(): Promise<RuntimeConfig> {
         emailOutboxRatePerMinute: values[
           'email.outbox.ratePerMinute'
         ] as number,
-        recruitDailyCap: values['recruit.dailyCap'] as number,
+        recruitDailyCap: values['recruit.internalDailyCap'] as number,
+        externalRecruitDailyCap: values['recruit.dailyCap'] as number,
+        externalRecruitIpDailyCap: values[
+          'recruit.externalIpDailyCap'
+        ] as number,
         protectionDurationDays: values['era.protectionDurationDays'] as number,
         enableAttacking: values.ENABLE_ATTACKING as boolean,
         attackLevelRange: values.ATTACK_LEVEL_RANGE as number,
@@ -115,15 +129,19 @@ export async function getRuntimeConfig(): Promise<RuntimeConfig> {
         disableRegistration: values.DISABLE_REGISTRATION as boolean,
         maintenance: values.MAINTENANCE_MODE as RuntimeConfig['maintenance'],
       };
-      if (requestEpoch === cacheEpoch) {
+      if (useCache && requestEpoch === cacheEpoch) {
         const loadedAt = Date.now();
         lastGood = { value, loadedAt };
         cached = { value, expiresAt: loadedAt + CACHE_MS };
       }
       return value;
     } catch {
-      if (lastGood && Date.now() - lastGood.loadedAt <= MAX_STALE_MS) {
-        if (requestEpoch === cacheEpoch)
+      if (
+        useCache &&
+        lastGood &&
+        Date.now() - lastGood.loadedAt <= MAX_STALE_MS
+      ) {
+        if (useCache && requestEpoch === cacheEpoch)
           cached = { value: lastGood.value, expiresAt: Date.now() + 1000 };
         return lastGood.value;
       }
@@ -132,8 +150,10 @@ export async function getRuntimeConfig(): Promise<RuntimeConfig> {
       if (pending === request) pending = null;
     }
   })();
-  pending = request;
-  pendingEpoch = requestEpoch;
+  if (useCache) {
+    pending = request;
+    pendingEpoch = requestEpoch;
+  }
   return request;
 }
 

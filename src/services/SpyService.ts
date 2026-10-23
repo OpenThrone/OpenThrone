@@ -12,6 +12,7 @@ import {
   updateUserUnits,
 } from '@/services/AttackDataService';
 import { getTargetAvailability } from '@/services/AttackValidationService';
+import { hasForbiddenForceTarget } from '@/services/ForceLifecycle.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import type { UnitType } from '@/types/typings';
 import {
@@ -28,6 +29,7 @@ import {
   serializeCombatResult,
   type SpyReplay,
 } from '@/utils/combatReplay';
+import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
 import { logDebug, logError } from '@/utils/logger';
 import { createCombatRandom } from '@/utils/serverRandom';
 import {
@@ -195,6 +197,7 @@ export const SpyService = {
         };
       return await prisma.$transaction(
         async (tx) => {
+          await lockEraLifecycleShared(tx);
           // Lock both rows in id order; every check below reads the locked state.
           const firstId = Math.min(
             validatedData.attackerId,
@@ -227,6 +230,19 @@ export const SpyService = {
               code: 'DEFENDER_UNAVAILABLE',
             };
           }
+          if (
+            await hasForbiddenForceTarget(
+              tx,
+              validatedData.attackerId,
+              validatedData.defenderId,
+            )
+          )
+            return {
+              status: 'failed',
+              message:
+                'Return alliance troops before targeting a member of their alliance.',
+              code: 'ALLIANCE_FORCE_TARGET_FORBIDDEN',
+            };
           const attacker = new SpyUser(attackerUser);
           const defender = new SpyUser(defenderUser);
 

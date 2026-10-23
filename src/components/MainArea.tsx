@@ -29,6 +29,7 @@ import React, {
   useState,
 } from 'react';
 
+import { ForceDuesNotice } from '@/components/alliance/ForceDuesNotice';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import frameClasses from '@/components/game/FantasyFrame.module.css';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -358,6 +359,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
       </header>
       <AnnouncementBanner />
       <Space h="md" />
+      {authorized && <ForceDuesNotice />}
       {children}
     </div>
   );

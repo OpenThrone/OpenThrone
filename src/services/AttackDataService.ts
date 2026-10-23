@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 
 import { BattleUpgrades, ItemTypes } from '@/constants';
@@ -8,6 +9,7 @@ import { getEraParticipantWhere } from '@/utils/loginPolicy';
 import { getOTStartDate } from '@/utils/timefunctions';
 
 import { ensureActiveEra } from './Era.service';
+import { contractRoster } from './Mercenary.service';
 import {
   resolveAttackerLosses,
   resolveDefenderLosses,
@@ -22,6 +24,7 @@ const PlayerUnitSchema = z.object({
   type: z.string(),
   level: z.number().int().min(1),
   quantity: z.number().int().min(0),
+  forceContractId: z.number().int().positive().optional(),
   isMercenary: z.boolean().default(false),
 });
 const PlayerUnitArraySchema = z.array(PlayerUnitSchema);
@@ -43,10 +46,13 @@ export const getUserById = async (
 ) => {
   const validatedUserId = UserIdSchema.parse(userId);
   const db = txClient ?? prisma;
-  return await db.users.findUnique({
+  const user = await db.users.findUnique({
     where: { id: validatedUserId },
     include: {
       UserUnit: true,
+      forceContracts: {
+        where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+      },
       UserItem: true,
       UserStructureUpgrade: true,
       UserBattleUpgrade: true,
@@ -54,6 +60,20 @@ export const getUserById = async (
       permissions: { where: { revokedAt: null } },
     },
   });
+  if (!user) return null;
+  return {
+    ...user,
+    UserUnit: [
+      ...(user.UserUnit ?? []),
+      ...contractRoster(
+        (user.forceContracts ?? []).filter(
+          (contract) =>
+            (contract.eraId ?? null) === (user.currentEraId ?? null),
+        ),
+        user.wounded_units,
+      ),
+    ],
+  };
 };
 
 /**
@@ -86,7 +106,59 @@ export const updateUserUnits = async (
 ) => {
   const validatedUserId = UserIdSchema.parse(userId);
   const validatedUnits = PlayerUnitArraySchema.parse(units);
-  const activeUnits = validatedUnits.filter((unit) => unit.quantity > 0);
+  const activeUnits = validatedUnits.filter(
+    (unit) => unit.quantity > 0 && !unit.forceContractId,
+  );
+  const user = validatedUnits.some((unit) => unit.forceContractId)
+    ? await txClient.users.findUniqueOrThrow({
+        where: { id: userId },
+        select: { wounded_units: true },
+      })
+    : { wounded_units: [] };
+  const wounds = Array.isArray(user.wounded_units)
+    ? (user.wounded_units as Array<{
+        forceContractId?: number;
+        quantity?: number;
+      }>)
+    : [];
+  for (const unit of validatedUnits.filter((entry) => entry.forceContractId)) {
+    const contract = await txClient.forceContract.findFirst({
+      where: { id: unit.forceContractId, userId, status: 'ACTIVE' },
+    });
+    if (!contract) throw new Error('Active force contract not found');
+    const survivors =
+      unit.quantity +
+      wounds
+        .filter((w) => w.forceContractId === contract.id)
+        .reduce((sum, w) => sum + Number(w.quantity ?? 0), 0);
+    if (survivors > contract.survivingQuantity)
+      throw new Error('Contract survivors cannot increase');
+    const killed = contract.survivingQuantity - survivors;
+    if (killed > 0)
+      await txClient.forceEvent.create({
+        data: {
+          operationKey: `combat-loss:${randomUUID()}`,
+          contractId: contract.id,
+          actorId: userId,
+          action: 'CASUALTIES',
+          quantity: killed,
+          details: { survivors },
+        },
+      });
+    await txClient.forceContract.update({
+      where: { id: contract.id },
+      data: {
+        survivingQuantity: survivors,
+        ...(survivors === 0
+          ? {
+              status: 'DEPLETED',
+              closedAt: new Date(),
+              requestedExtensionDays: null,
+            }
+          : {}),
+      },
+    });
+  }
   const incomingUnitKeys = new Set(
     activeUnits.map((unit) => `${unit.type}:${unit.level}:${unit.isMercenary}`),
   );

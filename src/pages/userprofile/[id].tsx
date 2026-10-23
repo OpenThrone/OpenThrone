@@ -620,7 +620,7 @@ const Index = ({
             <div className={actionClasses.list}>
               <Button
                 component={Link}
-                href={`/recruit/${profile?.recruitingLink}`}
+                href={`/recruit/${profile?.recruitingLink}?mode=internal`}
                 classNames={actionClassNames}
                 leftSection={<RpgAwesomeIcon icon="double-team" />}
                 style={{
@@ -750,7 +750,7 @@ const Index = ({
               ) : (
                 <Button
                   component={Link}
-                  href={`/recruit/${profile?.recruitingLink}`}
+                  href={`/recruit/${profile?.recruitingLink}?mode=internal`}
                   classNames={actionClassNames}
                   leftSection={<RpgAwesomeIcon icon="double-team" />}
                 >

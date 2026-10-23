@@ -505,6 +505,11 @@ export function redactBattleStatsForViewer(
       turns: nonnegative(stats.turns),
     };
     out.turns = toNumber(stats.turns);
+    if (stats.netPillageGold !== undefined) {
+      out.netPillageGold = toAmount(stats.netPillageGold);
+      out.forcePillageContribution = toAmount(stats.forcePillageContribution);
+      out.goldLoanRepayment = toAmount(stats.goldLoanRepayment);
+    }
   }
   if (role === 'defender') {
     out.defense_advisory = projectDefenseAdvisoryFacts(stats);

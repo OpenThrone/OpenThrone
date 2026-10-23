@@ -15,6 +15,12 @@ vi.mock('@/constants/AutoRecruit', () => ({
     return autoRecruitState.enabled;
   },
 }));
+vi.mock('@/services/RecruitmentCaptcha.service', () => ({
+  verifyRecruitmentCaptcha: vi.fn(
+    async (token: unknown) => token !== 'invalid',
+  ),
+  isRecruitmentCaptchaRequired: () => true,
+}));
 vi.mock('@/middleware/auth', () => ({
   withAuth: (handler: unknown) => handler,
 }));
@@ -263,12 +269,14 @@ describe('handleRecruitment link-based recruiting', () => {
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it('blocks a recruiter who already claimed 25 recruits today across all targets', async () => {
+  it('blocks a recruiter who already claimed 250 recruits today across all targets', async () => {
     const tx = setupUsers(
       makeTx({
         // Pair count is zero; only the recruiter's all-target total is at the cap.
         countFor: (where) =>
-          where.to_user === RECRUITER_ID && where.from_user?.not === 0 ? 25 : 0,
+          where.to_user === RECRUITER_ID && where.from_user?.not === 0
+            ? 250
+            : 0,
       }),
     );
     const res = await run({ recruitedUserId: LINK }, { session });
@@ -282,7 +290,7 @@ describe('handleRecruitment link-based recruiting', () => {
     expect(tx.users.update).not.toHaveBeenCalled();
   });
 
-  it('blocks a link owner who already received 25 recruits today from all senders', async () => {
+  it('does not globally cap an internal target', async () => {
     const tx = setupUsers(
       makeTx({
         countFor: (where) =>
@@ -293,13 +301,8 @@ describe('handleRecruitment link-based recruiting', () => {
     );
     const res = await run({ recruitedUserId: LINK }, { session });
 
-    expect(res.status).toHaveBeenCalledWith(409);
-    expect(res.json).toHaveBeenCalledWith({
-      error: 'This player has reached the daily recruitment limit.',
-      code: 'TARGET_DAILY_CAP_REACHED',
-    });
-    expect(tx.recruit_history.create).not.toHaveBeenCalled();
-    expect(tx.users.update).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(tx.recruit_history.create).toHaveBeenCalled();
   });
 
   it('allows a recruit one below both daily caps', async () => {
@@ -307,9 +310,9 @@ describe('handleRecruitment link-based recruiting', () => {
       makeTx({
         countFor: (where) =>
           where.to_user === RECRUITER_ID && where.from_user?.not === 0
-            ? 24
+            ? 249
             : where.to_user === undefined && where.from_user === LINK_OWNER_ID
-              ? 24
+              ? 249
               : 0,
       }),
     );
@@ -320,6 +323,20 @@ describe('handleRecruitment link-based recruiting', () => {
       where: { id: RECRUITER_ID },
       data: { gold: { increment: 250 } },
     });
+  });
+
+  it('rejects an invalid server captcha before granting internal rewards', async () => {
+    const tx = setupUsers(makeTx());
+    const res = await run(
+      { recruitedUserId: LINK, captchaToken: 'invalid' },
+      { session },
+    );
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'CAPTCHA_FAILED' }),
+    );
+    expect(tx.users.update).not.toHaveBeenCalled();
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
   it('keeps the five-per-day link limit', async () => {

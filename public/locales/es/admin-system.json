@@ -41,7 +41,9 @@
       "account.inactivity.autoAnonymizeEnabled": "Anonimización automática por inactividad",
       "era.protectionDurationDays": "Duración de la protección para nuevos jugadores en días (1-60; la protección también termina en el nivel 10, al alcanzar el umbral de población o cuando el jugador ataca a un jugador sin protección)",
       "ENABLE_MESSAGING": "Mensajes entre jugadores (si está desactivado, solo los administradores y moderadores pueden enviar mensajes)",
-      "recruit.dailyCap": "Límite diario de reclutamiento (ciudadanos que un jugador puede ganar al día reclutando; también fija el límite de población de la protección de novato)"
+      "recruit.dailyCap": "Límite de enlaces de reclutamiento externos (usos diarios del enlace de este jugador; también afecta el límite de población de protección para nuevos jugadores)",
+      "recruit.internalDailyCap": "Límite de reclutamiento interno (reclutas que un jugador puede obtener al día)",
+      "recruit.externalIpDailyCap": "Límite de enlaces externos por IP (usos diarios del enlace del mismo jugador desde una IP)"
     },
     "resetBeforeLogin": "Reiniciar la era actual antes de habilitar los inicios de sesión"
   },

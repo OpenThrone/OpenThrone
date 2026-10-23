@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "OpenThrone",
-    "copyright": "© Copyright {{year}} {{title}}."
+    "copyright": "\u00a9 Copyright {{year}} {{title}}."
   },
   "about": {
     "title": "About The Project",
@@ -20,7 +20,7 @@
     "openSource": "Open Source",
     "originStoryTitle": "Origin Story",
     "originStory": "OpenThrone is a persistent strategy game inspired by the spirit of DarkThrone, with kingdom building, army management, and strategic combat.",
-    "modernStack": "OpenThrone began as a fork of Moppler’s Dark Curse project. DasTacoMann has since developed it on a modern Next.js and React stack.",
+    "modernStack": "OpenThrone began as a fork of Moppler\u2019s Dark Curse project. DasTacoMann has since developed it on a modern Next.js and React stack.",
     "notAffiliated": "OpenThrone is not affiliated with nor endorsed by the original DarkThrone project or its creators.",
     "serverStatus": "The game is currently in active development. The server you are playing on is a Live Development Server.",
     "mayReset": "The game may be reset often, sometimes without notice.",
@@ -35,13 +35,14 @@
     "shareIdeasGitHub": "You can submit suggestions through the issue tracker. Suggestions are reviewed alongside development priorities; not every suggestion will be implemented.",
     "joinDiscord": "Join our Discord",
     "viewGitHub": "View on GitHub",
-    "licensed": "OpenThrone is licensed under MIT License. Copyright © 2023.",
+    "licensed": "OpenThrone is licensed under MIT License. Copyright \u00a9 2023.",
     "development": "Development",
     "developmentInfo": "OpenThrone is developed by DasTacoMann and operated by AIOXperts IT Solutions LLC, which funds its development and provides hosting.",
     "beginYourReign": "Begin Your Reign",
     "learnToPlay": "Learn to Play"
   },
   "buttons": {
+    "register": "Register",
     "submit": "Submit",
     "cancel": "Cancel",
     "confirm": "Confirm",
@@ -240,6 +241,12 @@
     "failedToFetchOnlinePlayerInfo": "Failed to fetch online player info"
   },
   "recruit": {
+    "externalAllowance": "This kingdom has {{remaining}} of {{limit}} external recruits left today. This connection can recruit {{ipRemaining}} more, up to {{ipLimit}} per kingdom each day.",
+    "submit": "Recruit 1 citizen",
+    "ipCapReached": "This connection has used its recruitment allowance for this kingdom today. Try again after the daily reset.",
+    "externalCapReached": "This kingdom has used its external recruitment allowance today. Try again after the daily reset.",
+    "externalCompleted": "Recruitment successful for {{name}}.",
+    "forTheirKingdom": "Recruit 1 citizen for {{name}}. No account is needed.",
     "title": "Recruiter",
     "dontHaveAccount": "Don't have an account? Sign up now to join the fun!",
     "antiSpamPolicy": "Recruiting is intended to be used with your friends and family. Spam of any kind is not permitted and will result in suspension or ban of your account. Further violations may result in a ban of your IP address. Please be respectful of others and only recruit with permission.",
@@ -252,16 +259,16 @@
     "selfRecruit": "You cannot recruit with your own link.",
     "recruiterCapReached": "You have reached your daily recruitment limit. Come back tomorrow.",
     "targetCapReached": "This player has reached their daily recruitment limit.",
-    "pairLimitReached": "You have already recruited with this link 5 times today.",
+    "pairLimitReached": "You have used your daily recruitment allowance with this player. Try again after the daily reset.",
     "noMoreTargets": "There are no more players you can recruit today.",
     "autoRecruitStopped": "Auto-recruit stopped: {{reason}}",
     "temporaryError": "Recruiting is temporarily unavailable. Please try again later.",
-    "completed": "Recruitment successful. Your kingdom gained 1 citizen.",
+    "completed": "Recruitment successful. Your kingdom gained 1 citizen and 250 gold.",
     "retry": "Try again",
     "verificationExpired": "Verification expired. Please try again.",
     "verificationFailed": "Verification failed. Please try again.",
     "checkingEligibility": "Checking recruitment eligibility",
-    "forYourKingdom": "Complete verification to recruit 1 citizen into your kingdom.",
+    "forYourKingdom": "Recruit 1 citizen and 250 gold for your kingdom.",
     "signInToRecruit": "Sign in to recruit 1 citizen into your kingdom.",
     "linkFrom": "Recruitment link from {{name}}",
     "pairProgress": "Recruited with {{name}} {{used}} of {{limit}} times today.",
@@ -406,8 +413,8 @@
   "profileActions": {
     "signIn": "Sign in to interact with this player.",
     "selfTarget": "You cannot target your own kingdom.",
-    "configError": "Mission settings could not load. Retrying…",
-    "loading": "Loading mission settings…",
+    "configError": "Mission settings could not load. Retrying\u2026",
+    "loading": "Loading mission settings\u2026",
     "targetUnavailable": "This player is unavailable for missions or has not returned since this era began.",
     "outOfRange": "This player is outside your mission range (within {{range}} levels of your own).",
     "attackingDisabled": "Attacking is currently disabled by the server.",
@@ -551,7 +558,7 @@
   "eraResetNotice": {
     "scheduled": "Era will reset on {{local}} OT Time ({{utc}})",
     "started": "Era reset in progress",
-    "scope": "Gameplay progress will return to the Era’s starting configuration. Your account will remain.",
+    "scope": "Gameplay progress will return to the Era\u2019s starting configuration. Your account will remain.",
     "closed": "Player logins are temporarily closed until the reset completes."
   },
   "artworkPreview": {
@@ -639,7 +646,7 @@
     "title": "File a Report",
     "formTitle": "Report a player",
     "reportedUser": "Player",
-    "searchUsers": "Type a player name…",
+    "searchUsers": "Type a player name\u2026",
     "category": "Reason",
     "categoryPlaceholder": "Choose a reason",
     "subject": "Subject (optional)",
@@ -666,5 +673,12 @@
       "ALLIANCE_ABUSE": "Alliance abuse",
       "OTHER": "Other"
     }
+  },
+  "forceDues": {
+    "overdue_one": "You have {{count}} overdue alliance obligation.",
+    "overdue_other": "You have {{count}} overdue alliance obligations.",
+    "reminder_one": "You have {{count}} alliance obligation due within 24 hours.",
+    "reminder_other": "You have {{count}} alliance obligations due within 24 hours.",
+    "review": "Review dues and fines"
   }
 }

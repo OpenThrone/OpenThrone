@@ -9,6 +9,9 @@ export type SpyRosterUnit = {
   type: UnitType;
   level: number;
   quantity: number;
+  forceContractId?: number;
+  forceKind?: 'MERCENARY' | 'ALLIANCE';
+  forceEquipment?: Array<{ type: string; level: number }>;
   isMercenary?: boolean;
 };
 
@@ -47,6 +50,7 @@ export type SpyMissionUser = Omit<
 };
 
 export type SpyUnitLoss = {
+  forceContractId?: number;
   type: UnitType;
   level: number;
   quantity: number;

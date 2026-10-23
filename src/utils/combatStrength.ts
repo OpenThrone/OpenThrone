@@ -8,6 +8,9 @@ interface CombatStrengthUnit {
   type: string;
   level: number;
   quantity: number;
+  forceContractId?: number;
+  forceKind?: 'MERCENARY' | 'ALLIANCE';
+  forceEquipment?: Array<{ type: string; level: number }>;
   isMercenary?: boolean;
   currentHP?: number;
 }
@@ -167,6 +170,7 @@ function allocate(
     const isMercenary = mercenary || unit.isMercenary === true;
     if (unit.currentHP !== undefined && unit.currentHP < info.hp) {
       partial.push({
+        ...unit,
         type: unit.type,
         level: unit.level,
         quantity: 1,
@@ -175,11 +179,12 @@ function allocate(
       });
       count--;
     }
-    const key = `${unit.type}:${unit.level}:${isMercenary}`;
+    const key = `${unit.type}:${unit.level}:${isMercenary}:${unit.forceContractId ?? 0}`;
     const existing = roster.get(key);
     if (existing) existing.quantity += count;
     else if (count)
       roster.set(key, {
+        ...unit,
         type: unit.type,
         level: unit.level,
         quantity: count,
@@ -207,7 +212,12 @@ function allocate(
       (entry) => entry.type === unit.type && entry.level === unit.level,
     )!;
     const baseStats = statsOf(info);
+    const hp =
+      unit.forceKind === 'MERCENARY' ? Math.max(1, info.hp * 0.8) : info.hp;
     groups.push({
+      forceContractId: unit.forceContractId,
+      forceKind: unit.forceKind,
+      forceEquipment: unit.forceEquipment,
       type: unit.type,
       level: unit.level,
       quantity: count,
@@ -218,8 +228,8 @@ function allocate(
           : baseStats.RangedAtkPower > 0
             ? 'RANGED'
             : 'MELEE',
-      maxHP: info.hp,
-      currentHP: unit.currentHP ?? info.hp,
+      maxHP: hp,
+      currentHP: Math.min(unit.currentHP ?? hp, hp),
       baseStats,
       itemStats: zeroStats(),
       upgradeStats: zeroStats(),
@@ -228,6 +238,22 @@ function allocate(
     });
   }
 
+  for (const group of groups) {
+    if (!group.forceContractId) continue;
+    for (const kit of group.forceEquipment ?? []) {
+      const item = ItemTypes.find(
+        (entry) =>
+          entry.usage === type &&
+          entry.type === kit.type &&
+          entry.level === kit.level,
+      );
+      if (!item) continue;
+      for (const key of STAT_KEYS) group.itemStats[key] += item[key] ?? 0;
+      group.equippedSlots.add(kit.type);
+      if (kit.type === 'WEAPON' && (item.RangedAtkPower ?? 0) > 0)
+        group.combatRole = 'RANGED';
+    }
+  }
   const inventory = new Map<string, number>();
   for (const item of user.items ?? []) {
     if (item.usage !== type) continue;
@@ -248,7 +274,11 @@ function allocate(
       let available = inventory.get(`${item.type}:${item.level}`) ?? 0;
       for (let index = 0; available > 0 && index < groups.length; index++) {
         const candidate = groups[index]!;
-        if (candidate.level < item.level || candidate.equippedSlots.has(slot))
+        if (
+          candidate.forceContractId ||
+          candidate.level < item.level ||
+          candidate.equippedSlots.has(slot)
+        )
           continue;
         const covered = Math.min(candidate.quantity, available);
         const group = splitCovered(groups, index, covered);
@@ -281,7 +311,11 @@ function allocate(
     let available = (upgradeInventory.get(upgrade.level) ?? 0) * coverage;
     for (let index = 0; available > 0 && index < groups.length; index++) {
       const candidate = groups[index]!;
-      if (candidate.level < (upgrade.minUnitLevel ?? 0)) continue;
+      if (
+        candidate.forceContractId ||
+        candidate.level < (upgrade.minUnitLevel ?? 0)
+      )
+        continue;
       const covered = Math.min(candidate.quantity, available);
       const group = splitCovered(groups, index, covered);
       for (const key of STAT_KEYS)
@@ -300,7 +334,13 @@ function allocate(
         (group.baseStats[key] +
           group.itemStats[key] +
           group.upgradeStats[key]) *
-        multiplier;
+        multiplier *
+        (group.forceKind === 'MERCENARY'
+          ? (type === 'OFFENSE' || type === 'SPY') ===
+            (key === 'MeleeAtkPower' || key === 'RangedAtkPower')
+            ? 1.25
+            : 0.8
+          : 1);
   }
   if (
     !groups.length &&

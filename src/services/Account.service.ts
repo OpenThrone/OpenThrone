@@ -704,7 +704,7 @@ export class AccountService {
           },
         });
 
-        await resetUserRelations(tx, userId, startSettings);
+        await resetUserRelations(tx, userId, startSettings, 'ACCOUNT');
         await tx.accountResetHistory.create({
           data: { userId, resetDate: new Date() },
         });

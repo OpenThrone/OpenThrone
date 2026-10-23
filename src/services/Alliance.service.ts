@@ -31,6 +31,9 @@ import {
   writeOffAllianceLoans,
 } from '@/services/AllianceLoan.service';
 import { lockAllianceChatRooms } from '@/services/chatRoomGuards';
+import { returnMemberForcesInTx } from '@/services/ForceLifecycle.service';
+import { settleForcePillageInTx } from '@/services/ForcePillage.service';
+import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { getLevelFromXP } from '@/utils/utilities';
@@ -371,6 +374,7 @@ export class AllianceService {
 
     try {
       return await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
         await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
 
         await this.validateAllianceCreation(tx, userId, validatedData);
@@ -784,6 +788,84 @@ export class AllianceService {
     allianceId: number,
     payoutLeaderId: number,
   ) {
+    const forceMembers = await tx.alliance_memberships.findMany({
+      where: { alliance_id: allianceId },
+      select: { user_id: true },
+      orderBy: { user_id: 'asc' },
+    });
+    for (const member of forceMembers)
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${member.user_id} FOR UPDATE`;
+    await settleForcePillageInTx(tx, allianceId);
+    const forceRecords = await tx.forceContract.findMany({
+      where: { allianceId },
+      include: { events: true },
+    });
+    const forceEvents = await tx.forceEvent.findMany({
+      where: {
+        OR: [
+          { allianceId },
+          { contractId: { in: forceRecords.map((contract) => contract.id) } },
+          { details: { path: ['allianceId'], equals: allianceId } },
+        ],
+      },
+    });
+    const reserves = await tx.forceReserve.findMany({ where: { allianceId } });
+    const obligations = await tx.forceObligation.findMany({
+      where: { allianceId },
+    });
+    const duesRules = await tx.forceDuesRule.findMany({
+      where: { allianceId },
+    });
+    const policies = await tx.allianceForcePolicy.findMany({
+      where: { allianceId },
+    });
+    if (
+      forceRecords.length ||
+      reserves.length ||
+      policies.length ||
+      obligations.length ||
+      duesRules.length
+    ) {
+      await tx.forceLedgerArchive.create({
+        data: {
+          allianceId,
+          snapshot: JSON.parse(
+            JSON.stringify(
+              {
+                reason: 'ALLIANCE_DISSOLVED',
+                contracts: forceRecords,
+                events: forceEvents,
+                reserves,
+                policies,
+                obligations,
+                duesRules,
+              },
+              (_, value) =>
+                typeof value === 'bigint' ? value.toString() : value,
+            ),
+          ),
+        },
+      });
+      const borrowerIds = [
+        ...new Set(forceRecords.map((contract) => contract.userId)),
+      ].sort((a, b) => a - b);
+      for (const userId of borrowerIds)
+        await returnMemberForcesInTx(tx, allianceId, userId);
+      await tx.forceEvent.deleteMany({
+        where: {
+          OR: [
+            { allianceId },
+            { contractId: { in: forceRecords.map((contract) => contract.id) } },
+            { details: { path: ['allianceId'], equals: allianceId } },
+          ],
+        },
+      });
+      await tx.forceObligation.deleteMany({ where: { allianceId } });
+      await tx.forceDuesRule.deleteMany({ where: { allianceId } });
+      await tx.forceContract.deleteMany({ where: { allianceId } });
+      await tx.forceReserve.deleteMany({ where: { allianceId } });
+      await tx.allianceForcePolicy.deleteMany({ where: { allianceId } });
+    }
     // Repayments still parked on loans belong in the treasury first; then
     // the treasury is split among the members and loans are written off.
     await settleLoanCreditsInTx(tx, allianceId);
@@ -856,6 +938,7 @@ export class AllianceService {
     ) => Promise<void>,
   ) {
     const { memberIds, roomIds } = await prisma.$transaction(async (tx) => {
+      await lockEraLifecycleShared(tx);
       await lockAllianceChatRooms(tx, allianceId);
       await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${allianceId} FOR UPDATE`;
       const alliance = await tx.alliances.findUnique({
@@ -891,6 +974,7 @@ export class AllianceService {
   ) {
     try {
       const { memberIds, roomIds } = await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
         await lockAllianceChatRooms(tx, allianceId);
         await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${allianceId} FOR UPDATE`;
 
@@ -942,6 +1026,7 @@ export class AllianceService {
 
     try {
       const membership = await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
         await lockAllianceThenUsers(tx, validatedData.allianceId, [userId]);
 
         // Check if user is already in THIS alliance
@@ -1047,6 +1132,7 @@ export class AllianceService {
 
     try {
       const result = await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
         await lockAllianceChatRooms(tx, validatedData.allianceId);
         // Serialize with transferLeadership so the new leader cannot leave
         // between its membership check and the leader change.
@@ -1073,6 +1159,7 @@ export class AllianceService {
           );
         }
 
+        await returnMemberForcesInTx(tx, validatedData.allianceId, userId);
         // Remove membership
         await tx.alliance_memberships.delete({
           where: {
@@ -1111,6 +1198,7 @@ export class AllianceService {
 
     try {
       const result = await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
         await lockAllianceChatRooms(tx, allianceId);
         // Same alliance-row lock as transferLeadership (see leaveAlliance).
         await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${allianceId} FOR UPDATE`;
@@ -1156,6 +1244,7 @@ export class AllianceService {
           throw new Error('You can only kick members ranked below you');
         }
 
+        await returnMemberForcesInTx(tx, allianceId, validatedData.memberId);
         await tx.alliance_memberships.delete({
           where: { id: memberToKick.id },
         });
@@ -1189,6 +1278,7 @@ export class AllianceService {
 
     try {
       return await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
         await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${allianceId} FOR UPDATE`;
 
         const actor = await this.getActor(tx, allianceId, actorId);
@@ -1262,6 +1352,7 @@ export class AllianceService {
 
     try {
       const updatedAlliance = await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
         await lockAllianceThenUsers(tx, allianceId, [
           currentLeaderId,
           validatedData.newLeaderId,
@@ -1485,6 +1576,7 @@ export class AllianceService {
 
     try {
       return await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
         await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${allianceId} FOR UPDATE`;
 
         const actor = await this.getActor(tx, allianceId, creatorId);
@@ -1564,6 +1656,7 @@ export class AllianceService {
 
     try {
       return await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
         await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${allianceId} FOR UPDATE`;
 
         const actor = await this.getActor(tx, allianceId, updaterId);
@@ -1652,6 +1745,7 @@ export class AllianceService {
 
     try {
       return await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
         await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${allianceId} FOR UPDATE`;
 
         const actor = await this.getActor(tx, allianceId, actorId);
@@ -1723,6 +1817,7 @@ export class AllianceService {
   ) {
     try {
       return await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
         await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${allianceId} FOR UPDATE`;
 
         const actor = await this.getActor(tx, allianceId, deleterId);
@@ -1885,6 +1980,7 @@ export class AllianceService {
       }
 
       await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
         await lockAllianceThenUsers(tx, target.alliance_id, [target.user_id]);
         await tx.$queryRaw`SELECT id FROM alliance_join_requests WHERE id = ${requestId} FOR UPDATE`;
 
@@ -2221,6 +2317,7 @@ export class AllianceService {
       return { message: 'Invitation declined' };
     }
     await prisma.$transaction(async (tx) => {
+      await lockEraLifecycleShared(tx);
       await lockAllianceThenUsers(tx, invite.alliance_id, [userId]);
       const updated = await tx.alliance_join_requests.updateMany({
         where: { id: inviteId, status: 'PENDING', kind: 'INVITE' },

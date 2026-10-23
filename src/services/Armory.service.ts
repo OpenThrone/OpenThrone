@@ -1,12 +1,13 @@
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 
 import { ItemTypes } from '@/constants';
 import { applyEventDiscount } from '@/constants/gameEvents';
-import { UnitTypes } from '@/constants/Units';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services/AttackDataService';
 import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
+import { MercenaryService } from '@/services/Mercenary.service';
 import { updateUserAndBankHistory } from '@/services/User.service';
 import type { Item } from '@/types/typings';
 import { discountedItemCost, slotFloorCost } from '@/utils/armoryPricing';
@@ -471,192 +472,34 @@ export class ArmoryService {
     level: number;
     quantity: number;
   }): Promise<MercenaryOperationResult> {
-    const validatedData = HireMercenarySchema.parse(data);
-    const { userId, unitType, level, quantity } = validatedData;
-
-    try {
-      // Use a transaction to update gold, mercenaries and create bank history atomically
-      const result = await prisma.$transaction(async (tx) => {
-        await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
-
-        // Read user inside transaction for consistency
-        const user = await getUserById(userId, tx);
-        if (!user) {
-          throw new Error('User not found');
-        }
-
-        const unit = UnitTypes.find(
-          (u) => u.type === unitType && u.level === level,
-        );
-        if (!unit) {
-          throw new Error('Invalid unit type or level');
-        }
-
-        // Check fort level requirement for mercenaries
-        const requiredFortLevel = 5 + (level - 1) * 3;
-        if (user.fort_level < requiredFortLevel) {
-          throw new Error(
-            `Fort level too low. Requires fort level ${requiredFortLevel} for level ${level} mercenaries.`,
-          );
-        }
-
-        // Calculate cost with user's price bonus
-        const uModel = new UserModel(user);
-        const unitBaseCost =
-          unit.cost - Math.ceil(((uModel.priceBonus ?? 0) / 100) * unit.cost);
-        const totalCost = BigInt(Math.ceil(unitBaseCost * quantity));
-
-        if (BigInt(user.gold) < totalCost) {
-          throw new Error('Insufficient gold');
-        }
-
-        // Prepare new mercenary entry
-        const currentMercs = (user.mercenaries as MercenaryData[]) || [];
-        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        const newMerc = { type: unitType, level, quantity, expiresAt };
-        const updatedMercs = [...currentMercs, newMerc];
-
-        // Update user gold and mercenaries in transaction
-        await tx.users.update({
-          where: { id: userId },
-          data: {
-            gold: { decrement: totalCost },
-            mercenaries: updatedMercs,
-          },
-        });
-
-        // Create bank history entry in transaction
-        await tx.bank_history.create({
-          data: {
-            gold_amount: totalCost,
-            from_user_id: userId,
-            from_user_account_type: 'HAND',
-            to_user_id: 0,
-            to_user_account_type: 'BANK',
-            date_time: new Date().toISOString(),
-            history_type: 'SALE',
-            stats: { type: 'HIRE_MERCENARY', unitType, level, quantity },
-          },
-        });
-
-        return {
-          updatedMercs,
-          remainingGold: (BigInt(user.gold) - totalCost).toString(),
-          cost: totalCost.toString(),
-          expiresAt,
-        };
-      });
-
-      return {
-        message: 'Mercenary hired successfully',
-        mercenaries: result.updatedMercs,
-        remainingGold: result.remainingGold,
-        cost: result.cost,
-        expiresAt: result.expiresAt,
-      };
-    } catch (error: any) {
-      logError('Error hiring mercenary', {
-        userId,
-        unitType,
-        level,
-        quantity,
-        error,
-      });
-      throw error;
-    }
+    const command = HireMercenarySchema.parse(data);
+    const contract = await MercenaryService.hire({
+      ...command,
+      type: command.unitType,
+      termDays: 1,
+      operationId: randomUUID(),
+    } as Parameters<typeof MercenaryService.hire>[0]);
+    return {
+      message: 'Mercenary contract hired',
+      mercenaries: [
+        {
+          type: contract.type,
+          level: contract.level,
+          quantity: contract.survivingQuantity,
+          expiresAt: contract.expiresAt!,
+        },
+      ],
+    };
   }
 
-  /**
-   * Dismisses mercenaries for a user
-   */
   static async dismissMercenary(data: {
     userId: number;
     unitType: string;
     level: number;
     quantity: number;
   }): Promise<MercenaryOperationResult> {
-    const validatedData = DismissMercenarySchema.parse(data);
-    const { userId, unitType, level, quantity } = validatedData;
-
-    try {
-      const result = await prisma.$transaction(async (tx) => {
-        await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
-
-        const user = await getUserById(userId, tx);
-        if (!user) {
-          throw new Error('User not found');
-        }
-
-        const unit = UnitTypes.find(
-          (u) => u.type === unitType && u.level === level,
-        );
-        if (!unit) {
-          throw new Error('Invalid unit type or level');
-        }
-
-        const currentMercs = (user.mercenaries as MercenaryData[]) || [];
-        let totalAvailable = 0;
-        for (const merc of currentMercs) {
-          if (merc.type === unitType && merc.level === level) {
-            totalAvailable += merc.quantity;
-          }
-        }
-        if (totalAvailable < quantity) {
-          throw new Error('Insufficient mercenaries to dismiss');
-        }
-
-        const uModel = new UserModel(user);
-        const unitCost = BigInt(
-          discountedItemCost(unit.cost, uModel.priceBonus ?? 0),
-        );
-        const originalCost = unitCost * BigInt(quantity);
-        const refund = originalCost / BigInt(2); // 50% refund
-
-        // Update mercenaries: subtract quantity across matching entries
-        let remainingToDismiss = quantity;
-        const updatedMercs = currentMercs.filter((merc) => {
-          if (
-            merc.type === unitType &&
-            merc.level === level &&
-            remainingToDismiss > 0
-          ) {
-            const subtract = Math.min(merc.quantity, remainingToDismiss);
-            merc.quantity -= subtract;
-            remainingToDismiss -= subtract;
-            if (merc.quantity <= 0) {
-              return false; // Remove if zero or negative
-            }
-            return true;
-          }
-          return true;
-        });
-
-        await tx.users.update({
-          where: { id: userId },
-          data: {
-            gold: { increment: refund },
-            mercenaries: updatedMercs,
-          },
-        });
-
-        return { updatedMercs, refund };
-      });
-
-      return {
-        message: 'Mercenary dismissed successfully',
-        mercenaries: result.updatedMercs,
-        addedGold: result.refund.toString(),
-      };
-    } catch (error: any) {
-      logError('Error dismissing mercenary', {
-        userId,
-        unitType,
-        level,
-        quantity,
-        error,
-      });
-      throw error;
-    }
+    DismissMercenarySchema.parse(data);
+    throw new Error('Dismiss a specific contract from the mercenary barracks');
   }
 
   /**

@@ -41,7 +41,9 @@
       "account.inactivity.autoAnonymizeEnabled": "Automatic inactivity anonymization",
       "era.protectionDurationDays": "New-player protection duration in days (1-60; protection also ends at level 10, at the population threshold, or when the player attacks an unprotected player)",
       "ENABLE_MESSAGING": "Player messaging (when off, only administrators and moderators can send messages)",
-      "recruit.dailyCap": "Daily recruiting cap (citizens a player can gain per day by recruiting; also sets the new-player protection population limit)"
+      "recruit.dailyCap": "External link recruitment cap (times this player's link may be used per day; also affects the new-player protection population limit)",
+      "recruit.internalDailyCap": "Internal recruitment cap (recruits a player may claim per day)",
+      "recruit.externalIpDailyCap": "External link per-IP cap (times one IP may use the same player's link per day)"
     },
     "resetBeforeLogin": "Reset current era before opening logins"
   },

@@ -28,6 +28,6 @@ export POSTGRES_URL_NON_POOLING="$POSTGRES_PRISMA_URL"
 # Combat replays are signed; a fixed test-only key keeps runs reproducible.
 export JWT_SECRET=integration-tests-only
 
-bun --no-env-file x prisma migrate deploy >/dev/null
+bun --no-env-file x prisma migrate deploy --config prisma/integration.config.ts >/dev/null
 if [ "$#" -eq 0 ]; then set -- test/integration; fi
 bun --no-env-file --config=test/integration/bunfig.toml test --timeout 600000 "$@"
