@@ -1,11 +1,11 @@
-import { Badge, Button, Group, SimpleGrid, Stack, Text } from '@mantine/core';
+import { Button, Group, SimpleGrid, Stack, Text } from '@mantine/core';
 import type { GetServerSideProps, InferGetServerSidePropsType } from 'next';
 import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { useTranslation } from 'next-i18next';
 
+import { AllianceCard } from '@/components/alliance/AllianceCard';
 import { MyAllianceInvites } from '@/components/alliance/AllianceInvites';
-import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import { MAX_ALLIANCE_MEMBERSHIPS } from '@/constants/alliances';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
@@ -19,6 +19,10 @@ type MyAlliance = {
   roleName: string;
   isLeader: boolean;
   memberCount: number;
+  avatar: string | null;
+  bannerimg: string | null;
+  motto: string | null;
+  gold: string;
 };
 
 /** Loads the signed-in player's alliances; visitors are sent to Browse. */
@@ -54,6 +58,10 @@ export const getServerSideProps: GetServerSideProps<{
     roleName: m.role?.name ?? 'Member',
     isLeader: m.alliance.leader_id === userId,
     memberCount: m.alliance._count.members,
+    avatar: m.alliance.avatar,
+    bannerimg: m.alliance.bannerimg,
+    motto: m.alliance.motto,
+    gold: String(m.alliance.gold_in_bank),
   }));
 
   return { props: { ...translations, myAlliances } };
@@ -111,33 +119,22 @@ export default function AlliancesIndex({
         ) : (
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
             {myAlliances.map((alliance) => (
-              <GameCard key={alliance.id} title={alliance.name}>
-                <Stack gap="sm">
-                  <Group gap="xs">
-                    {alliance.isLeader && (
-                      <Badge color="yellow" variant="filled">
-                        {t('mine.leader')}
-                      </Badge>
-                    )}
-                    {/* The leader holds the alliance itself, not a rank. */}
-                    {!alliance.isLeader && (
-                      <Badge variant="light">
-                        {t('mine.role', { role: alliance.roleName })}
-                      </Badge>
-                    )}
-                  </Group>
-                  <Text size="sm">
-                    {t('mine.members', { count: alliance.memberCount })}
-                  </Text>
-                  <Button
-                    component={Link}
-                    href={`/alliances/${alliance.id}`}
-                    variant="default"
-                  >
-                    {t('mine.open')}
-                  </Button>
-                </Stack>
-              </GameCard>
+              <AllianceCard
+                key={alliance.id}
+                id={alliance.id}
+                name={alliance.name}
+                description={alliance.motto}
+                imgsrc={alliance.avatar}
+                bannerimgsrc={alliance.bannerimg}
+                members={alliance.memberCount}
+                gold={alliance.gold}
+                isLeader={alliance.isLeader}
+                roleName={alliance.roleName}
+                userMembership
+                joinText={undefined}
+                joinMode={undefined}
+                onJoin={undefined}
+              />
             ))}
           </SimpleGrid>
         )}

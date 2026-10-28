@@ -58,6 +58,22 @@ getFriendTransferHistory = serviceModule.getFriendTransferHistory;
 getPendingFriendTransfers = serviceModule.getPendingFriendTransfers;
 cancelFriendTransfer = serviceModule.cancelFriendTransfer;
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// A transfer participant row as the service reads it after locking. Defaults
+// to a fully unlocked, 30-day-old Meat Market player (economy level 6).
+const participantRow = (
+  id: number,
+  overrides: Record<string, unknown> = {},
+) => ({
+  id,
+  race: 'HUMAN',
+  fort_level: 20,
+  economy_level: 6,
+  created_at: new Date(Date.now() - 30 * DAY_MS),
+  ...overrides,
+});
+
 describe('FriendTransferService', () => {
   let mockTx: TransactionClient;
   let mockConfig: any;
@@ -79,6 +95,11 @@ describe('FriendTransferService', () => {
       .mockResolvedValue({ _sum: { gold_amount: null } });
     mockPrisma.accountStatusHistory.findFirst = vi.fn().mockResolvedValue(null);
     mockPrisma.users.update = vi.fn();
+    // Phase 1 (#205): unlocked, 30-day-old participants and no recent combat.
+    mockPrisma.users.findMany = vi
+      .fn()
+      .mockResolvedValue([participantRow(1), participantRow(2)]);
+    mockPrisma.attack_log.findFirst = vi.fn().mockResolvedValue(null);
 
     // Default $transaction implementation: call the callback with the mockPrisma as the tx
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
@@ -132,8 +153,18 @@ describe('FriendTransferService', () => {
       expect(mockPrisma.social.findFirst).toHaveBeenCalledWith({
         where: {
           OR: [
-            { playerId: 1, friendId: 2, status: 'accepted' },
-            { playerId: 2, friendId: 1, status: 'accepted' },
+            {
+              playerId: 1,
+              friendId: 2,
+              relationshipType: 'FRIEND',
+              status: 'accepted',
+            },
+            {
+              playerId: 2,
+              friendId: 1,
+              relationshipType: 'FRIEND',
+              status: 'accepted',
+            },
           ],
         },
       });
@@ -226,22 +257,28 @@ describe('FriendTransferService', () => {
       expect(mockPrisma.users.update).not.toHaveBeenCalled();
     });
 
-    it('should handle zero fee percentage correctly', async () => {
-      mockConfigService.calculateTransferFee.mockReturnValue(BigInt(0));
-
+    it('charges the sender economy tier fee on top of the amount', async () => {
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
       mockPrisma.users.findUnique
-        .mockResolvedValueOnce({ id: 1, gold: BigInt(1000) })
+        .mockResolvedValueOnce({ id: 1, gold: BigInt(5000) })
         .mockResolvedValueOnce({ id: 2, gold: BigInt(0) });
 
       mockPrisma.bank_history.create.mockResolvedValue({ id: 456 });
 
       await transferGoldToFriend({ ...transferParams, amount: BigInt(1000) });
 
-      // With zero fee the sender is debited by the amount
-      expect(mockPrisma.users.update).toHaveBeenCalledWith({
+      // Economy level 6 (Meat Market) pays a 3% fee: 1000 + 30.
+      expect(mockPrisma.users.update).toHaveBeenNthCalledWith(1, {
         where: { id: 1 },
-        data: { gold: { decrement: BigInt(1000) } },
+        data: { gold: { decrement: BigInt(1030) } },
+      });
+      // The fee is booked to the SYSTEM account as before.
+      expect(mockPrisma.bank_history.create).toHaveBeenNthCalledWith(2, {
+        data: expect.objectContaining({
+          gold_amount: BigInt(30),
+          to_user_account_type: 'SYSTEM',
+          history_type: 'FRIEND_TRANSFER',
+        }),
       });
     });
 
@@ -312,8 +349,10 @@ describe('FriendTransferService', () => {
 
     it('rejects a gift that would push the recipient over the daily received cap (GIFT-03)', async () => {
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
-      mockPrisma.bank_history.aggregate.mockResolvedValue({
-        _sum: { gold_amount: BigInt(2_999_500) },
+      // First aggregate call is the recipient sum: 499,500 received + 1,000
+      // exceeds the Meat Market receive cap of 500,000.
+      mockPrisma.bank_history.aggregate.mockResolvedValueOnce({
+        _sum: { gold_amount: BigInt(499_500) },
       });
       mockPrisma.users.findUnique.mockResolvedValue({
         id: 1,
@@ -338,9 +377,150 @@ describe('FriendTransferService', () => {
 
     it('allows a gift that lands exactly on the daily received cap', async () => {
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
-      mockPrisma.bank_history.aggregate.mockResolvedValue({
-        _sum: { gold_amount: BigInt(2_999_000) },
+      // 499,000 received + 1,000 lands exactly on the 500,000 tier cap.
+      mockPrisma.bank_history.aggregate.mockResolvedValueOnce({
+        _sum: { gold_amount: BigInt(499_000) },
       });
+      mockPrisma.users.findUnique
+        .mockResolvedValueOnce({ id: 1, gold: BigInt(5000) })
+        .mockResolvedValueOnce({ id: 2, gold: BigInt(0) });
+      mockPrisma.bank_history.create.mockResolvedValue({ id: 456 });
+
+      const result = await transferGoldToFriend(transferParams);
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects a sender without the Coal Mine unlocked (#205)', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.users.findMany.mockResolvedValue([
+        participantRow(1, { economy_level: 2 }),
+        participantRow(2),
+      ]);
+
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        'Gold transfers unlock with the Coal Mine',
+      );
+      expect(mockPrisma.users.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a recipient without the Coal Mine unlocked (#205)', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.users.findMany.mockResolvedValue([
+        participantRow(1),
+        participantRow(2, { economy_level: 1 }),
+      ]);
+
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        'This player needs the Coal Mine to receive gold transfers',
+      );
+      expect(mockPrisma.users.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a sender account younger than the minimum age (#205)', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.users.findMany.mockResolvedValue([
+        participantRow(1, { created_at: new Date(Date.now() - 3 * DAY_MS) }),
+        participantRow(2),
+      ]);
+
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        'Your account must be at least 7 days old to send gold transfers',
+      );
+      expect(mockPrisma.users.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a recipient account younger than the minimum age (#205)', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.users.findMany.mockResolvedValue([
+        participantRow(1),
+        participantRow(2, { created_at: new Date(Date.now() - 3 * DAY_MS) }),
+      ]);
+
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        'This player must be at least 7 days old to receive gold transfers',
+      );
+      expect(mockPrisma.users.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a missing creation timestamp as too new (#205)', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.users.findMany.mockResolvedValue([
+        participantRow(1, { created_at: null }),
+        participantRow(2),
+      ]);
+
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        'Your account must be at least 7 days old to send gold transfers',
+      );
+    });
+
+    it('rejects players who fought within the last 24 hours in either direction (#205)', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.attack_log.findFirst.mockResolvedValue({ id: 55 });
+
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        "You can't send gold to a player you've fought in the last 24 hours",
+      );
+      expect(mockPrisma.attack_log.findFirst).toHaveBeenCalledWith({
+        where: {
+          timestamp: expect.objectContaining({ gte: expect.any(Date) }),
+          OR: [
+            { attacker_id: 1, defender_id: 2 },
+            { attacker_id: 2, defender_id: 1 },
+          ],
+        },
+        select: { id: true },
+      });
+      expect(mockPrisma.users.update).not.toHaveBeenCalled();
+    });
+
+    it('allows players whose fight is older than the block window', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.attack_log.findFirst.mockResolvedValue(null);
+      mockPrisma.users.findUnique
+        .mockResolvedValueOnce({ id: 1, gold: BigInt(5000) })
+        .mockResolvedValueOnce({ id: 2, gold: BigInt(0) });
+      mockPrisma.bank_history.create.mockResolvedValue({ id: 456 });
+
+      const result = await transferGoldToFriend(transferParams);
+      expect(result.success).toBe(true);
+    });
+
+    it('enforces the sender economy tier daily send cap (#205)', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      // First aggregate is the recipient sum (0), second the sender sum:
+      // 1,249,500 sent + 1,000 exceeds the Meat Market cap of 1,250,000.
+      mockPrisma.bank_history.aggregate
+        .mockResolvedValueOnce({ _sum: { gold_amount: BigInt(0) } })
+        .mockResolvedValueOnce({
+          _sum: { gold_amount: BigInt(1_249_500) },
+        });
+      mockPrisma.users.findUnique.mockResolvedValue({
+        id: 1,
+        gold: BigInt(5000),
+      });
+
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        'You have reached your daily limit for sending gold',
+      );
+      const sentWhere =
+        mockPrisma.bank_history.aggregate.mock.calls[1][0].where;
+      expect(sentWhere).toMatchObject({
+        from_user_id: 1,
+        from_user_account_type: 'HAND',
+        to_user_account_type: 'HAND',
+        history_type: 'FRIEND_TRANSFER',
+      });
+      expect(mockPrisma.users.update).not.toHaveBeenCalled();
+    });
+
+    it('allows a send that lands exactly on the tier send cap', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.bank_history.aggregate
+        .mockResolvedValueOnce({ _sum: { gold_amount: BigInt(0) } })
+        .mockResolvedValueOnce({
+          _sum: { gold_amount: BigInt(1_249_000) },
+        });
       mockPrisma.users.findUnique
         .mockResolvedValueOnce({ id: 1, gold: BigInt(5000) })
         .mockResolvedValueOnce({ id: 2, gold: BigInt(0) });
@@ -442,6 +622,42 @@ describe('FriendTransferService', () => {
       await expect(
         createGoldRequest({ ...requestParams, amount: BigInt(500) }),
       ).rejects.toThrow('Request amount must be between 1 and 1000000 gold');
+    });
+
+    it('rejects a request from a player without the Coal Mine (#205)', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.users.findMany.mockResolvedValue([
+        participantRow(1, { economy_level: 2 }),
+        participantRow(2),
+      ]);
+
+      await expect(createGoldRequest(requestParams)).rejects.toThrow(
+        'Gold transfers unlock with the Coal Mine',
+      );
+      expect(mockPrisma.bank_history.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a request aimed at a player without the Coal Mine (#205)', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.users.findMany.mockResolvedValue([
+        participantRow(1),
+        participantRow(2, { economy_level: 0 }),
+      ]);
+
+      await expect(createGoldRequest(requestParams)).rejects.toThrow(
+        'This player needs the Coal Mine to send gold transfers',
+      );
+      expect(mockPrisma.bank_history.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a request to a player you fought recently (#205)', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.attack_log.findFirst.mockResolvedValue({ id: 77 });
+
+      await expect(createGoldRequest(requestParams)).rejects.toThrow(
+        "You can't send gold to a player you've fought in the last 24 hours",
+      );
+      expect(mockPrisma.bank_history.create).not.toHaveBeenCalled();
     });
 
     it('should throw error if user has existing pending request', async () => {

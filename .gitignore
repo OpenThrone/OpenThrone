@@ -117,3 +117,6 @@ dogfood-output/
 # Project skills are tracked
 !.claude/
 !.claude/skills/
+
+# Uploaded alliance artwork is runtime data.
+/public/alliances/

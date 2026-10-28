@@ -30,6 +30,13 @@ import { alertService } from '@/services/Alert.service';
 import type { Locales, PlayerUnit, UnitType, User } from '@/types/typings'; // Assuming User type is defined elsewhere or use specific type from context
 import { logDebug, logError, logWarn } from '@/utils/logger'; // Added logError
 import { formatGold, toLocale } from '@/utils/numberFormatting';
+import {
+  buildPresetOrder,
+  isTrainingPresetId,
+  TRAINING_PRESET_EVENT,
+  TRAINING_TRAIN_EVENT,
+  type TrainingTrainDetail,
+} from '@/utils/trainingPresets';
 
 /**
  * Represents data structure for a unit displayed in training section.
@@ -356,11 +363,11 @@ const Training: React.FC = () => {
   );
 
   const handleFormSubmit = useCallback(
-    async (submitType: 'train' | 'untrain') => {
-      if (submittingRef.current) return;
+    async (submitType: 'train' | 'untrain'): Promise<boolean> => {
+      if (submittingRef.current) return false;
       if (!user) {
         alertService.error(t('training.userNotFound'));
-        return;
+        return false;
       }
       const unitsToModify = getUnitQuantities();
 
@@ -370,7 +377,7 @@ const Training: React.FC = () => {
             ? t('training.enterQuantityTrain')
             : t('training.enterQuantityUntrain'),
         );
-        return;
+        return false;
       }
 
       // Validation for training
@@ -384,7 +391,7 @@ const Training: React.FC = () => {
               have: formatGold(userGold, locale),
             }),
           );
-          return;
+          return false;
         }
         const citizensRequired = unitsToModify.reduce(
           (sum, unit) => sum + unit.quantity,
@@ -399,7 +406,7 @@ const Training: React.FC = () => {
               have: toLocale(availableCitizens, locale),
             }),
           );
-          return;
+          return false;
         }
       }
       // Validation for untraining (already partially handled in getUnitQuantities, but double-check here if needed)
@@ -412,6 +419,7 @@ const Training: React.FC = () => {
         if (data) {
           updateLocalUnits(data); // Update UI on success
         }
+        return Boolean(data);
       } catch (error: any) {
         alertService.error(
           error.message ||
@@ -419,6 +427,7 @@ const Training: React.FC = () => {
               ? t('training.failedToTrainUnits')
               : t('training.failedToUntrainUnits')),
         );
+        return false;
       } finally {
         submittingRef.current = false;
         setSubmitting(null);
@@ -433,6 +442,69 @@ const Training: React.FC = () => {
     setShowUntrainConfirm(false);
     handleUntrainAll();
   };
+
+  // The new-player tutorial can fill the order form with a starting army. The
+  // player still reviews it and presses Train, so nothing is spent on a click.
+  useEffect(() => {
+    const onPreset = (event: Event) => {
+      const preset = (event as CustomEvent<{ preset?: unknown }>).detail
+        ?.preset;
+      if (!user || !isTrainingPresetId(preset)) return;
+      const citizens =
+        user.units?.find((unit) => unit.type === 'CITIZEN')?.quantity ?? 0;
+      const starter = unitTypesIndex
+        .map(({ unitData }) =>
+          (unitData ?? []).find((unit) => unit.level === 1 && unit.enabled),
+        )
+        .filter((unit): unit is UnitData => Boolean(unit));
+      const order = buildPresetOrder(preset, {
+        citizens,
+        gold: Number(user.gold ?? 0),
+        units: starter.map((unit) => ({
+          id: unit.id,
+          type: unit.usage,
+          cost: unit.cost,
+        })),
+      });
+      if (Object.keys(order).length === 0) {
+        alertService.warn(t('training.presetNothingAffordable'));
+        return;
+      }
+      setUnitCosts(order);
+      setSectionCosts(
+        Object.fromEntries(
+          unitTypesIndex.map(({ type, unitData }) => [
+            type,
+            (unitData ?? []).reduce(
+              (sum, unit) => sum + (order[unit.id] ?? 0) * unit.cost,
+              0,
+            ),
+          ]),
+        ),
+      );
+      setTotalCost(
+        starter.reduce(
+          (sum, unit) => sum + (order[unit.id] ?? 0) * unit.cost,
+          0,
+        ),
+      );
+    };
+    window.addEventListener(TRAINING_PRESET_EVENT, onPreset);
+    return () => window.removeEventListener(TRAINING_PRESET_EVENT, onPreset);
+  }, [user, unitTypesIndex, t]);
+
+  // Lets the tutorial train the order it just filled in. The ref keeps the
+  // handler on the latest form state without re-subscribing on every keystroke.
+  const trainRef = useRef(handleFormSubmit);
+  trainRef.current = handleFormSubmit;
+  useEffect(() => {
+    const onTrain = (event: Event) => {
+      const { done } = (event as CustomEvent<TrainingTrainDetail>).detail;
+      trainRef.current('train').then(done, () => done(false));
+    };
+    window.addEventListener(TRAINING_TRAIN_EVENT, onTrain);
+    return () => window.removeEventListener(TRAINING_TRAIN_EVENT, onTrain);
+  }, []);
 
   const hasOrder = totalCost > 0;
 

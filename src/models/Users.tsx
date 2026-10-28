@@ -1,5 +1,6 @@
 import md5 from 'md5';
 
+import { KINGDOM_MORALE_DEFAULT } from '@/constants/KingdomMorale';
 import type {
   AccountStatus,
   PermissionType,
@@ -30,6 +31,8 @@ import type {
   DetailedCalculatedStrength,
 } from '@/utils/combatStrength';
 import { logWarn } from '@/utils/logger';
+import type { TutorialState } from '@/utils/tutorialState';
+import { parseTutorialState } from '@/utils/tutorialState';
 import { getAssetPath } from '@/utils/utilities';
 
 /**
@@ -159,6 +162,9 @@ class UserModel {
   /** User's economy development level. */
   public economyLevel: number;
 
+  /** Kingdom morale, 0-100 (#205): drives desertion and defection. */
+  public kingdomMorale: number;
+
   /** Remaining deposits available in the last 24 hours. */
   public depositsAvailable: number;
 
@@ -209,6 +215,9 @@ class UserModel {
   public sentry: number;
 
   public achievements: Record<string, any> = {};
+
+  /** Saved new-player tutorial progress; null until the offer is answered. */
+  public tutorialState: TutorialState | null = null;
 
   public twoFactorSecret: string | null = null;
 
@@ -329,6 +338,7 @@ class UserModel {
       this.is_online = false;
       this.overallrank = 0;
       this.economyLevel = 0;
+      this.kingdomMorale = KINGDOM_MORALE_DEFAULT;
       this.depositsAvailable = 0;
       this.nextDepositAvailable = 0;
       this.bonus_points = [];
@@ -413,6 +423,9 @@ class UserModel {
     this.is_online = false;
     this.overallrank = safeUserData.rank ?? 0;
     this.economyLevel = safeUserData.economy_level ?? 0;
+    this.kingdomMorale = Number(
+      (safeUserData as any).kingdom_morale ?? KINGDOM_MORALE_DEFAULT,
+    );
     this.depositsAvailable = (safeUserData as any).depositsAvailable ?? 0;
     this.nextDepositAvailable = (safeUserData as any).nextDepositAvailable ?? 0;
     const rawStructureUpgrades = Array.isArray(structure_upgrades)
@@ -486,6 +499,9 @@ class UserModel {
       typeof safeUserData.achievements === 'string'
         ? JSON.parse(safeUserData.achievements)
         : (safeUserData.achievements ?? {});
+    this.tutorialState = parseTutorialState(
+      (safeUserData as { tutorial_state?: unknown }).tutorial_state,
+    );
     this.twoFactorSecret = safeUserData.twoFactorSecret || null;
     this.twoFactorEnabled =
       (safeUserData as { twoFactorEnabled?: boolean }).twoFactorEnabled ??

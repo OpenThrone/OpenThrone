@@ -4,7 +4,15 @@ import {
   HouseUpgrades,
   UnitTypes,
 } from '@/constants';
-import BattleResult from '@/models/BattleResult';
+import {
+  defenderFatigueMultiplier,
+  defenderFatiguePercent,
+} from '@/constants/KingdomMorale';
+import BattleResult, {
+  createDamageAuditSide,
+  type DamageAuditBindingCap,
+  type DamageAuditSide,
+} from '@/models/BattleResult';
 import type {
   BattleArmyState,
   CombatRole,
@@ -223,6 +231,8 @@ interface BattleState {
   initialDefenderScore: number;
   /** Remaining units the defender may lose today across all attackers (dogpile cap). */
   defenderDailyCasualtyRemaining?: number;
+  /** Garrison fatigue multiplier from defense pressure today (#204); scales the defender's power, never casualties. */
+  defenderFatigueMultiplier: number;
 }
 
 /** Defines the simulation options shape used by related workflows. */
@@ -341,6 +351,15 @@ function initializeBattleState(
   const battleResult = new BattleResult(attacker, defender);
   const attackerStrength = calculateStrength(attacker, 'OFFENSE');
   const defenderStrength = calculateStrength(defender, 'DEFENSE');
+  // Garrison fatigue (#204) is fixed for the whole battle: pressure taken from
+  // earlier attackers today tires the wall, and the applied percent travels
+  // with the result so reports can show "Garrison fatigue: -X%".
+  const fatigueMultiplier = defenderFatigueMultiplier(
+    Number(defender.defensePressureToday ?? 0),
+  );
+  battleResult.defenderFatiguePercent = defenderFatiguePercent(
+    Number(defender.defensePressureToday ?? 0),
+  );
   const fortification = getFortificationByLevel(defender.fortLevel ?? 0);
   const resolvedStartFortHP = Number.isFinite(initialFortHP)
     ? Math.max(0, initialFortHP)
@@ -427,6 +446,7 @@ function initializeBattleState(
     initialDefenderScore:
       defenderStrength.totalStats.MeleeDefPower +
       defenderStrength.totalStats.RangedDefPower,
+    defenderFatigueMultiplier: fatigueMultiplier,
   };
 
   return state;
@@ -526,9 +546,18 @@ async function executeBattleTurn(state: BattleState, turn: number) {
       : attackerPhase && meleeAttack > 0
         ? rangedDefense * V5_COMBAT_CONSTANTS.RANGED_DEFENSE_ASSAULT_WEIGHT
         : 0);
+  // Garrison fatigue (#204) tips whether the wall holds: the tired garrison's
+  // contest defense is scaled down, and the normal consequences of a breach —
+  // loot included — follow from that same fatigued contest, so a fatigued
+  // breach always pays. Fort damage, counter damage, every casualty budget
+  // and the pressure-based dogpile protection below keep the rested power,
+  // so pressure never adds losses.
+  const contestDefensePressure = attackerPhase
+    ? defensePressure * state.defenderFatigueMultiplier
+    : defensePressure;
   const assaultSucceeded =
     attackerPhase &&
-    attackPressure > defensePressure &&
+    attackPressure > contestDefensePressure &&
     state.attackerOffenseRemaining > 0;
   state.assaultSucceeded ||= assaultSucceeded;
   if (attackerPhase && state.attackerOffenseRemaining > 0) {
@@ -601,6 +630,7 @@ async function executeBattleTurn(state: BattleState, turn: number) {
       attackerPhase && state.isDefenderProtected,
       attackerPhase
         ? {
+            taperChipDamage: true,
             defenderFortLevel: state.defender.fortLevel,
             defenderCasualtyBonusPct: getUserCasualtyBonusPercent(
               state.defender,
@@ -720,7 +750,13 @@ async function executeBattleTurn(state: BattleState, turn: number) {
       {
         assaultSucceeded,
         attackPressure,
-        defensePressure,
+        // The loot check rides the SAME fatigued contest value that decided
+        // the assault: a breach that happened only because the garrison was
+        // tired still yields loot instead of an empty "success".
+        // The loot check rides the SAME fatigued contest value that decided
+        // the assault: a breach that happened only because the garrison was
+        // tired still yields loot instead of an empty "success".
+        defensePressure: contestDefensePressure,
         fortHpPercent,
         isDefenderProtected: state.isDefenderProtected,
         coveredTurns,
@@ -1009,6 +1045,10 @@ export function calculatePillageBudget(
 export interface LootRaidContext {
   assaultSucceeded: boolean;
   attackPressure: number;
+  /**
+   * Defense pressure for the raid gate. Callers pass the same fatigued
+   * contest value that decided the assault, so breach and loot agree.
+   */
   defensePressure: number;
   fortHpPercent: number;
   isDefenderProtected?: boolean;
@@ -1098,12 +1138,15 @@ export function calculateLoot(
  * @param attackPower - Effective attack pressure after turn, race, morale, and roll modifiers.
  * @param defensePower - Effective defense pressure against the incoming damage type.
  * @param minimumDamageRatio - Minimum chip damage as a share of attack power.
+ * @param taperChip - Scale the chip floor by the attack/defense ratio so badly
+ *   outmatched assaults stop chipping the defense (attacker assaults only).
  * @returns Mitigated damage before casualty budgeting.
  */
 function computeMitigatedDamage(
   attackPower: number,
   defensePower: number,
   minimumDamageRatio = 0.05,
+  taperChip = false,
 ): number {
   const safeAttackPower = Math.max(0, Number(attackPower) || 0);
   const safeDefensePower = Math.max(0, Number(defensePower) || 0);
@@ -1111,7 +1154,17 @@ function computeMitigatedDamage(
   if (safeAttackPower <= 0) return 0;
 
   const subtractiveDamage = Math.max(0, safeAttackPower - safeDefensePower);
-  const chipDamage = safeAttackPower * minimumDamageRatio;
+  const { CHIP_TAPER_START_RATIO: start, CHIP_TAPER_FULL_RATIO: full } =
+    V5_COMBAT_CONSTANTS;
+  const chipShare = taperChip
+    ? clamp(
+        (safeAttackPower / Math.max(1e-9, safeDefensePower) - start) /
+          (full - start),
+        0,
+        1,
+      )
+    : 1;
+  const chipDamage = safeAttackPower * minimumDamageRatio * chipShare;
 
   return Math.max(subtractiveDamage, chipDamage);
 }
@@ -1132,6 +1185,8 @@ export function newComputeCasualties(
     defenderFortLevel?: number;
     defenderCasualtyBonusPct?: number;
     defenderStructureUpgrades?: CombatStrengthUser['structure_upgrades'];
+    /** Attacker assault: taper chip damage against much stronger defenses. */
+    taperChipDamage?: boolean;
   },
 ): {
   damageDealt: number;
@@ -1155,7 +1210,12 @@ export function newComputeCasualties(
       ? defenderDef
       : defenderDefFloor;
 
-  let damageDealt = computeMitigatedDamage(attackerAtk, effectiveDefenderDef);
+  let damageDealt = computeMitigatedDamage(
+    attackerAtk,
+    effectiveDefenderDef,
+    0.05,
+    options?.taperChipDamage === true,
+  );
 
   // Apply piercing ratio to increase damage in overwhelming scenarios.
   // Avoid multiplying by huge ratios (e.g. when defenderDef is ~0) which can explode damage values.
@@ -1258,6 +1318,14 @@ export async function distributeCasualties(params: {
   let totalAttackerCasualties = 0;
   let totalDefenderCasualties = 0;
 
+  // Battle-cumulative damage received by each side, this phase included;
+  // feeds casualty win quality (kept apart from the diagnostic damage audit).
+  result.damageReceived ??= { attacker: 0, defender: 0 };
+  result.damageReceived.defender += Math.max(0, attackerDamageDealt);
+  result.damageReceived.attacker += Math.max(0, defenderDamageDealt);
+  const cumulativeDamageToDefender = result.damageReceived.defender;
+  const cumulativeDamageToAttacker = result.damageReceived.attacker;
+
   /**
    * Replacement-anchored casualty cap for one side of the battle.
    *
@@ -1267,21 +1335,50 @@ export async function distributeCasualties(params: {
    * budget grows over the battle; `alreadyLost` makes the cap a per-battle
    * allowance rather than a per-turn one. `dailyAllowanceRemaining` clamps the
    * total across all attackers in a day (dogpile protection).
+   * `cap` is the limit; the other fields are its components, reported only
+   * in the damage audit.
+   *
+   * Win quality (damage received / damage dealt) uses battle-cumulative
+   * totals, not the current phase. Phases are one-sided (assault turns only
+   * hurt the defender, defense turns only hurt the attacker), so a
+   * phase-local ratio pinned the defender to the 0.3 floor and the attacker
+   * to 1.0, letting a decisive attacker always reach its full 8% ceiling.
+   * A side that has dealt nothing but taken damage gets winQuality 1 (via
+   * max(1, dealt)); a side that has taken nothing has no casualties to cap.
+   * The attacker's floor is ATTACKER_WIN_QUALITY_FLOOR (0.5), so even a
+   * decisive raid costs at least half the ceiling; the defender keeps 0.3.
    */
-  const budgetCasualtyCapFor = (params: {
+  const budgetCasualtyCapDetailsFor = (params: {
     user: BattleUserLike;
     opponent: BattleUserLike;
     population: number;
     turns: number;
     fortHpPercent: number;
-    damageDealtToUser: number;
-    damageDealtByUser: number;
+    /** Damage this side has received so far this battle, this phase included. */
+    cumulativeDamageToUser: number;
+    /** Damage this side has dealt so far this battle, this phase included. */
+    cumulativeDamageByUser: number;
     alreadyLost: number;
     dailyAllowanceRemaining?: number;
+    /** Lowest win-quality multiplier; defaults to the defender's 0.3. */
+    winQualityFloor?: number;
     /** Attacks received today; only the defender under dogpile earns this. */
     defensePressureToday: number;
-  }): number => {
-    if (params.population <= 0) return 0;
+  }): {
+    cap: number;
+    singleAttackCap: number | null;
+    softCap: number | null;
+    dailyRemaining: number | null;
+    perBattleRemaining: number;
+  } => {
+    if (params.population <= 0)
+      return {
+        cap: 0,
+        singleAttackCap: null,
+        softCap: null,
+        dailyRemaining: null,
+        perBattleRemaining: 0,
+      };
     const houseUpgrade =
       HouseUpgrades[
         Math.max(
@@ -1299,7 +1396,9 @@ export async function distributeCasualties(params: {
       turns: clamp(params.turns, 1, BATTLE_CONSTANTS.MAX_TURNS),
       levelDifference: (params.opponent.level ?? 0) - (params.user.level ?? 0),
       winQuality:
-        params.damageDealtToUser / Math.max(1, params.damageDealtByUser),
+        params.cumulativeDamageToUser /
+        Math.max(1, params.cumulativeDamageByUser),
+      winQualityFloor: params.winQualityFloor,
       fortHpPercent: params.fortHpPercent,
       defensePressureToday: params.defensePressureToday,
     });
@@ -1320,9 +1419,87 @@ export async function distributeCasualties(params: {
         0,
         Math.floor(params.dailyAllowanceRemaining) - params.alreadyLost,
       );
-      return Math.min(perBattleRemaining, dailyRemaining);
+      return {
+        cap: Math.min(perBattleRemaining, dailyRemaining),
+        singleAttackCap,
+        softCap,
+        dailyRemaining,
+        perBattleRemaining,
+      };
     }
-    return perBattleRemaining;
+    return {
+      cap: perBattleRemaining,
+      singleAttackCap,
+      softCap,
+      dailyRemaining: null,
+      perBattleRemaining,
+    };
+  };
+
+  const auditFor = (side: 'attacker' | 'defender'): DamageAuditSide => {
+    result.damageAudit ??= {
+      attacker: createDamageAuditSide(),
+      defender: createDamageAuditSide(),
+    };
+    return result.damageAudit[side];
+  };
+  /** Records one turn's damage against a side; diagnostic only. */
+  const recordAudit = (
+    side: 'attacker' | 'defender',
+    entry: {
+      rawIn: number;
+      suppressed: number;
+      binding: DamageAuditBindingCap;
+      caps: DamageAuditSide['caps'];
+    },
+  ) => {
+    const audit = auditFor(side);
+    audit.rawIn += entry.rawIn;
+    audit.applied += entry.rawIn - entry.suppressed;
+    audit.suppressed += entry.suppressed;
+    audit.caps = entry.caps;
+    if (entry.suppressed > 0) {
+      audit.suppressedBy[entry.binding] =
+        (audit.suppressedBy[entry.binding] ?? 0) + entry.suppressed;
+      let top: DamageAuditBindingCap = 'none';
+      let topAmount = 0;
+      for (const [label, amount] of Object.entries(audit.suppressedBy)) {
+        if ((amount ?? 0) > topAmount) {
+          top = label as DamageAuditBindingCap;
+          topAmount = amount ?? 0;
+        }
+      }
+      audit.bindingCap = top;
+    }
+  };
+  /** Which cap limited a pass that left damage unspent. */
+  const bindingCapFor = (
+    pass: { hitCasualtyCap: boolean; hitStackCap: boolean },
+    caps: {
+      usedCap: number;
+      protectedCap: number;
+      singleAttackCap: number | null;
+      softCap: number | null;
+      dailyRemaining: number | null;
+      perBattleRemaining: number;
+    },
+  ): DamageAuditBindingCap => {
+    if (pass.hitCasualtyCap) {
+      if (caps.protectedCap <= caps.usedCap) return 'protected';
+      if (
+        caps.dailyRemaining !== null &&
+        caps.dailyRemaining < caps.perBattleRemaining
+      )
+        return 'daily';
+      if (
+        caps.singleAttackCap !== null &&
+        caps.softCap !== null &&
+        caps.singleAttackCap <= caps.softCap
+      )
+        return 'singleAttack';
+      return 'soft';
+    }
+    return pass.hitStackCap ? 'stack' : 'none';
   };
 
   const applyDamageToUnits = (
@@ -1331,9 +1508,15 @@ export async function distributeCasualties(params: {
     isDefender: boolean,
     _isCollateral: boolean = false,
     maxCasualties?: number,
-  ): { casualties: number; remainingDamage: number } => {
+  ): {
+    casualties: number;
+    remainingDamage: number;
+    hitCasualtyCap: boolean;
+    hitStackCap: boolean;
+  } => {
     let remainingDamage = damage;
     let casualtiesCount = 0;
+    let hitStackCap = false;
     const side = isDefender ? 'Defender' : 'Attacker';
 
     // Lowest levels absorb casualties first, but no single stack may lose more
@@ -1437,6 +1620,7 @@ export async function distributeCasualties(params: {
         unitsRemaining > 0 &&
         remainingDamage > 0
       ) {
+        hitStackCap = true;
         result.routedStacks.push({
           side,
           type: unit.type,
@@ -1446,7 +1630,15 @@ export async function distributeCasualties(params: {
         });
       }
     }
-    return { casualties: casualtiesCount, remainingDamage };
+    return {
+      casualties: casualtiesCount,
+      remainingDamage,
+      hitCasualtyCap:
+        remainingDamage > 0 &&
+        maxCasualties !== undefined &&
+        casualtiesCount >= maxCasualties,
+      hitStackCap,
+    };
   };
 
   // Apply attacker damage to defender units
@@ -1472,18 +1664,19 @@ export async function distributeCasualties(params: {
       totals.sentries;
     const fortHpPercent = clamp(fortHP / Math.max(1, initialFortHP), 0, 1);
     const populationAtStart = totalPopulation + result.Losses.Defender.total;
-    const budgetCap = budgetCasualtyCapFor({
+    const budgetDetails = budgetCasualtyCapDetailsFor({
       user: defender,
       opponent: attacker,
       population: populationAtStart,
       turns: turn,
       fortHpPercent,
-      damageDealtToUser: attackerDamageDealt,
-      damageDealtByUser: defenderDamageDealt,
+      cumulativeDamageToUser: cumulativeDamageToDefender,
+      cumulativeDamageByUser: cumulativeDamageToAttacker,
       alreadyLost: result.Losses.Defender.total,
       dailyAllowanceRemaining: defender.dailyCasualtyAllowanceRemaining,
       defensePressureToday: Number(defender.defensePressureToday ?? 0),
     });
+    const budgetCap = budgetDetails.cap;
     // New players keep a hard per-battle ceiling instead of a damage floor:
     // attacks still visibly land, but never gut a starting army.
     const protectedCap = isDefenderProtected
@@ -1510,28 +1703,51 @@ export async function distributeCasualties(params: {
     ) {
       defenderCapUnits = 1;
     }
-    const {
-      casualties: fightingCasualties,
-      remainingDamage: remainingAttackerDamage,
-    } = applyDamageToUnits(
+    const fightingPass = applyDamageToUnits(
       defenderFightingPool,
       attackerDamageDealt,
       true,
       false,
       defenderCapUnits,
     );
+    const {
+      casualties: fightingCasualties,
+      remainingDamage: remainingAttackerDamage,
+    } = fightingPass;
     totalDefenderCasualties += fightingCasualties;
+    let finalPass = fightingPass;
 
     if (fortHP <= 0 && _includeCitz) {
-      const { casualties: collateralCasualties } = applyDamageToUnits(
+      const collateralPass = applyDamageToUnits(
         defenderCollateralPool,
         remainingAttackerDamage,
         true,
         true,
         Math.max(0, defenderCapUnits - fightingCasualties),
       );
-      totalDefenderCasualties += collateralCasualties;
+      totalDefenderCasualties += collateralPass.casualties;
+      finalPass = {
+        ...collateralPass,
+        hitStackCap: collateralPass.hitStackCap || fightingPass.hitStackCap,
+      };
     }
+
+    recordAudit('defender', {
+      rawIn: attackerDamageDealt,
+      suppressed: finalPass.remainingDamage,
+      binding: bindingCapFor(finalPass, {
+        ...budgetDetails,
+        usedCap: defenderCapUnits,
+        protectedCap,
+      }),
+      caps: {
+        singleAttackCap: budgetDetails.singleAttackCap,
+        softCap: budgetDetails.softCap,
+        dailyRemaining: budgetDetails.dailyRemaining,
+        protectedCap: Number.isFinite(protectedCap) ? protectedCap : null,
+        usedCap: defenderCapUnits,
+      },
+    });
   }
 
   // Apply defender damage to attacker units (symmetric budget protection)
@@ -1546,25 +1762,43 @@ export async function distributeCasualties(params: {
     const attackerPopulation =
       attackerOffensePool.reduce((sum, u) => sum + (u.quantity || 0), 0) +
       result.Losses.Attacker.total;
-    const attackerCapUnits = budgetCasualtyCapFor({
+    const attackerBudget = budgetCasualtyCapDetailsFor({
       user: attacker,
       opponent: defender,
       population: attackerPopulation,
       turns: turn,
       fortHpPercent: 0, // no fort protection for the away army
-      damageDealtToUser: defenderDamageDealt,
-      damageDealtByUser: attackerDamageDealt,
+      cumulativeDamageToUser: cumulativeDamageToAttacker,
+      cumulativeDamageByUser: cumulativeDamageToDefender,
       alreadyLost: result.Losses.Attacker.total,
       defensePressureToday: 0, // the away army earns no dogpile protection
+      winQualityFloor: V5_COMBAT_CONSTANTS.ATTACKER_WIN_QUALITY_FLOOR,
     });
-    const { casualties: attackerCasualties } = applyDamageToUnits(
+    const attackerCapUnits = attackerBudget.cap;
+    const attackerPass = applyDamageToUnits(
       attackerOffensePool,
       defenderDamageDealt,
       false,
       false,
       attackerCapUnits,
     );
-    totalAttackerCasualties += attackerCasualties;
+    totalAttackerCasualties += attackerPass.casualties;
+    recordAudit('attacker', {
+      rawIn: defenderDamageDealt,
+      suppressed: attackerPass.remainingDamage,
+      binding: bindingCapFor(attackerPass, {
+        ...attackerBudget,
+        usedCap: attackerCapUnits,
+        protectedCap: Number.POSITIVE_INFINITY,
+      }),
+      caps: {
+        singleAttackCap: attackerBudget.singleAttackCap,
+        softCap: attackerBudget.softCap,
+        dailyRemaining: attackerBudget.dailyRemaining,
+        protectedCap: null,
+        usedCap: attackerCapUnits,
+      },
+    });
   }
   result.Losses.Attacker.total += totalAttackerCasualties;
   result.Losses.Defender.total += totalDefenderCasualties;

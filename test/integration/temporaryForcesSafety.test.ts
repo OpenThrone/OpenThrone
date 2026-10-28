@@ -112,7 +112,18 @@ beforeEach(async () => {
   eraId = borrower.currentEraId!;
   await prisma.users.update({
     where: { id: borrowerId },
-    data: { fort_level: 12, gold: 1000000000n },
+    data: { fort_level: 12, gold: 1000000000n, economy_level: 6 },
+  });
+  // Trained army backing the mercenary share cap; OFFENSE never joins
+  // the spy mission hired below. createUser seeded a zero-quantity row.
+  await prisma.userUnit.updateMany({
+    where: {
+      userId: borrowerId,
+      type: 'OFFENSE',
+      level: 1,
+      isMercenary: false,
+    },
+    data: { quantity: 200 },
   });
 });
 describe('temporary force adversarial boundaries', () => {

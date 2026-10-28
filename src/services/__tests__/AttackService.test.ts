@@ -5,10 +5,13 @@ import { levelXPArray, UnitTypes } from '@/constants';
 import type { UserUnit } from '@/lib/prisma-exports';
 import BattleResult from '@/models/BattleResult';
 import { BattleUser } from '@/models/BattleUser';
+import type { BattleGameEvents } from '@/utils/battleGameEvents';
 import type { CombatReplayEnvelope } from '@/utils/combatReplay';
 
 installMockPrisma(vi);
 // Dynamic imports deliberately install the Prisma test boundary before service loading.
+const { invalidateGameEventModifiers } =
+  await import('../GameEventRuntime.service');
 const { AttackService } = await import('../AttackService');
 const { SpyService, redactLiveSpyResult } = await import('../SpyService');
 const { BattleService } = await import('../Battle.service');
@@ -25,6 +28,7 @@ interface GameRow {
 }
 type UnitLoss = Pick<UserUnit, 'type' | 'level' | 'quantity' | 'isMercenary'>;
 interface LogStats {
+  gameEvents?: BattleGameEvents;
   replay?: CombatReplayEnvelope;
   spyResults?: { spiesLost: number; unitsKilled?: number };
   attacker_losses?: string;
@@ -102,6 +106,8 @@ function player(
 }
 
 beforeEach(() => {
+  invalidateGameEventModifiers();
+  mockPrisma.gameEvent = { findMany: vi.fn().mockResolvedValue([]) };
   process.env.NEXTAUTH_SECRET = 'isolated-combat-replay-test-secret';
   process.env.NEXT_PUBLIC_ENABLE_ATTACKING = 'true';
   mockPrisma.serverSetting = {
@@ -325,6 +331,41 @@ function expectCasualtyConservation(
 }
 
 describe('live combat persistence and replay', () => {
+  test('persists the active event names and exact XP multiplier with the battle', async () => {
+    mockPrisma.gameEvent.findMany.mockResolvedValue([
+      {
+        id: 25,
+        name: 'Double XP',
+        description: null,
+        startsAt: new Date('2026-01-01T00:00:00Z'),
+        endsAt: null,
+        eraId: null,
+        config: { xpMultiplier: 2 },
+      },
+    ]);
+    expect((await AttackService.executeAttack(1, 2, 10)).status).toBe(
+      'success',
+    );
+    expect(logs[0].stats.gameEvents?.appliedXpMultiplier).toBe(2);
+    expect(logs[0].stats.gameEvents?.events[0].name).toBe('Double XP');
+    mockPrisma.gameEvent.findMany.mockResolvedValue([]);
+    invalidateGameEventModifiers();
+    expect(logs[0].stats.gameEvents?.events[0].effects.xpMultiplier).toBe(2);
+    const shared = (
+      await import('../AttackLogAccess.service')
+    ).redactAttackLogForViewer(
+      {
+        id: logs[0].id,
+        winner: 1,
+        attacker_id: 1,
+        defender_id: 2,
+        stats: logs[0].stats,
+      },
+      'shared',
+    );
+    expect(shared.stats.gameEvents).toEqual(logs[0].stats.gameEvents);
+  });
+
   test('queues an opted-in defender alert with the committed battle ID and outcome', async () => {
     const root = process.env.NEXT_PUBLIC_URL_ROOT;
     process.env.NEXT_PUBLIC_URL_ROOT = 'https://example.test';

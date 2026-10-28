@@ -27,6 +27,7 @@ import {
   Popover,
   SimpleGrid,
   Space,
+  Stack,
   Table,
   Text,
   ThemeIcon,
@@ -45,7 +46,11 @@ import { StyledNews } from '@/components/game/StyledNews';
 import { StyledTable } from '@/components/game/StyledTable';
 import HeroBanner from '@/components/HeroBanner';
 import MainArea from '@/components/MainArea';
+import { DesertionLog } from '@/components/overview/DesertionLog';
+import { DungeonPanel } from '@/components/overview/DungeonPanel';
 import { FortHealthStatSlot } from '@/components/overview/FortHealthStatSlot';
+import { KingdomMoraleMeter } from '@/components/overview/KingdomMoraleMeter';
+import { ReanimationLine } from '@/components/overview/ReanimationLine';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import StatCard from '@/components/StatCard';
 import { useUser } from '@/context/users';
@@ -314,6 +319,19 @@ const Overview = () => {
         />
       </SimpleGrid>
       <GameCard title={t('overview.kingdomStats')} icon={faCrown}>
+        <Stack gap="sm" mb="md">
+          {/* Hidden until morale is explained to players (SHOW_KINGDOM_MORALE). */}
+          {runtimeConfig?.showKingdomMorale === true && (
+            <>
+              <KingdomMoraleMeter morale={user.kingdomMorale} />
+              <DesertionLog />
+            </>
+          )}
+          {/* Hidden until captives are explained to players (SHOW_DUNGEON). */}
+          {runtimeConfig?.showDungeon === true && <DungeonPanel />}
+          {/* Undead racial perk (#211); renders nothing for other races. */}
+          <ReanimationLine />
+        </Stack>
         <SimpleGrid
           cols={{ base: 1, md: 2 }}
           spacing="sm"

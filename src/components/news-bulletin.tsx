@@ -1,8 +1,15 @@
 import { faBullhorn } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Anchor, CloseButton, Paper, Text, ThemeIcon } from '@mantine/core';
+import {
+  Anchor,
+  CloseButton,
+  Paper,
+  Text,
+  ThemeIcon,
+  Tooltip,
+} from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 import frameClasses from '@/components/game/FantasyFrame.module.css';
 import { resolveArtworkSource } from '@/utils/artwork';
@@ -19,6 +26,8 @@ const SEVERITY_COLOR: Record<NewsBulletinSeverity, string> = {
 };
 
 interface NewsBulletinProps {
+  compact?: boolean;
+  controls?: ReactNode;
   title: string;
   body: string;
   severity?: NewsBulletinSeverity | string | null;
@@ -29,6 +38,8 @@ interface NewsBulletinProps {
 
 /** Ornate site-wide announcement panel. Content is supplied by the caller. */
 const NewsBulletin: React.FC<NewsBulletinProps> = ({
+  compact = false,
+  controls,
   title,
   body,
   severity,
@@ -44,7 +55,7 @@ const NewsBulletin: React.FC<NewsBulletinProps> = ({
   return (
     <Paper
       component="section"
-      className={`${classes.bulletin} ${frameClasses.surface} ${frameClasses.ornate}`}
+      className={`${classes.bulletin} ${compact ? classes.compact : ''} ${frameClasses.surface} ${frameClasses.ornate}`}
       style={
         {
           '--announcement-art': resolveArtworkSource(
@@ -61,16 +72,27 @@ const NewsBulletin: React.FC<NewsBulletinProps> = ({
       aria-label={t('ariaLabels.siteAnnouncement')}
       radius="sm"
     >
-      <ThemeIcon
-        className={classes.icon}
-        variant="outline"
-        size={48}
-        radius="xl"
-        color={color}
-        aria-hidden="true"
+      <Tooltip
+        label={t(
+          `announcementsFeed.${Object.prototype.hasOwnProperty.call(SEVERITY_COLOR, severity ?? '') ? severity : 'INFO'}`,
+        )}
+        events={{ hover: true, focus: true, touch: true }}
       >
-        <FontAwesomeIcon icon={faBullhorn} />
-      </ThemeIcon>
+        <ThemeIcon
+          className={classes.icon}
+          variant="outline"
+          size={compact ? 36 : 48}
+          radius="xl"
+          color={color}
+          tabIndex={0}
+          role="img"
+          aria-label={t(
+            `announcementsFeed.${Object.prototype.hasOwnProperty.call(SEVERITY_COLOR, severity ?? '') ? severity : 'INFO'}`,
+          )}
+        >
+          <FontAwesomeIcon icon={faBullhorn} />
+        </ThemeIcon>
+      </Tooltip>
       <div className={classes.copy}>
         <Text component="h2" className={classes.title}>
           {title}
@@ -87,6 +109,7 @@ const NewsBulletin: React.FC<NewsBulletinProps> = ({
           </Anchor>
         ) : null}
       </div>
+      {controls && <div className={classes.controls}>{controls}</div>}
       {dismissible && onDismiss ? (
         <CloseButton
           onClick={onDismiss}

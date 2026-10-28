@@ -19,6 +19,7 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
+import { ContentPostActions } from '@/components/admin/ContentPostActions';
 import TablePagination from '@/components/admin/TablePagination';
 import type { AllianceListHit } from '@/components/alliance/AllianceListBadge';
 import { AllianceListBadge } from '@/components/alliance/AllianceListBadge';
@@ -897,6 +898,27 @@ export default function TablesSection() {
             <AttackLogTable logs={DEFENSE_LOGS} type="defense" viewerID={102} />
           </MockClicks>
         </GameCard>
+      </Specimen>
+
+      <Specimen
+        name="Content post actions"
+        usedOn={['/home/admin/content']}
+        note="Hover or Tab to identify Edit, Archive, Publish and Delete. Draft, published and archived visibility; every action is mocked."
+      >
+        <Stack>
+          {['DRAFT', 'PUBLISHED', 'ARCHIVED'].map((status) => (
+            <Group key={status} justify="space-between">
+              <Text size="sm">{status}</Text>
+              <ContentPostActions
+                status={status}
+                onEdit={mockAction('Edit post')}
+                onArchive={mockAction('Archive post')}
+                onPublish={mockAction('Publish post')}
+                onDelete={mockAction('Delete post')}
+              />
+            </Group>
+          ))}
+        </Stack>
       </Specimen>
 
       <Specimen

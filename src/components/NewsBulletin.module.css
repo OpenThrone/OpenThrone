@@ -32,7 +32,17 @@
   .bulletin { gap: 12px; margin-inline: 0; padding: 20px 44px 20px 16px; }
   .bulletin::before { display: none; }
   .copy { width: auto; flex: 1; }
-  .icon { display: none; }
+  .icon { align-self: flex-start; }
 }
 .link { display: inline-block; margin-top: 8px; color: var(--ot-accent); font-weight: 600; }
 .link:focus-visible { outline: 2px solid var(--ot-accent); outline-offset: 2px; }
+
+ .bulletin.compact { min-height: 0; margin-block: 12px; padding: 14px 42px 10px 16px; gap: 10px 14px; flex-wrap: wrap; }
+.compact .copy { width: auto; flex: 1; }
+.compact .title { font-size: 22px; margin-bottom: 3px; overflow-wrap: anywhere; }
+.controls { flex-basis: 100%; min-width: 0; }
+.icon:focus-visible { outline: 2px solid var(--ot-accent); outline-offset: 3px; }
+@media (max-width: 768px) {
+  .bulletin.compact { margin-inline: 0; padding-inline: 12px 38px; gap: 8px; }
+  .compact .title { font-size: 20px; }
+}

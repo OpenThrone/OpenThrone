@@ -127,6 +127,51 @@ function captureBattleActor(user: BattleActorInput): BattleActorSnapshot {
 }
 
 /** A group of recovering units of one type/level. */
+export type DamageAuditBindingCap =
+  | 'protected'
+  | 'daily'
+  | 'singleAttack'
+  | 'soft'
+  | 'stack'
+  | 'none';
+
+/** Per-side damage audit, accumulated over every turn of a battle. */
+export interface DamageAuditSide {
+  /** Damage entering casualty distribution (after fort/protection mitigation). */
+  rawIn: number;
+  /** Damage spent killing or wounding units. */
+  applied: number;
+  /** Damage left over once the caps (or the unit pool) stopped absorbing it. */
+  suppressed: number;
+  /** Cap values from the most recent turn that dealt damage to this side. */
+  caps: {
+    singleAttackCap: number | null;
+    softCap: number | null;
+    dailyRemaining: number | null;
+    protectedCap: number | null;
+    usedCap: number | null;
+  };
+  /** Cap that suppressed the most damage across the battle. */
+  bindingCap: DamageAuditBindingCap;
+  /** Suppressed damage per limiting cap. */
+  suppressedBy: Partial<Record<DamageAuditBindingCap, number>>;
+}
+
+export const createDamageAuditSide = (): DamageAuditSide => ({
+  rawIn: 0,
+  applied: 0,
+  suppressed: 0,
+  caps: {
+    singleAttackCap: null,
+    softCap: null,
+    dailyRemaining: null,
+    protectedCap: null,
+    usedCap: null,
+  },
+  bindingCap: 'none',
+  suppressedBy: {},
+});
+
 interface WoundedUnitGroup {
   forceContractId?: number;
   type: string;
@@ -224,6 +269,26 @@ class BattleResult {
     defender: WoundedUnitGroup[];
   };
 
+  /**
+   * Diagnostic only (never feeds outcomes): damage each side received, how
+   * much the casualty caps absorbed, and which cap bound. Keys are the side
+   * receiving the damage.
+   */
+  damageAudit: {
+    attacker: DamageAuditSide;
+    defender: DamageAuditSide;
+  };
+
+  /**
+   * Battle-cumulative damage each side has received (keys are the receiving
+   * side). Feeds casualty win quality, so unlike damageAudit it is outcome
+   * state, not diagnostics.
+   */
+  damageReceived: { attacker: number; defender: number };
+
+  /** Garrison fatigue applied to the defender's power (#204), as a 0-100 percent. */
+  defenderFatiguePercent: number;
+
   /** Stacks that hit the per-battle casualty cap and were forced to withdraw. */
   routedStacks: Array<{
     side: 'Attacker' | 'Defender';
@@ -280,6 +345,12 @@ class BattleResult {
     this.mitigationLog = [];
     this.wounded = { attacker: [], defender: [] };
     this.routedStacks = [];
+    this.damageAudit = {
+      attacker: createDamageAuditSide(),
+      defender: createDamageAuditSide(),
+    };
+    this.damageReceived = { attacker: 0, defender: 0 };
+    this.defenderFatiguePercent = 0;
     this.Losses = {
       Attacker: {
         total: 0,

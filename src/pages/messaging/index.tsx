@@ -1,4 +1,4 @@
-import { Button, Space } from '@mantine/core';
+import { Button, Space, Text } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
@@ -12,83 +12,50 @@ import MainArea from '@/components/MainArea';
 import NewMessageModal from '@/components/NewMessageModal';
 import { useUser } from '@/context/users';
 import useSocket from '@/hooks/useSocket';
+import type {
+  ChatMessage as FrontendMessage,
+  FrontendRoom,
+} from '@/types/typings';
 import { logError, logInfo } from '@/utils/logger';
-
-// Define a type for message structure used in frontend state
-interface FrontendMessage {
-  id: number;
-  roomId: number;
-  senderId: number;
-  content: string;
-  messageType: string;
-  sentAt: string; // ISO string
-  sender: {
-    id: number;
-    display_name: string;
-    avatar: string | null;
-    is_online: boolean;
-  };
-  reactions: {
-    userId: number;
-    reaction: string;
-    userDisplayName: string;
-  }[];
-  readBy: {
-    userId: number;
-    readAt: string; // ISO string
-    userDisplayName: string;
-  }[];
-  replyToMessage: {
-    id: number;
-    content: string;
-    sender: { id: number; display_name: string };
-  } | null;
-  sharedAttackLog: {
-    id: number;
-    attacker_id: number;
-    defender_id: number;
-    winner: number;
-    timestamp: string | null; // ISO string
-  } | null;
-  isOptimistic?: boolean;
-  tempId?: number;
-}
-
-// Define type for Room state
-interface FrontendRoom {
-  id: number;
-  name: string | null;
-  isPrivate: boolean;
-  isDirect: boolean;
-  createdById: number;
-  createdAt: string; // ISO string
-  updatedAt: string; // ISO string
-  lastMessage: string | null;
-  lastMessageTime: string | null; // ISO string
-  lastMessageSender: string | null;
-  unreadCount: number;
-  isAdmin: boolean;
-  participants: {
-    id: number;
-    role: 'ADMIN' | 'MEMBER';
-    canWrite: boolean;
-    display_name: string;
-    avatar: string | null;
-    is_online: boolean;
-  }[];
-}
 
 const MessageList = () => {
   const [rooms, setRooms] = useState<FrontendRoom[]>([]);
   const router = useRouter();
   const { data: session } = useSession();
   const { roomId: roomIdParam } = router.query;
+  const previousRoomParam = useRef<number | null>(null);
   const { markRoomAsRead } = useUser();
   const { t } = useTranslation('messaging');
 
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
   const [messages, setMessages] = useState<FrontendMessage[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [historyError, setHistoryError] = useState(false);
+  const [historyRevision, setHistoryRevision] = useState(0);
+  const [browsingOriginal, setBrowsingOriginal] = useState(false);
+  const [jumpError, setJumpError] = useState(false);
+  const contextRoom = useRef<number | null>(null);
+  const loadedRoom = useRef<number | null>(null);
+  const roomHistory = useRef(
+    new Map<number, { messages: FrontendMessage[]; hasMore: boolean }>(),
+  );
+  useEffect(() => {
+    if (
+      selectedRoomId &&
+      loadedRoom.current === selectedRoomId &&
+      !loadingMessages &&
+      !browsingOriginal
+    )
+      roomHistory.current.set(selectedRoomId, { messages, hasMore });
+  }, [selectedRoomId, messages, hasMore, loadingMessages, browsingOriginal]);
+  const activeRoom = useRef(selectedRoomId);
+  activeRoom.current = selectedRoomId;
+  const historyRequest = useRef<AbortController | null>(null);
+  const { isConnected } = useSocket(Number(session?.user?.id) || null);
+  const routerRef = useRef(router);
+  routerRef.current = router;
 
   const fetchRooms = useCallback(async () => {
     try {
@@ -127,37 +94,168 @@ const MessageList = () => {
     fetchRooms();
   }, [fetchRooms]);
 
+  // Opening a notification while already on /messaging must select its room.
   useEffect(() => {
-    const fetchMessages = async () => {
-      if (selectedRoomId) {
-        setLoadingMessages(true);
-        try {
-          const response = await fetch(`/api/messages/${selectedRoomId}`);
-          if (!response.ok) throw new Error(t('errorFetchingMessages'));
-          const data: FrontendMessage[] = await response.json();
-          setMessages(data);
+    const id = Number(roomIdParam);
+    if (
+      !Number.isSafeInteger(id) ||
+      id <= 0 ||
+      previousRoomParam.current === id
+    )
+      return;
+    if (!rooms.some((room) => room.id === id)) return;
+    previousRoomParam.current = id;
+    setSelectedRoomId(id);
+    setMessages((previous) =>
+      previous.filter((message) => message.roomId === id),
+    );
+  }, [roomIdParam, rooms]);
 
-          if (router.query.roomId !== selectedRoomId.toString()) {
-            router.push(`/messaging?roomId=${selectedRoomId}`, undefined, {
-              shallow: true,
-            });
-          }
-        } catch (error) {
+  useEffect(() => {
+    const controller = new AbortController();
+    historyRequest.current?.abort();
+    historyRequest.current = null;
+    setLoadingOlder(false);
+    setHistoryError(false);
+    setBrowsingOriginal(false);
+    setJumpError(false);
+    if (!selectedRoomId) {
+      setMessages([]);
+      setHasMore(false);
+      return () => controller.abort();
+    }
+    const roomId = selectedRoomId;
+    if (contextRoom.current !== null) {
+      setMessages([]);
+      contextRoom.current = null;
+    }
+    const cached = roomHistory.current.get(roomId);
+    if (loadedRoom.current !== roomId) {
+      setLoadingMessages(!cached);
+      setMessages(cached?.messages ?? []);
+      setHasMore(cached?.hasMore ?? false);
+    }
+    (async () => {
+      try {
+        const response = await fetch(`/api/messages/${roomId}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error(t('errorFetchingMessages'));
+        const data: FrontendMessage[] = await response.json();
+        if (controller.signal.aborted) return;
+        setMessages((previous) => {
+          const byId = new Map(
+            previous
+              .filter((message) => message.roomId === roomId)
+              .map((message) => [message.id, message]),
+          );
+          data.forEach((message) => byId.set(message.id, message));
+          return [...byId.values()].sort((a, b) => a.id - b.id);
+        });
+        if (loadedRoom.current !== roomId && !cached)
+          setHasMore(response.headers.get('X-Has-More') === 'true');
+        loadedRoom.current = roomId;
+        const currentRouter = routerRef.current;
+        if (currentRouter.query.roomId !== String(roomId))
+          currentRouter.replace(`/messaging?roomId=${roomId}`, undefined, {
+            shallow: true,
+          });
+      } catch (error) {
+        if (!controller.signal.aborted) {
           logError(t('errorFetchingMessages'), error);
-          setMessages([]);
-        } finally {
-          setLoadingMessages(false);
+          setHistoryError(true);
         }
-      } else {
-        setMessages([]);
+      } finally {
+        if (!controller.signal.aborted) setLoadingMessages(false);
       }
-    };
-    fetchMessages();
-  }, [selectedRoomId, router, t]);
+    })();
+    return () => controller.abort();
+  }, [selectedRoomId, isConnected, historyRevision, t]);
+
+  const loadOlder = useCallback(async () => {
+    const beforeId = messages[0]?.id;
+    if (!selectedRoomId || !beforeId || loadingOlder || historyRequest.current)
+      return;
+    const roomId = selectedRoomId;
+    const controller = new AbortController();
+    historyRequest.current = controller;
+    setLoadingOlder(true);
+    setHistoryError(false);
+    try {
+      const response = await fetch(
+        `/api/messages/${roomId}?beforeId=${beforeId}`,
+        { signal: controller.signal },
+      );
+      if (!response.ok) throw new Error(t('errorFetchingMessages'));
+      const data: FrontendMessage[] = await response.json();
+      if (controller.signal.aborted || activeRoom.current !== roomId) return;
+      setMessages((previous) =>
+        [
+          ...new Map(
+            [...data, ...previous].map((message) => [message.id, message]),
+          ).values(),
+        ].sort((a, b) => a.id - b.id),
+      );
+      setHasMore(response.headers.get('X-Has-More') === 'true');
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        logError(t('errorFetchingMessages'), error);
+        setHistoryError(true);
+      }
+    } finally {
+      if (historyRequest.current === controller) {
+        historyRequest.current = null;
+        setLoadingOlder(false);
+      }
+    }
+  }, [messages, selectedRoomId, loadingOlder, t]);
+
+  const jumpToMessage = useCallback(
+    async (messageId: number) => {
+      if (!selectedRoomId || historyRequest.current) return;
+      const roomId = selectedRoomId;
+      const controller = new AbortController();
+      historyRequest.current = controller;
+      setJumpError(false);
+      setLoadingOlder(true);
+      try {
+        const response = await fetch(
+          `/api/messages/${roomId}?aroundId=${messageId}`,
+          { signal: controller.signal },
+        );
+        if (!response.ok) throw new Error('Original message unavailable');
+        const data: FrontendMessage[] = await response.json();
+        if (controller.signal.aborted || activeRoom.current !== roomId) return;
+        setMessages(data);
+        setHasMore(response.headers.get('X-Has-More') === 'true');
+        setBrowsingOriginal(true);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setJumpError(true);
+          logError('Reply navigation failed', error);
+        }
+      } finally {
+        if (historyRequest.current === controller) {
+          historyRequest.current = null;
+          setLoadingOlder(false);
+        }
+      }
+    },
+    [selectedRoomId],
+  );
+  const returnToLatest = () => {
+    if (selectedRoomId) roomHistory.current.delete(selectedRoomId);
+    loadedRoom.current = null;
+    setMessages([]);
+    setHistoryRevision((value) => value + 1);
+  };
 
   const handleRoomSelect = useCallback(
     (roomId: number) => {
       setSelectedRoomId(roomId);
+      setMessages((previous) =>
+        previous.filter((message) => message.roomId === roomId),
+      );
       markRoomAsRead(roomId);
     },
     [markRoomAsRead],
@@ -169,6 +267,7 @@ const MessageList = () => {
         <RealtimeMessageHandler
           userId={Number(session.user.id)}
           selectedRoomId={selectedRoomId}
+          browsingOriginal={browsingOriginal}
           setMessages={setMessages}
           fetchRooms={fetchRooms} // Pass fetchRooms directly
           setRooms={setRooms}
@@ -181,6 +280,15 @@ const MessageList = () => {
         setSelectedRoomId={handleRoomSelect}
         messages={messages}
         loadingMessages={loadingMessages}
+        hasMore={hasMore}
+        loadingOlder={loadingOlder}
+        onLoadOlder={loadOlder}
+        historyError={historyError}
+        onRetryHistory={() => setHistoryRevision((value) => value + 1)}
+        onJumpToMessage={jumpToMessage}
+        browsingOriginal={browsingOriginal}
+        onReturnToLatest={returnToLatest}
+        jumpError={jumpError}
       />
     </>
   );
@@ -193,6 +301,15 @@ const MessageListComponent = ({
   setSelectedRoomId,
   messages,
   loadingMessages,
+  hasMore,
+  loadingOlder,
+  onLoadOlder,
+  historyError,
+  onRetryHistory,
+  onJumpToMessage,
+  browsingOriginal,
+  onReturnToLatest,
+  jumpError,
 }: {
   rooms: FrontendRoom[];
   setRooms: React.Dispatch<React.SetStateAction<FrontendRoom[]>>;
@@ -200,6 +317,15 @@ const MessageListComponent = ({
   setSelectedRoomId: (id: number) => void;
   messages: FrontendMessage[];
   loadingMessages: boolean;
+  hasMore: boolean;
+  loadingOlder: boolean;
+  onLoadOlder: () => void;
+  historyError: boolean;
+  onRetryHistory: () => void;
+  onJumpToMessage: (id: number) => void;
+  browsingOriginal: boolean;
+  onReturnToLatest: () => void;
+  jumpError: boolean;
 }) => {
   const router = useRouter();
   const { t } = useTranslation('messaging');
@@ -265,6 +391,24 @@ const MessageListComponent = ({
           </div>
         </GameCard>
       </div>
+      {historyError && (
+        <Text c="red" role="alert" mb="xs">
+          {t('errorFetchingMessages')}{' '}
+          <Button variant="subtle" size="compact-xs" onClick={onRetryHistory}>
+            {t('message.retry')}
+          </Button>
+        </Text>
+      )}
+      {jumpError && (
+        <Text role="alert" size="sm" mb="xs">
+          {t('conversation.originalUnavailable')}
+        </Text>
+      )}
+      {browsingOriginal && (
+        <Button variant="subtle" size="xs" mb="xs" onClick={onReturnToLatest}>
+          {t('conversation.returnToLatest')}
+        </Button>
+      )}
       <div className={styles.chatLayout}>
         <div className={`${styles.panel} ${styles.roomsPanel}`}>
           <ChatRoomListThemed
@@ -279,6 +423,11 @@ const MessageListComponent = ({
             messages={messages}
             roomInfo={selectedRoom}
             isLoading={loadingMessages}
+            hasMore={hasMore}
+            loadingOlder={loadingOlder}
+            onLoadOlder={onLoadOlder}
+            onJumpToMessage={onJumpToMessage}
+            onSentFromHistory={browsingOriginal ? onReturnToLatest : undefined}
           />
         </div>
       </div>
@@ -297,12 +446,14 @@ const MessageListComponent = ({
 const RealtimeMessageHandler = ({
   userId,
   selectedRoomId,
+  browsingOriginal,
   setMessages,
   setRooms,
   fetchRooms, // Receive fetchRooms prop
 }: {
   userId: number;
   selectedRoomId: number | null;
+  browsingOriginal: boolean;
   setMessages: React.Dispatch<React.SetStateAction<FrontendMessage[]>>;
   setRooms: React.Dispatch<React.SetStateAction<FrontendRoom[]>>;
   fetchRooms: () => Promise<void>; // Type fetchRooms prop
@@ -310,32 +461,23 @@ const RealtimeMessageHandler = ({
   const { addEventListener, removeEventListener, socket, isConnected } =
     useSocket(userId);
   const { t } = useTranslation('messaging');
-  const currentRoomRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!socket || !isConnected || !selectedRoomId) return;
+    socket.emit('joinRoom', selectedRoomId);
+    return () => {
+      socket.emit('leaveRoom', selectedRoomId);
+    };
+  }, [socket, isConnected, selectedRoomId]);
 
   useEffect(() => {
     if (!socket || !userId || !isConnected) return;
-
-    // --- Join/Leave Room Logic ---
-    if (selectedRoomId !== currentRoomRef.current) {
-      if (currentRoomRef.current !== null) {
-        logInfo(`Socket ${socket.id} leaving room-${currentRoomRef.current}`);
-        socket.emit('leaveRoom', currentRoomRef.current);
-      }
-      if (selectedRoomId !== null) {
-        logInfo(`Socket ${socket.id} joining room-${selectedRoomId}`);
-        socket.emit('joinRoom', selectedRoomId);
-        currentRoomRef.current = selectedRoomId;
-      } else {
-        currentRoomRef.current = null;
-      }
-    }
 
     // --- Define Event Handlers ---
     const handleReceiveMessage = (messageData: FrontendMessage) => {
       logInfo(
         `[User ${userId}] handleReceiveMessage CALLED. Msg ID: ${messageData.id}, Msg Room: ${messageData.roomId}, Selected Room: ${selectedRoomId}`,
       );
-      if (messageData.roomId === selectedRoomId) {
+      if (messageData.roomId === selectedRoomId && !browsingOriginal) {
         setMessages((prev) => {
           const optimisticIndex = prev.findIndex(
             (msg) => msg.isOptimistic && msg.tempId === messageData.tempId,
@@ -365,11 +507,7 @@ const RealtimeMessageHandler = ({
               lastMessageSender:
                 messageData.sender?.display_name || t('unknown'),
               updatedAt: messageData.sentAt,
-              unreadCount:
-                messageData.senderId !== userId &&
-                messageData.roomId !== selectedRoomId
-                  ? (room.unreadCount || 0) + 1
-                  : room.unreadCount,
+              unreadCount: room.unreadCount,
             };
           }
           return room;
@@ -400,7 +538,8 @@ const RealtimeMessageHandler = ({
               notificationData?.timestamp || new Date().toISOString(),
             );
             const unreadCount =
-              roomId !== selectedRoomId
+              roomId !== selectedRoomId &&
+              Number(notificationData.senderId) !== userId
                 ? (room.unreadCount || 0) + 1
                 : room.unreadCount;
 
@@ -532,7 +671,7 @@ const RealtimeMessageHandler = ({
     // --- Cleanup ---
     return () => {
       logInfo(
-        `[User ${userId}] Cleaning up ALL message listeners for selectedRoomId: ${currentRoomRef.current}`,
+        `[User ${userId}] Cleaning up ALL message listeners for selectedRoomId: ${selectedRoomId}`,
       );
       removeEventListener('receiveMessage', handleReceiveMessage);
       removeEventListener(
@@ -542,18 +681,12 @@ const RealtimeMessageHandler = ({
       removeEventListener('reactionAdded', handleReactionAdded);
       removeEventListener('reactionRemoved', handleReactionRemoved);
       removeEventListener('messagesRead', handleMessagesRead);
-
-      if (currentRoomRef.current !== null && socket) {
-        logInfo(
-          `Socket ${socket.id} leaving room-${currentRoomRef.current} on cleanup`,
-        );
-        socket.emit('leaveRoom', currentRoomRef.current);
-      }
     };
   }, [
     socket,
     userId,
     selectedRoomId,
+    browsingOriginal,
     isConnected,
     addEventListener,
     removeEventListener,

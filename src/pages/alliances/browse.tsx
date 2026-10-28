@@ -1,143 +1,12 @@
-import {
-  Avatar,
-  Box,
-  Button,
-  Group,
-  Image,
-  SimpleGrid,
-  Stack,
-  Text,
-} from '@mantine/core';
-import { useRouter } from 'next/router';
+import { SimpleGrid } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 
-import { GameCard } from '@/components/game/GameCard';
-import panelClasses from '@/components/game/Panels.module.css';
+import { AllianceCard } from '@/components/alliance/AllianceCard';
 import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
-import { toLocale } from '@/utils/numberFormatting';
-
-/** User card image. */
-export const UserCardImage = ({
-  id,
-  name,
-  members,
-  description,
-  gold,
-  joinText,
-  imgsrc,
-  bannerimgsrc,
-  joinMode,
-  onJoin,
-  userMembership, // Permissions or role if member
-  isLeader,
-}) => {
-  const { t } = useTranslation('alliances');
-  const { user } = useUser();
-  const [loading, setLoading] = useState(false);
-
-  const router = useRouter();
-  const handleJoinClick = async () => {
-    setLoading(true);
-    await onJoin(id);
-    setLoading(false);
-  };
-
-  const handleManageClick = () => {
-    router.push(`/alliances/${id}`);
-  };
-
-  const isInviteOnly = joinMode === 'INVITE_ONLY';
-  return (
-    <GameCard title={name}>
-      <Stack gap="md">
-        <Box
-          style={{
-            borderRadius: '8px',
-            overflow: 'hidden',
-            border: '1px solid var(--ot-line)',
-            height: 140,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background:
-              'linear-gradient(180deg, var(--ot-surface-2) 0%, var(--ot-inset) 100%)',
-          }}
-        >
-          {bannerimgsrc ? (
-            <Image src={bannerimgsrc} alt={name} fit="cover" h={140} />
-          ) : (
-            <Text size="xl" fw={700} c="dimmed" ta="center">
-              {name}
-            </Text>
-          )}
-        </Box>
-        <Group justify="center" mt={-40}>
-          <Avatar
-            src={imgsrc}
-            size={96}
-            radius={96}
-            style={{
-              border: '2px solid var(--ot-line)',
-              boxShadow: '0 6px 16px rgba(0,0,0,0.6)',
-            }}
-          />
-        </Group>
-        <Text ta="center" fz="sm" c="dimmed">
-          {description}
-        </Text>
-        <Group justify="space-between" className={panelClasses.insetRow}>
-          {/* Treasury is only sent for the viewer's own alliances (ALL-08). */}
-          {gold != null && (
-            <div>
-              <Text size="xs" c="dimmed" tt="uppercase">
-                {t('browse.gold')}
-              </Text>
-              <Text fw={700}>{toLocale(gold, user?.locale)}</Text>
-            </div>
-          )}
-          <div>
-            <Text size="xs" c="dimmed" tt="uppercase">
-              {t('browse.members')}
-            </Text>
-            <Text fw={700}>{toLocale(members, user?.locale)}</Text>
-          </div>
-        </Group>
-        <Group gap="xs">
-          {userMembership || isLeader ? (
-            <Button
-              fullWidth
-              radius="sm"
-              size="sm"
-              variant="default"
-              onClick={handleManageClick}
-            >
-              {t('browse.manage', 'View Dashboard')}
-            </Button>
-          ) : (
-            <Button
-              fullWidth
-              radius="sm"
-              size="sm"
-              disabled={isInviteOnly}
-              loading={loading}
-              onClick={handleJoinClick}
-            >
-              {isInviteOnly
-                ? t('browse.inviteOnly')
-                : joinMode === 'REQUEST_TO_JOIN'
-                  ? t('browse.requestToJoin')
-                  : joinText || t('browse.join')}
-            </Button>
-          )}
-        </Group>
-      </Stack>
-    </GameCard>
-  );
-};
 
 const Browse = () => {
   const [alliances, setAlliances] = useState([]);
@@ -184,7 +53,7 @@ const Browse = () => {
 
   return (
     <MainArea title={t('browse.title')}>
-      <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 3 }}>
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
         {alliances.map((alliance) => {
           const userMembership = user?.alliance_memberships?.find(
             (m) => m.alliance_id === alliance.id,
@@ -194,7 +63,7 @@ const Browse = () => {
           );
 
           return (
-            <UserCardImage
+            <AllianceCard
               key={alliance.id}
               name={alliance.name}
               description={alliance.motto}
@@ -213,6 +82,7 @@ const Browse = () => {
               // Check if user is member/leader
               userMembership={userMembership}
               isLeader={isLeader}
+              roleName={userMembership?.role?.name}
             />
           );
         })}

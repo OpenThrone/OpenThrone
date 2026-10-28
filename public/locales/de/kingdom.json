@@ -1,0 +1,70 @@
+{
+  "morale": {
+    "label": "Königreichsmoral",
+    "steady": "Stetig",
+    "restless": "Getrieben: Bürger verlassen das Königreich",
+    "mutinous": "Aufrührerisch: Truppen desertieren und Söldner verweigern Verträge",
+    "explain": "Was die Moral bewegt",
+    "tooltip": "Die Moral steigt, wenn Sie sich täglich anmelden, eine Verteidigung gewinnen und dem Königreich Zeit zur Erholung geben. Sie sinkt, wenn Sie eine Verteidigung verlieren, Ihre Söldner nicht bezahlen können oder sich länger abwesend machen.",
+    "ariaLabel": "Königreichsmoral {{percent}} von 100: {{state}}"
+  },
+  "desertions": {
+    "title": "Desertionsprotokoll",
+    "loading": "Das Protokoll wird gelesen...",
+    "error": "Das Protokoll konnte nicht gelesen werden.",
+    "empty": "Niemand hat Ihr Königreich verlassen.",
+    "justNow": "gerade eben",
+    "more": "und {{count}} weitere",
+    "events": {
+      "citizens_one": "{{count}} Bürger verließ das Königreich",
+      "citizens_other": "{{count}} Bürger verlassen das Königreich",
+      "abandon_one": "{{count}} {{unit}} der Stufe {{level}} verließ das Königreich",
+      "abandon_other": "{{count}} {{unit}} Soldaten der Stufe {{level}} verlassen das Königreich",
+      "defectLost_one": "{{count}} {{unit}} Soldat der Stufe {{level}} desertierte zum Feind",
+      "defectLost_other": "{{count}} {{unit}} Soldaten der Stufe {{level}} desertierten zum Feind",
+      "defectReceived_one": "{{count}} Deserteur kam als Bürger zu Ihrem Königreich",
+      "defectReceived_other": "{{count}} Deserteure kamen als Bürger zu Ihrem Königreich",
+      "mercenary_one": "{{count}} {{unit}} Söldner der Stufe {{level}} verließ den Vertrag",
+      "mercenary_other": "{{count}} {{unit}} Söldner der Stufe {{level}} verlassen den Vertrag"
+    }
+  },
+  "dungeon": {
+    "title": "Verlies",
+    "loading": "Die Zellen werden geprüft...",
+    "error": "Das Verlies konnte nicht gelesen werden.",
+    "locked": "Gesperrt — erfordert eine {{name}} (Befestigungsstufe {{level}}).",
+    "heldTitle": "Gefangene in Ihrem Verlies",
+    "heldEmpty": "Ihr Verlies hält keine Gefangenen, und keine Ihrer Truppen wird gefangen gehalten.",
+    "capacity": "{{held}} / {{max}} Gefangene",
+    "heldRow_one": "{{count}} {{unit}} der Stufe {{level}} wurde von {{player}} genommen",
+    "heldRow_other": "{{count}} {{unit}} der Stufe {{level}} wurden von {{player}} genommen",
+    "ransomHint": "Lösegeld {{price}} — Sie behalten {{share}}",
+    "convertReady": "Übernehmen für {{cost}}",
+    "convertIn": "Übernehmbar in {{hours}} Std.",
+    "convertHelp": "Gefangene können nach 72 Stunden im Verlies übernommen werden.",
+    "release": "Freilassen",
+    "convert": "Übernehmen",
+    "mineTitle": "Ihre Truppen in feindlichen Verliesen",
+    "mineRow_one": "{{count}} {{unit}} der Stufe {{level}} wird von {{player}} festgehalten",
+    "mineRow_other": "{{count}} {{unit}} der Stufe {{level}} werden von {{player}} festgehalten",
+    "ransom": "Auslösen",
+    "ransomPrice": "Auslösen für {{price}}",
+    "escapesIn": "entkommt in {{hours}} Std.",
+    "actionDone_one": "{{count}} Gefangener bearbeitet.",
+    "actionDone_other": "{{count}} Gefangene bearbeitet."
+  },
+  "reanimation": {
+    "label": "Heute wiedererweckt",
+    "status": "{{risen}} / {{cap}}",
+    "locked": "Wiederbelebung schläft — Ihre Gefallenen erheben sich wieder ab einem {{name}} (Befestigungsstufe {{level}}).",
+    "fortFallback": "Befestigungsstufe {{level}}"
+  },
+  "unitTypes": {
+    "CITIZEN": "Bürger",
+    "WORKER": "Arbeiter",
+    "OFFENSE": "Angriff",
+    "DEFENSE": "Verteidigung",
+    "SPY": "Spion",
+    "SENTRY": "Wächter"
+  }
+}

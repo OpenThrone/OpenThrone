@@ -4,6 +4,8 @@ import {
   Accordion,
   Anchor,
   Badge,
+  Box,
+  Button,
   Group,
   Space,
   Stack,
@@ -28,6 +30,9 @@ interface NewsItem {
 
 interface StyledNewsProps {
   news: NewsItem[];
+  archive?: boolean;
+  pendingReadIds?: number[];
+  onReadChange?: (id: number) => void;
 }
 
 const kindBadgeColor: Record<string, string> = {
@@ -36,27 +41,55 @@ const kindBadgeColor: Record<string, string> = {
   CHANGELOG: 'green',
 };
 
+function DispatchFrame({
+  archive,
+  title,
+  children,
+}: {
+  archive: boolean;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return archive ? (
+    <Box>{children}</Box>
+  ) : (
+    <GameCard title={title} icon={faScroll}>
+      {children}
+    </GameCard>
+  );
+}
+
 /** Styled news. */
-export const StyledNews: React.FC<StyledNewsProps> = ({ news }) => {
-  const { t } = useTranslation('home');
+export const StyledNews: React.FC<StyledNewsProps> = ({
+  news,
+  archive = false,
+  pendingReadIds = [],
+  onReadChange,
+}) => {
+  const { t, i18n } = useTranslation('home');
+  const { t: tCommunity } = useTranslation('community');
+
   if (news.length === 0) {
     return (
-      <GameCard title={t('dispatches.title')} icon={faScroll}>
+      <DispatchFrame archive={archive} title={t('dispatches.title')}>
         <Text size="sm" c="var(--ot-muted)" ta="center" py="lg">
           {t('dispatches.empty')}
         </Text>
-      </GameCard>
+      </DispatchFrame>
     );
   }
 
   const sorted = [...news].sort((a, b) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
-    return 0;
+    return (
+      Date.parse(b.created_timestamp) - Date.parse(a.created_timestamp) ||
+      b.id - a.id
+    );
   });
 
   return (
-    <GameCard title={t('dispatches.title')} icon={faScroll}>
+    <DispatchFrame archive={archive} title={t('dispatches.title')}>
       <Accordion
         variant="contained"
         defaultValue={
@@ -80,9 +113,13 @@ export const StyledNews: React.FC<StyledNewsProps> = ({ news }) => {
       >
         {sorted.map((item) => (
           <Accordion.Item key={item.id} value={item.id.toString()}>
-            <Accordion.Control>
-              <Group justify="space-between" wrap="nowrap" gap="xs">
-                <Group gap="xs" wrap="nowrap">
+            <Accordion.Control style={{ minHeight: 64 }}>
+              <Group justify="space-between" wrap="wrap" gap="xs">
+                <Group
+                  gap="xs"
+                  wrap="nowrap"
+                  style={{ minWidth: 0, flex: '1 1 220px' }}
+                >
                   {item.isPinned && (
                     <FontAwesomeIcon
                       icon={faScroll}
@@ -111,7 +148,9 @@ export const StyledNews: React.FC<StyledNewsProps> = ({ news }) => {
                     </Badge>
                   )}
                   <Text size="xs" c="var(--ot-muted)">
-                    {new Date(item.created_timestamp).toLocaleDateString()}
+                    {new Date(item.created_timestamp).toLocaleDateString(
+                      i18n.language,
+                    )}
                   </Text>
                 </Group>
               </Group>
@@ -124,11 +163,25 @@ export const StyledNews: React.FC<StyledNewsProps> = ({ news }) => {
                   c="var(--ot-muted)"
                   lh={1.6}
                   lineClamp={4}
-                  style={{ wordBreak: 'break-word' }}
+                  style={{ wordBreak: 'break-word', maxWidth: '75ch' }}
                 >
                   <MarkdownArticle content={item.content} variant="compact" />
                 </Text>
-                <Group justify="flex-end">
+                <Group justify="space-between">
+                  {onReadChange ? (
+                    <Button
+                      size="compact-xs"
+                      variant="subtle"
+                      loading={pendingReadIds.includes(item.id)}
+                      onClick={() => onReadChange(item.id)}
+                    >
+                      {tCommunity(
+                        item.read ? 'news.markAsUnread' : 'news.markAsRead',
+                      )}
+                    </Button>
+                  ) : (
+                    <span />
+                  )}
                   <Anchor
                     component={Link}
                     href={`/community/news/${item.id}`}
@@ -144,18 +197,22 @@ export const StyledNews: React.FC<StyledNewsProps> = ({ news }) => {
           </Accordion.Item>
         ))}
       </Accordion>
-      <Space h="xs" />
-      <Group justify="center">
-        <Anchor
-          component={Link}
-          href="/community/news"
-          size="xs"
-          c="var(--ot-muted)"
-          underline="hover"
-        >
-          {t('dispatches.viewAll')}
-        </Anchor>
-      </Group>
-    </GameCard>
+      {!archive && (
+        <>
+          <Space h="xs" />
+          <Group justify="center">
+            <Anchor
+              component={Link}
+              href="/community/news"
+              size="xs"
+              c="var(--ot-muted)"
+              underline="hover"
+            >
+              {t('dispatches.viewAll')}
+            </Anchor>
+          </Group>
+        </>
+      )}
+    </DispatchFrame>
   );
 };

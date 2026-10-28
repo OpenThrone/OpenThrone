@@ -36,15 +36,7 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  Badge,
-  Drawer,
-  Group,
-  Menu,
-  ScrollArea,
-  Text,
-  UnstyledButton,
-} from '@mantine/core';
+import { Badge, Drawer, Menu, Text, UnstyledButton } from '@mantine/core';
 import { useReducedMotion } from '@mantine/hooks';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -52,11 +44,11 @@ import { signOut } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import React, { useEffect, useRef, useState } from 'react';
 
+import ChatNotificationItems from '@/components/game/ChatNotificationItems';
 import frameClasses from '@/components/game/FantasyFrame.module.css';
 import styles from '@/components/MobileNavigation.module.css';
 import { useUser } from '@/context/users';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
-import { formatLastMessageTime } from '@/utils/timefunctions';
 
 import HeaderIconButton from './HeaderIconButton';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
@@ -353,58 +345,10 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     )}
                   </Menu.Target>
                   <Menu.Dropdown>
-                    <Menu.Label>
-                      {t('interface.recentUnreadMessages')}
-                    </Menu.Label>
-                    {unreadMessages.length === 0 ? (
-                      <Menu.Item disabled>
-                        {t('interface.noUnreadMessages')}
-                      </Menu.Item>
-                    ) : (
-                      <ScrollArea.Autosize mah={260}>
-                        {unreadMessages
-                          .sort(
-                            (a, b) =>
-                              new Date(b.timestamp).getTime() -
-                              new Date(a.timestamp).getTime(),
-                          )
-                          .slice(0, 10)
-                          .map((msg) => (
-                            <Menu.Item
-                              key={msg.id}
-                              component={Link}
-                              href={`/messaging?roomId=${msg.chatRoomId}`}
-                              onClick={() =>
-                                handleMessageItemClick(msg.chatRoomId)
-                              }
-                              style={{
-                                whiteSpace: 'normal',
-                                height: 'auto',
-                                paddingTop: '8px',
-                                paddingBottom: '8px',
-                              }}
-                            >
-                              <div>
-                                <Group justify="space-between" mb={4}>
-                                  <Text fw={500} size="sm" truncate>
-                                    {msg.senderName}
-                                  </Text>
-                                  <Text c="dimmed" size="xs">
-                                    {formatLastMessageTime(msg.timestamp)}
-                                  </Text>
-                                </Group>
-                                <Text size="xs" lineClamp={2}>
-                                  {msg.content}
-                                </Text>
-                              </div>
-                            </Menu.Item>
-                          ))}
-                      </ScrollArea.Autosize>
-                    )}
-                    <Menu.Divider />
-                    <Menu.Item component={Link} href="/messaging">
-                      {t('interface.seeAllMessages')}
-                    </Menu.Item>
+                    <ChatNotificationItems
+                      messages={unreadMessages}
+                      onRoomSelect={handleMessageItemClick}
+                    />
                   </Menu.Dropdown>
                 </Menu>
                 {enableSocial && (

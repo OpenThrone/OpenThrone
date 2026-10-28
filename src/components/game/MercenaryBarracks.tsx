@@ -14,6 +14,14 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
+import {
+  getRequiredEconomyUpgradeName,
+  hasFeature,
+} from '@/constants/FeatureUnlocks';
+import {
+  MERCENARY_ROLE_CAP,
+  mercenaryTierFeatureKey,
+} from '@/utils/temporaryForces';
 
 export interface MercenaryOffer {
   type: string;
@@ -33,6 +41,14 @@ export interface MercenaryContract {
   expiresAt: string;
   unitPriceGold: string;
 }
+export interface MercenaryArmyShare {
+  /** Surviving mercenaries across every role, wounded included. */
+  mercenaries: number;
+  /** Own trained units (OFFENSE/DEFENSE/SPY/SENTRY quantities). */
+  trainedUnits: number;
+  /** Maximum surviving mercenaries the share cap allows. */
+  allowed: number;
+}
 export type MercenaryOrder =
   | {
       action: 'hire';
@@ -49,6 +65,8 @@ export function MercenaryBarracks({
   offers,
   contracts,
   fortLevel,
+  economyLevel,
+  armyShare,
   gold,
   busy,
   error,
@@ -57,6 +75,8 @@ export function MercenaryBarracks({
   offers: MercenaryOffer[];
   contracts: MercenaryContract[];
   fortLevel: number;
+  economyLevel: number;
+  armyShare?: MercenaryArmyShare;
   gold: string;
   busy?: boolean;
   error?: string;
@@ -70,17 +90,33 @@ export function MercenaryBarracks({
   const offer = offers.find((o) => `${o.type}:${o.level}` === selected);
   const count = Number(quantity) || 0;
   const termDays = Number(days) || 1;
+  const hallUpgrade = getRequiredEconomyUpgradeName('MERCENARY_HALL') ?? '';
+  const hallLocked = !hasFeature(
+    { economyLevel, fortLevel: 0 },
+    'MERCENARY_HALL',
+  );
+  const tierLocked = (level: number) =>
+    !hasFeature({ economyLevel, fortLevel: 0 }, mercenaryTierFeatureKey(level));
+  const tierUpgrade = (level: number) =>
+    getRequiredEconomyUpgradeName(mercenaryTierFeatureKey(level)) ?? '';
+  const withinShareCap = armyShare
+    ? armyShare.mercenaries + Math.max(0, Math.floor(count)) <=
+      armyShare.allowed
+    : true;
   const total = offer
     ? BigInt(Math.max(0, Math.floor(count))) *
       (BigInt(offer.mobilization) + BigInt(termDays) * BigInt(offer.dailyPrice))
     : 0n;
   const valid =
     offer &&
+    !hallLocked &&
+    !tierLocked(offer.level) &&
     Number.isInteger(count) &&
     count > 0 &&
-    count <= 100 &&
+    count <= MERCENARY_ROLE_CAP &&
     total <= BigInt(gold) &&
-    fortLevel >= offer.fortLevel;
+    fortLevel >= offer.fortLevel &&
+    withinShareCap;
   return (
     <Stack gap="lg">
       <GameCard title={t('hireTitle')}>
@@ -94,16 +130,26 @@ export function MercenaryBarracks({
               {error}
             </Alert>
           )}
+          {hallLocked && (
+            <Alert color="yellow">
+              {t('lockedHall', { upgrade: hallUpgrade })}
+            </Alert>
+          )}
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
             <Select
               label={t('unit')}
               placeholder={t('choose')}
               value={selected}
               onChange={setSelected}
+              disabled={hallLocked}
               data={offers.map((o) => ({
                 value: `${o.type}:${o.level}`,
-                label: `${t(`roles.${o.type}`)} · ${o.name} · ${t('tier', { level: o.level })}`,
-                disabled: fortLevel < o.fortLevel,
+                label: `${t(`roles.${o.type}`)} · ${o.name} · ${t('tier', { level: o.level })}${
+                  tierLocked(o.level)
+                    ? ` · ${t('tierLocked', { upgrade: tierUpgrade(o.level) })}`
+                    : ''
+                }`,
+                disabled: fortLevel < o.fortLevel || tierLocked(o.level),
               }))}
             />
             <NumberInput
@@ -111,8 +157,9 @@ export function MercenaryBarracks({
               value={quantity}
               onChange={setQuantity}
               min={1}
-              max={100}
+              max={MERCENARY_ROLE_CAP}
               allowDecimal={false}
+              disabled={hallLocked}
             />
             <Select
               label={t('term')}
@@ -131,6 +178,18 @@ export function MercenaryBarracks({
                 mobilization: offer.mobilization,
                 daily: offer.dailyPrice,
                 total: total.toString(),
+              })}
+            </Text>
+          )}
+          {armyShare && (
+            <Text
+              size="sm"
+              c={withinShareCap ? undefined : 'red'}
+              role={withinShareCap ? undefined : 'alert'}
+            >
+              {t('shareCap', {
+                mercenaries: armyShare.mercenaries,
+                allowed: armyShare.allowed,
               })}
             </Text>
           )}
@@ -199,10 +258,12 @@ export function MercenaryBarracks({
                           variant="default"
                           loading={busy}
                           disabled={
+                            hallLocked ||
+                            tierLocked(c.level) ||
                             BigInt(c.unitPriceGold) *
                               BigInt(c.survivingQuantity) *
                               BigInt(termDays) >
-                            BigInt(gold)
+                              BigInt(gold)
                           }
                           onClick={() =>
                             onOrder({

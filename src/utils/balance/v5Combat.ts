@@ -22,6 +22,14 @@ export const V5_COMBAT_CONSTANTS = {
   PROTECTED_LEVEL_LOOT_FACTOR: 0.8,
   DEFENSE_COVERAGE_THRESHOLD: 0.25,
   SINGLE_ATTACK_POPULATION_LOSS_CAP: 0.08,
+  /** Default (defender) floor on casualty win quality: a crushed side still pays at least this share of its budget. */
+  DEFENDER_WIN_QUALITY_FLOOR: 0.3,
+  /** Attacker floor on casualty win quality (issue #200): an anti-farming cost so decisive raids still pay at least half the casualty budget. */
+  ATTACKER_WIN_QUALITY_FLOOR: 0.5,
+  /** Assault chip damage is zero at or below this attack/defense ratio (issue #200). */
+  CHIP_TAPER_START_RATIO: 0.25,
+  /** Assault chip damage reaches its full floor at this attack/defense ratio. */
+  CHIP_TAPER_FULL_RATIO: 0.75,
   /** No single battle may destroy more than this many days of rebuild throughput. */
   CASUALTY_BUDGET_RECOVERY_DAYS: 5,
   /** All attackers combined may not destroy more than this many days of throughput per day. */
@@ -375,6 +383,8 @@ export function calculateCasualtyBudget(params: {
   winQuality: number;
   fortHpPercent: number;
   defensePressureToday: number;
+  /** Lowest win-quality multiplier; defaults to DEFENDER_WIN_QUALITY_FLOOR. */
+  winQualityFloor?: number;
 }): number {
   const ceiling = Math.min(
     Math.max(0, Number(params.dailyThroughput) || 0) *
@@ -389,7 +399,11 @@ export function calculateCasualtyBudget(params: {
     ceiling *
     Math.min(1, calculateTurnDamageFactor(params.turns)) *
     clamp(1 - params.levelDifference * 0.08, 0.8, 1) *
-    clamp(params.winQuality, 0.3, 1) *
+    clamp(
+      params.winQuality,
+      params.winQualityFloor ?? V5_COMBAT_CONSTANTS.DEFENDER_WIN_QUALITY_FLOOR,
+      1,
+    ) *
     fortProtection *
     calculatePressureProtection(params.defensePressureToday)
   );

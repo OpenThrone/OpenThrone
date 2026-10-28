@@ -347,12 +347,27 @@ A change is complete only if:
 - [ ] Works across race themes
 - [ ] Visual guide (`/test`) updated for added, removed or restyled components
 - [ ] Visual evidence provided (before and after screenshots) for any UI/styling bug resolutions
+- [ ] Validated locally against a throwaway database (see Local validation before alpha)
 - [ ] Design file re-synced (`bun run design:sync`) once a visual change is merged and deployed to alpha
 
 
 ## Environments and deployment
 
 Branch model: `master` is production (`openthrone.dev`) and `alpha` is the alpha server (`alpha.openthrone.dev`). Agents work on a feature branch cut from `alpha`, test locally, open a PR into `alpha`, test on the alpha server, then open a release PR from `alpha` into `master`. Never commit directly to `alpha` or `master`. Do not deploy to production without the user's explicit go-ahead. Server hostnames, deploy steps, rollback and production data rules are kept outside this repository; ask the user for them before touching alpha or production.
+
+### Local validation before alpha
+
+Any change that affects gameplay, UI, or data is run locally before it goes to alpha or staging. Local runs use a throwaway database and never a shared one:
+
+- **Database:** start a disposable PostgreSQL container on a free loopback port, using a database named `ot_integration` and the disposable `ot`/`ot` credentials. Pick a port that is not already in use (`podman ps`); other sessions may hold one. Check the port before starting; if it is taken, pick another.
+- **Config:** do not load `.env` for these runs. Use `bun --no-env-file`, and pass the database URL and secrets through a generated env file outside the repo (`chmod 600`). Turn off background jobs (`DO_TURN_UPDATES`, `DO_DAILY_UPDATES`, `DO_BOT_UPDATES`) and turnstile.
+- **Schema:** `OT_INTEGRATION_DB=1 POSTGRES_URL_NON_POOLING=<container url> bun --no-env-file x prisma migrate deploy --config prisma/integration.config.ts`, after `bun --no-env-file x prisma generate --config prisma/integration.config.ts` if the client was not generated.
+- **Seed:** `POSTGRES_PRISMA_URL=<container url> bun --no-env-file scripts/dev-seed.ts`. Redirect its output to a file outside the repo, and read only the account names from it. Never print passwords into chat or logs.
+- **Run:** `bun --no-env-file run dev` with the env file sourced. Log in as a seeded player (or the admin account) and check the change on the affected pages, in the browser, at desktop width.
+- **Evidence:** keep before and after screenshots outside the repo, and cite them in the PR.
+- **Teardown:** stop the dev server and remove the container (`podman rm -f <name>`).
+
+Local checks prove the change works against a fresh database. They do not replace the alpha test. Alpha and staging are deployed only after this passes.
 
 ## Versioning and releases
 

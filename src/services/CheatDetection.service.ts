@@ -1,7 +1,41 @@
+import {
+  assessDefectorFarming,
+  DEFECTOR_FARMING_WINDOW_DAYS,
+  defectorFarmingSeverity,
+} from '@/constants/KingdomMorale';
 import prisma from '@/lib/prisma';
 import { InvestigationStatus, SignalSeverity } from '@/lib/prisma-exports';
 import { proxyLoginIpHashes } from '@/services/LoginTelemetry.service';
 import { logActionStrict } from '@/utils/auditLogger';
+import { getOTDayKey } from '@/utils/timefunctions';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Login telemetry retention: pairs only share a pattern within this window. */
+const PAIR_LOGIN_WINDOW_DAYS = 30;
+/** Bounded per-user login lookup, mirroring LoginTelemetry's own limit. */
+const PAIR_LOGIN_EVENT_LIMIT = 1000;
+
+/**
+ * Deterministic advisory-lock key for one (receiver, loser, type)
+ * cheat-signal pair: FNV-1a 64-bit over the triple, rendered as a signed
+ * bigint string for pg_advisory_xact_lock. A hash collision only
+ * over-serializes two unrelated pairs for a moment; it never
+ * under-serializes a pair, which is all the dedupe needs.
+ */
+const cheatSignalLockKey = (
+  receiverId: number,
+  loserId: number,
+  type: string,
+): string => {
+  const identity = `${receiverId}:${loserId}:${type}`;
+  let hash = 0xcbf29ce484222325n; // FNV-1a offset basis
+  for (let index = 0; index < identity.length; index += 1) {
+    // eslint-disable-next-line no-bitwise -- FNV-1a XOR step over the byte
+    hash ^= BigInt(identity.charCodeAt(index));
+    hash = BigInt.asUintN(64, hash * 0x100000001b3n); // FNV-1a prime
+  }
+  return BigInt.asIntN(64, hash).toString();
+};
 
 /** Encapsulates cheat detection data access and domain operations. */
 export class CheatDetectionService {
@@ -161,5 +195,225 @@ export class CheatDetectionService {
       ...cluster,
       hash: `${hash.slice(0, 10)}…`,
     }));
+  }
+
+  /**
+   * Defector-farming cheat signal (#205): after a loser's daily morale pass
+   * commits its defections, evaluate every receiver that loser fed within
+   * the rolling DEFECTOR_FARMING_WINDOW_DAYS. A pair signals when the
+   * receiver collected the loser's defectors on DEFECTOR_FARMING_MIN_DAYS or
+   * more distinct OT days, or took at least half of everything the loser
+   * lost to desertion in the window; a shared login IP/device pattern adds
+   * weight. Runs on plain prisma AFTER the pass's transaction commits (a
+   * failed statement inside it would abort the whole pass on Postgres) and
+   * reads the committed desertionEvent rows, so a same-day re-run of the
+   * pass re-evaluates it; the per-pair dedupe keeps that idempotent.
+   * Signal only — this never blocks gameplay. Bots never signal in either
+   * direction: bot losers feeding a human attacker (or a bot collecting a
+   * human's collapse) is ordinary play.
+   */
+  static async detectDefectorFarming(
+    loserId: number,
+    now: Date = new Date(),
+  ): Promise<void> {
+    if (!Number.isSafeInteger(loserId) || loserId <= 0) return;
+    const windowStart = new Date(
+      now.getTime() - DEFECTOR_FARMING_WINDOW_DAYS * DAY_MS,
+    );
+
+    const loser = await prisma.users.findUnique({
+      where: { id: loserId },
+      select: { display_name: true, isBot: true },
+    });
+    if (!loser || loser.isBot) return;
+
+    const defectRows = await prisma.desertionEvent.findMany({
+      where: {
+        userId: loserId,
+        kind: 'DEFECT',
+        createdAt: { gte: windowStart },
+      },
+      select: { defectedToUserId: true, quantity: true, createdAt: true },
+    });
+    if (defectRows.length === 0) return;
+
+    // Everything the loser lost to desertion in the window, every kind:
+    // citizens, trained deserters that abandoned, defectors and mercenaries.
+    const totalLost = await prisma.desertionEvent.aggregate({
+      _sum: { quantity: true },
+      where: { userId: loserId, createdAt: { gte: windowStart } },
+    });
+    const totalLostToDesertion = Number(totalLost._sum.quantity ?? 0);
+    if (totalLostToDesertion <= 0) return;
+
+    const perReceiver = new Map<
+      number,
+      { quantity: number; days: Set<string> }
+    >();
+    for (const row of defectRows) {
+      if (row.defectedToUserId === null || row.defectedToUserId === loserId)
+        continue;
+      const entry = perReceiver.get(row.defectedToUserId) ?? {
+        quantity: 0,
+        days: new Set<string>(),
+      };
+      entry.quantity += row.quantity;
+      entry.days.add(getOTDayKey(new Date(row.createdAt)));
+      perReceiver.set(row.defectedToUserId, entry);
+    }
+    if (perReceiver.size === 0) return;
+
+    const receiverRows = await prisma.users.findMany({
+      where: { id: { in: [...perReceiver.keys()] } },
+      select: { id: true, isBot: true },
+    });
+    const humanReceivers = receiverRows.filter((row) => !row.isBot);
+
+    for (const receiver of humanReceivers) {
+      const stats = perReceiver.get(receiver.id);
+      if (!stats) continue;
+      const base = assessDefectorFarming({
+        distinctDays: stats.days.size,
+        defectedToReceiver: stats.quantity,
+        totalLostToDesertion,
+      });
+      if (!base.triggered) continue;
+
+      // Extra weight when the pair already shares a login network or device
+      // pattern — the same telemetry the multi-account clusters are built
+      // from, queried for just this pair.
+      const sharedLoginPattern = await this.pairSharesLoginPattern(
+        receiver.id,
+        loserId,
+        now,
+      );
+      const assessment = assessDefectorFarming({
+        distinctDays: stats.days.size,
+        defectedToReceiver: stats.quantity,
+        totalLostToDesertion,
+        sharedLoginPattern,
+      });
+      const sharePercent = Math.round(assessment.share * 100);
+      const summary =
+        `Received ${stats.quantity} defectors from ${loser.display_name} across ` +
+        `${stats.days.size} of the last ${DEFECTOR_FARMING_WINDOW_DAYS} days — ` +
+        `${sharePercent}% of everything that kingdom lost to desertion.${
+          sharedLoginPattern
+            ? ' The pair also shares a login network/browser pattern.'
+            : ''
+        }`;
+      const evidence = {
+        kind: 'defector-farming',
+        defectedToReceiver: stats.quantity,
+        totalLostToDesertion,
+        distinctDays: stats.days.size,
+        share: Math.round(assessment.share * 1000) / 1000,
+        windowDays: DEFECTOR_FARMING_WINDOW_DAYS,
+        reasons: assessment.reasons,
+        ...(sharedLoginPattern ? { sharedLoginPattern: true } : {}),
+      };
+
+      // Deduplicated per pair, serialized by a per-pair advisory lock in a
+      // small transaction around the find/update/create: two concurrent
+      // detections (an overlapping cron pass retried the loser) cannot both
+      // pass the findFirst with nothing there and create duplicate signals.
+      // An open or acknowledged signal is bumped in place; a dismissed or
+      // actioned one is never resurrected — the next qualifying pattern
+      // raises a fresh signal instead. ($executeRaw, not $queryRaw:
+      // pg_advisory_xact_lock returns void, which $queryRaw cannot
+      // deserialize.)
+      await prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${cheatSignalLockKey(
+          receiver.id,
+          loserId,
+          'DEFECTOR_FARMING',
+        )}::bigint)`;
+        const openSignal = await tx.cheatSignal.findFirst({
+          where: {
+            userId: receiver.id,
+            relatedUserId: loserId,
+            type: 'DEFECTOR_FARMING',
+            status: { in: ['OPEN', 'ACKNOWLEDGED'] },
+          },
+          select: { id: true, score: true },
+        });
+        if (openSignal) {
+          // The signal never weakens while open: score ratchets up and the
+          // severity always matches the stored score.
+          const score = Math.max(openSignal.score, assessment.score);
+          await tx.cheatSignal.update({
+            where: { id: openSignal.id },
+            data: {
+              score,
+              severity: defectorFarmingSeverity(score),
+              lastSeenAt: now,
+              summary,
+              evidence,
+            },
+          });
+          return;
+        }
+        await tx.cheatSignal.create({
+          data: {
+            userId: receiver.id,
+            relatedUserId: loserId,
+            type: 'DEFECTOR_FARMING',
+            severity: assessment.severity,
+            score: assessment.score,
+            status: 'OPEN',
+            summary,
+            evidence,
+          },
+        });
+      });
+    }
+  }
+
+  /**
+   * Whether two accounts share a login IP or device pattern inside the
+   * telemetry retention window, excluding our own proxy's address (everyone
+   * logs in through it, so it is not a shared network). Targeted pair lookup
+   * over the same LoginEvent data getMultiAccountClusters clusters.
+   */
+  private static async pairSharesLoginPattern(
+    userA: number,
+    userB: number,
+    now: Date,
+  ): Promise<boolean> {
+    const since = new Date(now.getTime() - PAIR_LOGIN_WINDOW_DAYS * DAY_MS);
+    const [eventsA, eventsB] = await Promise.all([
+      prisma.loginEvent.findMany({
+        where: { userId: userA, occurredAt: { gte: since } },
+        select: { ipHash: true, deviceHash: true },
+        distinct: ['ipHash', 'deviceHash'],
+        orderBy: { occurredAt: 'desc' },
+        take: PAIR_LOGIN_EVENT_LIMIT,
+      }),
+      prisma.loginEvent.findMany({
+        where: { userId: userB, occurredAt: { gte: since } },
+        select: { ipHash: true, deviceHash: true },
+        distinct: ['ipHash', 'deviceHash'],
+        orderBy: { occurredAt: 'desc' },
+        take: PAIR_LOGIN_EVENT_LIMIT,
+      }),
+    ]);
+    if (eventsA.length === 0 || eventsB.length === 0) return false;
+    const proxyHashes = proxyLoginIpHashes();
+    const ipsOf = (events: typeof eventsA) =>
+      new Set(
+        events
+          .map((event) => event.ipHash)
+          .filter((hash) => hash && !proxyHashes.has(hash)),
+      );
+    const devicesOf = (events: typeof eventsA) =>
+      new Set(
+        events
+          .map((event) => event.deviceHash)
+          .filter((hash): hash is string => hash !== null),
+      );
+    const [ipsA, ipsB] = [ipsOf(eventsA), ipsOf(eventsB)];
+    if ([...ipsA].some((hash) => ipsB.has(hash))) return true;
+    const [devicesA, devicesB] = [devicesOf(eventsA), devicesOf(eventsB)];
+    return [...devicesA].some((hash) => devicesB.has(hash));
   }
 }

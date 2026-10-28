@@ -42,7 +42,18 @@
       "muteNotifications": "Benachrichtigungen stummschalten",
       "deleteGroup": "Gruppe löschen",
       "deleteConversation": "Unterhaltung löschen"
-    }
+    },
+    "loadOlder": "Ältere Nachrichten laden",
+    "newMessages_one": "{{count}} neue Nachricht · Zur neuesten springen",
+    "newMessages_other": "{{count}} neue Nachrichten · Zur neuesten springen",
+    "unreadDivider": "Neue Nachrichten",
+    "typing": "{{names}} schreibt…",
+    "typingSeveral": "{{names}} und {{count}} weitere Personen schreiben…",
+    "typingNames": "{{names}} schreiben…",
+    "reconnecting": "Verbindung wird wiederhergestellt… Dein Entwurf bleibt hier erhalten.",
+    "connected": "Verbunden",
+    "originalUnavailable": "Die ursprüngliche Nachricht konnte nicht geöffnet werden. Versuche es erneut oder lade ältere Nachrichten.",
+    "returnToLatest": "Zu den neuesten Nachrichten"
   },
   "message": {
     "replyingTo": "Antwort an {{name}}",
@@ -55,14 +66,28 @@
     "readByMore_one": "Gelesen von: {{names}} und {{count, number}} weiteren Person",
     "readByMore_other": "Gelesen von: {{names}} und {{count, number}} weiteren Personen",
     "sent": "Gesendet",
-    "viewAttackLog": "Angriffsbericht #{{id}} ansehen"
+    "viewAttackLog": "Angriffsbericht #{{id}} ansehen",
+    "pending": "Wird gesendet…",
+    "failed": "Senden unbestätigt. Deine Nachricht bleibt erhalten.",
+    "retry": "Erneut versuchen",
+    "sharedAttackLog": "Geteilter Angriffsbericht #{{id}}",
+    "deliveryErrors": {
+      "unconfirmed": "Zustellung unbestätigt. Erneut senden ist sicher.",
+      "rejected": "Nachricht nicht gesendet. Versuche es erneut.",
+      "rateLimited": "Zu viele Nachrichten. Warte kurz und versuche es erneut."
+    },
+    "removed": "Diese Nachricht wurde entfernt.",
+    "jumpToOriginal": "Zur ursprünglichen Nachricht springen"
   },
   "input": {
     "placeholder": "Geben Sie Ihre Nachricht ein...",
     "replyPlaceholder": "Geben Sie Ihre Antwort ein...",
     "shareAttackLog": "Angriffsbericht teilen",
     "send": "Nachricht senden",
-    "cancelReply": "Antwort abbrechen"
+    "cancelReply": "Antwort abbrechen",
+    "keyboardHint": "Enter zum Senden · Umschalt+Enter für eine neue Zeile · Enter fügt Zeilen in Codeblöcken ein",
+    "offline": "Verbindung wird wiederhergestellt… Deine Nachricht bleibt hier.",
+    "invalidContent": "Die Nachricht konnte nicht vorbereitet werden. Kürze sie oder entferne nicht unterstützte Formatierungen und versuche es erneut."
   },
   "members": {
     "title": "Gruppenmitglieder verwalten",
@@ -87,7 +112,8 @@
     },
     "actionFailed": "Fehlgeschlagen: {{message}}",
     "unknownError": "Unbekannter Fehler",
-    "actionError": "Das Mitglied konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
+    "actionError": "Das Mitglied konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+    "roster": "Gruppenmitglieder"
   },
   "share": {
     "title": "Angriffsbericht teilen",
@@ -104,7 +130,8 @@
     "victory": "Sieg",
     "defeat": "Niederlage",
     "share": "Teilen",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "retry": "Erneut versuchen"
   },
   "newMessageModal": {
     "titleCreateGroup": "Gruppenchat erstellen",
@@ -119,5 +146,20 @@
     "createGroup": "Gruppe erstellen",
     "addPeople": "Personen hinzufügen",
     "send": "Nachricht senden"
+  },
+  "format": {
+    "bold": "Fett",
+    "italic": "Kursiv",
+    "strike": "Durchgestrichen",
+    "code": "Inline-Code",
+    "codeBlock": "Codeblock",
+    "quote": "Zitat",
+    "link": "Link hinzufügen",
+    "unlink": "Link entfernen",
+    "linkUrl": "Link-URL",
+    "saveLink": "Link speichern",
+    "externalLink": "Link in neuem Tab öffnen",
+    "internalLink": "Link in diesem Tab öffnen",
+    "toolbar": "Nachrichtenformatierung"
   }
 }

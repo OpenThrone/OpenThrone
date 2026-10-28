@@ -22,7 +22,8 @@
   "displayName": "Anzeigename",
   "userNumber": "Nutzer Nr. {{id}}",
   "signalTypes": {
-    "LINKED_ACCOUNT_ACTIVITY": "Aktivität verknüpfter Konten"
+    "LINKED_ACCOUNT_ACTIVITY": "Aktivität verknüpfter Konten",
+    "DEFECTOR_FARMING": "Überläufer-Farming"
   },
   "acknowledge": "Bestätigen",
   "dismiss": "Verwerfen",

@@ -243,6 +243,38 @@ describe('Gold Pillage Fix', () => {
 });
 
 describe('Casualties', () => {
+  // Issue #200: hopeless assaults (battle #23555, ~0.11 atk/def) kept chipping guards.
+  describe('assault chip-damage taper', () => {
+    const assault = (atk: number, def: number, taper: boolean) =>
+      newComputeCasualties(
+        atk,
+        def,
+        0,
+        0,
+        0,
+        atk / def,
+        undefined,
+        false,
+        false,
+        false,
+        taper ? { taperChipDamage: true } : undefined,
+      ).rawDamageDealt;
+
+    it('removes chip damage when the attack is far below defense', () => {
+      expect(assault(3256, 28588, true)).toBe(0);
+      expect(assault(3256, 28588, false)).toBe(Math.ceil(3256 * 0.05));
+    });
+
+    it('scales chip damage between the taper ratios', () => {
+      expect(assault(500, 1000, true)).toBe(Math.ceil(500 * 0.05 * 0.5));
+    });
+
+    it('keeps the full floor at or above the taper end ratio', () => {
+      expect(assault(800, 1000, true)).toBe(assault(800, 1000, false));
+      expect(assault(2000, 1000, true)).toBe(assault(2000, 1000, false));
+    });
+  });
+
   it('should compute casualties with unequal strength', () => {
     const result = newComputeCasualties(
       2000,

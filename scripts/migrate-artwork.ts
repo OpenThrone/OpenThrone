@@ -31,7 +31,8 @@ async function collect(directory: string): Promise<string[]> {
   for (const entry of entries) {
     const file = path.join(directory, entry.name);
     if (entry.isDirectory()) files.push(...(await collect(file)));
-    else if (/\.(webp|png|jpe?g|gif|svg)$/i.test(entry.name)) files.push(file);
+    else if (/\.(webp|png|jpe?g|gif|svg|mp4)$/i.test(entry.name))
+      files.push(file);
   }
   return files.sort();
 }
@@ -46,6 +47,7 @@ const contentType = (file: string) =>
     '.jpeg': 'image/jpeg',
     '.gif': 'image/gif',
     '.svg': 'image/svg+xml',
+    '.mp4': 'video/mp4',
   })[path.extname(file).toLowerCase()];
 
 async function main() {
@@ -200,10 +202,24 @@ async function main() {
   } finally {
     client.destroy();
   }
+  // Merge by key: a batch of new files must not drop entries uploaded earlier.
+  const manifestPath = path.join(root, 'docs/artwork/manifest.json');
+  let previous: typeof manifest = [];
+  try {
+    previous = JSON.parse(await readFile(manifestPath, 'utf8'));
+  } catch {
+    previous = [];
+  }
+  const merged = new Map(previous.map((item) => [item.key, item]));
+  for (const item of manifest) merged.set(item.key, item);
   await mkdir(path.join(root, 'docs/artwork'), { recursive: true });
   await writeFile(
-    path.join(root, 'docs/artwork/manifest.json'),
-    `${JSON.stringify(manifest, null, 2)}\n`,
+    manifestPath,
+    `${JSON.stringify(
+      [...merged.values()].sort((a, b) => a.key.localeCompare(b.key)),
+      null,
+      2,
+    )}\n`,
   );
   if (archive) {
     // Only remove bundled sources after every S3 AND public URL verification passed.
@@ -234,7 +250,7 @@ main().catch((error) => {
   // Only messages authored above are safe to display.
   const message =
     error instanceof Error &&
-    /^(Missing |Archive |Public base |Upload failed |Verification failed |Could not archive)/.test(
+    /^(Missing |Archive |Public base |Upload failed[: ]|Verification failed |Could not archive)/.test(
       error.message,
     )
       ? error.message

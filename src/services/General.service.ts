@@ -114,10 +114,12 @@ export class GeneralService {
           bio: true,
           colorScheme: true,
           economy_level: true,
+          kingdom_morale: true,
           avatar: true,
           locale: true,
           stats: true,
           achievements: true,
+          tutorial_state: true,
           currentEraId: true,
           era_joined_at: true,
           created_at: true,
@@ -259,10 +261,12 @@ export class GeneralService {
             bio: true,
             colorScheme: true,
             economy_level: true,
+            kingdom_morale: true,
             avatar: true,
             locale: true,
             stats: true,
             achievements: true,
+            tutorial_state: true,
             currentEraId: true,
             era_joined_at: true,
             created_at: true,
@@ -435,6 +439,7 @@ export class GeneralService {
         bio: user.bio,
         colorScheme: user.colorScheme,
         economy_level: user.economy_level,
+        kingdom_morale: user.kingdom_morale,
         avatar: user.avatar,
         locale: user.locale as Locales,
         stats:
@@ -463,6 +468,7 @@ export class GeneralService {
         depositsAvailable,
         nextDepositAvailable,
         alliance_memberships: (user as any).alliance_memberships,
+        tutorial_state: user.tutorial_state ?? null,
       };
 
       return responseDto;

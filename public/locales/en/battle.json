@@ -1,4 +1,15 @@
 {
+  "gameEvents": {
+    "history": "Event history",
+    "xpBonus": "{{value}}× XP event",
+    "eventCount_one": "{{count}} event",
+    "eventCount_other": "{{count}} events",
+    "details": "View event details: {{label}}",
+    "title": "Game events during this mission",
+    "appliedXp": "Applied XP multiplier: {{value}}×",
+    "savedContext": "Saved when the mission occurred. Event effects listed above may also affect activities outside combat.",
+    "notRecorded": "Event context was not recorded for this older report."
+  },
   "attack": {
     "title": "Attack Players",
     "searchPlayer": "Search for a player to attack",
@@ -270,6 +281,7 @@
   },
   "training": {
     "title": "Training",
+    "presetNothingAffordable": "Nothing could be ordered with your current gold and citizens.",
     "trainingStatus": "Training Status",
     "untrainedCitizens": "Untrained Citizens",
     "goldOnHand": "Gold On Hand",
@@ -468,6 +480,9 @@
     "attackerXp": "Attacker XP",
     "defenderXp": "Defender XP",
     "casualties": "Casualties",
+    "garrisonFatigue": "Garrison fatigue: -{{percent}}%",
+    "garrisonFatigueTooltip": "The defender's garrison has already fought today. Every defence it repels tires it a little more, and a tired garrison defends with less power.",
+    "garrisonFatigueHelp": "What garrison fatigue means",
     "pillageDeductions": "Alliance contribution: {{contribution}} \u00b7 Gold-loan repayment: {{repayment}} \u00b7 Gold brought home: {{net}}"
   },
   "timeline": {
@@ -489,7 +504,13 @@
     "youLostSoldiers_one": "You lost {{dead}} soldier.",
     "youLostSoldiers_other": "You lost {{dead}} soldiers.",
     "playerLostSoldiers_one": "{{player}} lost {{dead}} soldier.",
-    "playerLostSoldiers_other": "{{player}} lost {{dead}} soldiers."
+    "playerLostSoldiers_other": "{{player}} lost {{dead}} soldiers.",
+    "captivesTaken_one": "Captives taken: {{taken}}.",
+    "captivesTaken_other": "Captives taken: {{taken}}.",
+    "troopsTakenCaptive_one": "{{taken}} of your troops was taken captive.",
+    "troopsTakenCaptive_other": "{{taken}} of your troops were taken captive.",
+    "reanimatedUnits_one": "{{risen}} fallen rose again to serve you.",
+    "reanimatedUnits_other": "{{risen}} fallen rose again to serve you."
   },
   "losses": {
     "units_one": "{{total}} Unit",
@@ -640,5 +661,44 @@
       "ordinary": "Battle result supports only limited confidence",
       "unknown": "Not enough battle detail to judge casualty efficiency"
     }
+  },
+  "sharing": {
+    "searchingPlayers": "Searching players…",
+    "title": "Share report",
+    "participantsOnly": "Only the attacker and defender can manage access. Recipients cannot reshare this report.",
+    "audience": "Share with",
+    "player": "Player",
+    "alliance": "Alliance",
+    "public": "Public",
+    "findPlayer": "Find a player (at least 2 characters)",
+    "selectPlayer": "Choose a player",
+    "noPlayers": "No matching players",
+    "grant": "Grant access",
+    "selectAlliance": "Choose an alliance",
+    "membershipBound": "Access follows current alliance membership. Members lose this access when they leave.",
+    "noAlliances": "You need the Share reports permission in an alliance to share with it.",
+    "publicWarning": "Anyone with this link, including people who are not signed in, can read the shared report. Gathered intelligence will be visible; private participant details stay hidden.",
+    "confirmPublic": "I understand this report and its gathered intelligence will be public.",
+    "stopPublic": "Stop public access",
+    "makePublic": "Make report public",
+    "access": "Who has access",
+    "restricted": "Restricted",
+    "permanentParticipants": "The attacker and defender always have access.",
+    "revokeNamed": "Revoke access for {{name}}",
+    "revoke": "Revoke",
+    "noGrants": "No additional players or alliances have access.",
+    "independentAccess": "Revoking one grant does not remove access through another grant or public link. Previously viewed or copied information cannot be recalled.",
+    "loadError": "Could not load sharing settings. Try again.",
+    "searchError": "Could not search players. Try again.",
+    "saved": "Sharing settings saved.",
+    "saveError": "Could not save sharing settings. Try again.",
+    "retry": "Try again",
+    "loading": "Loading sharing settings",
+    "copyLink": "Copy report link",
+    "copied": "Link copied. Only authorized viewers can open it.",
+    "copyError": "Could not copy the link. Copy the page address instead.",
+    "done": "Done",
+    "addDetails": "Add a note or attach to a target call",
+    "signIn": "Sign in to view private reports"
   }
 }

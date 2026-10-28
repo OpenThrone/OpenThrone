@@ -111,6 +111,11 @@ export function adminCombatDetails(value: unknown) {
     if (['string', 'number', 'boolean'].includes(typeof stats[key]))
       outcome[key] = stats[key];
   }
+  // Diagnostic objects: damage_audit is stored as a JSON string.
+  for (const key of ['damage_audit', 'defender_protection']) {
+    const value = asRecord(stats[key]);
+    if (Object.keys(value).length) outcome[key] = value;
+  }
   const spy = asRecord(stats.spyResults);
   for (const key of [
     'success',

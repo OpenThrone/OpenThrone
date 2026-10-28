@@ -1,8 +1,12 @@
 import { z } from 'zod';
 
 import {
+  calculateFriendTransferFee,
+  FRIEND_TRANSFER_ATTACK_BLOCK_HOURS,
   FRIEND_TRANSFER_DAILY_RECEIVED_CAP,
+  FRIEND_TRANSFER_MIN_ACCOUNT_AGE_DAYS,
   FRIEND_TRANSFER_NOTE_MAX_LENGTH,
+  getFriendTransferLimits,
 } from '@/constants/FriendTransfer';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
@@ -11,7 +15,6 @@ import { getActiveAccountStatus } from '@/services/User.service';
 import { createApiError } from '@/utils/api-error';
 
 import {
-  calculateTransferFee,
   canMakeTransfer,
   friendTransferCompleteConfig,
   getFriendTransferConfig,
@@ -56,6 +59,77 @@ interface FriendTransferRequest {
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const MIN_ACCOUNT_AGE_MS =
+  FRIEND_TRANSFER_MIN_ACCOUNT_AGE_DAYS * 24 * 60 * 60 * 1000;
+const ATTACK_BLOCK_MS = FRIEND_TRANSFER_ATTACK_BLOCK_HOURS * 60 * 60 * 1000;
+
+/** The users columns the upgrade-based transfer rules are enforced on. */
+interface TransferParticipant {
+  id: number;
+  race: string;
+  fort_level: number;
+  economy_level: number;
+  created_at: Date | null;
+}
+
+/** Reads both transfer participants after their user rows are locked. */
+const getTransferParticipants = async (
+  fromUserId: number,
+  toUserId: number,
+  tx: TransactionClient,
+): Promise<Map<number, TransferParticipant>> => {
+  const rows = await tx.users.findMany({
+    where: { id: { in: [fromUserId, toUserId] } },
+    select: {
+      id: true,
+      race: true,
+      fort_level: true,
+      economy_level: true,
+      created_at: true,
+    },
+  });
+  return new Map(rows.map((row) => [row.id, row as TransferParticipant]));
+};
+
+/** The player's upgrade-based transfer limits, or null while locked. */
+const limitsOf = (participant: { economy_level: number } | undefined | null) =>
+  participant ? getFriendTransferLimits(participant.economy_level) : null;
+
+/** Throws unless the account is old enough to send or receive transfers. */
+const assertTransferAccountAge = (
+  participant: TransferParticipant,
+  role: 'send' | 'receive',
+) => {
+  const createdAt = participant.created_at;
+  if (!createdAt || Date.now() - createdAt.getTime() < MIN_ACCOUNT_AGE_MS) {
+    throw createApiError(
+      role === 'send'
+        ? `Your account must be at least ${FRIEND_TRANSFER_MIN_ACCOUNT_AGE_DAYS} days old to send gold transfers`
+        : `This player must be at least ${FRIEND_TRANSFER_MIN_ACCOUNT_AGE_DAYS} days old to receive gold transfers`,
+    );
+  }
+};
+
+/** Finds an attack in either direction inside the combat-block window. */
+const findRecentAttack = (
+  fromUserId: number,
+  toUserId: number,
+  tx: TransactionClient,
+) =>
+  tx.attack_log.findFirst({
+    where: {
+      timestamp: { gte: new Date(Date.now() - ATTACK_BLOCK_MS) },
+      OR: [
+        { attacker_id: fromUserId, defender_id: toUserId },
+        { attacker_id: toUserId, defender_id: fromUserId },
+      ],
+    },
+    select: { id: true },
+  });
+
+/** Player-facing refusal when either side fought the other recently. */
+const FRIEND_TRANSFER_ATTACK_BLOCK_MESSAGE =
+  "You can't send gold to a player you've fought in the last 24 hours";
 
 const NoteSchema = z
   .string()
@@ -114,8 +188,18 @@ const verifyFriendship = async (
   const friendship = await tx.social.findFirst({
     where: {
       OR: [
-        { playerId: fromUserId, friendId: toUserId, status: 'accepted' },
-        { playerId: toUserId, friendId: fromUserId, status: 'accepted' },
+        {
+          playerId: fromUserId,
+          friendId: toUserId,
+          relationshipType: 'FRIEND',
+          status: 'accepted',
+        },
+        {
+          playerId: toUserId,
+          friendId: fromUserId,
+          relationshipType: 'FRIEND',
+          status: 'accepted',
+        },
       ],
     },
   });
@@ -205,6 +289,37 @@ const validateGoldRequest = async (
     };
   }
 
+  // Locked players cannot create gold requests either: both the requester and
+  // the friend who would pay need the Coal Mine unlocked (#205).
+  const participants = await getTransferParticipants(fromUserId, toUserId, tx);
+  if (!limitsOf(participants.get(fromUserId))) {
+    return { valid: false, error: 'Gold transfers unlock with the Coal Mine' };
+  }
+  if (!limitsOf(participants.get(toUserId))) {
+    return {
+      valid: false,
+      error: 'This player needs the Coal Mine to send gold transfers',
+    };
+  }
+  // Both accounts must be old enough, as they would be when the request is paid.
+  const isOldEnough = (createdAt: Date | null | undefined) =>
+    !!createdAt && Date.now() - createdAt.getTime() >= MIN_ACCOUNT_AGE_MS;
+  if (!isOldEnough(participants.get(fromUserId)?.created_at)) {
+    return {
+      valid: false,
+      error: `Your account must be at least ${FRIEND_TRANSFER_MIN_ACCOUNT_AGE_DAYS} days old to request gold`,
+    };
+  }
+  if (!isOldEnough(participants.get(toUserId)?.created_at)) {
+    return {
+      valid: false,
+      error: `This player must be at least ${FRIEND_TRANSFER_MIN_ACCOUNT_AGE_DAYS} days old to send gold transfers`,
+    };
+  }
+  if (await findRecentAttack(fromUserId, toUserId, tx)) {
+    return { valid: false, error: FRIEND_TRANSFER_ATTACK_BLOCK_MESSAGE };
+  }
+
   // Check if user can make request (cooldown)
   const existingRequest = await tx.bank_history.findFirst({
     where: {
@@ -280,6 +395,39 @@ const transferGoldWithinTransaction = async (
     throw createApiError('This player cannot receive gold right now');
   }
 
+  // Upgrade-based rules (#205): both players need GOLD_TRANSFER unlocked, both
+  // accounts must be old enough, and they must not have fought each other
+  // recently. Rows are read after the locks above.
+  const participants = await getTransferParticipants(
+    validatedParams.fromUserId,
+    validatedParams.toUserId,
+    tx,
+  );
+  const senderRow = participants.get(validatedParams.fromUserId);
+  const recipientRow = participants.get(validatedParams.toUserId);
+  const senderLimits = limitsOf(senderRow);
+  const recipientLimits = limitsOf(recipientRow);
+
+  if (!senderRow || !senderLimits) {
+    throw createApiError('Gold transfers unlock with the Coal Mine');
+  }
+  if (!recipientRow || !recipientLimits) {
+    throw createApiError(
+      'This player needs the Coal Mine to receive gold transfers',
+    );
+  }
+  assertTransferAccountAge(senderRow, 'send');
+  assertTransferAccountAge(recipientRow, 'receive');
+  if (
+    await findRecentAttack(
+      validatedParams.fromUserId,
+      validatedParams.toUserId,
+      tx,
+    )
+  ) {
+    throw createApiError(FRIEND_TRANSFER_ATTACK_BLOCK_MESSAGE);
+  }
+
   // Per-recipient rolling daily cap across all senders. The recipient row is
   // locked above, so concurrent gifts to the same player serialize here.
   const received = await tx.bank_history.aggregate({
@@ -300,6 +448,29 @@ const transferGoldWithinTransaction = async (
       'This player has reached the daily limit for receiving gold',
     );
   }
+  // The recipient's economy tier may cap receiving below the global limit.
+  if (receivedToday + validatedParams.amount > recipientLimits.receivePerDay) {
+    throw createApiError(
+      'This player has reached the daily limit for receiving gold',
+    );
+  }
+
+  // The sender's rolling daily cap for the amount they may send (excluding
+  // SYSTEM tax rows, which book the fee, not the gift).
+  const sent = await tx.bank_history.aggregate({
+    _sum: { gold_amount: true },
+    where: {
+      from_user_id: validatedParams.fromUserId,
+      from_user_account_type: 'HAND',
+      to_user_account_type: 'HAND',
+      history_type: 'FRIEND_TRANSFER',
+      date_time: { gte: new Date(Date.now() - DAY_MS) },
+    },
+  });
+  const sentToday = BigInt(sent?._sum?.gold_amount ?? 0);
+  if (sentToday + validatedParams.amount > senderLimits.sendPerDay) {
+    throw createApiError('You have reached your daily limit for sending gold');
+  }
 
   // Check sender's gold balance
   const sender = await tx.users.findUnique({
@@ -314,8 +485,11 @@ const transferGoldWithinTransaction = async (
     throw { message: 'Insufficient gold for transfer' } as any;
   }
 
-  // Calculate tax if enabled
-  const taxAmount = calculateTransferFee(validatedParams.amount);
+  // Calculate tax from the sender's economy tier (#205)
+  const taxAmount = calculateFriendTransferFee(
+    validatedParams.amount,
+    senderRow.economy_level,
+  );
   const totalAmount = validatedParams.amount + taxAmount;
 
   if (BigInt(sender.gold ?? 0) < totalAmount) {
@@ -783,4 +957,60 @@ export const cancelFriendTransfer = async (
     },
     { isolationLevel: 'ReadCommitted' },
   );
+};
+
+/**
+ * Gets the signed-in player's transfer standing for the limits endpoint:
+ * whether gold transfers are unlocked, the tier limits and fee, and the
+ * rolling-24h totals already sent and received (#205).
+ * @param userId - The ID of the signed-in user
+ */
+export const getFriendTransferStatus = async (userId: number) => {
+  const user = await prisma.users.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      race: true,
+      fort_level: true,
+      economy_level: true,
+    },
+  });
+  if (!user) {
+    throw createApiError('Player not found', 404);
+  }
+
+  const limits = limitsOf(user);
+  const since = new Date(Date.now() - DAY_MS);
+  // Sent total excludes the SYSTEM tax rows: they book the fee, not the gift.
+  const [sent, received] = await Promise.all([
+    prisma.bank_history.aggregate({
+      _sum: { gold_amount: true },
+      where: {
+        from_user_id: userId,
+        from_user_account_type: 'HAND',
+        to_user_account_type: 'HAND',
+        history_type: 'FRIEND_TRANSFER',
+        date_time: { gte: since },
+      },
+    }),
+    prisma.bank_history.aggregate({
+      _sum: { gold_amount: true },
+      where: {
+        to_user_id: userId,
+        to_user_account_type: 'HAND',
+        history_type: 'FRIEND_TRANSFER',
+        date_time: { gte: since },
+      },
+    }),
+  ]);
+
+  return {
+    unlocked: limits !== null,
+    // Plain integer strings so clients can parse them with BigInt().
+    sendPerDay: (limits?.sendPerDay ?? BigInt(0)).toString(),
+    receivePerDay: (limits?.receivePerDay ?? BigInt(0)).toString(),
+    feePercent: limits?.feePercent ?? 0,
+    sentToday: BigInt(sent?._sum?.gold_amount ?? 0).toString(),
+    receivedToday: BigInt(received?._sum?.gold_amount ?? 0).toString(),
+  };
 };

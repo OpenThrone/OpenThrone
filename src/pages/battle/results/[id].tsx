@@ -1,26 +1,25 @@
 import { Button, Group } from '@mantine/core';
 import type { InferGetServerSidePropsType } from 'next';
+import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
-import { AllianceIntelShareModal } from '@/components/alliance/AllianceIntelShareModal';
 import AssassinateResult from '@/components/AssassinateResult';
 import AttackResult from '@/components/attackResult';
+import { BattleGameEventContext } from '@/components/battle/BattleGameEventContext';
+import { ReportShareModal } from '@/components/battle/ReportShareModal';
 import InfiltrationResult from '@/components/InfiltrationResult';
 import IntelResult from '@/components/IntelResult';
 import MainArea from '@/components/MainArea';
 import { OrnatePanel } from '@/components/OrnatePanel';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
-import { AllianceIntelService } from '@/services/AllianceIntel.service';
 import {
   ATTACK_LOG_ACL_SELECT,
   getAttackLogViewerRole,
   redactAttackLogForViewer,
 } from '@/services/AttackLogAccess.service';
-import { ensureActiveEra } from '@/services/Era.service';
-import { localePrefix } from '@/utils/localeRedirect';
 
 const PLAYER_SELECT = {
   id: true,
@@ -34,25 +33,41 @@ const ResultsPage = ({
   battle,
   lastGenerated,
   viewerID,
-  shareTargets,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { t } = useTranslation('battle');
-  const { t: tIntel } = useTranslation('allianceIntel');
-  const [shareTarget, setShareTarget] = useState<
-    NonNullable<typeof shareTargets>[number] | null
-  >(null);
-  const [sharedIds, setSharedIds] = useState<number[]>([]);
+  const [sharingOpen, setSharingOpen] = useState(false);
   if (!battle) {
     return (
       <MainArea title={t('results.title')}>
         <p>{t('results.noPermission')}</p>
+        {!viewerID && (
+          <Button component={Link} href="/account/login">
+            {t('sharing.signIn')}
+          </Button>
+        )}
       </MainArea>
     );
   }
 
   return (
     <MainArea title={t('results.title')}>
+      {(Number(viewerID) === battle.attacker_id ||
+        Number(viewerID) === battle.defender_id) && (
+        <Group justify="flex-end" mb="md">
+          <Button variant="light" onClick={() => setSharingOpen(true)}>
+            {t('sharing.title')}
+          </Button>
+          <ReportShareModal
+            logId={battle.id}
+            opened={sharingOpen}
+            onClose={() => setSharingOpen(false)}
+          />
+        </Group>
+      )}
       <OrnatePanel minHeight={300}>
+        {battle.type !== 'attack' && (
+          <BattleGameEventContext value={battle.stats?.gameEvents} />
+        )}
         {battle.type === 'attack' ? (
           <AttackResult battle={battle} viewerID={Number(viewerID)} />
         ) : battle.type === 'ASSASSINATE' ? (
@@ -71,40 +86,6 @@ const ResultsPage = ({
           />
         )}
       </OrnatePanel>
-      {shareTargets && shareTargets.length > 0 && (
-        <Group mt="md" gap="xs">
-          {shareTargets.map((target) => (
-            <Button
-              key={target.allianceId}
-              variant="light"
-              disabled={
-                target.alreadyShared || sharedIds.includes(target.allianceId)
-              }
-              onClick={() => setShareTarget(target)}
-            >
-              {target.alreadyShared || sharedIds.includes(target.allianceId)
-                ? tIntel('share.alreadyShared', 'Already shared')
-                : shareTargets.length > 1
-                  ? tIntel('share.buttonNamed', 'Share with {{name}}', {
-                      name: target.allianceName,
-                    })
-                  : tIntel('share.button', 'Share with alliance')}
-            </Button>
-          ))}
-        </Group>
-      )}
-      {shareTarget && (
-        <AllianceIntelShareModal
-          opened
-          onClose={() => setShareTarget(null)}
-          allianceId={shareTarget.allianceId}
-          attackLogId={battle.id}
-          canReportThreat={shareTarget.canReportThreat}
-          onShared={() =>
-            setSharedIds((ids) => [...ids, shareTarget.allianceId])
-          }
-        />
-      )}
     </MainArea>
   );
 };
@@ -114,24 +95,15 @@ const ResultsPage = ({
 export const getServerSideProps = async (context) => {
   const { params } = context;
   const battleId = Number(params.id);
+  context.res.setHeader('Cache-Control', 'private, no-store');
+  const session = await getServerSession(context.req, context.res, authOptions);
   const noBattle = {
     props: {
       battle: null,
       lastGenerated: null,
-      viewerID: null,
-      shareTargets: null,
+      viewerID: Number(session?.user?.id ?? 0),
     },
   };
-
-  const session = await getServerSession(context.req, context.res, authOptions);
-  if (!session) {
-    return {
-      redirect: {
-        destination: `${localePrefix(context.locale, context.defaultLocale)}/account/login`,
-        permanent: false,
-      },
-    };
-  }
 
   if (!Number.isSafeInteger(battleId) || battleId <= 0) {
     return noBattle;
@@ -146,32 +118,33 @@ export const getServerSideProps = async (context) => {
         defenderPlayer: { select: PLAYER_SELECT },
       },
     }),
-    ensureActiveEra(),
+    prisma.era.findFirst({
+      where: { endDate: null },
+      orderBy: { startDate: 'desc' },
+    }),
   ]);
 
   // Missing, legacy-era and unreadable logs look the same to the viewer.
-  if (!battle || !battle.timestamp || battle.timestamp < era.startDate) {
+  if (
+    !battle ||
+    !era ||
+    !battle.timestamp ||
+    battle.timestamp < era.startDate
+  ) {
     return noBattle;
   }
 
-  const viewerUserId = Number(session.user.id);
+  const viewerUserId = Number(session?.user?.id ?? 0);
   const role = await getAttackLogViewerRole(viewerUserId, battle);
   if (!role) {
     return noBattle;
   }
-
-  // Only the attacker or defender can pass a report on to an alliance.
-  const shareTargets =
-    role === 'attacker' || role === 'defender'
-      ? await AllianceIntelService.getShareTargets(viewerUserId, battle.id)
-      : [];
 
   return {
     props: {
       battle: redactAttackLogForViewer(battle, role),
       lastGenerated: new Date().toISOString(),
       viewerID: viewerUserId,
-      shareTargets,
     },
   };
 };

@@ -3,99 +3,112 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   ActionIcon,
   Box,
+  Button,
   CloseButton,
   Group,
   Paper,
+  Stack,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import React, { useCallback, useState } from 'react';
-import type { Socket } from 'socket.io-client';
+import React, { useCallback, useEffect, useState } from 'react';
 
+import ChatRichComposer from '@/components/game/ChatRichComposer';
+import type { ChatDraft } from '@/types/chat';
 import type { ChatMessage } from '@/types/typings';
-import { logInfo } from '@/utils/logger';
+import { CHAT_MAX_LENGTH } from '@/utils/chatContent';
 
 import styles from './ChatThemed.module.css';
 
 interface ChatMessageInputThemedProps {
   selectedRoomId: number | null;
-  socket: Socket | null;
   isConnected: boolean;
-  currentUserId: number | undefined;
-  markRoomAsRead: (roomId: number) => void;
+  onSendMessage: (draft: ChatDraft) => boolean;
   replyingToMessage: ChatMessage | null;
   setReplyingToMessage: (message: ChatMessage | null) => void;
   setIsShareModalOpen: (isOpen: boolean) => void;
   canWrite: boolean;
+  onTyping?: (isTyping: boolean) => void;
 }
 
 const ChatMessageInputThemed: React.FC<ChatMessageInputThemedProps> = ({
   selectedRoomId,
-  socket,
   isConnected,
-  currentUserId,
-  markRoomAsRead,
+  onSendMessage,
   replyingToMessage,
   setReplyingToMessage,
   setIsShareModalOpen,
   canWrite,
+  onTyping,
 }) => {
   const { t } = useTranslation('messaging');
-  const [newMessage, setNewMessage] = useState('');
-
-  const handleSendMessage = useCallback(
-    (content: string) => {
-      if (
-        !selectedRoomId ||
-        !content.trim() ||
-        !socket ||
-        !isConnected ||
-        !currentUserId
-      ) {
-        return;
-      }
-
-      const messageContent = content.trim();
-      logInfo(
-        `ChatMessageInputThemed: Emitting sendMessage for room ${selectedRoomId}`,
-      );
-
-      socket.emit('sendMessage', {
-        roomId: selectedRoomId,
-        content: messageContent,
-        replyToMessageId: replyingToMessage?.id,
-      });
-
-      markRoomAsRead(selectedRoomId);
-      setReplyingToMessage(null);
-      setNewMessage('');
-    },
-    [
-      selectedRoomId,
-      socket,
-      isConnected,
-      currentUserId,
-      markRoomAsRead,
-      replyingToMessage,
-      setReplyingToMessage,
-    ],
-  );
+  const [drafts, setDrafts] = useState<Record<number, ChatDraft>>({});
+  const [sendError, setSendError] = useState(false);
+  const draft = drafts[selectedRoomId] ?? { content: '' };
+  useEffect(() => {
+    setReplyingToMessage(null);
+    setSendError(false);
+  }, [selectedRoomId, setReplyingToMessage]);
+  const handleSendMessage = useCallback(() => {
+    if (
+      !selectedRoomId ||
+      !draft.content.trim() ||
+      draft.content.length > CHAT_MAX_LENGTH ||
+      !canWrite ||
+      !isConnected
+    )
+      return;
+    const accepted = onSendMessage({
+      ...draft,
+      replyToMessage: replyingToMessage,
+    });
+    if (!accepted) {
+      setSendError(true);
+      return;
+    }
+    setSendError(false);
+    onTyping?.(false);
+    setReplyingToMessage(null);
+    setDrafts((previous) => ({
+      ...previous,
+      [selectedRoomId]: { content: '' },
+    }));
+  }, [
+    selectedRoomId,
+    draft,
+    canWrite,
+    isConnected,
+    onSendMessage,
+    replyingToMessage,
+    setReplyingToMessage,
+    onTyping,
+  ]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    handleSendMessage(newMessage);
+    handleSendMessage();
   };
 
   return (
     <Paper
       component="form"
       onSubmit={handleSubmit}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node))
+          onTyping?.(false);
+      }}
       className={styles.inputPanel}
       p="md"
       radius={0}
-      shadow="sm"
+      styles={{
+        root: {
+          background: 'var(--ot-surface)',
+          border: 0,
+          borderTop: '1px solid var(--ot-line)',
+          boxShadow: 'none',
+        },
+      }}
     >
       {replyingToMessage && (
         <Box
@@ -124,59 +137,83 @@ const ChatMessageInputThemed: React.FC<ChatMessageInputThemedProps> = ({
           </Group>
         </Box>
       )}
-      <Group gap="xs" wrap="nowrap">
-        <Tooltip label={t('input.shareAttackLog')}>
-          <ActionIcon
+      <ChatRichComposer
+        key={selectedRoomId}
+        value={draft.richContent}
+        focusKey={replyingToMessage?.id}
+        disabled={!canWrite}
+        label={
+          replyingToMessage
+            ? t('input.replyPlaceholder')
+            : t('input.placeholder')
+        }
+        onSend={handleSendMessage}
+        onChange={(content, richContent) => {
+          setSendError(false);
+          onTyping?.(Boolean(content.trim()));
+          if (selectedRoomId)
+            setDrafts((previous) => ({
+              ...previous,
+              [selectedRoomId]: { content, richContent },
+            }));
+        }}
+      />
+      <Group justify="space-between" gap="xs" mt="xs">
+        <Group gap="xs">
+          <Button
+            type="button"
             variant="subtle"
+            size="compact-sm"
             onClick={() => setIsShareModalOpen(true)}
-            size="lg"
-            disabled={!canWrite}
-            aria-label={t('input.shareAttackLog')}
+            disabled={!canWrite || !selectedRoomId}
+            leftSection={<FontAwesomeIcon icon={faPaperclip} />}
           >
-            <FontAwesomeIcon icon={faPaperclip} />
+            {t('input.shareAttackLog')}
+          </Button>
+          <Text
+            size="xs"
+            c={
+              draft.content.length > CHAT_MAX_LENGTH ? 'red' : 'var(--ot-muted)'
+            }
+            aria-live="polite"
+          >
+            {draft.content.length.toLocaleString()} /{' '}
+            {CHAT_MAX_LENGTH.toLocaleString()}
+          </Text>
+        </Group>
+        <Tooltip label={t('input.send')}>
+          <ActionIcon
+            type="submit"
+            size="lg"
+            disabled={
+              !draft.content.trim() ||
+              draft.content.length > CHAT_MAX_LENGTH ||
+              !canWrite ||
+              !isConnected ||
+              !selectedRoomId
+            }
+            className={styles.sendButton}
+            aria-label={t('input.send')}
+          >
+            <FontAwesomeIcon icon={faPaperPlane} />
           </ActionIcon>
         </Tooltip>
-        <TextInput
-          placeholder={
-            replyingToMessage
-              ? t('input.replyPlaceholder')
-              : t('input.placeholder')
-          }
-          aria-label={
-            replyingToMessage
-              ? t('input.replyPlaceholder')
-              : t('input.placeholder')
-          }
-          value={newMessage}
-          onChange={(event) => setNewMessage(event.target.value)}
-          className="flex-1"
-          disabled={!canWrite}
-          rightSection={
-            <ActionIcon
-              type="submit"
-              size="lg"
-              disabled={!newMessage.trim() || !canWrite}
-              className={styles.sendButton}
-              aria-label={t('input.send')}
-            >
-              <FontAwesomeIcon icon={faPaperPlane} />
-            </ActionIcon>
-          }
-          rightSectionWidth={46}
-          styles={{
-            input: {
-              paddingRight: 46,
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(234, 174, 43, 0.25)',
-              color: '#f6e9bf',
-              fontFamily: 'MedievalSharp, serif',
-            },
-            section: {
-              paddingRight: 4,
-            },
-          }}
-        />
       </Group>
+      {sendError && (
+        <Text size="xs" c="red" role="alert">
+          {t('input.invalidContent')}
+        </Text>
+      )}
+      <Stack gap={2} mt={6}>
+        <Text size="xs" c="var(--ot-muted)">
+          {t('input.keyboardHint')}
+        </Text>
+        {!isConnected && (
+          <Text size="xs" c="var(--ot-muted)" role="status">
+            {t('input.offline')}
+          </Text>
+        )}
+      </Stack>
     </Paper>
   );
 };

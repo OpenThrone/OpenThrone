@@ -4,6 +4,7 @@ import { withAuth } from '@/middleware/auth';
 import { mercenaryOffer, MercenaryService } from '@/services/Mercenary.service';
 import { logError } from '@/utils/logger';
 import { publicErrorMessage } from '@/utils/publicError';
+import { MERCENARY_ROLE_CAP } from '@/utils/temporaryForces';
 
 const actionSchema = z.discriminatedUnion('action', [
   z
@@ -11,7 +12,7 @@ const actionSchema = z.discriminatedUnion('action', [
       action: z.literal('hire'),
       type: z.enum(['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY']),
       level: z.number().int().min(1).max(3),
-      quantity: z.number().int().min(1).max(100),
+      quantity: z.number().int().min(1).max(MERCENARY_ROLE_CAP),
       termDays: z.union([z.literal(1), z.literal(3), z.literal(7)]),
       operationId: z.string().uuid(),
     })
@@ -37,7 +38,10 @@ const handler = async (req, res) => {
   if (!req.session) return res.status(401).json({ message: 'Unauthorized' });
   const userId = req.session.user.id;
   if (req.method === 'GET') {
-    const contracts = await MercenaryService.list(userId);
+    const [contracts, armyShare] = await Promise.all([
+      MercenaryService.list(userId),
+      MercenaryService.armyShare(userId),
+    ]);
     const offers = (['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'] as const).flatMap(
       (role) => [1, 2, 3].map((level) => mercenaryOffer(role, level)),
     );
@@ -45,7 +49,7 @@ const handler = async (req, res) => {
       .status(200)
       .json(
         JSON.parse(
-          JSON.stringify({ contracts, offers }, (_, value) =>
+          JSON.stringify({ contracts, offers, armyShare }, (_, value) =>
             typeof value === 'bigint' ? value.toString() : value,
           ),
         ),
@@ -71,7 +75,7 @@ const handler = async (req, res) => {
       return res.status(400).json({ message: 'Invalid mercenary order' });
     const message = publicErrorMessage(error, 'Unable to process this order');
     if (
-      /Insufficient|Maximum|Fort|tier|Contract|Operation ID|active|required/.test(
+      /Insufficient|Maximum|Fort|tier|unlock|limit|Contract|Operation ID|active|required/.test(
         message,
       )
     )

@@ -960,8 +960,8 @@ export class BattleService {
   }
 
   /**
-   * Shares an attack log with the other current members of a chat room. Anyone
-   * who can read the log may share it, but only to a room they currently belong to.
+   * Shares an attack log with a room the battle participant currently belongs
+   * to. Recipients may read reports but cannot grant access to others.
    */
   static async manageAttackLogACL(
     attackLogId: number,
@@ -983,7 +983,7 @@ export class BattleService {
 
       // Unknown logs get the same answer as unreadable ones.
       const role = await getAttackLogViewerRole(userId, attackLog);
-      if (!role) {
+      if (role !== 'attacker' && role !== 'defender') {
         throw new Error('You do not have permission to share this attack log');
       }
 

@@ -20,6 +20,7 @@ import frameClasses from '@/components/game/FantasyFrame.module.css';
 import MarkdownArticle from '@/components/news/MarkdownArticle';
 import classes from '@/components/public/PublicPages.module.css';
 import type { BlogPostDTO } from '@/services/Blog.service';
+import { getNewsDate } from '@/utils/news';
 
 interface BlogPostProps {
   post: BlogPostDTO & { image?: string; tags?: string[] };
@@ -43,7 +44,8 @@ const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
       ),
     [post.content],
   );
-  const date = new Date(post.created_timestamp);
+  const publishedDate = getNewsDate(post);
+  const date = new Date(publishedDate);
   const dateLabel = Number.isNaN(date.getTime())
     ? ''
     : new Intl.DateTimeFormat(i18n.language, {
@@ -88,9 +90,7 @@ const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
           </Group>
           <Text size="xs" c="var(--ot-muted)">
             {post.authorName ? `${post.authorName} · ` : ''}
-            {dateLabel && (
-              <time dateTime={post.created_timestamp}>{dateLabel}</time>
-            )}
+            {dateLabel && <time dateTime={publishedDate}>{dateLabel}</time>}
             {' · '}
             {t('news.minutesToRead', { count: readMinutes })}
           </Text>

@@ -43,6 +43,13 @@ beforeEach(() => {
       }));
     }),
   };
+  mockPrisma.attack_log = {
+    findUnique: vi.fn(async () => ({
+      attacker_id: RECIPIENT_ID,
+      defender_id: DEFENDER_ID,
+    })),
+  };
+  mockPrisma.$queryRaw = vi.fn(async () => []);
   mockPrisma.attack_log_acl = {
     findMany: vi.fn(async () => []),
     createMany: vi.fn(async ({ data }: any) => ({ count: data.length })),
@@ -170,6 +177,7 @@ describe('room share recipients', () => {
     });
     expect(mockPrisma.attack_log_acl.createMany).toHaveBeenCalledWith({
       data: [{ attack_log_id: 100, shared_with_user_id: OUTSIDER_ID }],
+      skipDuplicates: true,
     });
   });
 });

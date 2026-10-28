@@ -1,22 +1,11 @@
 // Modal component for creating new messages or adding users to existing chats
-import { faPaperPlane, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  Avatar,
-  Button,
-  Group,
-  Loader,
-  Modal,
-  MultiSelect,
-  Stack,
-  Text,
-  Textarea,
-  TextInput,
-} from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import MessageComposeDialog, {
+  type MessageRecipient,
+} from '@/components/game/MessageComposeDialog';
 import { logError } from '@/utils/logger';
 
 const EMPTY_EXISTING_USERS: number[] = [];
@@ -53,7 +42,7 @@ const NewMessageModal = ({
   const [groupName, setGroupName] = useState('');
   const [searchValue, setSearchValue] = useState('');
   const [debouncedSearch] = useDebouncedValue(searchValue, 300);
-  const [availableUsers, setAvailableUsers] = useState<any[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<MessageRecipient[]>([]);
   const [loading, setLoading] = useState(false);
   const submissionPending = useRef(false);
   const [submitting, setSubmitting] = useState(false);
@@ -141,7 +130,12 @@ const NewMessageModal = ({
     // Validate inputs
     if (selectedUsers.length === 0) return;
     if (!isAddingToExistingChat && !message.trim()) return;
-    if (isDirectMessage && !groupName.trim()) return;
+    if (
+      (isDirectMessage ||
+        (!isAddingToExistingChat && selectedUsers.length > 1)) &&
+      !groupName.trim()
+    )
+      return;
 
     if (submissionPending.current) return;
     submissionPending.current = true;
@@ -254,127 +248,31 @@ const NewMessageModal = ({
     setError('');
   };
 
-  // Custom item renderer for MultiSelect
-  const renderOption = (item: any) => {
-    const { value, image, label, race, class: userClass } = item.option;
-    return (
-      <Group gap="sm">
-        <Avatar src={image} radius="xl" size="sm">
-          {label?.[0]?.toUpperCase() || '?'}
-        </Avatar>
-        <div>
-          <Text size="sm">
-            {label}
-            {value}
-          </Text>
-          <Text size="xs" opacity={0.5}>
-            {race} {userClass}
-          </Text>
-        </div>
-      </Group>
-    );
-  };
-
   return (
-    <Modal
+    <MessageComposeDialog
       opened={opened}
-      closeOnEscape={!submitting}
-      closeOnClickOutside={!submitting}
-      withCloseButton={!submitting}
       onClose={() => {
         if (submissionPending.current) return;
         resetForm();
         onClose();
       }}
+      onSubmit={handleSubmit}
       title={modalTitle}
-      size="md"
-      centered
-    >
-      <Stack gap="md">
-        {error ? (
-          <Text c="red" role="alert">
-            {error}
-          </Text>
-        ) : null}
-        <MultiSelect
-          data={availableUsers}
-          value={selectedUsers}
-          onChange={setSelectedUsers}
-          searchValue={searchValue}
-          onSearchChange={setSearchValue}
-          placeholder={t('newMessageModal.searchPlaceholder')}
-          label={t('newMessageModal.recipients')}
-          searchable
-          clearable
-          nothingFoundMessage={
-            loading ? <Loader size="xs" /> : t('newMessageModal.noUsersFound')
-          }
-          maxDropdownHeight={200}
-          renderOption={renderOption}
-          styles={(theme) => ({
-            pill: {
-              backgroundColor: theme.colors.blue[7],
-              color: theme.white,
-            },
-          })}
-          data-testid="user-search"
-        />
-
-        {(isAddingToExistingChat && isDirectMessage) ||
-        (!isAddingToExistingChat && selectedUsers.length > 1) ? (
-          <TextInput
-            label={t('newMessageModal.groupName')}
-            placeholder={t('newMessageModal.groupNamePlaceholder')}
-            value={groupName}
-            onChange={(e) => setGroupName(e.target.value)}
-            required={isDirectMessage || selectedUsers.length > 1}
-            data-testid="group-name"
-          />
-        ) : null}
-
-        {!isAddingToExistingChat || (isDirectMessage && message.trim()) ? (
-          <Textarea
-            label={t('newMessageModal.message')}
-            placeholder={t('input.placeholder')}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            minRows={3}
-            maxRows={5}
-            required={!isAddingToExistingChat}
-            data-testid="message-input"
-          />
-        ) : null}
-
-        <Group justify="flex-end" mt="md">
-          <Button
-            variant="default"
-            disabled={submitting}
-            onClick={() => {
-              resetForm();
-              onClose();
-            }}
-            leftSection={<FontAwesomeIcon icon={faTimes} />}
-          >
-            {t('newMessageModal.cancel')}
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            loading={submitting}
-            disabled={
-              selectedUsers.length === 0 ||
-              (!isAddingToExistingChat && !message.trim())
-            }
-            leftSection={<FontAwesomeIcon icon={faPaperPlane} />}
-          >
-            {isAddingToExistingChat
-              ? isDirectMessage
-                ? t('newMessageModal.createGroup')
-                : t('newMessageModal.addPeople')
-              : t('newMessageModal.send')}
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
+      availableUsers={availableUsers}
+      selectedUsers={selectedUsers}
+      onUsersChange={setSelectedUsers}
+      searchValue={searchValue}
+      onSearchChange={setSearchValue}
+      message={message}
+      onMessageChange={setMessage}
+      groupName={groupName}
+      onGroupNameChange={setGroupName}
+      error={error}
+      loading={loading}
+      submitting={submitting}
+      isAddingToExistingChat={isAddingToExistingChat}
+      isDirectMessage={isDirectMessage}
+    />
   );
 };
 

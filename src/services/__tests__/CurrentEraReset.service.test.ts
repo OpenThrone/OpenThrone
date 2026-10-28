@@ -72,6 +72,8 @@ describe('resetCurrentEra', () => {
       alliance_cooldowns: { deleteMany: vi.fn() },
       autoRecruitSession: { deleteMany: vi.fn() },
       userEra: { deleteMany: vi.fn() },
+      // Dungeon captives (#210) are freed without returning at era reset.
+      captive: { deleteMany: vi.fn(async () => ({ count: 0 })) },
       alliances: { updateMany: vi.fn() },
       alliance_xp: { deleteMany: vi.fn() },
       alliance_upgrades: { deleteMany: vi.fn() },

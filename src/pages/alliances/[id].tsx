@@ -37,6 +37,7 @@ import MainArea from '@/components/MainArea';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { AllianceService } from '@/services';
 import type { AllianceInfo } from '@/services/Alliance.service';
+import { avatarFramingStyle, splitAvatarFraming } from '@/utils/avatarFraming';
 import { stringifyObj } from '@/utils/numberFormatting';
 
 interface AlliancePageProps {
@@ -103,12 +104,23 @@ const AlliancePage = ({
           p={0}
           style={{ overflow: 'hidden', position: 'relative' }}
         >
-          <Box h={200} bg="dark.6">
+          <Box h={200} bg="dark.6" style={{ overflow: 'hidden' }}>
             {alliance.bannerimg ? (
               <img
-                src={alliance.bannerimg}
+                src={splitAvatarFraming(alliance.bannerimg).src}
                 alt={t('index.bannerAlt', 'Alliance banner')}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  ...avatarFramingStyle(
+                    splitAvatarFraming(alliance.bannerimg).framing ?? {
+                      x: 50,
+                      y: 50,
+                      zoom: 1,
+                    },
+                  ),
+                }}
               />
             ) : (
               <Center
@@ -124,7 +136,16 @@ const AlliancePage = ({
           <Box p="md" mt={-60} style={{ position: 'relative', zIndex: 1 }}>
             <Group align="flex-end">
               <Avatar
-                src={alliance.avatar}
+                src={splitAvatarFraming(alliance.avatar).src}
+                styles={{
+                  image: avatarFramingStyle(
+                    splitAvatarFraming(alliance.avatar).framing ?? {
+                      x: 50,
+                      y: 50,
+                      zoom: 1,
+                    },
+                  ),
+                }}
                 size={120}
                 radius={120}
                 style={{ border: `4px solid ${theme.colors.dark[7]}` }}

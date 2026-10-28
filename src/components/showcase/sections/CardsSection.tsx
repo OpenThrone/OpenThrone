@@ -19,7 +19,19 @@ import { StatGrid } from '@/components/game/StatGrid';
 import HeaderIconButton from '@/components/HeaderIconButton';
 import HeroBanner from '@/components/HeroBanner';
 import { OrnatePanel } from '@/components/OrnatePanel';
+import {
+  type DesertionEvent,
+  DesertionLog,
+} from '@/components/overview/DesertionLog';
+import type {
+  DungeonActions,
+  DungeonData,
+} from '@/components/overview/DungeonPanel';
+import { DungeonPanel } from '@/components/overview/DungeonPanel';
 import { FortHealthStatSlot } from '@/components/overview/FortHealthStatSlot';
+import { KingdomMoraleMeter } from '@/components/overview/KingdomMoraleMeter';
+import type { ReanimationData } from '@/components/overview/ReanimationLine';
+import { ReanimationLine } from '@/components/overview/ReanimationLine';
 import type { ProfileStat } from '@/components/profile/ProfileStatTiles';
 import { ProfileStatTiles } from '@/components/profile/ProfileStatTiles';
 import {
@@ -97,6 +109,176 @@ const MOCK_PROTECTION: ProtectionSummary = {
   durationDays: 14,
   daysLeft: 4.6,
   timeRemainingShare: 0.33,
+};
+
+/** Ledger timestamps relative to now, so the guide always reads as recent. */
+const hoursAgo = (hours: number) =>
+  new Date(Date.now() - hours * 3600 * 1000).toISOString();
+
+/** Static ledger rows: the guide hands them to the log, so no API call is made. */
+const MOCK_DESERTIONS: DesertionEvent[] = [
+  {
+    id: 1,
+    kind: 'CITIZENS',
+    unitType: 'CITIZEN',
+    unitLevel: 1,
+    quantity: 40,
+    createdAt: hoursAgo(2),
+    direction: 'lost',
+  },
+  {
+    id: 2,
+    kind: 'DEFECT',
+    unitType: 'OFFENSE',
+    unitLevel: 2,
+    quantity: 12,
+    createdAt: hoursAgo(6),
+    direction: 'lost',
+  },
+  {
+    id: 3,
+    kind: 'ABANDON',
+    unitType: 'DEFENSE',
+    unitLevel: 3,
+    quantity: 5,
+    createdAt: hoursAgo(27),
+    direction: 'lost',
+  },
+  {
+    id: 4,
+    kind: 'MERCENARY',
+    unitType: 'OFFENSE',
+    unitLevel: 1,
+    quantity: 3,
+    createdAt: hoursAgo(51),
+    direction: 'lost',
+  },
+  {
+    id: 5,
+    kind: 'DEFECT',
+    // The loser's row; defectors arrive as untrained citizens, so the
+    // receiving copy counts heads instead of a tier.
+    unitType: 'SPY',
+    unitLevel: 1,
+    quantity: 12,
+    createdAt: hoursAgo(74),
+    direction: 'received',
+  },
+];
+
+/** Dungeon timestamps relative to now, so countdowns always read live. */
+const hoursFromNow = (hours: number) =>
+  new Date(Date.now() + hours * 3600 * 1000).toISOString();
+
+/** Static dungeon payload: the guide hands it over, so no API call is made. */
+const MOCK_DUNGEON: DungeonData = {
+  unlocked: true,
+  fortLevel: 14,
+  requiredFortLevel: 13,
+  requiredFortName: 'Citadel',
+  capacity: 250,
+  held: [
+    {
+      id: 11,
+      unitType: 'DEFENSE',
+      unitLevel: 3,
+      quantity: 24,
+      counterpartName: 'Lady Morwen',
+      capturedAt: hoursAgo(80),
+      ransomPrice: '240000',
+      ransomShare: '120000',
+      convertCost: '150000',
+      convertReadyAt: hoursFromNow(-8),
+      escapesAt: hoursFromNow(88),
+    },
+    {
+      id: 12,
+      unitType: 'SPY',
+      unitLevel: 1,
+      quantity: 6,
+      counterpartName: 'Grimtusk',
+      capturedAt: hoursAgo(10),
+      ransomPrice: '3600',
+      ransomShare: '1800',
+      convertCost: '2250',
+      convertReadyAt: hoursFromNow(62),
+      escapesAt: hoursFromNow(158),
+    },
+  ],
+  heldTotal: 30,
+  mine: [
+    {
+      id: 13,
+      unitType: 'OFFENSE',
+      unitLevel: 2,
+      quantity: 15,
+      counterpartName: 'Lady Morwen',
+      capturedAt: hoursAgo(30),
+      ransomPrice: '60000',
+      ransomShare: '30000',
+      convertCost: null,
+      convertReadyAt: null,
+      escapesAt: hoursFromNow(138),
+    },
+  ],
+};
+
+const MOCK_DUNGEON_LOCKED: DungeonData = {
+  unlocked: false,
+  fortLevel: 9,
+  requiredFortLevel: 13,
+  requiredFortName: 'Citadel',
+  capacity: 0,
+  held: [],
+  heldTotal: 0,
+  // The kingdom's own captured troops show (and ransom) even while the
+  // kingdom's own dungeon is still locked.
+  mine: [
+    {
+      id: 14,
+      unitType: 'SENTRY',
+      unitLevel: 1,
+      quantity: 9,
+      counterpartName: 'Grimtusk',
+      capturedAt: hoursAgo(20),
+      ransomPrice: '5400',
+      ransomShare: '2700',
+      convertCost: null,
+      convertReadyAt: null,
+      escapesAt: hoursFromNow(148),
+    },
+  ],
+};
+
+/** Mock dungeon buttons: the guide never reaches the dungeon API. */
+const MOCK_DUNGEON_ACTIONS: DungeonActions = {
+  ransom: mockAction('Ransom'),
+  release: mockAction('Release'),
+  convert: mockAction('Convert'),
+};
+
+/** Static reanimation payloads; the guide never reaches the reanimation API. */
+const MOCK_REANIMATION: ReanimationData = {
+  race: 'UNDEAD',
+  unlocked: true,
+  requiredFortLevel: 5,
+  requiredFortName: 'Outpost Level 2',
+  reanimatedToday: 3,
+  dailyCap: 42,
+};
+
+const MOCK_REANIMATION_AT_CAP: ReanimationData = {
+  ...MOCK_REANIMATION,
+  reanimatedToday: 42,
+};
+
+const MOCK_REANIMATION_LOCKED: ReanimationData = {
+  race: 'UNDEAD',
+  unlocked: false,
+  requiredFortLevel: 5,
+  requiredFortName: 'Outpost Level 2',
+  reanimatedToday: 0,
+  dailyCap: 0,
 };
 
 /** Builds a client-only mock player; nothing here touches the API. */
@@ -408,6 +590,56 @@ export default function CardsSection() {
         <Stack gap="sm">
           <FortHealthStatSlot user={healthyUser} />
           <FortHealthStatSlot user={damagedUser} />
+        </Stack>
+      </Specimen>
+
+      <Specimen
+        name="KingdomMoraleMeter"
+        usedOn={['/home/overview']}
+        note="Morale bar with the state it puts the kingdom in. The three states are the server's own thresholds (40 and 20) read from src/constants/KingdomMorale.ts; the bar and the state text use Mantine theme colours, so they retint per race. Players only see it when Server Settings → Show kingdom morale is on (off by default)."
+        wide
+      >
+        <Stack gap="md">
+          <KingdomMoraleMeter morale={72} />
+          <KingdomMoraleMeter morale={33} />
+          <KingdomMoraleMeter morale={12} />
+        </Stack>
+      </Specimen>
+
+      <Specimen
+        name="DesertionLog"
+        usedOn={['/home/overview']}
+        note="Collapsed until it is opened. The guide hands over static rows, so the log makes no API call; the page itself reads /api/kingdom/desertions. Defectors arrive as citizens: the received copy reads '12 deserters joined your kingdom as citizens', while the losing side keeps the tier it lost. Shown to players only with Show kingdom morale on."
+        wide
+      >
+        <DesertionLog events={MOCK_DESERTIONS} />
+      </Specimen>
+
+      <Specimen
+        name="DungeonPanel"
+        usedOn={['/home/overview']}
+        note="Captives held (ransom value, release / convert, 72h convert gate) and the kingdom's own troops in enemy dungeons. The locked copy still lists the kingdom's own captured troops with a working ransom button: ransoming needs no dungeon. The guide hands over a static payload and mock actions, so neither the read nor the buttons reach the API; the page itself reads /api/kingdom/dungeon. Players only see it when Server Settings → Show dungeon is on (off by default)."
+        wide
+      >
+        <Stack gap="md">
+          <DungeonPanel data={MOCK_DUNGEON} actions={MOCK_DUNGEON_ACTIONS} />
+          <DungeonPanel
+            data={MOCK_DUNGEON_LOCKED}
+            actions={MOCK_DUNGEON_ACTIONS}
+          />
+        </Stack>
+      </Specimen>
+
+      <Specimen
+        name="ReanimationLine"
+        usedOn={['/home/overview']}
+        note="Undead racial perk line (#211): fallen risen today against the day's cap (2% of the trained combat army), or the locked state naming the fort level it unlocks at. Every other race renders nothing at all — no line, no API read. The guide hands over a static payload, so the line makes no API call; the page itself reads /api/kingdom/reanimation."
+        wide
+      >
+        <Stack gap="md">
+          <ReanimationLine data={MOCK_REANIMATION} />
+          <ReanimationLine data={MOCK_REANIMATION_AT_CAP} />
+          <ReanimationLine data={MOCK_REANIMATION_LOCKED} />
         </Stack>
       </Specimen>
     </ShowcaseSection>

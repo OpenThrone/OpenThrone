@@ -4,6 +4,7 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type {
+  MercenaryArmyShare,
   MercenaryContract,
   MercenaryOffer,
   MercenaryOrder,
@@ -19,6 +20,7 @@ export default function Mercenaries() {
   const [data, setData] = useState<{
     offers: MercenaryOffer[];
     contracts: MercenaryContract[];
+    armyShare?: MercenaryArmyShare;
   } | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -80,10 +82,14 @@ export default function Mercenaries() {
         ) : (
           <Loader aria-label={t('loading')} />
         )
+      ) : !user ? (
+        // Wait for the player so the locked state never flashes for Tavern owners.
+        <Loader aria-label={t('loading')} />
       ) : (
         <MercenaryBarracks
           {...data}
           fortLevel={user?.fortLevel ?? 0}
+          economyLevel={user?.economyLevel ?? 0}
           gold={String(user?.gold ?? 0)}
           busy={busy}
           error={error}

@@ -2,6 +2,8 @@ import { Button, Stack, Table, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import type { MouseEvent, ReactNode } from 'react';
 
+import { AllianceArtworkEditor } from '@/components/alliance/AllianceArtworkEditor';
+import { AllianceCard } from '@/components/alliance/AllianceCard';
 import { transactionTypeLabel } from '@/components/alliance/allianceLabels';
 import { AllianceMembers } from '@/components/alliance/AllianceMembers';
 import { AllianceOverview } from '@/components/alliance/AllianceOverview';
@@ -19,6 +21,7 @@ import type {
   AllianceMember,
   AllianceRole,
 } from '@/services/Alliance.service';
+import { getPureCrest, resolveArtworkSource } from '@/utils/artwork';
 
 const ALLIANCE_ID = 7;
 const LEADER_ID = 101;
@@ -222,6 +225,45 @@ export default function AllianceSection() {
       title="Alliances"
       description="The alliance page panels that render from the AllianceInfo the page already holds, fed with a mock alliance viewed by its leader."
     >
+      <Specimen
+        framed={false}
+        name="Alliance directory card"
+        usedOn={['/alliances', '/alliances/browse']}
+        note="Shared artwork, stats and membership treatment across both directories."
+      >
+        <AllianceCard
+          id={ALLIANCE_ID}
+          name="The Silver Court"
+          members={5}
+          description="Strength through unity"
+          gold="125000"
+          imgsrc={getPureCrest('ELF')}
+          bannerimgsrc={resolveArtworkSource(
+            '/assets/images/ui/public/war-table.webp',
+          )}
+          isLeader
+          userMembership
+          onJoin={async () => {}}
+        />
+      </Specimen>
+      <Specimen
+        framed={false}
+        name="Alliance artwork"
+        usedOn={[PAGE]}
+        wide
+        note="Photo and banner crop, drag positioning, zoom, replacement and removal. Crop edits remain local until Save; the guide uses mock saves."
+      >
+        <AllianceArtworkEditor
+          avatar={getPureCrest('ELF')}
+          bannerimg={
+            resolveArtworkSource('/assets/images/ui/public/war-table.webp') ??
+            undefined
+          }
+          onSave={async () => {
+            mockAction('Save alliance artwork')();
+          }}
+        />
+      </Specimen>
       <Specimen
         framed={false}
         name="AllianceOverview"

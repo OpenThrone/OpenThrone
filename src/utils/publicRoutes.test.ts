@@ -11,6 +11,7 @@ describe('public page access', () => {
       '/faq',
       '/community/news',
       '/community/news/42',
+      '/battle/results/42',
       '/community/stats',
       '/account/login',
       '/account/register',
@@ -26,6 +27,7 @@ describe('public page access', () => {
   it('keeps game, administration, and non-public community routes protected', () => {
     for (const path of [
       '/home/overview',
+      '/battle/history',
       '/home/admin/content',
       '/community/news/admin',
       '/community/stats/private',

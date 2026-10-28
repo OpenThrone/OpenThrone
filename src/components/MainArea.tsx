@@ -12,9 +12,7 @@ import {
   Container,
   Group,
   Menu,
-  ScrollArea,
   Space,
-  Text,
   Title,
   UnstyledButton,
 } from '@mantine/core';
@@ -31,12 +29,12 @@ import React, {
 
 import { ForceDuesNotice } from '@/components/alliance/ForceDuesNotice';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
+import ChatNotificationItems from '@/components/game/ChatNotificationItems';
 import frameClasses from '@/components/game/FantasyFrame.module.css';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
-import { formatLastMessageTime } from '@/utils/timefunctions';
 
 import HeaderIconButton from './HeaderIconButton';
 import classes from './MainArea.module.css';
@@ -175,54 +173,10 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                 </Menu.Target>
 
                 <Menu.Dropdown>
-                  <Menu.Label>Recent Unread Messages</Menu.Label>
-                  {unreadMessages.length === 0 ? (
-                    <Menu.Item disabled>No unread messages</Menu.Item>
-                  ) : (
-                    <ScrollArea.Autosize mah={300}>
-                      {unreadMessages
-                        .sort(
-                          (a, b) =>
-                            new Date(b.timestamp).getTime() -
-                            new Date(a.timestamp).getTime(),
-                        )
-                        .slice(0, 10)
-                        .map((msg) => (
-                          <Menu.Item
-                            key={msg.id}
-                            component={Link}
-                            href={`/messaging?roomId=${msg.chatRoomId}`}
-                            onClick={() =>
-                              handleMessageItemClick(msg.chatRoomId)
-                            }
-                            style={{
-                              whiteSpace: 'normal',
-                              height: 'auto',
-                              paddingTop: '8px',
-                              paddingBottom: '8px',
-                            }}
-                          >
-                            <div>
-                              <Group justify="space-between" mb={4}>
-                                <Text fw={500} size="sm" truncate>
-                                  {msg.senderName}
-                                </Text>
-                                <Text c="dimmed" size="xs">
-                                  {formatLastMessageTime(msg.timestamp)}
-                                </Text>
-                              </Group>
-                              <Text size="xs" lineClamp={2}>
-                                {msg.content}
-                              </Text>
-                            </div>
-                          </Menu.Item>
-                        ))}
-                    </ScrollArea.Autosize>
-                  )}
-                  <Menu.Divider />
-                  <Menu.Item component={Link} href="/messaging">
-                    See all messages
-                  </Menu.Item>
+                  <ChatNotificationItems
+                    messages={unreadMessages}
+                    onRoomSelect={handleMessageItemClick}
+                  />
                 </Menu.Dropdown>
               </Menu>
               {enableSocial && (

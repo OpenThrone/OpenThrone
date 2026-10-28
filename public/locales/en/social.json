@@ -89,7 +89,7 @@
     "amountPlaceholder": "Enter amount (numbers only)",
     "summaryTitle": "Transfer Summary",
     "amountRow": "Transfer Amount:",
-    "feeRow": "Transfer Fee ({{percent}}%):",
+    "feeDestroyedRow": "Fee: {{percent}}% ({{amount}} gold), destroyed",
     "totalRow": "Total Cost:",
     "maxTransfer": "Maximum transfer: {{amount}} gold",
     "availableGold": "Your available gold: {{amount}} gold",
@@ -98,7 +98,14 @@
     "notesPlaceholder": "Add a message for your friend",
     "cancel": "Cancel",
     "submit": "Transfer Gold",
-    "transferFailed": "Transfer failed"
+    "transferFailed": "Transfer failed",
+    "sentToday": "Sent today {{sent}} / {{limit}}",
+    "sentTodayLoading": "Checking your daily allowance...",
+    "receiveLimitHint": "Their receive limit applies too.",
+    "overDailyLimit": "More than your remaining daily allowance of {{amount}} gold.",
+    "lockedTitle": "Gold transfers locked",
+    "locked": "Gold transfers unlock with the {{upgrade}}.",
+    "limitsFailed": "Could not load your transfer limits."
   },
   "notifications": {
     "newFriendRequest": "{{player}} wants to be your friend!",

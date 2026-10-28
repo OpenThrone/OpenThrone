@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 import { ChatRole, Prisma } from '@/lib/prisma-exports';
 import {
   ATTACK_LOG_ACL_SELECT,
-  canReadAttackLog,
+  getAttackLogViewerRole,
   grantAttackLogAccessToRoom,
 } from '@/services/AttackLogAccess.service';
 import {
@@ -12,7 +12,14 @@ import {
   withLockedChatRoom,
 } from '@/services/chatRoomGuards';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
+import type { ChatMessage } from '@/types/typings';
 import { isAdmin, isModerator } from '@/utils/authorization';
+import {
+  CHAT_MAX_LENGTH,
+  chatPlainText,
+  type ChatRichContent,
+  parseChatRichContent,
+} from '@/utils/chatContent';
 import { logError, logInfo } from '@/utils/logger';
 
 // Type definitions for messaging operations
@@ -27,6 +34,8 @@ export interface CreateRoomData {
 /** Describes the message data contract. */
 export interface MessageData {
   content: string;
+  richContent?: ChatRichContent;
+  clientMessageId?: string;
   messageType?: string;
   replyToMessageId?: number;
   sharedAttackLogId?: number;
@@ -75,7 +84,22 @@ const CreateRoomSchema = z.object({
 });
 
 const MessageSchema = z.object({
-  content: z.string().min(1),
+  content: z.string().trim().min(1).max(CHAT_MAX_LENGTH),
+  richContent: z
+    .unknown()
+    .transform((value, ctx) => {
+      try {
+        return parseChatRichContent(value);
+      } catch {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Invalid rich message',
+        });
+        return z.NEVER;
+      }
+    })
+    .optional(),
+  clientMessageId: z.string().uuid().optional(),
   messageType: z.string().default('TEXT'),
   replyToMessageId: z.number().int().positive().optional(),
   sharedAttackLogId: z.number().int().positive().optional(),
@@ -84,6 +108,101 @@ const MessageSchema = z.object({
 const SendMessageSchema = MessageSchema.extend({
   roomId: z.number().int().positive(),
 });
+
+const CHAT_MESSAGE_RELATIONS = {
+  sender: {
+    select: {
+      id: true,
+      display_name: true,
+      avatar: true,
+      last_active: true,
+    },
+  },
+  replyToMessage: {
+    select: {
+      id: true,
+      content: true,
+      deletedAt: true,
+      sender: { select: { id: true, display_name: true } },
+    },
+  },
+  sharedAttackLog: {
+    select: {
+      id: true,
+      attacker_id: true,
+      defender_id: true,
+      winner: true,
+      timestamp: true,
+    },
+  },
+  reactions: {
+    select: {
+      userId: true,
+      reaction: true,
+      user: { select: { id: true, display_name: true } },
+    },
+  },
+  readBy: {
+    select: {
+      userId: true,
+      readAt: true,
+      user: { select: { id: true, display_name: true } },
+    },
+  },
+} as const;
+type StoredChatMessage = Prisma.ChatMessageGetPayload<{
+  include: typeof CHAT_MESSAGE_RELATIONS;
+}>;
+
+export function serializeChatMessage(message: StoredChatMessage): ChatMessage {
+  return {
+    id: message.id,
+    roomId: message.roomId,
+    senderId: message.senderId,
+    content: message.deletedAt ? '' : message.content,
+    deletedAt: message.deletedAt?.toISOString() ?? null,
+    richContent: message.deletedAt
+      ? null
+      : (message.richContent as unknown as ChatRichContent | null),
+    clientMessageId: message.clientMessageId,
+    messageType: message.messageType,
+    sentAt: message.sentAt.toISOString(),
+    sender: {
+      id: message.sender.id,
+      display_name: message.sender.display_name,
+      avatar: message.sender.avatar,
+      is_online:
+        !!message.sender.last_active &&
+        Date.now() - message.sender.last_active.getTime() < 5 * 60 * 1000,
+    },
+    reactions: (message.reactions ?? []).map((r) => ({
+      userId: r.userId,
+      reaction: r.reaction,
+      userDisplayName: r.user.display_name,
+    })),
+    readBy: (message.readBy ?? []).map((r) => ({
+      userId: r.userId,
+      readAt: r.readAt.toISOString(),
+      userDisplayName: r.user.display_name,
+    })),
+    replyToMessage: message.replyToMessage
+      ? {
+          id: message.replyToMessage.id,
+          sender: message.replyToMessage.sender,
+          content: message.replyToMessage.deletedAt
+            ? ''
+            : message.replyToMessage.content,
+        }
+      : null,
+    sharedAttackLog:
+      !message.deletedAt && message.sharedAttackLog
+        ? {
+            ...message.sharedAttackLog,
+            timestamp: message.sharedAttackLog.timestamp?.toISOString() ?? null,
+          }
+        : null,
+  };
+}
 
 /** Largest number of users one add request may include. */
 export const MAX_ADD_PARTICIPANTS = 50;
@@ -141,7 +260,7 @@ export async function assertMessagingAllowed(userId: number, roomId?: number) {
 }
 
 export class MessagingService {
-  /** Anyone who can read a log may share it; see canReadAttackLog. */
+  /** Only battle participants may share a report. */
   private static async checkLogSharePermission(
     userId: number,
     logId: number,
@@ -156,12 +275,13 @@ export class MessagingService {
         acl: { select: ATTACK_LOG_ACL_SELECT },
       },
     });
-    return canReadAttackLog(userId, log, client);
+    const role = await getAttackLogViewerRole(userId, log, client);
+    return role === 'attacker' || role === 'defender';
   }
 
   /**
    * Grants the other current room members read access after a share message.
-   * Failures are logged; the message itself has already been sent.
+   * Grant failures roll back the message in the enclosing transaction.
    */
   private static async grantAclToParticipants(
     logId: number,
@@ -184,6 +304,7 @@ export class MessagingService {
         `[ACL Grant] FAILED to create ACL entries for shared log ${logId} in room ${roomId}:`,
         aclError,
       );
+      throw aclError;
     }
   }
 
@@ -504,7 +625,12 @@ export class MessagingService {
   /**
    * Gets messages for a specific chat room
    */
-  static async getRoomMessages(userId: number, roomId: number) {
+  static async getRoomMessages(
+    userId: number,
+    roomId: number,
+    beforeId?: number,
+    limit = 51,
+  ) {
     try {
       return await withLockedChatRoom(roomId, async (tx) => {
         await assertAllianceChatMembership(tx, userId, roomId);
@@ -527,109 +653,13 @@ export class MessagingService {
         }
 
         const messages = await tx.chatMessage.findMany({
-          where: { roomId },
-          orderBy: { sentAt: 'asc' },
-          include: {
-            sender: {
-              select: {
-                id: true,
-                display_name: true,
-                avatar: true,
-                last_active: true,
-              },
-            },
-            reactions: {
-              select: {
-                userId: true,
-                reaction: true,
-                user: { select: { id: true, display_name: true } },
-              },
-            },
-            readBy: {
-              select: {
-                userId: true,
-                readAt: true,
-                user: { select: { id: true, display_name: true } },
-              },
-            },
-            replyToMessage: {
-              select: {
-                id: true,
-                content: true,
-                sender: { select: { id: true, display_name: true } },
-              },
-            },
-            sharedAttackLog: {
-              select: {
-                id: true,
-                attacker_id: true,
-                defender_id: true,
-                winner: true,
-                timestamp: true,
-              },
-            },
-          },
+          where: { roomId, ...(beforeId ? { id: { lt: beforeId } } : {}) },
+          orderBy: { id: 'desc' },
+          take: limit,
+          include: CHAT_MESSAGE_RELATIONS,
         });
 
-        const transformedMessages = messages.map((message) => {
-          const isOnline = message.sender.last_active
-            ? new Date().getTime() -
-                new Date(message.sender.last_active).getTime() <
-              5 * 60 * 1000
-            : false;
-
-          const reactions = message.reactions.map((r) => ({
-            userId: r.userId,
-            reaction: r.reaction,
-            userDisplayName: r.user.display_name,
-          }));
-
-          const readBy = message.readBy.map((r) => ({
-            userId: r.userId,
-            readAt: r.readAt.toISOString(),
-            userDisplayName: r.user.display_name,
-          }));
-
-          const replyToMessage = message.replyToMessage
-            ? JSON.parse(
-                JSON.stringify(message.replyToMessage, (key, value) =>
-                  typeof value === 'bigint' ? value.toString() : value,
-                ),
-              )
-            : null;
-
-          const sharedAttackLog = message.sharedAttackLog
-            ? {
-                ...JSON.parse(
-                  JSON.stringify(message.sharedAttackLog, (key, value) =>
-                    typeof value === 'bigint' ? value.toString() : value,
-                  ),
-                ),
-                timestamp: message.sharedAttackLog.timestamp?.toISOString(),
-              }
-            : null;
-
-          return {
-            id: message.id,
-            roomId: message.roomId,
-            senderId: message.senderId,
-            content: message.content,
-            messageType: message.messageType,
-            sentAt: message.sentAt.toISOString(),
-            sender: {
-              id: message.sender.id,
-              display_name: message.sender.display_name,
-              avatar: message.sender.avatar,
-              is_online: isOnline,
-            },
-            reactions,
-            readBy,
-            replyToMessage,
-            sharedAttackLog,
-          };
-        });
-
-        return transformedMessages;
+        return messages.reverse().map(serializeChatMessage);
       });
     } catch (error) {
       logError('Error getting room messages', { userId, roomId, error });
@@ -943,6 +973,8 @@ export class MessagingService {
           roomId: message.roomId,
           senderId: message.senderId,
           content: message.content,
+          richContent: message.richContent,
+          clientMessageId: message.clientMessageId,
           messageType: message.messageType,
           sentAt: message.sentAt,
           sender: {
@@ -969,50 +1001,7 @@ export class MessagingService {
   static async sendMessageRealtime(
     userId: number,
     data: MessageData & { roomId: number },
-  ): Promise<
-    Prisma.ChatMessageGetPayload<{
-      include: {
-        sender: {
-          select: {
-            id: true;
-            display_name: true;
-            avatar: true;
-            last_active: true;
-          };
-        };
-        replyToMessage: {
-          select: {
-            id: true;
-            content: true;
-            sender: { select: { id: true; display_name: true } };
-          };
-        };
-        sharedAttackLog: {
-          select: {
-            id: true;
-            attacker_id: true;
-            defender_id: true;
-            winner: true;
-            timestamp: true;
-          };
-        };
-        reactions: {
-          select: {
-            userId: true;
-            reaction: true;
-            user: { select: { id: true; display_name: true } };
-          };
-        };
-        readBy: {
-          select: {
-            userId: true;
-            readAt: true;
-            user: { select: { id: true; display_name: true } };
-          };
-        };
-      };
-    }>
-  > {
+  ): Promise<StoredChatMessage & { deduplicated?: boolean }> {
     const validatedData = SendMessageSchema.parse(data);
     await assertMessagingAllowed(userId, validatedData.roomId);
     const {
@@ -1021,7 +1010,16 @@ export class MessagingService {
       replyToMessageId,
       messageType = 'TEXT',
       sharedAttackLogId,
+      richContent,
+      clientMessageId,
     } = validatedData;
+
+    if (
+      richContent &&
+      (!chatPlainText(richContent.doc).trim() || messageType !== 'TEXT')
+    ) {
+      throw new Error('Invalid rich message');
+    }
 
     try {
       return await withLockedChatRoom(roomId, async (tx) => {
@@ -1047,6 +1045,20 @@ export class MessagingService {
           if (!membership) {
             throw new Error('Not an alliance member.');
           }
+        }
+
+        if (clientMessageId) {
+          const existing = await tx.chatMessage.findUnique({
+            where: {
+              roomId_senderId_clientMessageId: {
+                roomId,
+                senderId: userId,
+                clientMessageId,
+              },
+            },
+            include: CHAT_MESSAGE_RELATIONS,
+          });
+          if (existing) return { ...existing, deduplicated: true };
         }
 
         let validReplyToId: number | null = null;
@@ -1080,51 +1092,18 @@ export class MessagingService {
           data: {
             roomId,
             senderId: userId,
-            content,
+            content: richContent
+              ? chatPlainText(richContent.doc).trim()
+              : content,
+            richContent: richContent
+              ? JSON.parse(JSON.stringify(richContent))
+              : undefined,
+            clientMessageId,
             messageType,
             replyToMessageId: validReplyToId,
             sharedAttackLogId: validSharedAttackLogId,
           },
-          include: {
-            sender: {
-              select: {
-                id: true,
-                display_name: true,
-                avatar: true,
-                last_active: true,
-              },
-            },
-            replyToMessage: {
-              select: {
-                id: true,
-                content: true,
-                sender: { select: { id: true, display_name: true } },
-              },
-            },
-            sharedAttackLog: {
-              select: {
-                id: true,
-                attacker_id: true,
-                defender_id: true,
-                winner: true,
-                timestamp: true,
-              },
-            },
-            reactions: {
-              select: {
-                userId: true,
-                reaction: true,
-                user: { select: { id: true, display_name: true } },
-              },
-            },
-            readBy: {
-              select: {
-                userId: true,
-                readAt: true,
-                user: { select: { id: true, display_name: true } },
-              },
-            },
-          },
+          include: CHAT_MESSAGE_RELATIONS,
         });
 
         await tx.chatRoom.update({
@@ -1229,6 +1208,8 @@ export class MessagingService {
           roomId: message.roomId,
           senderId: message.senderId,
           content: message.content,
+          richContent: message.richContent,
+          clientMessageId: message.clientMessageId,
           messageType: message.messageType,
           sentAt: message.sentAt.toISOString(),
           sender: {

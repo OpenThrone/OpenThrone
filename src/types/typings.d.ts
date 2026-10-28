@@ -378,6 +378,8 @@ export interface UserApiResponse {
   bio: string;
   colorScheme: string | null;
   economy_level: number;
+  /** Kingdom morale, 0-100 (#205). */
+  kingdom_morale: number;
   avatar: string | null;
   UserStructureUpgrade: any[]; // Temporarily any to allow UserStructureUpgrade[]
   UserBattleUpgrade: any[]; // Temporarily any to allow UserBattleUpgrade[]
@@ -396,6 +398,8 @@ export interface UserApiResponse {
   goldPerTurn: number;
   depositsAvailable: number;
   nextDepositAvailable: { hours: number; minutes: number; seconds: number } | 0;
+  /** Saved tutorial progress; null until the player answers the offer. */
+  tutorial_state?: unknown;
   alliance_memberships?: {
     alliance_id: number;
     role_id: number;
@@ -415,6 +419,11 @@ export interface UserApiResponse {
 // Define the Prisma User type alias again for internal use if needed
 export type User = PrismaUser;
 export interface ChatMessage {
+  deletedAt?: string | null;
+  richContent?: import('@/utils/chatContent').ChatRichContent | null;
+  clientMessageId?: string | null;
+  deliveryState?: 'pending' | 'failed';
+  deliveryError?: 'unconfirmed' | 'rejected' | 'rateLimited';
   id: number;
   roomId: number;
   senderId: number;

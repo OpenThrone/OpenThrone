@@ -1,10 +1,10 @@
-import { Box, Button, Text, Title } from '@mantine/core';
+import { Alert, Box, Button, Text, Title } from '@mantine/core';
 import type { GetServerSideProps, InferGetServerSidePropsType } from 'next';
 import { getSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
-import BlogPost from '@/components/blogPost';
+import { StyledNews } from '@/components/game/StyledNews';
 import MainArea from '@/components/MainArea';
 import type { NewsDraft } from '@/components/news/NewsComposer';
 import NewsComposer from '@/components/news/NewsComposer';
@@ -14,6 +14,7 @@ import SeoHead from '@/components/SeoHead';
 import type { BlogPostDTO } from '@/services/Blog.service';
 import { BlogService } from '@/services/Blog.service';
 import { logError } from '@/utils/logger';
+import { getNewsDate } from '@/utils/news';
 import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const News = ({
@@ -28,14 +29,18 @@ const News = ({
   const [composerIsOpen, setComposerIsOpen] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [postError, setPostError] = useState('');
+  const [readError, setReadError] = useState('');
+  const [pendingReadIds, setPendingReadIds] = useState<number[]>([]);
   const canPost = loggedIn && userId === 1;
   const [draft, setDraft] = useState<NewsDraft>({ title: '', content: '' });
 
   const handleReadChange = async (postId: number) => {
-    if (!loggedIn) return;
+    if (!loggedIn || pendingReadIds.includes(postId)) return;
     const postToUpdate = posts.find((p) => p.id === postId);
     if (!postToUpdate) return;
     const newReadStatus = !postToUpdate.isRead;
+    setPendingReadIds((ids) => [...ids, postId]);
+    setReadError('');
 
     setPosts((prev) =>
       prev.map((p) => (p.id === postId ? { ...p, isRead: newReadStatus } : p)),
@@ -51,11 +56,14 @@ const News = ({
       await response.json();
     } catch (error) {
       logError('Error updating read status:', error);
+      setReadError(t('news.markAsReadError'));
       setPosts((prev) =>
         prev.map((p) =>
           p.id === postId ? { ...p, isRead: !newReadStatus } : p,
         ),
       );
+    } finally {
+      setPendingReadIds((ids) => ids.filter((id) => id !== postId));
     }
   };
 
@@ -121,6 +129,11 @@ const News = ({
             />
           )}
 
+          {readError && (
+            <Alert color="red" role="alert">
+              {readError}
+            </Alert>
+          )}
           <Box className={classes.newsFeed}>
             {posts.length === 0 ? (
               <Box className={classes.emptyNews}>
@@ -134,20 +147,16 @@ const News = ({
                 )}
               </Box>
             ) : (
-              [...posts]
-                .sort((a, b) => {
-                  if (a.isPinned && !b.isPinned) return -1;
-                  if (!a.isPinned && b.isPinned) return 1;
-                  return 0;
-                })
-                .map((post) => (
-                  <BlogPost
-                    post={post}
-                    loggedIn={loggedIn}
-                    handleReadChange={handleReadChange}
-                    key={`Post_${post.id}`}
-                  />
-                ))
+              <StyledNews
+                archive
+                pendingReadIds={pendingReadIds}
+                news={posts.map((post) => ({
+                  ...post,
+                  created_timestamp: getNewsDate(post),
+                  read: !loggedIn || post.isRead,
+                }))}
+                onReadChange={loggedIn ? handleReadChange : undefined}
+              />
             )}
           </Box>
         </Box>
@@ -171,6 +180,7 @@ export const getServerSideProps: GetServerSideProps<NewsPageProps> = async (
     'common',
     'navigation',
     'community',
+    'home',
   ]);
   try {
     if (session) {

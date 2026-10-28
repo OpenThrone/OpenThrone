@@ -101,7 +101,7 @@ describe('attack log ACL grant (ATK-01)', () => {
     expect(mockPrisma.attack_log_acl.createMany).not.toHaveBeenCalled();
   });
 
-  it('lets a share recipient re-share to a room they belong to', async () => {
+  it('rejects resharing by a recipient even when they belong to the room', async () => {
     mockPrisma.attack_log.findUnique.mockResolvedValue({
       id: LOG_ID,
       attacker_id: ATTACKER_ID,
@@ -122,8 +122,8 @@ describe('attack log ACL grant (ATK-01)', () => {
       res,
     );
 
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(grantedUserIds().sort()).toEqual([ATTACKER_ID, DEFENDER_ID].sort());
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(mockPrisma.attack_log_acl.createMany).not.toHaveBeenCalled();
   });
 
   it('rejects a reader sharing to a room they are not in', async () => {

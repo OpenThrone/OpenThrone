@@ -508,42 +508,167 @@
   },
   "walkthrough": {
     "offer": {
-      "title": "¿Quieres hacer el recorrido inicial?",
-      "body": "Un breve recorrido opcional te mostrará el menú, el consejero, las estadísticas, Entrenamiento, Armería y Banco, y te dejará en Ataque."
+      "title": "Bienvenido a tu reino",
+      "body": "¿Quieres un recorrido guiado rápido? Explica cada página cuando la visitas, empezando por el Resumen, y te lleva a la siguiente. Puedes pausarlo o desactivarlo cuando quieras.",
+      "returningTitle": "¿Continuar el recorrido?",
+      "returningBody": "Pausaste el recorrido antes. ¿Seguimos donde lo dejaste?"
     },
-    "skip": "Omitir",
     "start": "Iniciar recorrido",
-    "close": "Cerrar recorrido",
     "back": "Atrás",
     "next": "Siguiente",
-    "finish": "Finalizar",
-    "menu": {
-      "title": "El menú de mando",
-      "body": "Usa esta barra para moverte entre Inicio, Batalla, Estructuras, Alianzas y el resto del reino."
+    "finish": "Entendido",
+    "notNow": "Ahora no",
+    "progress": "Paso {{current}} de {{total}}",
+    "options": {
+      "label": "Opciones del recorrido",
+      "skipPage": "Omitir esta página",
+      "snooze": "Recuérdamelo mañana",
+      "dismiss": "No volver a mostrar"
     },
-    "sidebar": {
-      "title": "El libro de tu reino",
-      "body": "La barra lateral mantiene a mano el oro, los ciudadanos, el nivel, los turnos, el consejero, la búsqueda de jugadores y el temporizador de turnos."
+    "settings": {
+      "label": "Tutorial",
+      "description": "Repite el recorrido guiado desde el principio.",
+      "restart": "Reiniciar tutorial"
     },
-    "overview": {
-      "title": "El reino de un vistazo",
-      "body": "El Resumen es tu control de pulso: riqueza, población, tamaño del ejército, oro en el banco y progreso hacia el siguiente nivel."
+    "actions": {
+      "openTraining": "Abrir Entrenamiento",
+      "openAttack": "Ver Ataque",
+      "openArmory": "Muéstrame la Armería",
+      "openBank": "Muéstrame el Banco"
     },
-    "training": {
-      "title": "Entrena ciudadanos con intención",
-      "body": "Los obreros generan oro, las unidades ofensivas ganan ataques, las defensivas protegen a tu pueblo y los espías controlan la información."
+    "strategy": {
+      "label": "Ejército inicial",
+      "steady": {
+        "title": "Inicio estable (recomendado)",
+        "body": "La mitad obreros para oro, la mitad defensa para estar a salvo."
+      },
+      "balanced": {
+        "title": "Equilibrado",
+        "body": "Obreros, defensa y un grupo de ofensiva."
+      },
+      "raider": {
+        "title": "Saqueador",
+        "body": "La mitad ofensiva para atacar antes."
+      },
+      "filled": "El pedido de abajo está rellenado. Entrénalo ahora u omite para ajustarlo tú.",
+      "train": "Entrenar y continuar"
     },
-    "armory": {
-      "title": "Equípate antes de marchar",
-      "body": "La Armería convierte unidades entrenadas en poder real. Compra ofensiva para golpear más fuerte y defensa para resistir."
+    "chapters": {
+      "overview": {
+        "menu": {
+          "title": "El menú de mando",
+          "body": "Aquí te mueves entre Inicio, Batalla y Estructuras. Solo ves lo que puedes usar ahora: las Mejoras de batalla y las Mejoras de estructuras aparecen al desbloquearlas (Mejoras de estructuras en el nivel 5, con la Aldea)."
+        },
+        "sidebar": {
+          "title": "El libro de tu reino",
+          "body": "La barra lateral mantiene a la vista tu oro, ciudadanos, nivel y turnos, además del consejero, la búsqueda de jugadores y el temporizador de turnos."
+        },
+        "protection": {
+          "title": "Estás protegido",
+          "body": "Como jugador nuevo, los ataques contra ti solo se llevan una pequeña parte de tu oro. La protección termina con lo primero que ocurra: dentro de unos {{days}} días, que tu población llegue a {{population}} o el nivel {{levelLimit}}. Aprovecha el tiempo para construir."
+        },
+        "stats": {
+          "title": "El reino de un vistazo",
+          "body": "El Resumen muestra tu oro, el tamaño del ejército y el progreso hacia el siguiente nivel. Échale un vistazo cada vez que entres."
+        },
+        "next": {
+          "title": "¿Y ahora qué?",
+          "body": "Abre Batalla en el menú. Entrenamiento convierte ciudadanos en unidades y Ataque es donde eliges tus combates. Elige uno y el recorrido te explicará esa página."
+        }
+      },
+      "attack": {
+        "targets": {
+          "title": "Elige tus objetivos",
+          "body": "Aquí aparecen los jugadores a los que puedes atacar. Compara nivel, oro y defensa antes de gastar turnos de ataque."
+        },
+        "needOffense": {
+          "title": "Necesitas unidades ofensivas para atacar",
+          "body": "Los ciudadanos apenas luchan. Entrena primero unidades ofensivas y deja algo de defensa en casa. La siguiente parada es Entrenamiento."
+        }
+      },
+      "training": {
+        "how": {
+          "title": "Convierte ciudadanos en ejército",
+          "body": "Aquí tus ciudadanos sin entrenar se convierten en unidades. Escribe una cantidad junto a una unidad, mira el coste en la barra del pedido y pulsa Entrenar. Al desentrenar se devuelve parte del coste."
+        },
+        "balance": {
+          "title": "Forma un ejército equilibrado",
+          "body": "Los obreros ganan oro, la defensa protege a tu gente y tu fuerte, y la ofensiva gana ataques. Apostar todo a un solo papel te deja expuesto o sin oro, así que combínalos."
+        },
+        "strategy": {
+          "title": "Elige un plan inicial",
+          "body": "¿No sabes por dónde empezar? Elige un plan y el pedido se rellena por ti. «Entrenar y continuar» gasta el oro al instante, así que omite si prefieres preparar el pedido tú mismo."
+        },
+        "next": {
+          "title": "A equiparse",
+          "body": "Con armas y armadura, las unidades golpean más fuerte. ¿Quieres conocer la Armería?"
+        }
+      },
+      "armory": {
+        "gear": {
+          "title": "Equipa a tus unidades",
+          "body": "Compra armas y armaduras aquí. El equipo ofensivo sube tu ataque y el defensivo tu defensa. El equipo solo ayuda a las unidades que has entrenado."
+        },
+        "next": {
+          "title": "Una parada más",
+          "body": "El oro que llevas encima puede ser robado. ¿Quieres ver cómo lo protege el Banco?"
+        }
+      },
+      "bank": {
+        "protect": {
+          "title": "Guarda lo que no puedas defender",
+          "body": "Los depósitos protegen tu oro de los atacantes. Deposita el oro sobrante cada día mientras tus obreros y estructuras mantienen los ingresos."
+        }
+      }
     },
-    "bank": {
-      "title": "Guarda lo que no puedas defender",
-      "body": "El oro en mano es útil pero está expuesto. Los depósitos protegen tu riqueza mientras obreros y estructuras mantienen los ingresos."
-    },
-    "attack": {
-      "title": "Elige tu primer objetivo",
-      "body": "Estás listo para explorar el campo de batalla. Compara niveles, oro y riesgo antes de gastar turnos de ataque."
+    "skip": "Omitir",
+    "learn": {
+      "title": "Aprender",
+      "subtitle": "Repite las lecciones guiadas cuando quieras o lee las guías completas.",
+      "lessonsTitle": "Lecciones guiadas",
+      "guidesTitle": "Guías",
+      "status": {
+        "active": "El tutorial está activo: cada lección se reproduce al visitar su página.",
+        "snoozed": "El tutorial está en pausa y volverá a ofrecerse mañana.",
+        "off": "El tutorial está desactivado. Repetir una lección lo vuelve a activar."
+      },
+      "seen": "Completada",
+      "unseen": "Aún sin ver",
+      "open": "Abrir",
+      "replay": "Repetir",
+      "restart": "Reiniciar todo el tutorial",
+      "lessons": {
+        "overview": {
+          "title": "Tu reino de un vistazo",
+          "summary": "El menú, la barra lateral y la página de Resumen."
+        },
+        "attack": {
+          "title": "Elegir objetivos",
+          "summary": "Cómo funciona la página de Ataque y qué necesitas para luchar."
+        },
+        "training": {
+          "title": "Entrenar un ejército",
+          "summary": "Convierte ciudadanos en obreros y soldados, con planes iniciales."
+        },
+        "armory": {
+          "title": "Equipar unidades",
+          "summary": "Armas y armaduras que hacen más fuertes a las unidades entrenadas."
+        },
+        "bank": {
+          "title": "Guardar oro",
+          "summary": "Cómo mantener tu oro a salvo de los saqueadores."
+        }
+      },
+      "guides": {
+        "howToPlay": {
+          "title": "Cómo jugar",
+          "summary": "El ciclo básico, razas, ejército, economía y alianzas."
+        },
+        "faq": {
+          "title": "Preguntas frecuentes",
+          "summary": "Respuestas a las dudas habituales."
+        }
+      }
     }
   },
   "player": {
@@ -625,6 +750,13 @@
         "killed_one": "Perdiste {{count}} de tus {{target}}.",
         "killed_other": "Perdiste {{count}} de tus {{target}}.",
         "noKills": "Ninguno de tus {{target}} resultó herido."
+      },
+      "shared": {
+        "sent_one": "{{attacker}} envió {{count}} asesino contra {{target}} de {{defender}}.",
+        "sent_other": "{{attacker}} envió {{count}} asesinos contra {{target}} de {{defender}}.",
+        "killed_one": "Los asesinos mataron a {{count}} de los {{target}} del objetivo.",
+        "killed_other": "Los asesinos mataron a {{count}} de los {{target}} del objetivo.",
+        "noKills": "Ninguno de los {{target}} del objetivo sufrió daños."
       }
     },
     "infiltration": {
@@ -639,8 +771,17 @@
         "sent_other": "{{attacker}} envió {{count}} infiltrados contra tu fortaleza.",
         "damage": "Tu fortaleza recibió {{damage}} de daño.",
         "caught": "Tus centinelas los capturaron antes de que llegaran a la fortaleza."
+      },
+      "shared": {
+        "sent_one": "{{attacker}} envió {{count}} infiltrado contra la fortaleza de {{defender}}.",
+        "sent_other": "{{attacker}} envió {{count}} infiltrados contra la fortaleza de {{defender}}.",
+        "damage": "La fortaleza del objetivo sufrió {{damage}} de daño.",
+        "caught": "Los centinelas del objetivo atraparon a los infiltrados antes de que llegaran a la fortaleza."
       }
-    }
+    },
+    "sharedSpiesLost_one": "El atacante perdió {{count}} espía.",
+    "sharedSpiesLost_other": "El atacante perdió {{count}} espías.",
+    "sharedNoSpiesLost": "Todos los espías del atacante regresaron a salvo."
   },
   "report": {
     "title": "Enviar una denuncia",
@@ -673,5 +814,29 @@
       "ALLIANCE_ABUSE": "Abuso en una alianza",
       "OTHER": "Otro"
     }
-  }
+  },
+  "announcementsFeed": {
+    "showActive": "Mostrar anuncios activos ({{count}})",
+    "showDismissed": "Mostrar anuncios descartados ({{count}})",
+    "dismissed": "Descartado",
+    "restore": "Restaurar",
+    "orderLabel": "Orden de anuncios",
+    "orderDescription": "Se guarda automáticamente para este jugador en este dispositivo.",
+    "orderPriority": "Mayor prioridad primero",
+    "orderNewest": "Más recientes primero",
+  "title": "Anuncios",
+  "priority": "Mayor prioridad primero",
+  "filter": "Filtrar anuncios por gravedad",
+  "ALL": "Todos",
+  "CRITICAL": "Crítico",
+  "WARNING": "Advertencia",
+  "INFO": "Información",
+  "SUCCESS": "Éxito",
+  "page": "{{current}} de {{total}}",
+  "goToPage": "Ir al anuncio {{page}}",
+  "next": "Siguiente anuncio",
+  "previous": "Anuncio anterior",
+  "first": "Primer anuncio",
+  "last": "Último anuncio"
+}
 }

@@ -210,6 +210,7 @@ export class AllianceIntelService {
         'You do not have permission to share reports with the alliance',
       );
 
+      await tx.$queryRaw`SELECT id FROM attack_log WHERE id = ${data.attackLogId} FOR UPDATE`;
       const log = await tx.attack_log.findUnique({
         where: { id: data.attackLogId },
         select: {

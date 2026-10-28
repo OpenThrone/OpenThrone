@@ -95,7 +95,7 @@ export const SpyReportShell = ({
 
   // The spymaster follows up on the target; the target can strike back.
   const followUpTarget = isViewerDefender ? attackerPlayer : defenderPlayer;
-  const canFollowUp = isViewerAttacker || isViewerDefender || viewerID === 1;
+  const canFollowUp = isViewerAttacker || isViewerDefender;
 
   const participant = (
     player: any,

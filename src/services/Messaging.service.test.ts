@@ -216,19 +216,26 @@ describe('sharing an attack log in chat (ATTACK_LOG_SHARE)', () => {
     };
   });
 
-  it('lets a share recipient re-share and grants the other room members', async () => {
+  it('rejects resharing by a recipient before creating the message or ACL', async () => {
     setLogAcl([
       { shared_with_user_id: RECIPIENT_ID, shared_with_alliance_id: null },
     ]);
+    await expect(share(RECIPIENT_ID)).rejects.toThrow('No permission');
+    expect(mockPrisma.chatMessage.create).not.toHaveBeenCalled();
+    expect(mockPrisma.attack_log_acl.createMany).not.toHaveBeenCalled();
+  });
 
-    await share(RECIPIENT_ID);
-
+  it('lets a battle participant share and grants the other room members', async () => {
+    setLogAcl([]);
+    mockPrisma.chatRoom.findUnique.mockResolvedValue({
+      allianceId: null,
+      participants: [{ userId: ATTACKER_ID }, { userId: OTHER_MEMBER_ID }],
+    });
+    await share(ATTACKER_ID);
     expect(mockPrisma.chatMessage.create).toHaveBeenCalled();
     expect(mockPrisma.attack_log_acl.createMany).toHaveBeenCalledWith({
-      data: [
-        { attack_log_id: LOG_ID, shared_with_user_id: OTHER_MEMBER_ID },
-        { attack_log_id: LOG_ID, shared_with_user_id: OUTSIDER_ID },
-      ],
+      data: [{ attack_log_id: LOG_ID, shared_with_user_id: OTHER_MEMBER_ID }],
+      skipDuplicates: true,
     });
   });
 

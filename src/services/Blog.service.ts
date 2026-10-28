@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
+import { compareNewsPosts } from '@/utils/news';
 
 // Type definitions for blog operations
 /**
@@ -29,6 +30,7 @@ export interface BlogPostDTO {
   postedby_id: number;
   authorName?: string;
   created_timestamp: string; // ISO
+  publishedAt?: string | null; // ISO; null for legacy posts
   isRead: boolean;
   lastReadAt?: string | null;
   kind?: string;
@@ -164,6 +166,9 @@ export class BlogService {
             p.created_timestamp instanceof Date
               ? p.created_timestamp.toISOString()
               : String(p.created_timestamp),
+          publishedAt: p.publishedAt
+            ? new Date(p.publishedAt).toISOString()
+            : null,
           isRead: Boolean(isRead),
           lastReadAt:
             isRead && p.postReadStatus[0] && p.postReadStatus[0].last_read_at
@@ -176,6 +181,8 @@ export class BlogService {
           isPinned: p.isPinned ?? false,
         };
       });
+
+      dtos.sort(compareNewsPosts);
 
       const authorIds = [...new Set(posts.map((p: any) => p.postedby_id))];
       if (authorIds.length > 0) {
@@ -247,6 +254,9 @@ export class BlogService {
           post.created_timestamp instanceof Date
             ? post.created_timestamp.toISOString()
             : String(post.created_timestamp),
+        publishedAt: post.publishedAt
+          ? new Date(post.publishedAt).toISOString()
+          : null,
         isRead: Boolean(isRead),
         kind: post.kind ?? 'NEWS',
         status: post.status,

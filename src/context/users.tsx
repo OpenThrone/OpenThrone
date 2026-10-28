@@ -193,6 +193,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const handleNewMessageNotification = (data: UnreadMessages) => {
+      if (data.senderId === userId) return;
       logInfo('Received newMessageNotification:', data);
       setUnreadMessages((prev) => {
         if (prev.some((msg) => msg.id === data.id)) return prev;

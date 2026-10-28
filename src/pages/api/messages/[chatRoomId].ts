@@ -13,7 +13,14 @@ interface AuthenticatedRequest extends NextApiRequest {
 }
 
 const ChatRoomIdSchema = z.object({
-  chatRoomId: z.coerce.number().int(),
+  chatRoomId: z.coerce.number().int().positive(),
+  beforeId: z.coerce.number().int().positive().optional(),
+  aroundId: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(Number.MAX_SAFE_INTEGER - 1)
+    .optional(),
 });
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
@@ -22,7 +29,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (!validatedQuery.success) {
     return res.status(400).json({ message: 'Invalid chatRoomId' });
   }
-  const { chatRoomId } = validatedQuery.data;
+  const { chatRoomId, beforeId, aroundId } = validatedQuery.data;
   const { session } = req; // Now correctly typed
 
   if (!session) {
@@ -36,8 +43,17 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   // --- GET Request (Fetching Messages) ---
   if (req.method === 'GET') {
     try {
-      const messages = await MessagingService.getRoomMessages(userId, roomId);
-      res.status(200).json(messages);
+      const messages = await MessagingService.getRoomMessages(
+        userId,
+        roomId,
+        aroundId ? aroundId + 1 : beforeId,
+        51,
+      );
+      if (aroundId && !messages.some((message) => message.id === aroundId))
+        return res.status(404).json({ message: 'Message unavailable' });
+      res.setHeader('Cache-Control', 'private, no-store');
+      res.setHeader('X-Has-More', String(messages.length > 50));
+      res.status(200).json(messages.slice(-50));
     } catch (error) {
       logError('GET /api/messages/[chatRoomId] Error:', error);
       if (error.message.includes('Forbidden')) {

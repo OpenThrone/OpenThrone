@@ -13,6 +13,7 @@ import {
 } from '@/services/AttackDataService';
 import { getTargetAvailability } from '@/services/AttackValidationService';
 import { hasForbiddenForceTarget } from '@/services/ForceLifecycle.service';
+import { getBattleGameEventContext } from '@/services/GameEventRuntime.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import type { UnitType } from '@/types/typings';
 import {
@@ -553,6 +554,10 @@ export const SpyService = {
             ? validatedData.attackerId
             : validatedData.defenderId;
           const serializedResult = serializeCombatResult(spyResults);
+          const { snapshot: eventSnapshot } =
+            await getBattleGameEventContext(tx);
+          // Spy missions do not receive the combat XP multiplier.
+          const gameEvents = { ...eventSnapshot, appliedXpMultiplier: 1 };
 
           const attack_log = await createAttackLog(
             {
@@ -562,7 +567,11 @@ export const SpyService = {
               attacker_losses_total: spyResults.spiesLost ?? 0,
               defender_losses_total:
                 'unitsKilled' in spyResults ? spyResults.unitsKilled : 0,
-              stats: { spyResults: serializedResult, replay: sealedReplay },
+              stats: {
+                spyResults: serializedResult,
+                replay: sealedReplay,
+                gameEvents,
+              },
               // Connect to users via relation fields instead of setting IDs directly
               attackerPlayer: { connect: { id: validatedData.attackerId } },
               defenderPlayer: { connect: { id: validatedData.defenderId } },

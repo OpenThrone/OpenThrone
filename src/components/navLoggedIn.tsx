@@ -16,6 +16,10 @@ import {
 } from '@/hooks/useImpersonation';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import type { PlayerRace } from '@/types/typings';
+import {
+  isBattleUpgradesUnlocked,
+  isStructureUpgradesUnlocked,
+} from '@/utils/menuUnlocks';
 import { getAssetPath } from '@/utils/utilities';
 
 import MobileNavigation from './MobileNavigation';
@@ -47,6 +51,7 @@ const subMenus: Record<string, NavItem[]> = {
     { key: 'levels', href: '/home/levels', labelKey: 'home.levels' },
     { key: 'profile', href: '/home/profile', labelKey: 'home.profile' },
     { key: 'settings', href: '/home/settings', labelKey: 'home.settings' },
+    { key: 'learn', href: '/home/learn', labelKey: 'home.learn' },
   ],
   battle: [
     { key: 'attack', href: '/battle/users', labelKey: 'battle.attack' },
@@ -130,6 +135,7 @@ const subMenuIcons: Record<string, string> = {
   'home.levels': 'ascending-block',
   'home.profile': 'player',
   'home.settings': 'gear-hammer',
+  'home.learn': 'book',
   'home.administration': 'rune-stone',
   'battle.attack': 'crossed-swords',
   'battle.training': 'muscle-up',
@@ -189,13 +195,43 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
     ];
   }, [hasAnyStaffAccess]);
 
+  // New players get a shorter menu: entries with nothing to do yet stay out
+  // until their unlock rule is met (the pages themselves remain reachable).
+  const progress = useMemo(
+    () =>
+      user
+        ? {
+            level: user.level,
+            offensiveLevel: user.offensiveLevel,
+            spyLevel: user.spyLevel,
+          }
+        : null,
+    [user],
+  );
+  const lockedKeys = useMemo(() => {
+    const locked = new Set<string>();
+    if (!progress || !isBattleUpgradesUnlocked(progress)) {
+      locked.add('battle.upgrades');
+    }
+    if (!progress || !isStructureUpgradesUnlocked(progress)) {
+      locked.add('structures.upgrades');
+    }
+    return locked;
+  }, [progress]);
+
   const resolvedSubMenus: Record<string, NavItem[]> = useMemo(() => {
-    if (staffSubMenus.length === 0) return subMenus;
+    const unlocked = Object.fromEntries(
+      Object.entries(subMenus).map(([parentKey, items]) => [
+        parentKey,
+        items.filter((item) => !lockedKeys.has(`${parentKey}.${item.key}`)),
+      ]),
+    );
+    if (staffSubMenus.length === 0) return unlocked;
     return {
-      ...subMenus,
-      home: [...subMenus.home, ...staffSubMenus],
+      ...unlocked,
+      home: [...unlocked.home, ...staffSubMenus],
     };
-  }, [staffSubMenus]);
+  }, [lockedKeys, staffSubMenus]);
 
   useEffect(() => {
     const localePrefix = router.locale ? `/${router.locale}` : '';
@@ -469,13 +505,16 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
         sidebarContent={sidebarContent}
         className="xl:hidden"
       />
-      <div onMouseLeave={resetMenu} onMouseEnter={clearReset}>
+      <div
+        onMouseLeave={resetMenu}
+        onMouseEnter={clearReset}
+        data-tour-id={tourId}
+      >
         <nav
           className={`hidden h-10 xl:block ${raceClasses.menuPrimaryClass} ${classes.primary}`}
           style={{
             backgroundImage: `url('${getAssetPath('top-menu', null, menuRace)}')`,
           }}
-          data-tour-id={tourId}
           aria-label={tNav('ariaLabels.mainNavigation')}
           onMouseEnter={clearReset}
         >

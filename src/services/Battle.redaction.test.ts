@@ -157,6 +157,9 @@ describe('redactAttackLogForViewer: attack reports', () => {
         xpEarned: JSON.stringify({ attacker: 15, defender: 5 }),
         pillagedGold: '500',
         fortDamage: 100,
+        defender_fatigue_percent: 0,
+        // Dungeon captives (#210); legacy rows have none.
+        captives_taken: 0,
         attacker_losses: { total: 5 },
         defender_losses: { total: 40 },
         combat_summary: {
@@ -233,6 +236,27 @@ describe('redactAttackLogForViewer: attack reports', () => {
       expect(stats).not.toHaveProperty('mitigation_log');
       expect(JSON.stringify(stats)).not.toContain('never-return-this');
     }
+  });
+
+  it('shows each side only its own reanimated count (#211)', () => {
+    const log = attackLog();
+    // Distinct counts: if the redaction ever handed a side the opponent's
+    // number, these equalities fail.
+    Object.assign(log.stats, {
+      reanimated_units: { attacker: 12, defender: 7 },
+    });
+    const asAttacker = redactAttackLogForViewer(log, 'attacker').stats;
+    expect(asAttacker.reanimated_units).toBe(12);
+    const asDefender = redactAttackLogForViewer(log, 'defender').stats;
+    expect(asDefender.reanimated_units).toBe(7);
+    // A shared report (a shared viewer or an anonymous public reader) carries
+    // no count at all, so the opponent never learns how many rose.
+    const asShared = redactAttackLogForViewer(log, 'shared').stats;
+    expect(asShared).not.toHaveProperty('reanimated_units');
+    expect(JSON.stringify(asShared)).not.toContain('reanimated_units');
+    // Legacy rows predate the stat; both sides simply read zero.
+    const legacy = redactAttackLogForViewer(attackLog(), 'attacker').stats;
+    expect(legacy.reanimated_units).toBe(0);
   });
 
   it('distinguishes recorded zero damage and wounds from missing or corrupt data', () => {

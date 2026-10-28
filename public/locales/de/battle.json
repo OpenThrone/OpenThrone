@@ -1,4 +1,15 @@
 {
+  "gameEvents": {
+    "history": "Ereignisverlauf",
+    "xpBonus": "{{value}}× EP-Ereignis",
+    "eventCount_one": "{{count}} Ereignis",
+    "eventCount_other": "{{count}} Ereignisse",
+    "details": "Ereignisdetails anzeigen: {{label}}",
+    "title": "Spielereignisse während dieser Mission",
+    "appliedXp": "Angewendeter EP-Multiplikator: {{value}}×",
+    "savedContext": "Zum Zeitpunkt der Mission gespeichert. Die aufgeführten Effekte können auch Aktivitäten außerhalb des Kampfes beeinflussen.",
+    "notRecorded": "Für diesen älteren Bericht wurde kein Ereigniskontext gespeichert."
+  },
   "attack": {
     "title": "Spieler angreifen",
     "searchPlayer": "Nach einem Spieler zum Angreifen suchen",
@@ -270,6 +281,7 @@
   },
   "training": {
     "title": "Training",
+    "presetNothingAffordable": "Mit Ihrem aktuellen Gold und Ihren Bürgern lässt sich nichts bestellen.",
     "trainingStatus": "Trainingsstatus",
     "untrainedCitizens": "Untrainierte Bürger",
     "goldOnHand": "Gold zur Hand",
@@ -467,7 +479,11 @@
     "gold": "Gold",
     "attackerXp": "EP des Angreifers",
     "defenderXp": "EP des Verteidigers",
-    "casualties": "Verluste"
+    "casualties": "Verluste",
+    "garrisonFatigue": "Garnisonsmüdigkeit: -{{percent}}%",
+    "garrisonFatigueTooltip": "Die Garnison des Verteidigers hat bereits heute gekämpft. Jeder zurückgeworfene Angriff ermüdet sie ein wenig mehr, und eine müde Garnison verteidigt mit geringerer Kraft.",
+    "garrisonFatigueHelp": "Was die Garnisonsmüdigkeit bedeutet",
+    "pillageDeductions": "Allianzbeitrag: {{contribution}} · Goldrückzahlung: {{repayment}} · Gold mitgebracht: {{net}}"
   },
   "timeline": {
     "battleId": "Kampf-ID: {{id}}",
@@ -488,7 +504,13 @@
     "youLostSoldiers_one": "Sie haben {{dead}} Soldaten verloren.",
     "youLostSoldiers_other": "Sie haben {{dead}} Soldaten verloren.",
     "playerLostSoldiers_one": "{{player}} hat {{dead}} Soldaten verloren.",
-    "playerLostSoldiers_other": "{{player}} hat {{dead}} Soldaten verloren."
+    "playerLostSoldiers_other": "{{player}} hat {{dead}} Soldaten verloren.",
+    "captivesTaken_one": "Gefangene genommen: {{taken}}.",
+    "captivesTaken_other": "Gefangene genommen: {{taken}}.",
+    "troopsTakenCaptive_one": "{{taken}} Ihrer Truppen wurde gefangen genommen.",
+    "troopsTakenCaptive_other": "{{taken}} Ihrer Truppen wurden gefangen genommen.",
+    "reanimatedUnits_one": "{{risen}} Gefallener erhob sich erneut, um Ihnen zu dienen.",
+    "reanimatedUnits_other": "{{risen}} Gefallene erhoben sich erneut, um Ihnen zu dienen."
   },
   "losses": {
     "units_one": "{{total}} Einheit",
@@ -639,5 +661,44 @@
       "ordinary": "Kampfergebnis erlaubt nur begrenzte Zuversicht",
       "unknown": "Zu wenige Kampfdetails zur Beurteilung der Verluste"
     }
+  },
+  "sharing": {
+    "searchingPlayers": "Spieler werden gesucht…",
+    "title": "Bericht teilen",
+    "participantsOnly": "Nur Angreifer und Verteidiger können den Zugriff verwalten. Empfänger können diesen Bericht nicht weiterteilen.",
+    "audience": "Teilen mit",
+    "player": "Spieler",
+    "alliance": "Allianz",
+    "public": "Öffentlich",
+    "findPlayer": "Spieler suchen (mindestens 2 Zeichen)",
+    "selectPlayer": "Spieler auswählen",
+    "noPlayers": "Keine passenden Spieler",
+    "grant": "Zugriff gewähren",
+    "selectAlliance": "Allianz auswählen",
+    "membershipBound": "Der Zugriff gilt nur für aktuelle Allianzmitglieder und endet beim Austritt.",
+    "noAlliances": "Du benötigst die Berechtigung Berichte teilen in einer Allianz, um mit ihr zu teilen.",
+    "publicWarning": "Jeder mit diesem Link kann den geteilten Bericht lesen, auch ohne Anmeldung. Gesammelte Informationen sind sichtbar; private Teilnehmerdetails bleiben verborgen.",
+    "confirmPublic": "Ich verstehe, dass dieser Bericht und seine gesammelten Informationen öffentlich werden.",
+    "stopPublic": "Öffentlichen Zugriff beenden",
+    "makePublic": "Bericht veröffentlichen",
+    "access": "Wer hat Zugriff",
+    "restricted": "Eingeschränkt",
+    "permanentParticipants": "Angreifer und Verteidiger haben immer Zugriff.",
+    "revokeNamed": "Zugriff für {{name}} entziehen",
+    "revoke": "Entziehen",
+    "noGrants": "Keine weiteren Spieler oder Allianzen haben Zugriff.",
+    "independentAccess": "Das Entziehen einer Freigabe entfernt keinen Zugriff über eine andere Freigabe oder einen öffentlichen Link. Bereits gelesene oder kopierte Informationen können nicht zurückgerufen werden.",
+    "loadError": "Freigaben konnten nicht geladen werden. Versuche es erneut.",
+    "searchError": "Spielersuche fehlgeschlagen. Versuche es erneut.",
+    "saved": "Freigaben gespeichert.",
+    "saveError": "Freigaben konnten nicht gespeichert werden. Versuche es erneut.",
+    "retry": "Erneut versuchen",
+    "loading": "Freigaben werden geladen",
+    "copyLink": "Berichtslink kopieren",
+    "copied": "Link kopiert. Nur berechtigte Leser können ihn öffnen.",
+    "copyError": "Link konnte nicht kopiert werden. Kopiere die Seitenadresse.",
+    "done": "Fertig",
+    "addDetails": "Notiz hinzufügen oder einem Zielaufruf zuordnen",
+    "signIn": "Anmelden, um private Berichte zu lesen"
   }
 }

@@ -78,4 +78,18 @@ describe('administration combat reports', () => {
         .attacker.units,
     ).toEqual([]);
   });
+  test('exposes damage audit and protection diagnostics', () => {
+    const details = adminCombatDetails({
+      damage_audit: '{"defender":{"rawIn":10,"bindingCap":"daily"}}',
+      defender_protection: { protected: true, reason: 'LEVEL' },
+    });
+    expect(details.outcome.damage_audit).toEqual({
+      defender: { rawIn: 10, bindingCap: 'daily' },
+    });
+    expect(details.outcome.defender_protection).toEqual({
+      protected: true,
+      reason: 'LEVEL',
+    });
+    expect(adminCombatDetails({}).outcome.damage_audit).toBeUndefined();
+  });
 });

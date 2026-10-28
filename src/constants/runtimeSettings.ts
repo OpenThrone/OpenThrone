@@ -136,6 +136,54 @@ export const RUNTIME_SETTING_REGISTRY = {
     env: 'NEXT_PUBLIC_ENABLE_ENEMIES',
     fallback: false,
   },
+  ENABLE_DESERTION: {
+    type: 'BOOLEAN',
+    label: 'Desertion',
+    isPublic: true,
+    schema: z.boolean(),
+    env: undefined,
+    // Off: the daily morale pass still moves morale, but no citizens, troops
+    // or mercenaries desert and no defectors change sides.
+    fallback: false,
+  },
+  ENABLE_REANIMATION: {
+    type: 'BOOLEAN',
+    label: 'Undead reanimation',
+    isPublic: true,
+    schema: z.boolean(),
+    env: undefined,
+    // Off: Undead raise no units from battles.
+    fallback: true,
+  },
+  ENABLE_GARRISON_FATIGUE: {
+    type: 'BOOLEAN',
+    label: 'Garrison fatigue',
+    isPublic: true,
+    schema: z.boolean(),
+    env: undefined,
+    // Off: repeated attacks no longer weaken the defender. Pressure is still
+    // recorded, so turning it back on mid-day applies today's pressure.
+    fallback: true,
+  },
+  SHOW_KINGDOM_MORALE: {
+    type: 'BOOLEAN',
+    label: 'Show kingdom morale',
+    isPublic: true,
+    schema: z.boolean(),
+    env: undefined,
+    // Off: morale still runs, but players don't see the meter or desertion log yet.
+    fallback: false,
+  },
+  SHOW_DUNGEON: {
+    type: 'BOOLEAN',
+    label: 'Show dungeon',
+    isPublic: true,
+    schema: z.boolean(),
+    env: undefined,
+    // Off: players don't see the dungeon panel, and battles take no captives
+    // (those units are killed instead).
+    fallback: false,
+  },
   DISABLE_LOGIN: {
     type: 'BOOLEAN',
     label: 'Disable login',

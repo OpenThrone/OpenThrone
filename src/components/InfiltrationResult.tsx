@@ -11,7 +11,11 @@ const InfiltrationResult = ({ battle, lastGenerated, viewerID }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
   const spy = stats?.spyResults ?? {};
   const isViewerDefender = viewerID === defenderPlayer?.id;
-  const view = isViewerDefender ? 'defender' : 'attacker';
+  const view = isViewerDefender
+    ? 'defender'
+    : viewerID === attackerPlayer?.id
+      ? 'attacker'
+      : 'shared';
   const sent = Number(spy.spiesSent ?? 0);
   const lost = Number(spy.spiesLost ?? 0);
   const succeeded = winner === attackerPlayer?.id;

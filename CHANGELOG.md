@@ -4,6 +4,48 @@ OpenThrone follows [Semantic Versioning](https://semver.org/) on the 0.x line:
 each production release raises the minor version and hotfixes raise the patch
 version. Alpha builds carry the next version with an `-alpha` suffix.
 
+## v0.9.0 (2026-10-27)
+
+### Added
+- **Upgrade unlocks:** economy upgrades now unlock features. Gold transfers
+  open at the Coal Mine, with send and receive limits and a lower fee at each
+  economy tier. Accounts must be 7 days old, and players who fought in the
+  last 24 hours cannot trade gold.
+- **Mercenaries:** hiring needs the Tavern, and higher tiers need the Copper
+  Mine and the Meat Market. Mercenaries can make up at most half of your army.
+- **Undead reanimation:** Undead kingdoms at fort level 5 and above raise
+  part of the fallen after each battle, as level 1 units.
+- **Animated wall:** the header wall burns as your fort takes damage.
+- **Tutorial:** a short guide on each main page that remembers your
+  progress, and a Learn page to replay any lesson.
+- **Armory:** equipment readiness by tier, with upgrade hints.
+
+### Changed
+- Repeated attacks in one day wear a defender down, so a kingdom under
+  constant attack defends a little weaker until the next day.
+- The intel armory chart shows coverage for each equipment slot.
+
+### Fixed
+- Hopeless attacks against much stronger defenses no longer kill more
+  defenders than attackers.
+
+## v0.8.0 (2026-10-25)
+
+### Added
+- **Chat:** refreshed chat interfaces with reply navigation, unread-message
+  boundaries and typing indicators, plus more reliable rich messages.
+- **Combat logs:** battle reports record game events, and reward lines show
+  the context behind each reward.
+- **Report sharing:** you choose who can see a shared report, and recipient
+  search is simpler.
+- **Alliance artwork:** alliance banners frame consistently, and alliance
+  directory cards share one layout.
+
+### Changed
+- **News:** the newest publications appear first, with their publication dates.
+- **Announcements:** bulletins are paginated and grouped by severity, and
+  dismissed announcements can be restored.
+
 ## v0.7.1 (2026-10-23)
 
 ### Fixed

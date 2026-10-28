@@ -4,6 +4,7 @@ import BlogPost from '@/components/blogPost';
 import { StyledNews } from '@/components/game/StyledNews';
 import MarkdownArticle from '@/components/news/MarkdownArticle';
 import type { BlogPostDTO } from '@/services/Blog.service';
+import { compareNewsPosts } from '@/utils/news';
 
 import { mockAction, ShowcaseSection, Specimen } from '../Showcase';
 
@@ -103,6 +104,44 @@ See the [battle guide](/community/news/302) for unit costs.`,
   tags: ['strategy', 'new era', 'alliances'],
 };
 
+const MOCK_FEED: BlogPostDTO[] = [
+  {
+    ...MOCK_POST,
+    id: 401,
+    title: 'Published October 20',
+    content: 'Created and published October 20.',
+    isPinned: false,
+    created_timestamp: '2026-10-20T12:00:00.000Z',
+    publishedAt: '2026-10-20T12:00:00.000Z',
+  },
+  {
+    ...MOCK_POST,
+    id: 402,
+    title: 'Legacy news from October 19',
+    content: 'Legacy posts fall back to their creation date.',
+    isPinned: false,
+    created_timestamp: '2026-10-19T12:00:00.000Z',
+    publishedAt: null,
+  },
+  {
+    ...MOCK_POST,
+    id: 403,
+    title: 'Older draft published October 23',
+    content: 'Created October 10, published October 23: newest unpinned story.',
+    isPinned: false,
+    created_timestamp: '2026-10-10T12:00:00.000Z',
+    publishedAt: '2026-10-23T12:00:00.000Z',
+  },
+  {
+    ...MOCK_POST,
+    id: 404,
+    title: 'Pinned realm rules',
+    content: 'Pinned notices remain above the chronological feed.',
+    created_timestamp: '2026-10-01T12:00:00.000Z',
+    publishedAt: '2026-10-01T12:00:00.000Z',
+  },
+];
+
 function BlogPostDemo() {
   const [isRead, setIsRead] = useState(MOCK_POST.isRead);
   return (
@@ -143,12 +182,42 @@ export default function NewsSection() {
 
       <Specimen
         framed={false}
+        name="Dispatch archive"
+        usedOn={['/community/news']}
+        wide
+        note="Compact archive with read-state actions and links to full articles."
+      >
+        <StyledNews
+          archive
+          news={MOCK_DISPATCHES}
+          onReadChange={mockAction('Toggle read status')}
+        />
+      </Specimen>
+      <Specimen
+        framed={false}
         name="BlogPost"
-        usedOn={['/community/news', '/community/news/[id]']}
+        usedOn={['/community/news/[id]']}
         note="Read toggle is local. The share button uses the browser share sheet or clipboard (no server call)."
         wide
       >
         <BlogPostDemo />
+      </Specimen>
+
+      <Specimen
+        framed={false}
+        name="News publication order"
+        usedOn={['/community/news']}
+        note="Pinned notices first, then publication date descending. An older draft published today precedes earlier news; legacy posts use their creation date."
+        wide
+      >
+        {[...MOCK_FEED].sort(compareNewsPosts).map((post) => (
+          <BlogPost
+            key={post.id}
+            post={post}
+            loggedIn={false}
+            handleReadChange={mockAction('Read post')}
+          />
+        ))}
       </Specimen>
 
       <Specimen

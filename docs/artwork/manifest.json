@@ -6,6 +6,150 @@
     "contentType": "image/webp"
   },
   {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d0-1536.av1.mp4",
+    "sha256": "c563add4942a4d7ef6f521447370f1d0d674088f8c0b5cd11472433cc0d39663",
+    "bytes": 339617,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d0-1536.mp4",
+    "sha256": "8353a9a419d62b9e274a88aa966c76b7da2ca4a8cdbac6b3eec24feed7723925",
+    "bytes": 575504,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d0-1536.webp",
+    "sha256": "54928150a87b563f44c2982895247e9bf9ad3d6d903173f321ccdabd7d0f8b22",
+    "bytes": 63302,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d0-768.av1.mp4",
+    "sha256": "5a3f9c899754ccd9629efdacc5252013666bc56336835217fa269252ea3b5937",
+    "bytes": 112497,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d0-768.mp4",
+    "sha256": "7ac2b694f706c1ec23fca29707abe121467b4bef3fdb1c3c65b9106180075fde",
+    "bytes": 184145,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d0-768.webp",
+    "sha256": "f9bf004946a8d783bba1a806bceb2fb572342b9696edbfa2db85781c78566956",
+    "bytes": 22416,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d1-1536.av1.mp4",
+    "sha256": "2bfc212afdcac1060e460d67241322598700ab2b0987e343e6b148bb5274b9b7",
+    "bytes": 338892,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d1-1536.mp4",
+    "sha256": "5b663141cb6dfb473b656f23bfa2e6742d57d524d04708f4fc4460694da48b9c",
+    "bytes": 573255,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d1-1536.webp",
+    "sha256": "08476bb635a4e8b82a90f7a13322a424c4396eb00d7776e9ffc5638a3de889a3",
+    "bytes": 64702,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d1-768.av1.mp4",
+    "sha256": "d09d42cb42a84ea7f3de7bbddc337fe49bf3091cdfb1a5114a66d6f14c9256ca",
+    "bytes": 113582,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d1-768.mp4",
+    "sha256": "a1b9fb4c68f9585e79e8b202b45061557b4384d4925cbaa07713fae3e38ce996",
+    "bytes": 181980,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d1-768.webp",
+    "sha256": "a81e3d787dd0b7d7a3de9f6e020156148ee25dfd7a153967cda3e9b4c4cc0011",
+    "bytes": 22962,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d2-1536.av1.mp4",
+    "sha256": "a8f1f75fe9600683fce1f3019e3e1c8c25659527a785c47b5ef1f4df9ed264e2",
+    "bytes": 341624,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d2-1536.mp4",
+    "sha256": "e03ad04226ad48bedcde18b4dfbe2610a7581b551fc67d4f7decdbe74ba5810f",
+    "bytes": 557724,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d2-1536.webp",
+    "sha256": "c434787107a6c98e811172ad2aa11afca8d47b8441485f2c352963e4d6246013",
+    "bytes": 61984,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d2-768.av1.mp4",
+    "sha256": "9197b5d67765ed370a7cdd9b1b876f7837147f4e5b76f196e3a42c4a8754bcff",
+    "bytes": 114486,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d2-768.mp4",
+    "sha256": "deab0cbc36dadb0a66daf043e62ce90ebb218110add39aad0f1c6e34a2316837",
+    "bytes": 190742,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d2-768.webp",
+    "sha256": "aa6e1b6f28e162e17298ee2695fa5ffb8d526f050d7725c31b0b2cfe78827e5c",
+    "bytes": 22210,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d3-1536.av1.mp4",
+    "sha256": "b6744dec92ce4c5346e73417e3d25cb133f6e59264b929b79d178cfe2da6fc6e",
+    "bytes": 381266,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d3-1536.mp4",
+    "sha256": "becff762d0b6a456d4c0ee139653c63d5dd0c074817f2ccb1fd4358b875e4d61",
+    "bytes": 747545,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d3-1536.webp",
+    "sha256": "fc116f95e465646ce760e1cb802ab7bfe1dd5c61acb0f6b2ec1643bb2ef917f1",
+    "bytes": 67900,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d3-768.av1.mp4",
+    "sha256": "ec90581c9591470e4f7645216c81ce4c8f1128d49cc73e17356241b91e411e34",
+    "bytes": 131931,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d3-768.mp4",
+    "sha256": "5e5cc867df67f6e4bbf2ac3166a56dbe3d9a1f99bd91cfb2e45a5b50edd73a52",
+    "bytes": 250042,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v3-d3-768.webp",
+    "sha256": "127ae68785919b4264fe4bd1ff6542f6da38a292712487eb1fcf00e4c4fc7d6d",
+    "bytes": 23626,
+    "contentType": "image/webp"
+  },
+  {
     "key": "artwork/v1/assets/header/Elf-wall-header.webp",
     "sha256": "772b2a5083a89eea6dbbec10efd4e36feef94c709c081d7ae95710245e2d755a",
     "bytes": 13640,
@@ -18,21 +162,297 @@
     "contentType": "image/webp"
   },
   {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d0-1536.av1.mp4",
+    "sha256": "321f670440b1cb0ade0a749ba3108636ace7964c7a33df6dbe00e6820b9b6d6d",
+    "bytes": 349982,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d0-1536.mp4",
+    "sha256": "24d05b1f78e84a8223b22f06881e5ea4a3a98a89593e372c0a7168d001d12ccd",
+    "bytes": 577326,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d0-1536.webp",
+    "sha256": "cf2038c712429e48ae1efbeba2ee954925de71a08901859e1660c19d65b0c9de",
+    "bytes": 56720,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d0-768.av1.mp4",
+    "sha256": "318f537743a4fef8824fc392f2b8da2d4dbdc4d343e3b7aab984f68b9a3e6f79",
+    "bytes": 109059,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d0-768.mp4",
+    "sha256": "0e897415a176ed11ba9236c9e5f8d7c3a10b9e2f09f47d15ef71241bfb201caf",
+    "bytes": 189793,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d0-768.webp",
+    "sha256": "f899b77c2686c71d096ae33b98138125f44af0479d123f8efe5e45cdb43cc15e",
+    "bytes": 18550,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d1-1536.av1.mp4",
+    "sha256": "6239a1fad895a895d8ef418c89c3164f4cbb9fa9f1da30b9eb2223f7defb6534",
+    "bytes": 351062,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d1-1536.mp4",
+    "sha256": "1d9c31a113f0a86997a2702cc11c5654d64dc1e1951053456575f4bf6e0ef697",
+    "bytes": 574432,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d1-1536.webp",
+    "sha256": "519ee56ac6dfd966628e41c8d59468a764e1fc3cc20219d03bb9d02b428914cd",
+    "bytes": 58158,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d1-768.av1.mp4",
+    "sha256": "bc311383109b19c0580dc39db68b7a767095fb065310a4e6905137f58fdc0ce2",
+    "bytes": 111798,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d1-768.mp4",
+    "sha256": "ee6d1c3db57fe2d52d59e49f48e20b4c56be9044655959b820bc2f3f8a50564d",
+    "bytes": 192493,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d1-768.webp",
+    "sha256": "bc363fc9a923f648e6e28e608c381077fdf0cfe09ed2879d1932df5dd9fd0b56",
+    "bytes": 19094,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d2-1536.av1.mp4",
+    "sha256": "e93fd25654a2a4fafade5d35d7a0e2af91b83576f48b46b3d3e5243302687251",
+    "bytes": 352442,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d2-1536.mp4",
+    "sha256": "a2d7e1bcbb5f0fc18dd1b2cfa559523aedf2ef6aaf610bfa78caf79f6319dba8",
+    "bytes": 578851,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d2-1536.webp",
+    "sha256": "32233db0cd12b0d778903f8e3e5d1c9e656fc44baed4a21f70958aa19d7458cd",
+    "bytes": 54940,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d2-768.av1.mp4",
+    "sha256": "2acec803cde99707d4d16391a7adff554efe8a72b2260fb7d641e7119daee434",
+    "bytes": 111800,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d2-768.mp4",
+    "sha256": "529cb669fe56d4777a8859a604ea20c090d5c5f2b8339d6a490238cf3e8a053b",
+    "bytes": 195891,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d2-768.webp",
+    "sha256": "40292ffd139c504aeee76167c033fbadbeb5d57bfbffae65baebd28ad9ff229e",
+    "bytes": 18282,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d3-1536.av1.mp4",
+    "sha256": "92dc3829e26f3fef9dd218ea5a22d6f1dfcec97c4219f0511bc7f1850f53ef1a",
+    "bytes": 388135,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d3-1536.mp4",
+    "sha256": "5098e2c701643623962b14ecc114230e8ebf9b38be63b358e2a94f5728498a33",
+    "bytes": 746536,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d3-1536.webp",
+    "sha256": "3629d97d2ca62fb66cfeeec4ade7859d78b5ee9221cf9a7923ab6056e7b7bac7",
+    "bytes": 59992,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d3-768.av1.mp4",
+    "sha256": "3b5d4a1d5087d4982e8a2e9ad72a7173a38e2716668be7830a5b0a03a5f88e89",
+    "bytes": 127972,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d3-768.mp4",
+    "sha256": "1c5db71c6880f2cac035368108dd42e94b79ee5c9b0a7dd6195189cdfee53800",
+    "bytes": 262252,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v3-d3-768.webp",
+    "sha256": "74bb4b8eff1d2a00ff2ec99b88ad55d707b4942646ab357e4913b7b73f775cf9",
+    "bytes": 20350,
+    "contentType": "image/webp"
+  },
+  {
     "key": "artwork/v1/assets/header/HUMAN-wall-header-v2.webp",
     "sha256": "f28ba785fb109f0ab7505cb29544b624bbe96367651bb7564c01e632ee67310c",
     "bytes": 495274,
     "contentType": "image/webp"
   },
   {
-    "key": "artwork/v1/assets/header/OpenThrone.webp",
-    "sha256": "197faa4cb3e394b90f4f4153f6c852c8e6664d15aa382816161df71c0c7db5f5",
-    "bytes": 392080,
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d0-1536.av1.mp4",
+    "sha256": "9297da6470ee72c868b79f63413431b521c5c71c3a3168a45ffdd70e3b45802a",
+    "bytes": 372739,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d0-1536.mp4",
+    "sha256": "5fcecae21adc693afddefe74278767629e6df802f7792c429e16670bd3367298",
+    "bytes": 636348,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d0-1536.webp",
+    "sha256": "daf86e546b08d77ecc69951247507b2b6cf27cd8a39e0629e528d4cd85c326ae",
+    "bytes": 75032,
     "contentType": "image/webp"
   },
   {
-    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v2.webp",
-    "sha256": "524897f87cbe78672cc3f16883f63a6ab215c17337f8bb04ae619daab0ea306b",
-    "bytes": 359390,
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d0-768.av1.mp4",
+    "sha256": "17476a46876e4d637c073c80e8ba4f9e257c3a5d51a11f742ff43a580e0804c2",
+    "bytes": 117617,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d0-768.mp4",
+    "sha256": "0037173684a5a8bb868f5e776d66552f749ba672d6472bc1d58821b88801cabf",
+    "bytes": 193181,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d0-768.webp",
+    "sha256": "b144d605a9c85e429434147829289cd0743135a0f6bc695b32f38c0774611551",
+    "bytes": 25928,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d1-1536.av1.mp4",
+    "sha256": "97bae094371c97448a1ffaf619c523c0cea316ea4470a92014d8e3e4b112e78a",
+    "bytes": 373123,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d1-1536.mp4",
+    "sha256": "1d19d41d8f253d2207c5b29db6900df60da14c94b7a7b3fb1558488fad349bc5",
+    "bytes": 622679,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d1-1536.webp",
+    "sha256": "2b270e0a89a063d2ed165f3c1e76d031557228ed7b70b0894ce5c9b96d55cbc5",
+    "bytes": 76376,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d1-768.av1.mp4",
+    "sha256": "a68e7bb92281da0d061d023d6d51bc41ed2d6963f966d7455f92983f7af1ee89",
+    "bytes": 120049,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d1-768.mp4",
+    "sha256": "cbb0dd98f45f18b084d747ec18c40deafb2631f7920dfbe326cae2675f4e65cf",
+    "bytes": 194209,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d1-768.webp",
+    "sha256": "f6d50681cfe95550cba4631ded070bc7bea7477fcb4ea551ac9dd385689ed2c6",
+    "bytes": 26582,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d2-1536.av1.mp4",
+    "sha256": "11339affdac81c526621a3a5dc47c9ce245ac443e1c382109265c7c71512d175",
+    "bytes": 371524,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d2-1536.mp4",
+    "sha256": "c26f958d7ba36b7f1527298ec0c4d3de9c900549bb31a5ff9d0e8cc299dec3a6",
+    "bytes": 604251,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d2-1536.webp",
+    "sha256": "767ef1effc598162d82a6b62b165490bb33c1b26ac1b2bde67af609c49110675",
+    "bytes": 72272,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d2-768.av1.mp4",
+    "sha256": "6fc6b20e594c8c30a1e1f9c116c6b913ccb4d7ca5d62e3d3dcd41892e206c459",
+    "bytes": 120973,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d2-768.mp4",
+    "sha256": "f275f99825e2875cbd70cabd9ed4c3f9770952d29379d35280ec245bc3df335c",
+    "bytes": 195802,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d2-768.webp",
+    "sha256": "04ba5199cc45e173a102151b7bc7b0d480560711ea74d505aaa6327d3cd8d614",
+    "bytes": 24954,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d3-1536.av1.mp4",
+    "sha256": "29cf7f75a761863c3713e5de8e9ea0f146de579038d4521973af8670ae82ed29",
+    "bytes": 408393,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d3-1536.mp4",
+    "sha256": "ca20bfdf020e9b5fa67c7a974e5a8d7fed5d684c996575502d97860360bdd359",
+    "bytes": 794138,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d3-1536.webp",
+    "sha256": "8f3115300c085be0f7e9942ec603aa80390a69891165908d3ba109cdb0707e5c",
+    "bytes": 75184,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d3-768.av1.mp4",
+    "sha256": "72600b1d7715df87bbc1bff2721a170a95fd297105ad8d89e3b59cea3c1b1934",
+    "bytes": 137985,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d3-768.mp4",
+    "sha256": "1dbc3a6500a7a1e02398cc2df3e60aa34dd06d1e1d131648ddecc38a85be3cc8",
+    "bytes": 258604,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v3-d3-768.webp",
+    "sha256": "d8352bc790d5a566a81defa0f9140bda9299005575391e0672e31def088a3e58",
+    "bytes": 26784,
     "contentType": "image/webp"
   },
   {
@@ -90,6 +510,162 @@
     "contentType": "image/png"
   },
   {
+    "key": "artwork/v1/assets/header/OpenThrone.webp",
+    "sha256": "197faa4cb3e394b90f4f4153f6c852c8e6664d15aa382816161df71c0c7db5f5",
+    "bytes": 392080,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v2.webp",
+    "sha256": "524897f87cbe78672cc3f16883f63a6ab215c17337f8bb04ae619daab0ea306b",
+    "bytes": 359390,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d0-1536.av1.mp4",
+    "sha256": "edfaf4a73f91ce636f3c13287e8bb07d13bbc83664b108626dd9cb21372b0b8c",
+    "bytes": 342067,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d0-1536.mp4",
+    "sha256": "42c4081ec0ddc5b3637d222ff6b26fe4490b2cf44a93f43f8368b8e5521dc6b1",
+    "bytes": 545799,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d0-1536.webp",
+    "sha256": "dc4e7d7a431c9fd9fdfa0a16a657f20cef69a3410e6045543b333d8bf3f81a5e",
+    "bytes": 61732,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d0-768.av1.mp4",
+    "sha256": "f89e065c1ad2babad40645f358ead635e04dc8d489fbc384550b0eeac9d7f367",
+    "bytes": 106047,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d0-768.mp4",
+    "sha256": "c75e0341b1294e6e78a0abea562264e9f0fc885eb1497c6d6b04f9b359bceef4",
+    "bytes": 163036,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d0-768.webp",
+    "sha256": "ad4726f735e35a391926d6099d7d9613bac8dc3edf893f623a47fa544d4f241b",
+    "bytes": 20744,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d1-1536.av1.mp4",
+    "sha256": "a313702111e016bf5c89a75c029115df06eb546feda0fef5dd9e7dc67388495f",
+    "bytes": 340189,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d1-1536.mp4",
+    "sha256": "a5d876729d5a6e9c4f133a20c45422f8e190a34596b07207b2a9d5eb0a306e64",
+    "bytes": 547342,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d1-1536.webp",
+    "sha256": "c004d0931807e7605f9ac2af8e331bb34b324d8f5f4050a5b6fcd2f130b96085",
+    "bytes": 62934,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d1-768.av1.mp4",
+    "sha256": "7bf53269f806feaa444e219d22ad51b1d90e8e7b778e463cad5e306ace04c306",
+    "bytes": 107592,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d1-768.mp4",
+    "sha256": "6b37f9ac3cd8b8d71153c2735e2dab17bd218ca2556bba999ae7376088317219",
+    "bytes": 166858,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d1-768.webp",
+    "sha256": "e0c077f61269e9ff216770a6a1d656d176c76a727ae788a8664ae1390d934636",
+    "bytes": 21104,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d2-1536.av1.mp4",
+    "sha256": "6d1679a66bc21a43de1ec6887f4ef5d95b725589704cadccfbef2e4ecb58a9e9",
+    "bytes": 338841,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d2-1536.mp4",
+    "sha256": "4abc3fe5f40dd17a68ee1bae3e71ea29b827532c1c24a210e594140fe73b3366",
+    "bytes": 532893,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d2-1536.webp",
+    "sha256": "8a36983d5f0834f81ba6b171f0475dbf78913d458a94fd099fea0cfe5ec080c2",
+    "bytes": 58836,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d2-768.av1.mp4",
+    "sha256": "1af4541be43312b50257235fff8422002bc980823de30a88592d7692d16bc2fd",
+    "bytes": 108370,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d2-768.mp4",
+    "sha256": "0846cfc0ebe88eae44a684940e989b4e9ff227372b2029095b9ec2fd015a17d2",
+    "bytes": 172259,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d2-768.webp",
+    "sha256": "ab8021e9b5e30bfe3b6dac5d8de0b5766377e8f22e94bce3d0c676e7e067925e",
+    "bytes": 20362,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d3-1536.av1.mp4",
+    "sha256": "e25d8e7eb0838e307aa2201457aa1a96fe69f7fffe415f7acc0f45cd908c31c1",
+    "bytes": 372648,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d3-1536.mp4",
+    "sha256": "c73b4fa96fa0e2c1a998f0e4b4a75c5fb7e780e7b4e939852deaf521ec8afd30",
+    "bytes": 718268,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d3-1536.webp",
+    "sha256": "7a95a63ac551acf627d383bfb9ff13c18dccd5b7bb1be9134f6055ce4fc820ff",
+    "bytes": 62940,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d3-768.av1.mp4",
+    "sha256": "1defcafb79880ef361da59f6d3cade9a16bf104c575b1782cf8346891f261373",
+    "bytes": 124915,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d3-768.mp4",
+    "sha256": "7c2fceb27276c8fc88ff49b3fa0bbd22a74fd13e6d1d8208e5e816f293176e5f",
+    "bytes": 236658,
+    "contentType": "video/mp4"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v3-d3-768.webp",
+    "sha256": "c5ede113e8557a1b20978cb9d49ce5f5b67049e9d58c77b83727411ce6a1b192",
+    "bytes": 21540,
+    "contentType": "image/webp"
+  },
+  {
     "key": "artwork/v1/assets/images/advisor-scroll.webp",
     "sha256": "02363daeed93251d7b2e8117556340d1315f8f3c93ed4ed8a788c285d59aabc2",
     "bytes": 58706,
@@ -102,15 +678,15 @@
     "contentType": "image/png"
   },
   {
-    "key": "artwork/v1/assets/images/santee.webp",
-    "sha256": "d8ffe9546bb6180af9dadecc093132d0a754599b52bfe003bd7ea77c574e091f",
-    "bytes": 243764,
-    "contentType": "image/webp"
-  },
-  {
     "key": "artwork/v1/assets/images/santee_250x229.webp",
     "sha256": "9d9b530febed859835c0e79a357d65b49dfada2e248bd0b1c7dee32416ecaae8",
     "bytes": 8670,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/santee.webp",
+    "sha256": "d8ffe9546bb6180af9dadecc093132d0a754599b52bfe003bd7ea77c574e091f",
+    "bytes": 243764,
     "contentType": "image/webp"
   },
   {
@@ -210,12 +786,6 @@
     "contentType": "image/webp"
   },
   {
-    "key": "artwork/v1/assets/shields/ELF.webp",
-    "sha256": "a311b927441c34eeaed76fddcb8b0bba1aa6944df0ca29456fa64a094ed03c2c",
-    "bytes": 106900,
-    "contentType": "image/webp"
-  },
-  {
     "key": "artwork/v1/assets/shields/ELF_150x150.webp",
     "sha256": "f4266ddf818210120b914696b41ec3bed44c796949f57c48be8d2c711d8fc1c6",
     "bytes": 3834,
@@ -228,9 +798,9 @@
     "contentType": "image/webp"
   },
   {
-    "key": "artwork/v1/assets/shields/GOBLIN.webp",
-    "sha256": "9563d03e21e6e7d94fb9dffc86a31ac4984b93d6d22fec530b44fb45a679bf4a",
-    "bytes": 283290,
+    "key": "artwork/v1/assets/shields/ELF.webp",
+    "sha256": "a311b927441c34eeaed76fddcb8b0bba1aa6944df0ca29456fa64a094ed03c2c",
+    "bytes": 106900,
     "contentType": "image/webp"
   },
   {
@@ -246,9 +816,9 @@
     "contentType": "image/webp"
   },
   {
-    "key": "artwork/v1/assets/shields/HUMAN.webp",
-    "sha256": "57cbe0d8b80c40425f23a9086d9567420815b2c1063f9bb72b1ae36ed558759c",
-    "bytes": 116810,
+    "key": "artwork/v1/assets/shields/GOBLIN.webp",
+    "sha256": "9563d03e21e6e7d94fb9dffc86a31ac4984b93d6d22fec530b44fb45a679bf4a",
+    "bytes": 283290,
     "contentType": "image/webp"
   },
   {
@@ -264,9 +834,9 @@
     "contentType": "image/webp"
   },
   {
-    "key": "artwork/v1/assets/shields/UNDEAD.webp",
-    "sha256": "9936155eaa13a53f711724ce0c365a1bb007143e87d4d96b7b5a0146c750a2e9",
-    "bytes": 156236,
+    "key": "artwork/v1/assets/shields/HUMAN.webp",
+    "sha256": "57cbe0d8b80c40425f23a9086d9567420815b2c1063f9bb72b1ae36ed558759c",
+    "bytes": 116810,
     "contentType": "image/webp"
   },
   {
@@ -279,6 +849,12 @@
     "key": "artwork/v1/assets/shields/UNDEAD_25x25.webp",
     "sha256": "414f81544044b212f208f6aba964e49ca6c88cc7d373a51bdce3a3937731a9de",
     "bytes": 586,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/UNDEAD.webp",
+    "sha256": "9936155eaa13a53f711724ce0c365a1bb007143e87d4d96b7b5a0146c750a2e9",
+    "bytes": 156236,
     "contentType": "image/webp"
   }
 ]

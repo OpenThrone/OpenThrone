@@ -1,0 +1,70 @@
+{
+  "morale": {
+    "label": "Kingdom morale",
+    "steady": "Steady",
+    "restless": "Restless: citizens are leaving",
+    "mutinous": "Mutinous: troops are deserting and mercenaries refuse contracts",
+    "explain": "What moves morale",
+    "tooltip": "Morale rises when you log in each day, win a defense and give the kingdom time to recover. It falls when you lose a defense, cannot pay your mercenaries, or stay away for days.",
+    "ariaLabel": "Kingdom morale {{percent}} of 100: {{state}}"
+  },
+  "desertions": {
+    "title": "Desertion log",
+    "loading": "Reading the ledger...",
+    "error": "The desertion ledger could not be read.",
+    "empty": "No one has left your kingdom.",
+    "justNow": "just now",
+    "more": "and {{count}} more",
+    "events": {
+      "citizens_one": "{{count}} citizen left the kingdom",
+      "citizens_other": "{{count}} citizens left the kingdom",
+      "abandon_one": "{{count}} Level {{level}} {{unit}} soldier abandoned the kingdom",
+      "abandon_other": "{{count}} Level {{level}} {{unit}} soldiers abandoned the kingdom",
+      "defectLost_one": "{{count}} Level {{level}} {{unit}} soldier defected to the enemy",
+      "defectLost_other": "{{count}} Level {{level}} {{unit}} soldiers defected to the enemy",
+      "defectReceived_one": "{{count}} deserter joined your kingdom as a citizen",
+      "defectReceived_other": "{{count}} deserters joined your kingdom as citizens",
+      "mercenary_one": "{{count}} Level {{level}} {{unit}} mercenary walked out of their contract",
+      "mercenary_other": "{{count}} Level {{level}} {{unit}} mercenaries walked out of their contract"
+    }
+  },
+  "dungeon": {
+    "title": "Dungeon",
+    "loading": "Checking the cells...",
+    "error": "The dungeon could not be read.",
+    "locked": "Locked — requires a {{name}} (fortification level {{level}}).",
+    "heldTitle": "Captives you hold",
+    "heldEmpty": "Your dungeon holds no captives, and none of your troops are held captive.",
+    "capacity": "{{held}} / {{max}} captives",
+    "heldRow_one": "{{count}} Level {{level}} {{unit}} taken from {{player}}",
+    "heldRow_other": "{{count}} Level {{level}} {{unit}} taken from {{player}}",
+    "ransomHint": "Ransom {{price}} — you keep {{share}}",
+    "convertReady": "Convert for {{cost}}",
+    "convertIn": "Convertible in {{hours}}h",
+    "convertHelp": "Captives may be converted after 72 hours in the dungeon.",
+    "release": "Release",
+    "convert": "Convert",
+    "mineTitle": "Your troops in enemy dungeons",
+    "mineRow_one": "{{count}} Level {{level}} {{unit}} held by {{player}}",
+    "mineRow_other": "{{count}} Level {{level}} {{unit}} held by {{player}}",
+    "ransom": "Ransom",
+    "ransomPrice": "Ransom {{price}}",
+    "escapesIn": "escapes in {{hours}}h",
+    "actionDone_one": "{{count}} captive processed.",
+    "actionDone_other": "{{count}} captives processed."
+  },
+  "reanimation": {
+    "label": "Reanimated today",
+    "status": "{{risen}} / {{cap}}",
+    "locked": "Reanimation sleeps — your fallen rise again once you build {{name}} (fortification level {{level}}).",
+    "fortFallback": "fortification level {{level}}"
+  },
+  "unitTypes": {
+    "CITIZEN": "Citizen",
+    "WORKER": "Worker",
+    "OFFENSE": "Offense",
+    "DEFENSE": "Defense",
+    "SPY": "Spy",
+    "SENTRY": "Sentry"
+  }
+}

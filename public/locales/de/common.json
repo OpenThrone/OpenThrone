@@ -508,42 +508,167 @@
   },
   "walkthrough": {
     "offer": {
-      "title": "Die erste Runde kennenlernen?",
-      "body": "Eine kurze, optionale Einführung zeigt Ihnen Menü, Berater, Statistiken, Ausbildung, Waffenkammer und Bank – und lässt Sie bei Angriff loslegen."
+      "title": "Willkommen in Ihrem Reich",
+      "body": "Möchten Sie eine kurze Führung? Sie erklärt jede Seite, sobald Sie sie besuchen, beginnend mit der Übersicht, und weist Ihnen den Weg zur nächsten. Sie können sie jederzeit pausieren oder abschalten.",
+      "returningTitle": "Rundgang fortsetzen?",
+      "returningBody": "Sie haben den Rundgang pausiert. Dort weitermachen, wo Sie aufgehört haben?"
     },
-    "skip": "Überspringen",
     "start": "Rundgang starten",
-    "close": "Einführung schließen",
     "back": "Zurück",
     "next": "Weiter",
-    "finish": "Fertig",
-    "menu": {
-      "title": "Das Befehlsmenü",
-      "body": "Mit dieser Leiste wechseln Sie zwischen Startseite, Kampf, Strukturen, Allianzen und dem übrigen Reich."
+    "finish": "Verstanden",
+    "notNow": "Jetzt nicht",
+    "progress": "Schritt {{current}} von {{total}}",
+    "options": {
+      "label": "Rundgang-Optionen",
+      "skipPage": "Diese Seite überspringen",
+      "snooze": "Morgen erinnern",
+      "dismiss": "Nicht mehr anzeigen"
     },
-    "sidebar": {
-      "title": "Ihr Königreichs-Buch",
-      "body": "Die Seitenleiste hält Gold, Bürger, Level, Runden, den Berater, die Spielersuche und den Runden-Timer griffbereit."
+    "settings": {
+      "label": "Einführung",
+      "description": "Den geführten Rundgang von vorn wiederholen.",
+      "restart": "Einführung neu starten"
     },
-    "overview": {
-      "title": "Das Reich auf einen Blick",
-      "body": "Die Übersicht ist Ihr Pulscheck: Vermögen, Bevölkerung, Heeresgröße, Bankguthaben und Fortschritt zum nächsten Level."
+    "actions": {
+      "openTraining": "Ausbildung öffnen",
+      "openAttack": "Angriff ansehen",
+      "openArmory": "Waffenkammer zeigen",
+      "openBank": "Bank zeigen"
     },
-    "training": {
-      "title": "Bürger gezielt ausbilden",
-      "body": "Arbeiter erzeugen Gold, Offensiv-Einheiten gewinnen Angriffe, Defensiv-Einheiten schützen Ihr Volk, und Spione kontrollieren Informationen."
+    "strategy": {
+      "label": "Startarmee",
+      "steady": {
+        "title": "Ruhiger Start (empfohlen)",
+        "body": "Halb Arbeiter für Gold, halb Verteidigung für Sicherheit."
+      },
+      "balanced": {
+        "title": "Ausgewogen",
+        "body": "Arbeiter, Verteidigung und ein Trupp Angreifer."
+      },
+      "raider": {
+        "title": "Plünderer",
+        "body": "Zur Hälfte Angriff, damit Sie früher zuschlagen können."
+      },
+      "filled": "Die Bestellung unten ist ausgefüllt. Bilden Sie jetzt aus, oder überspringen Sie, um sie selbst anzupassen.",
+      "train": "Ausbilden & weiter"
     },
-    "armory": {
-      "title": "Ausrüsten vor dem Marsch",
-      "body": "Die Waffenkammer macht ausgebildete Einheiten zu echter Stärke. Kaufen Sie Offensive für härtere Schläge und Verteidigung, um zu bestehen."
+    "chapters": {
+      "overview": {
+        "menu": {
+          "title": "Das Befehlsmenü",
+          "body": "Hier wechseln Sie zwischen Startseite, Kampf und Strukturen. Sie sehen nur, was Sie gerade nutzen können: Kampf-Upgrades und Struktur-Upgrades erscheinen, sobald Sie sie freischalten (Struktur-Upgrades ab Level 5 mit dem Dorf)."
+        },
+        "sidebar": {
+          "title": "Ihr Königreichs-Buch",
+          "body": "Die Seitenleiste zeigt Gold, Bürger, Level und Runden, dazu den Berater, die Spielersuche und den Runden-Timer."
+        },
+        "protection": {
+          "title": "Sie stehen unter Schutz",
+          "body": "Als neuer Spieler verlieren Sie bei Angriffen nur einen kleinen Teil Ihres Goldes. Der Schutz endet, sobald eines davon eintritt: in etwa {{days}} Tagen, Ihre Bevölkerung erreicht {{population}} oder Level {{levelLimit}}. Nutzen Sie die Zeit zum Aufbau."
+        },
+        "stats": {
+          "title": "Das Reich auf einen Blick",
+          "body": "Die Übersicht zeigt Ihr Gold, die Heeresgröße und den Fortschritt zum nächsten Level. Werfen Sie bei jeder Anmeldung einen Blick darauf."
+        },
+        "next": {
+          "title": "Wohin als Nächstes?",
+          "body": "Öffnen Sie Kampf im Menü. In der Ausbildung werden Bürger zu Einheiten, unter Angriff suchen Sie Ihre Gegner. Wählen Sie eines, und der Rundgang erklärt die Seite."
+        }
+      },
+      "attack": {
+        "targets": {
+          "title": "Wählen Sie Ihre Ziele",
+          "body": "Hier stehen die Spieler, die Sie angreifen können. Vergleichen Sie Level, Gold und Verteidigung, bevor Sie Angriffsrunden einsetzen."
+        },
+        "needOffense": {
+          "title": "Zum Angreifen brauchen Sie Offensiv-Einheiten",
+          "body": "Bürger kämpfen kaum. Bilden Sie zuerst Offensiv-Einheiten aus und behalten Sie etwas Verteidigung zu Hause. Als Nächstes geht es zur Ausbildung."
+        }
+      },
+      "training": {
+        "how": {
+          "title": "Bürger zur Armee machen",
+          "body": "Hier werden Ihre unausgebildeten Bürger zu Einheiten. Geben Sie neben einer Einheit eine Menge ein, prüfen Sie die Kosten in der Bestellleiste und drücken Sie auf Ausbilden. Beim Entlassen wird ein Teil der Kosten erstattet."
+        },
+        "balance": {
+          "title": "Eine ausgewogene Armee aufbauen",
+          "body": "Arbeiter verdienen Gold, Verteidigung schützt Volk und Festung, Angreifer gewinnen Schlachten. Wer alles auf eine Rolle setzt, bleibt ungeschützt oder pleite – mischen Sie also."
+        },
+        "strategy": {
+          "title": "Einen Startplan wählen",
+          "body": "Unsicher, wo Sie anfangen sollen? Wählen Sie einen Plan, und die Bestellung wird für Sie ausgefüllt. „Ausbilden & weiter“ gibt das Gold sofort aus – überspringen Sie, wenn Sie die Bestellung lieber selbst festlegen."
+        },
+        "next": {
+          "title": "Als Nächstes ausrüsten",
+          "body": "Mit Waffen und Rüstung schlagen Einheiten härter zu. Möchten Sie die Waffenkammer kennenlernen?"
+        }
+      },
+      "armory": {
+        "gear": {
+          "title": "Einheiten ausrüsten",
+          "body": "Hier kaufen Sie Waffen und Rüstung. Offensiv-Ausrüstung erhöht den Angriff, Defensiv-Ausrüstung die Verteidigung. Ausrüstung hilft nur ausgebildeten Einheiten."
+        },
+        "next": {
+          "title": "Noch eine Station",
+          "body": "Gold in Ihrer Hand kann gestohlen werden. Möchten Sie sehen, wie die Bank es schützt?"
+        }
+      },
+      "bank": {
+        "protect": {
+          "title": "Einlagern, was Sie nicht verteidigen können",
+          "body": "Einlagen schützen Ihr Gold vor Angreifern. Zahlen Sie überschüssiges Gold täglich ein, während Arbeiter und Strukturen das Einkommen sichern."
+        }
+      }
     },
-    "bank": {
-      "title": "Einlagern, was Sie nicht verteidigen können",
-      "body": "Gold auf der Hand ist nützlich, aber ungeschützt. Einlagen sichern Ihr Vermögen, während Arbeiter und Strukturen für Einkommen sorgen."
-    },
-    "attack": {
-      "title": "Wählen Sie Ihr erstes Ziel",
-      "body": "Sie sind bereit, das Schlachtfeld zu erkunden. Vergleichen Sie Level, Gold und Risiko, bevor Sie Angriffsrunden ausgeben."
+    "skip": "Überspringen",
+    "learn": {
+      "title": "Lernen",
+      "subtitle": "Wiederholen Sie die geführten Lektionen jederzeit oder lesen Sie die ausführlichen Anleitungen.",
+      "lessonsTitle": "Geführte Lektionen",
+      "guidesTitle": "Anleitungen",
+      "status": {
+        "active": "Die Einführung ist aktiv: Jede Lektion startet, wenn Sie die jeweilige Seite besuchen.",
+        "snoozed": "Die Einführung ist pausiert und meldet sich morgen wieder.",
+        "off": "Die Einführung ist abgeschaltet. Das Wiederholen einer Lektion schaltet sie wieder ein."
+      },
+      "seen": "Abgeschlossen",
+      "unseen": "Noch nicht gesehen",
+      "open": "Öffnen",
+      "replay": "Wiederholen",
+      "restart": "Gesamte Einführung neu starten",
+      "lessons": {
+        "overview": {
+          "title": "Ihr Königreich auf einen Blick",
+          "summary": "Das Menü, die Seitenleiste und die Übersichtsseite."
+        },
+        "attack": {
+          "title": "Ziele wählen",
+          "summary": "Wie die Angriffsseite funktioniert und was Sie zum Kämpfen brauchen."
+        },
+        "training": {
+          "title": "Eine Armee ausbilden",
+          "summary": "Bürger zu Arbeitern und Soldaten machen, mit Startplänen."
+        },
+        "armory": {
+          "title": "Einheiten ausrüsten",
+          "summary": "Waffen und Rüstung machen ausgebildete Einheiten stärker."
+        },
+        "bank": {
+          "title": "Gold einlagern",
+          "summary": "So schützen Sie Ihr Gold vor Plünderern."
+        }
+      },
+      "guides": {
+        "howToPlay": {
+          "title": "So wird gespielt",
+          "summary": "Der Spielkreislauf, Völker, Armee, Wirtschaft und Allianzen."
+        },
+        "faq": {
+          "title": "FAQ",
+          "summary": "Antworten auf häufige Fragen."
+        }
+      }
     }
   },
   "player": {
@@ -625,6 +750,13 @@
         "killed_one": "Sie haben {{count}} Ihrer {{target}} verloren.",
         "killed_other": "Sie haben {{count}} Ihrer {{target}} verloren.",
         "noKills": "Keine Ihrer {{target}} wurden verletzt."
+      },
+      "shared": {
+        "sent_one": "{{attacker}} schickte {{count}} Attentäter gegen {{defender}}s {{target}}.",
+        "sent_other": "{{attacker}} schickte {{count}} Attentäter gegen {{defender}}s {{target}}.",
+        "killed_one": "Die Attentäter töteten {{count}} der {{target}} des Ziels.",
+        "killed_other": "Die Attentäter töteten {{count}} der {{target}} des Ziels.",
+        "noKills": "Keine der {{target}} des Ziels wurden verletzt."
       }
     },
     "infiltration": {
@@ -639,8 +771,17 @@
         "sent_other": "{{attacker}} hat {{count}} Infiltratoren gegen Ihre Festung geschickt.",
         "damage": "Ihre Festung hat {{damage}} Schaden erlitten.",
         "caught": "Ihre Wachen haben sie gefasst, bevor sie die Festung erreichten."
+      },
+      "shared": {
+        "sent_one": "{{attacker}} schickte {{count}} Infiltrator gegen {{defender}}s Festung.",
+        "sent_other": "{{attacker}} schickte {{count}} Infiltratoren gegen {{defender}}s Festung.",
+        "damage": "Die Festung des Ziels erlitt {{damage}} Schaden.",
+        "caught": "Die Wachen des Ziels fingen die Infiltratoren vor der Festung ab."
       }
-    }
+    },
+    "sharedSpiesLost_one": "Der Angreifer verlor {{count}} Spion.",
+    "sharedSpiesLost_other": "Der Angreifer verlor {{count}} Spione.",
+    "sharedNoSpiesLost": "Alle Spione des Angreifers kehrten sicher zurück."
   },
   "report": {
     "title": "Meldung erstellen",
@@ -673,5 +814,29 @@
       "ALLIANCE_ABUSE": "Missbrauch in einer Allianz",
       "OTHER": "Sonstiges"
     }
-  }
+  },
+  "announcementsFeed": {
+    "showActive": "Aktive Ankündigungen anzeigen ({{count}})",
+    "showDismissed": "Ausgeblendete Ankündigungen anzeigen ({{count}})",
+    "dismissed": "Ausgeblendet",
+    "restore": "Wiederherstellen",
+    "orderLabel": "Reihenfolge der Ankündigungen",
+    "orderDescription": "Wird für diesen Spieler auf diesem Gerät automatisch gespeichert.",
+    "orderPriority": "Höchste Priorität zuerst",
+    "orderNewest": "Neueste zuerst",
+  "title": "Ankündigungen",
+  "priority": "Höchste Priorität zuerst",
+  "filter": "Ankündigungen nach Schweregrad filtern",
+  "ALL": "Alle",
+  "CRITICAL": "Kritisch",
+  "WARNING": "Warnung",
+  "INFO": "Info",
+  "SUCCESS": "Erfolg",
+  "page": "{{current}} von {{total}}",
+  "goToPage": "Zur Ankündigung {{page}}",
+  "next": "Nächste Ankündigung",
+  "previous": "Vorherige Ankündigung",
+  "first": "Erste Ankündigung",
+  "last": "Letzte Ankündigung"
+}
 }

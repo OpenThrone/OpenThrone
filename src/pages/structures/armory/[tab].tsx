@@ -4,7 +4,7 @@ import {
   faPeopleGroup,
   faUniversity,
 } from '@fortawesome/free-solid-svg-icons';
-import { Box, Space } from '@mantine/core';
+import { Badge, Box, Group, Space } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { Fragment, useEffect, useMemo, useState } from 'react';
@@ -17,13 +17,23 @@ import { TabBar } from '@/components/game/TabBar';
 import MainArea from '@/components/MainArea';
 import NewItemSection from '@/components/newItemSection';
 import { applyEventDiscount } from '@/constants/gameEvents';
+import { UnitTypes } from '@/constants/Units';
 import { useUser } from '@/context/users';
 import { useActiveGameEvents } from '@/hooks/useActiveGameEvents';
 import type UserModel from '@/models/Users';
 import { alertService } from '@/services/Alert.service';
 import type { Item } from '@/types/typings';
-import type { ArmoryItem, ArmoryUpgradeConversion } from '@/utils/armoryOrder';
-import { armoryCategoryKeys } from '@/utils/armoryOrder';
+import type {
+  ArmoryItem,
+  ArmoryUpgradeConversion,
+  ArmoryUpgradeHint,
+} from '@/utils/armoryOrder';
+import {
+  armoryCategoryKeys,
+  armorySlotReadiness,
+  armoryUnitTiers,
+  armoryUpgradeHint,
+} from '@/utils/armoryOrder';
 import { discountedItemCost, slotFloorCost } from '@/utils/armoryPricing';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
@@ -265,6 +275,20 @@ const ArmoryTab = () => {
         unit.type === tab.toUpperCase() ? total + unit.quantity : total,
       0,
     ) ?? 0;
+  const unitTiers = armoryUnitTiers(user?.units ?? [], tab.toUpperCase());
+  /** Units wear items at their own level or below; gear above the top unit level is out of reach. */
+  const maxUnitLevel = Math.max(
+    0,
+    ...UnitTypes.filter((unit) => unit.type === tab.toUpperCase()).map(
+      (unit) => unit.level,
+    ),
+  );
+  const usableCategories = Object.fromEntries(
+    Object.entries(categories).map(([category, categoryItems]) => [
+      category,
+      categoryItems.filter((item) => item.level <= maxUnitLevel),
+    ]),
+  );
 
   if (!user) {
     return (
@@ -273,6 +297,24 @@ const ArmoryTab = () => {
       </MainArea>
     );
   }
+
+  const slotReadiness = Object.values(categories)
+    .filter((categoryItems) => categoryItems.length > 0)
+    .map((categoryItems) => armorySlotReadiness(categoryItems, unitTiers));
+  const completeSlots = slotReadiness.filter((slot) => slot.complete).length;
+  /** The highest tier any slot of this tab can still fit, shown once rather than per section. */
+  const tabHint = Object.values(categories)
+    .map((categoryItems) => armoryUpgradeHint(categoryItems, unitTiers))
+    .reduce<ArmoryUpgradeHint | null>(
+      (best, hint) =>
+        hint &&
+        (!best ||
+          hint.tier > best.tier ||
+          (hint.tier === best.tier && hint.fits > best.fits))
+          ? hint
+          : best,
+      null,
+    );
 
   const statItems = [
     {
@@ -291,11 +333,34 @@ const ArmoryTab = () => {
       icon: faUniversity,
     },
     { label: t('armory.armoryLevel'), value: user?.armoryLevel, icon: faGavel },
+    {
+      label: t('armory.unitsFor', { tab: t(`armory.${tab}`) }),
+      value: toLocale(units, user?.locale),
+      icon: faPeopleGroup,
+    },
+    {
+      label: t('armory.fullyEquippedSlots'),
+      value: t('armory.slotCount', {
+        complete: completeSlots,
+        total: slotReadiness.length,
+      }),
+      icon: faGavel,
+    },
   ];
 
   return (
     <MainArea title={t('armory.title')}>
       <StatGrid title={t('armory.status')} stats={statItems} />
+      {tabHint && (
+        <Group mt="sm" justify="flex-end">
+          <Badge variant="light" color="yellow" radius="sm">
+            {t('armory.tierUpgradeHint', {
+              tier: tabHint.tier,
+              units: toLocale(tabHint.fits, user?.locale),
+            })}
+          </Badge>
+        </Group>
+      )}
       <Space h="md" />
       <TabBar
         value={tab}
@@ -314,13 +379,14 @@ const ArmoryTab = () => {
       <Space h="md" />
       <ArmoryLoadoutPlanner
         key={tab}
-        categories={categories}
+        categories={usableCategories}
         allItems={allItems}
         quantities={itemCosts}
         setQuantities={setItemCosts}
         onUpgrade={handleUpgrade}
         upgrading={pendingAction === 'upgrade'}
         units={units}
+        unitTiers={unitTiers}
         gold={user?.gold ?? 0n}
         locale={user?.locale}
         disabled={Boolean(pendingAction)}
@@ -336,7 +402,8 @@ const ArmoryTab = () => {
                   items={categoryItems}
                   itemCosts={itemCosts}
                   setItemCosts={setItemCosts}
-                  units={units}
+                  unitTiers={unitTiers}
+                  maxUnitLevel={maxUnitLevel}
                   allItems={allItems}
                   disabled={Boolean(pendingAction)}
                 />

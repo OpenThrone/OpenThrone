@@ -1,17 +1,19 @@
-import { Button, Group, Stack, Text } from '@mantine/core';
+import { Button, Group, SegmentedControl, Stack, Text } from '@mantine/core';
 import type { ComponentProps } from 'react';
 import { useState } from 'react';
 
+import AnnouncementPager from '@/components/AnnouncementPager';
 import { BattleResultBanner } from '@/components/BattleResultBanner';
 import { DefenseAdvisory } from '@/components/DefenseAdvisory';
+import GameHeader from '@/components/GameHeader';
 import type { NewsBulletinSeverity } from '@/components/news-bulletin';
-import NewsBulletin from '@/components/news-bulletin';
 import {
   mockAction,
   ShowcaseSection,
   Specimen,
 } from '@/components/showcase/Showcase';
 import type { DefenseAdvisoryFacts } from '@/utils/defenseAdvisory';
+import { FORT_DAMAGE_TIERS, type FortDamageTier } from '@/utils/fortDamage';
 
 type BannerTone = ComponentProps<typeof BattleResultBanner>['tone'];
 
@@ -68,6 +70,13 @@ const RESULT_BANNERS: { tone: BannerTone; title: string; subtitle: string }[] =
     },
   ];
 
+const DAMAGE_LABELS: Record<FortDamageTier, string> = {
+  0: 'Intact (75%+)',
+  1: 'Cracked (50–74%)',
+  2: 'Breached (25–49%)',
+  3: 'Ruined (<25%)',
+};
+
 const advisoryStats = (facts: DefenseAdvisoryFacts) => ({
   defense_advisory: facts,
 });
@@ -103,6 +112,7 @@ const ADVISORIES: { label: string; stats: ReturnType<typeof advisoryStats> }[] =
 /** Announcements, battle result banners and defender advice. */
 export default function BannersSection() {
   const [dismissed, setDismissed] = useState<NewsBulletinSeverity[]>([]);
+  const [damage, setDamage] = useState<FortDamageTier>(0);
 
   return (
     <ShowcaseSection
@@ -112,23 +122,56 @@ export default function BannersSection() {
     >
       <Specimen
         framed={false}
+        name="GameHeader (fort damage)"
+        usedOn={['Layout (all pages)']}
+        note="Animated race wall: a frame-1 still, then a seamless 8 s loop (AV1, H.264 fallback) that fades in once playing. The wall shows the signed-in player's fort health in four tiers; tiers 1 to 3 add a CSS fire glow, and 2 to 3 add rising embers. Reduced motion and Save-Data keep the still, and the glow stays static."
+        wide
+      >
+        <Stack gap="sm">
+          <SegmentedControl
+            size="xs"
+            aria-label="Fort damage"
+            value={String(damage)}
+            onChange={(value) => setDamage(Number(value) as FortDamageTier)}
+            data={FORT_DAMAGE_TIERS.map((tier) => ({
+              label: DAMAGE_LABELS[tier],
+              value: String(tier),
+            }))}
+          />
+          <GameHeader damageTier={damage} />
+        </Stack>
+      </Specimen>
+      <Specimen
+        framed={false}
         name="NewsBulletin"
         usedOn={['MainArea (all game pages)']}
-        note="One bulletin per severity; dismiss hides it locally."
+        note="Compact announcements with internal navigation, severity tooltips and dismissed notice recovery."
         wide
       >
         <Stack gap="md">
-          {BULLETINS.filter(
-            ({ severity }) => !dismissed.includes(severity),
-          ).map((bulletin) => (
-            <NewsBulletin
-              key={bulletin.severity}
-              {...bulletin}
-              onDismiss={() =>
-                setDismissed((current) => [...current, bulletin.severity])
-              }
-            />
-          ))}
+          <AnnouncementPager
+            announcements={BULLETINS.map((bulletin) => ({
+              ...bulletin,
+              id: BULLETINS.indexOf(bulletin),
+            }))}
+            dismissed={
+              new Set(
+                dismissed.map((severity) =>
+                  BULLETINS.findIndex((b) => b.severity === severity),
+                ),
+              )
+            }
+            onRestore={(id) =>
+              setDismissed((current) =>
+                current.filter(
+                  (severity) => severity !== BULLETINS[id].severity,
+                ),
+              )
+            }
+            onDismiss={(id) =>
+              setDismissed((current) => [...current, BULLETINS[id].severity])
+            }
+          />
           {dismissed.length > 0 && (
             <Group>
               <Button

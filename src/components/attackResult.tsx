@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Grid,
+  Group,
   SimpleGrid,
   Stack,
   Text,
@@ -13,6 +14,8 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
 import classes from '@/components/AttackResults.module.css';
+import { BattleGameEventContext } from '@/components/battle/BattleGameEventContext';
+import { GarrisonFatigueNotice } from '@/components/battle/GarrisonFatigueNotice';
 import { ReportHeader } from '@/components/battle/ReportHeader';
 import { DefenseAdvisory } from '@/components/DefenseAdvisory';
 import { useUser } from '@/context/users';
@@ -104,6 +107,16 @@ const AttackResults = ({ battle, viewerID }) => {
   );
   const attackerLossCount = totalLosses(stats.attacker_losses);
   const defenderLossCount = totalLosses(stats.defender_losses);
+  // Garrison fatigue (#204) is recorded on the log for both sides to read.
+  const garrisonFatigue =
+    Number(
+      stats?.defender_fatigue_percent ?? stats?.defenderFatiguePercent ?? 0,
+    ) || 0;
+  // Dungeon captives (#210) are recorded on the log for both sides to read.
+  const captivesTaken = Number(stats?.captives_taken ?? 0) || 0;
+  // Undead reanimation (#211): the redaction hands each side only its own
+  // risen count, so the line reads the same for attacker and defender.
+  const reanimatedUnits = Number(stats?.reanimated_units ?? 0) || 0;
   const xpLine = (isViewer: boolean, playerName: string, xp: number) =>
     isViewer
       ? t('timeline.youEarnedXp', { xp: toLocale(xp, locale) })
@@ -161,6 +174,32 @@ const AttackResults = ({ battle, viewerID }) => {
     t('timeline.fortDamage', { damage: toLocale(fortDamage, locale) }),
     lossLine(isViewerAttacker, attackerPlayer.display_name, attackerLossCount),
     lossLine(isViewerDefender, defenderPlayer.display_name, defenderLossCount),
+    // Dungeon captives (#210): each side reads its own line.
+    ...(isViewerAttacker && captivesTaken > 0
+      ? [
+          t('timeline.captivesTaken', {
+            count: captivesTaken,
+            taken: toLocale(captivesTaken, locale),
+          }),
+        ]
+      : []),
+    ...(isViewerDefender && captivesTaken > 0
+      ? [
+          t('timeline.troopsTakenCaptive', {
+            count: captivesTaken,
+            taken: toLocale(captivesTaken, locale),
+          }),
+        ]
+      : []),
+    // Undead reanimation (#211): only the viewer's own fallen rise again.
+    ...((isViewerAttacker || isViewerDefender) && reanimatedUnits > 0
+      ? [
+          t('timeline.reanimatedUnits', {
+            count: reanimatedUnits,
+            risen: toLocale(reanimatedUnits, locale),
+          }),
+        ]
+      : []),
   ];
 
   const sentence = {
@@ -287,6 +326,8 @@ const AttackResults = ({ battle, viewerID }) => {
           ]}
         />
 
+        <GarrisonFatigueNotice percent={garrisonFatigue} />
+
         {isViewerAttacker && stats.netPillageGold !== undefined && (
           <Text size="sm" ta="center" mt="sm">
             {t('battleReport.pillageDeductions', {
@@ -385,16 +426,19 @@ const AttackResults = ({ battle, viewerID }) => {
               >
                 <Stack gap="md">
                   <Box>
-                    <Text
-                      style={{
-                        fontFamily: 'MedievalSharp, serif',
-                        color: '#e8d39a',
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {t('battleReport.spoilsOfWar')}
-                    </Text>
+                    <Group justify="space-between" gap="xs">
+                      <Text
+                        style={{
+                          fontFamily: 'MedievalSharp, serif',
+                          color: '#e8d39a',
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {t('battleReport.spoilsOfWar')}
+                      </Text>
+                      <BattleGameEventContext value={stats.gameEvents} />
+                    </Group>
 
                     <SimpleGrid cols={2} spacing="xs" mt="sm">
                       <Box>

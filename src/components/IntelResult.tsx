@@ -3,7 +3,7 @@ import {
   faChartPie,
   faWarehouse,
 } from '@fortawesome/free-solid-svg-icons';
-import { Box, Grid, Group, RingProgress, Text } from '@mantine/core';
+import { Box, Grid, Group, Progress, RingProgress, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 
@@ -30,7 +30,12 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   const locale = user?.locale;
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
   const isAttackerWinner = winner === attackerPlayer.id;
-  const isViewerDefender = viewerID === defenderPlayer.id;
+  const view =
+    viewerID === defenderPlayer.id
+      ? 'defender'
+      : viewerID === attackerPlayer.id
+        ? 'attacker'
+        : 'shared';
 
   const observedUnits = useMemo<PlayerUnit[]>(() => {
     const intel = stats.spyResults.intelligenceGathered;
@@ -130,13 +135,10 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
           title={t('spyReport.missionLog')}
           lines={[
             Number(stats.spyResults.spiesLost ?? 0) > 0
-              ? t(
-                  `spyReport.${isViewerDefender ? 'defender' : 'attacker'}SpiesLost`,
-                  { count: Number(stats.spyResults.spiesLost) },
-                )
-              : t(
-                  `spyReport.${isViewerDefender ? 'defender' : 'attacker'}NoSpiesLost`,
-                ),
+              ? t(`spyReport.${view}SpiesLost`, {
+                  count: Number(stats.spyResults.spiesLost),
+                })
+              : t(`spyReport.${view}NoSpiesLost`),
           ]}
         />
       )}
@@ -196,29 +198,11 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                     })}
                     icon={faWarehouse}
                   >
-                    <Group justify="center">
-                      <RingProgress
-                        size={170}
-                        thickness={16}
-                        label={
-                          <Text size="xs" ta="center">
-                            {t(
-                              `intelReport.observedRoleUnits.${category.name}`,
-                              {
-                                replace: {
-                                  count: toLocale(category.total, locale),
-                                },
-                              },
-                            )}
-                          </Text>
-                        }
-                        sections={category.itemsBreakdown.map((item) => ({
-                          value: item.percentage || 0,
-                          color: itemColors[item.type],
-                          tooltip: `${toLocale(item.quantity, locale)} ${t(`intelReport.itemTypes.${item.type}`, { defaultValue: item.type })}`,
-                        }))}
-                      />
-                    </Group>
+                    <Text size="sm" ta="center" c="dimmed">
+                      {t(`intelReport.observedRoleUnits.${category.name}`, {
+                        replace: { count: toLocale(category.total, locale) },
+                      })}
+                    </Text>
                     <Grid mt="md">
                       {category.itemsBreakdown.map((item, idx) => (
                         <Grid.Col span={4} key={idx}>
@@ -237,6 +221,15 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                               {item.percentage !== null &&
                                 ` (${item.percentage.toLocaleString(locale || undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%)`}
                             </Text>
+                            {item.percentage !== null && (
+                              <Progress
+                                mt={6}
+                                size="sm"
+                                value={item.percentage}
+                                color={itemColors[item.type]}
+                                aria-hidden
+                              />
+                            )}
                           </Box>
                         </Grid.Col>
                       ))}

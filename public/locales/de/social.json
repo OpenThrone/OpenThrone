@@ -89,7 +89,7 @@
     "amountPlaceholder": "Betrag eingeben (nur Zahlen)",
     "summaryTitle": "Übersicht der Übertragung",
     "amountRow": "Übertragungsbetrag:",
-    "feeRow": "Übertragungsgebühr ({{percent}} %):",
+    "feeDestroyedRow": "Gebühr: {{percent}} % ({{amount}} Gold), zerstört",
     "totalRow": "Gesamtkosten:",
     "maxTransfer": "Maximale Übertragung: {{amount}} Gold",
     "availableGold": "Ihr verfügbares Gold: {{amount}} Gold",
@@ -98,7 +98,14 @@
     "notesPlaceholder": "Nachricht an Ihren Freund hinzufügen",
     "cancel": "Abbrechen",
     "submit": "Gold übertragen",
-    "transferFailed": "Übertragung fehlgeschlagen"
+    "transferFailed": "Übertragung fehlgeschlagen",
+    "sentToday": "Heute gesendet {{sent}} / {{limit}}",
+    "sentTodayLoading": "Überprüfen Sie Ihr Tageslimit ...",
+    "receiveLimitHint": "Der Empfänger hat ebenfalls ein Tageslimit.",
+    "overDailyLimit": "Mehr als Ihr verbleibender Tagesbetrag von {{amount}} Gold.",
+    "lockedTitle": "Goldübertragungen gesperrt",
+    "locked": "Goldübertragungen werden mit dem {{upgrade}} freigeschaltet.",
+    "limitsFailed": "Konnte Ihre Übertragungsgrenzen nicht laden."
   },
   "notifications": {
     "newFriendRequest": "{{player}} möchte Ihr Freund sein!",

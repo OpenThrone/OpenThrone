@@ -13,7 +13,11 @@ import {
   assertAllianceChatMembership,
   withLockedChatRoom,
 } from '@/services/chatRoomGuards';
-import { MessagingService } from '@/services/Messaging.service';
+import {
+  MessagingService,
+  serializeChatMessage,
+} from '@/services/Messaging.service';
+import type { ChatSendAcknowledgement, ChatSendPayload } from '@/types/chat';
 import {
   DEFAULT_DASHBOARD_TEST_ORIGIN,
   isOriginAllowed,
@@ -28,6 +32,9 @@ import { rateLimiter } from './rate-limiter';
 let io: Server | null = null;
 // Store mapping of userId to a Set of socketIds
 const userSockets = new Map<number, Set<string>>();
+// Typing is deliberately transient and rate-limited per socket/room.
+const typingEventAt = new Map<string, number>();
+const typingRoomRevision = new WeakMap<Socket, Map<number, number>>();
 
 type GlobalSocketState = typeof globalThis & { __OT_SOCKET_IO__?: Server };
 
@@ -94,9 +101,17 @@ const handleConnection = (socket: Socket) => {
   });
 
   // Register chat-only event handlers
-  socket.on('sendMessage', (data) => handleSendMessage(socket, userId, data));
+  socket.on('sendMessage', (data, acknowledge) =>
+    handleSendMessage(
+      socket,
+      userId,
+      data,
+      typeof acknowledge === 'function' ? acknowledge : undefined,
+    ),
+  );
   socket.on('joinRoom', (roomId) => handleJoinRoom(socket, userId, roomId));
   socket.on('leaveRoom', (roomId) => handleLeaveRoom(socket, userId, roomId));
+  socket.on('chatTyping', (data) => handleChatTyping(socket, userId, data));
   socket.on('addReaction', (data) => handleAddReaction(socket, userId, data));
   socket.on('removeReaction', (data) =>
     handleRemoveReaction(socket, userId, data),
@@ -307,91 +322,66 @@ export const initializeSocket = (httpServer: HttpServer) => {
   return io;
 };
 
-const handleSendMessage = async (
+export const handleSendMessage = async (
   socket: Socket,
   userId: number,
-  data: {
-    roomId: number;
-    content: string;
-    tempId?: number;
-    replyToMessageId?: number;
-    messageType?: string;
-    sharedAttackLogId?: number;
-  },
+  data: Partial<ChatSendPayload> & { tempId?: number },
+  acknowledge?: (result: ChatSendAcknowledgement) => void,
 ) => {
-  if (
-    !(await rateLimiter(`sendMessage-${userId}`, { windowMs: 10000, max: 10 }))
-  ) {
-    socket.emit('messageError', {
-      tempId: data.tempId,
-      error: 'You are sending messages too quickly.',
-    });
-    return;
-  }
-  const {
-    roomId,
-    content,
-    replyToMessageId,
-    messageType = 'TEXT',
-    sharedAttackLogId,
-  } = data;
-  logInfo(
-    `sendMessage event received for room ${roomId} from user ${userId}`,
-    data,
-  );
-
-  if (!roomId || !content || userId === undefined) {
-    logInfo('sendMessage failed: Missing required data or userId');
-    socket.emit('messageError', {
-      tempId: data.tempId,
-      error: 'Invalid message data',
-    });
-    return;
-  }
-
+  let saved: Awaited<ReturnType<typeof MessagingService.sendMessageRealtime>>;
   try {
-    const newMessage = await MessagingService.sendMessageRealtime(userId, {
-      roomId: Number(roomId),
-      content,
-      replyToMessageId,
-      messageType,
-      sharedAttackLogId,
+    if (
+      !(await rateLimiter(`sendMessage-${userId}`, {
+        windowMs: 10000,
+        max: 10,
+      }))
+    ) {
+      acknowledge?.({ ok: false, error: 'RATE_LIMITED' });
+      socket.emit('messageError', {
+        tempId: data?.tempId,
+        clientMessageId: data?.clientMessageId,
+        error: 'You are sending messages too quickly.',
+      });
+      return;
+    }
+    saved = await MessagingService.sendMessageRealtime(userId, {
+      roomId: data?.roomId,
+      content: data?.content,
+      richContent: data?.richContent,
+      clientMessageId: data?.clientMessageId,
+      replyToMessageId: data?.replyToMessageId,
+      messageType: data?.messageType,
+      sharedAttackLogId: data?.sharedAttackLogId,
     });
-
-    const serializedMessage = serializeData(newMessage);
-
-    if (!isRecord(serializedMessage)) {
-      throw new Error('Unable to serialize message payload');
-    }
-
-    const messagePayload = {
-      ...serializedMessage,
-      tempId: data.tempId,
-    };
-    const roomChannel = `room-${roomId}`;
-
-    const socketsInRoom = await io?.in(roomChannel).fetchSockets();
-    const senderInRoom = socketsInRoom?.some((s) => s.id === socket.id);
-    logInfo(
-      `<<< SERVER >>> Sockets currently in ${roomChannel} before emit:`,
-      socketsInRoom?.map(
-        (s) => `${s.id} (User: ${findUserIdBySocketId(s.id)})`,
-      ),
-    );
-
-    io?.to(roomChannel).emit('receiveMessage', messagePayload);
-    if (!senderInRoom) {
-      socket.emit('receiveMessage', messagePayload);
-    }
-    logInfo(`<<< SERVER >>> Emitted 'receiveMessage' to ${roomChannel}`);
-
-    await sendNotifications(Number(roomId), userId, newMessage);
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    logError(`Error handling sendMessage for room ${roomId}:`, error);
+  } catch (error) {
+    logError('Failed to save chat message', {
+      userId,
+      roomId: data?.roomId,
+      error,
+    });
+    acknowledge?.({ ok: false, error: 'REJECTED' });
     socket.emit('messageError', {
-      tempId: data.tempId,
-      error: message || 'Failed to send message.',
+      tempId: data?.tempId,
+      clientMessageId: data?.clientMessageId,
+      error: 'Could not send message.',
+    });
+    return;
+  }
+
+  // Confirm durable storage before presence lookups or notification fan-out.
+  const message = serializeChatMessage(saved);
+  acknowledge?.({ ok: true, message });
+  const payload = { ...message, tempId: data?.tempId };
+  socket.emit('receiveMessage', payload);
+  if (saved.deduplicated) return;
+  try {
+    socket.to(`room-${saved.roomId}`).emit('receiveMessage', payload);
+    await sendNotifications(saved.roomId, userId, saved);
+  } catch (error) {
+    // A notification failure must never turn a committed message into a failed send.
+    logError('Chat message saved but notification delivery failed', {
+      messageId: saved.id,
+      error,
     });
   }
 };
@@ -495,7 +485,21 @@ const handleLeaveRoom = (socket: Socket, userId: number, roomId: unknown) => {
     typeof roomId === 'number' ||
     (typeof roomId === 'string' && !isNaN(Number(roomId)))
   ) {
+    const revisions =
+      typingRoomRevision.get(socket) ?? new Map<number, number>();
+    revisions.set(Number(roomId), (revisions.get(Number(roomId)) ?? 0) + 1);
+    typingRoomRevision.set(socket, revisions);
     const roomChannel = `room-${Number(roomId)}`;
+    if (socket.rooms.has(roomChannel)) {
+      socket.to(roomChannel).emit('chatTypingUpdate', {
+        roomId: Number(roomId),
+        userId,
+        displayName: '',
+        isTyping: false,
+      });
+    }
+    typingEventAt.delete(`${socket.id}:${Number(roomId)}:start`);
+    typingEventAt.delete(`${socket.id}:${Number(roomId)}:stop`);
     socket.leave(roomChannel);
     logInfo(
       `<<< SERVER >>> Socket ${socket.id} (User ${userId}) left ${roomChannel}`,
@@ -504,6 +508,62 @@ const handleLeaveRoom = (socket: Socket, userId: number, roomId: unknown) => {
     logError(
       `<<< SERVER >>> Invalid roomId for leaveRoom from Socket ${socket.id}: ${String(roomId)}`,
     );
+  }
+};
+
+export const handleChatTyping = async (
+  socket: Socket,
+  userId: number,
+  data: unknown,
+) => {
+  if (!isRecord(data)) return;
+  const roomId = Number(data.roomId);
+  if (
+    !Number.isSafeInteger(roomId) ||
+    roomId <= 0 ||
+    typeof data.isTyping !== 'boolean'
+  )
+    return;
+  const roomChannel = `room-${roomId}`;
+  // A socket must have completed the authorized join handshake for this room.
+  if (!socket.rooms.has(roomChannel)) return;
+
+  const revision = typingRoomRevision.get(socket)?.get(roomId) ?? 0;
+  const key = `${socket.id}:${roomId}:${data.isTyping ? 'start' : 'stop'}`;
+  const now = Date.now();
+  const previous = typingEventAt.get(key) ?? 0;
+  if (now - previous < (data.isTyping ? 1200 : 250)) return;
+  typingEventAt.set(key, now);
+
+  try {
+    const displayName = await withLockedChatRoom(roomId, async (tx) => {
+      const participant = await tx.chatRoomParticipant.findUnique({
+        where: { roomId_userId: { roomId, userId } },
+        select: { canWrite: true, user: { select: { display_name: true } } },
+      });
+      if (!participant?.canWrite) return null;
+      await assertAllianceChatMembership(tx, userId, roomId);
+      return participant.user.display_name;
+    });
+    if (
+      displayName === null ||
+      !socket.connected ||
+      !socket.rooms.has(roomChannel) ||
+      (typingRoomRevision.get(socket)?.get(roomId) ?? 0) !== revision
+    )
+      return;
+    socket.to(roomChannel).emit('chatTypingUpdate', {
+      roomId,
+      userId,
+      displayName,
+      isTyping: data.isTyping,
+    });
+  } catch (error) {
+    logError('Failed to authorize chat typing event', {
+      userId,
+      roomId,
+      error,
+    });
   }
 };
 
@@ -875,6 +935,9 @@ const handleDisconnect = (socket: Socket, userId: number, reason: string) => {
     `Socket ${socket.id} disconnected for user ${userId}. Reason: ${reason}`,
   );
   const userSocketSet = userSockets.get(userId);
+  for (const key of typingEventAt.keys()) {
+    if (key.startsWith(`${socket.id}:`)) typingEventAt.delete(key);
+  }
   if (userSocketSet) {
     userSocketSet.delete(socket.id);
     logInfo(
@@ -918,16 +981,6 @@ async function sendNotifications(
     );
   });
 }
-
-const findUserIdBySocketId = (socketId: string): number | string => {
-  let foundUserId: number | string = 'Unknown';
-  userSockets.forEach((socketIdSet, uid) => {
-    if (socketIdSet.has(socketId)) {
-      foundUserId = uid;
-    }
-  });
-  return foundUserId;
-};
 
 /** Server instance without logging when it is absent (tests, scripts). */
 const resolveSocketServer = (): Server | null =>

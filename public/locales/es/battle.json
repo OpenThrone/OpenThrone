@@ -1,4 +1,15 @@
 {
+  "gameEvents": {
+    "history": "Historial de eventos",
+    "xpBonus": "Evento de XP ×{{value}}",
+    "eventCount_one": "{{count}} evento",
+    "eventCount_other": "{{count}} eventos",
+    "details": "Ver detalles del evento: {{label}}",
+    "title": "Eventos durante esta misión",
+    "appliedXp": "Multiplicador de XP aplicado: {{value}}×",
+    "savedContext": "Guardado al realizar la misión. Los efectos indicados también pueden afectar actividades fuera del combate.",
+    "notRecorded": "No se registraron los eventos para este informe antiguo."
+  },
   "attack": {
     "title": "Atacar Jugadores",
     "searchPlayer": "Buscar un jugador para atacar",
@@ -270,6 +281,7 @@
   },
   "training": {
     "title": "Entrenamiento",
+    "presetNothingAffordable": "No se pudo pedir nada con tu oro y ciudadanos actuales.",
     "trainingStatus": "Estado de Entrenamiento",
     "untrainedCitizens": "Ciudadanos sin Entrenar",
     "goldOnHand": "Oro Disponible",
@@ -467,7 +479,11 @@
     "gold": "Oro",
     "attackerXp": "EXP del atacante",
     "defenderXp": "EXP del defensor",
-    "casualties": "Bajas"
+    "casualties": "Bajas",
+    "garrisonFatigue": "Fatiga de la guarnición: -{{percent}}%",
+    "garrisonFatigueTooltip": "La guarnición del defensor ya ha luchado hoy. Cada defensa que rechaza la cansará un poco más, y una guarnición cansada defiende con menos poder.",
+    "garrisonFatigueHelp": "Qué es la fatiga de la guarnición",
+    "pillageDeductions": "Aportación de la alianza: {{contribution}} · Repago del préstamo de oro: {{repayment}} · Oro recuperado: {{net}}"
   },
   "timeline": {
     "battleId": "ID de batalla: {{id}}",
@@ -488,7 +504,13 @@
     "youLostSoldiers_one": "Perdiste {{dead}} soldado.",
     "youLostSoldiers_other": "Perdiste {{dead}} soldados.",
     "playerLostSoldiers_one": "{{player}} perdió {{dead}} soldado.",
-    "playerLostSoldiers_other": "{{player}} perdió {{dead}} soldados."
+    "playerLostSoldiers_other": "{{player}} perdió {{dead}} soldados.",
+    "captivesTaken_one": "Cautivos tomados: {{taken}}.",
+    "captivesTaken_other": "Cautivos tomados: {{taken}}.",
+    "troopsTakenCaptive_one": "{{taken}} de tus tropas fue tomado cautivo.",
+    "troopsTakenCaptive_other": "{{taken}} de tus tropas fueron tomadas cautivas.",
+    "reanimatedUnits_one": "{{risen}} caído se levantó de nuevo para servirte.",
+    "reanimatedUnits_other": "{{risen}} caídos se levantaron de nuevo para servirte."
   },
   "losses": {
     "units_one": "{{total}} unidad",
@@ -639,5 +661,44 @@
       "ordinary": "El resultado solo permite una confianza limitada",
       "unknown": "Faltan detalles para evaluar la eficiencia de las bajas"
     }
+  },
+  "sharing": {
+    "searchingPlayers": "Buscando jugadores…",
+    "title": "Compartir informe",
+    "participantsOnly": "Solo el atacante y el defensor pueden gestionar el acceso. Los destinatarios no pueden volver a compartir este informe.",
+    "audience": "Compartir con",
+    "player": "Jugador",
+    "alliance": "Alianza",
+    "public": "Público",
+    "findPlayer": "Buscar jugador (al menos 2 caracteres)",
+    "selectPlayer": "Elige un jugador",
+    "noPlayers": "No hay jugadores coincidentes",
+    "grant": "Conceder acceso",
+    "selectAlliance": "Elige una alianza",
+    "membershipBound": "El acceso depende de la pertenencia actual a la alianza. Los miembros lo pierden al salir.",
+    "noAlliances": "Necesitas el permiso Compartir informes en una alianza para compartir con ella.",
+    "publicWarning": "Cualquiera con este enlace, incluso sin iniciar sesión, puede leer el informe compartido. La información recopilada será visible; los detalles privados de los participantes permanecerán ocultos.",
+    "confirmPublic": "Entiendo que este informe y su información recopilada serán públicos.",
+    "stopPublic": "Desactivar acceso público",
+    "makePublic": "Hacer público el informe",
+    "access": "Quién tiene acceso",
+    "restricted": "Restringido",
+    "permanentParticipants": "El atacante y el defensor siempre tienen acceso.",
+    "revokeNamed": "Revocar acceso de {{name}}",
+    "revoke": "Revocar",
+    "noGrants": "Ningún jugador ni alianza adicional tiene acceso.",
+    "independentAccess": "Revocar un permiso no elimina el acceso por otro permiso o enlace público. No se puede recuperar información ya vista o copiada.",
+    "loadError": "No se pudo cargar la configuración. Inténtalo de nuevo.",
+    "searchError": "No se pudieron buscar jugadores. Inténtalo de nuevo.",
+    "saved": "Configuración guardada.",
+    "saveError": "No se pudo guardar la configuración. Inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "loading": "Cargando configuración",
+    "copyLink": "Copiar enlace del informe",
+    "copied": "Enlace copiado. Solo los lectores autorizados pueden abrirlo.",
+    "copyError": "No se pudo copiar el enlace. Copia la dirección de la página.",
+    "done": "Listo",
+    "addDetails": "Añadir nota o vincular a un objetivo",
+    "signIn": "Inicia sesión para ver informes privados"
   }
 }

@@ -89,7 +89,7 @@
     "amountPlaceholder": "Introduce la cantidad (solo números)",
     "summaryTitle": "Resumen de la transferencia",
     "amountRow": "Cantidad a transferir:",
-    "feeRow": "Comisión de transferencia ({{percent}} %):",
+    "feeDestroyedRow": "Comisión: {{percent}} % ({{amount}} de oro), destruida",
     "totalRow": "Coste total:",
     "maxTransfer": "Transferencia máxima: {{amount}} de oro",
     "availableGold": "Tu oro disponible: {{amount}} de oro",
@@ -98,7 +98,14 @@
     "notesPlaceholder": "Añade un mensaje para tu amigo",
     "cancel": "Cancelar",
     "submit": "Transferir oro",
-    "transferFailed": "La transferencia ha fallado"
+    "transferFailed": "La transferencia ha fallado",
+    "sentToday": "Hoy enviado {{sent}} / {{limit}}",
+    "sentTodayLoading": "Comprobando tu límite diario ...",
+    "receiveLimitHint": "También se aplica el límite de recepción de tu amigo.",
+    "overDailyLimit": "Más que tu límite diario restante de {{amount}} de oro.",
+    "lockedTitle": "Transferencias de oro bloqueadas",
+    "locked": "Las transferencias de oro se desbloquean con el {{upgrade}}.",
+    "limitsFailed": "No se pudieron cargar tus límites de transferencia."
   },
   "notifications": {
     "newFriendRequest": "¡{{player}} quiere ser tu amigo!",

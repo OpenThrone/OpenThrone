@@ -31,6 +31,22 @@ export function installMockPrisma(vi: any) {
     updateMany: vi.fn(async () => ({ count: 0 })),
     deleteMany: vi.fn(async () => ({ count: 0 })),
   };
+  // Kingdom morale (#205) daily pass reads these; defaults keep suites without
+  // their own implementations on the happy path.
+  mockPrisma.desertionEvent = {
+    findMany: vi.fn(async () => []),
+    aggregate: vi.fn(async () => ({ _sum: { quantity: null } })),
+    create: vi.fn(),
+    createMany: vi.fn(async () => ({ count: 0 })),
+  };
+  mockPrisma.alliance_memberships = {
+    findFirst: vi.fn(async () => null),
+  };
+  mockPrisma.attack_log.aggregate = vi.fn(async () => ({
+    _sum: { defender_losses_total: null, pillaged_gold: null },
+  }));
+  mockPrisma.attack_log.groupBy = vi.fn(async () => []);
+  mockPrisma.attack_log.count = vi.fn(async () => 0);
   mockPrisma.forceObligation = {
     findMany: vi.fn(async () => []),
     updateMany: vi.fn(async () => ({ count: 0 })),
@@ -175,6 +191,8 @@ export function resetMockPrisma() {
     Object.values(mockPrisma.staffRoleAssignment || {}).forEach(clearFn);
     Object.values(mockPrisma.antiAbuseShadow || {}).forEach(clearFn);
     Object.values(mockPrisma.era || {}).forEach(clearFn);
+    Object.values(mockPrisma.desertionEvent || {}).forEach(clearFn);
+    Object.values(mockPrisma.alliance_memberships || {}).forEach(clearFn);
   } catch (e) {
     // no-op
   }

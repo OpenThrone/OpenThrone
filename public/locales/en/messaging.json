@@ -42,7 +42,18 @@
       "muteNotifications": "Mute notifications",
       "deleteGroup": "Delete group",
       "deleteConversation": "Delete conversation"
-    }
+    },
+    "loadOlder": "Load earlier messages",
+    "newMessages_one": "{{count}} new message · Jump to latest",
+    "newMessages_other": "{{count}} new messages · Jump to latest",
+    "unreadDivider": "New messages",
+    "typing": "{{names}} is typing…",
+    "typingSeveral": "{{names}} and {{count}} others are typing…",
+    "typingNames": "{{names}} are typing…",
+    "reconnecting": "Reconnecting… Your draft is saved here.",
+    "connected": "Connected",
+    "originalUnavailable": "The original message could not be opened. Try again or load older messages.",
+    "returnToLatest": "Return to latest messages"
   },
   "message": {
     "replyingTo": "Replying to {{name}}",
@@ -55,14 +66,28 @@
     "readByMore_one": "Read by: {{names}} and {{count, number}} more",
     "readByMore_other": "Read by: {{names}} and {{count, number}} more",
     "sent": "Sent",
-    "viewAttackLog": "View Attack Log #{{id}}"
+    "viewAttackLog": "View Attack Log #{{id}}",
+    "pending": "Sending…",
+    "failed": "Send unconfirmed. Your message is retained.",
+    "retry": "Retry",
+    "sharedAttackLog": "Shared Attack Log #{{id}}",
+    "deliveryErrors": {
+      "unconfirmed": "Delivery unconfirmed. Retry safely.",
+      "rejected": "Message not sent. Try again.",
+      "rateLimited": "Sending too quickly. Wait a moment and retry."
+    },
+    "removed": "This message was removed.",
+    "jumpToOriginal": "Jump to original message"
   },
   "input": {
     "placeholder": "Type your message...",
     "replyPlaceholder": "Type your reply...",
     "shareAttackLog": "Share Attack Log",
     "send": "Send message",
-    "cancelReply": "Cancel reply"
+    "cancelReply": "Cancel reply",
+    "keyboardHint": "Enter to send · Shift+Enter for a new line · Enter adds lines inside code blocks",
+    "offline": "Reconnecting… Your message will stay here.",
+    "invalidContent": "This message could not be prepared. Shorten it or remove unsupported formatting and try again."
   },
   "members": {
     "title": "Manage Group Members",
@@ -87,7 +112,8 @@
     },
     "actionFailed": "Failed: {{message}}",
     "unknownError": "Unknown error",
-    "actionError": "Could not update the member. Please try again."
+    "actionError": "Could not update the member. Please try again.",
+    "roster": "Group members"
   },
   "share": {
     "title": "Share Attack Log",
@@ -104,7 +130,8 @@
     "victory": "Victory",
     "defeat": "Defeat",
     "share": "Share",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "retry": "Retry"
   },
   "newMessageModal": {
     "titleCreateGroup": "Create Group Chat",
@@ -119,5 +146,20 @@
     "createGroup": "Create Group",
     "addPeople": "Add People",
     "send": "Send Message"
+  },
+  "format": {
+    "bold": "Bold",
+    "italic": "Italic",
+    "strike": "Strikethrough",
+    "code": "Inline code",
+    "codeBlock": "Code block",
+    "quote": "Quote",
+    "link": "Add link",
+    "unlink": "Remove link",
+    "linkUrl": "Link URL",
+    "saveLink": "Save link",
+    "externalLink": "Open link in a new tab",
+    "internalLink": "Open link in this tab",
+    "toolbar": "Message formatting"
   }
 }

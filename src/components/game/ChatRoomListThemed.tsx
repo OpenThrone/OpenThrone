@@ -1,4 +1,4 @@
-import { Avatar, Group, Text } from '@mantine/core';
+import { Avatar, Group, Text, UnstyledButton } from '@mantine/core';
 import clsx from 'clsx';
 import { useTranslation } from 'next-i18next';
 import React from 'react';
@@ -40,7 +40,7 @@ const ChatRoomListThemed: React.FC<ChatRoomListThemedProps> = ({
   const { t, i18n } = useTranslation('messaging');
 
   return (
-    <div className={styles.panel}>
+    <div className={styles.roomSidebar}>
       <div className={styles.panelHeader}>
         <Text className={styles.panelTitle}>{title ?? t('rooms.heading')}</Text>
         <Text size="xs" className={styles.roomMeta}>
@@ -49,21 +49,14 @@ const ChatRoomListThemed: React.FC<ChatRoomListThemedProps> = ({
       </div>
       <div className={styles.roomList}>
         {rooms.map((room) => (
-          <div
+          <UnstyledButton
             key={room.id}
             className={clsx(
               styles.roomItem,
               selectedRoomId === room.id && styles.roomItemActive,
             )}
             onClick={() => onRoomSelect(room.id)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onRoomSelect(room.id);
-              }
-            }}
+            aria-pressed={selectedRoomId === room.id}
           >
             <Avatar src={room.image || undefined} size={40} radius="xl">
               {room.name
@@ -100,7 +93,7 @@ const ChatRoomListThemed: React.FC<ChatRoomListThemedProps> = ({
                 {room.unreadCount.toLocaleString(i18n.language)}
               </div>
             )}
-          </div>
+          </UnstyledButton>
         ))}
       </div>
     </div>

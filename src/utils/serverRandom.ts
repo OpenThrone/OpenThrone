@@ -9,7 +9,8 @@ import {
 
 import type { RandomFn } from '@/utils/random';
 
-const COMBAT_FORMULA_VERSION = 'combat-v6';
+// v7 (issue #200): assault chip taper and battle-wide casualty win quality.
+const COMBAT_FORMULA_VERSION = 'combat-v7';
 const SERVER_RANDOM_ALGORITHM = 'hmac-sha256-counter-v1';
 
 type CombatDomain = 'attack' | 'spy';

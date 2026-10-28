@@ -42,7 +42,18 @@
       "muteNotifications": "Silenciar notificaciones",
       "deleteGroup": "Eliminar grupo",
       "deleteConversation": "Eliminar conversación"
-    }
+    },
+    "loadOlder": "Cargar mensajes anteriores",
+    "newMessages_one": "{{count}} mensaje nuevo · Ir al último",
+    "newMessages_other": "{{count}} mensajes nuevos · Ir al último",
+    "unreadDivider": "Mensajes nuevos",
+    "typing": "{{names}} está escribiendo…",
+    "typingSeveral": "{{names}} y {{count}} personas más están escribiendo…",
+    "typingNames": "{{names}} están escribiendo…",
+    "reconnecting": "Reconectando… Tu borrador se conserva aquí.",
+    "connected": "Conectado",
+    "originalUnavailable": "No se pudo abrir el mensaje original. Inténtalo de nuevo o carga mensajes anteriores.",
+    "returnToLatest": "Volver a los mensajes recientes"
   },
   "message": {
     "replyingTo": "Respondiendo a {{name}}",
@@ -55,14 +66,28 @@
     "readByMore_one": "Leído por: {{names}} y {{count, number}} más",
     "readByMore_other": "Leído por: {{names}} y {{count, number}} más",
     "sent": "Enviado",
-    "viewAttackLog": "Ver registro de ataque #{{id}}"
+    "viewAttackLog": "Ver registro de ataque #{{id}}",
+    "pending": "Enviando…",
+    "failed": "Envío sin confirmar. Tu mensaje se conserva.",
+    "retry": "Reintentar",
+    "sharedAttackLog": "Informe de ataque compartido #{{id}}",
+    "deliveryErrors": {
+      "unconfirmed": "Entrega sin confirmar. Puedes reintentar con seguridad.",
+      "rejected": "Mensaje no enviado. Inténtalo de nuevo.",
+      "rateLimited": "Envíos demasiado rápidos. Espera un momento y reintenta."
+    },
+    "removed": "Este mensaje se ha eliminado.",
+    "jumpToOriginal": "Ir al mensaje original"
   },
   "input": {
     "placeholder": "Escribe tu mensaje...",
     "replyPlaceholder": "Escribe tu respuesta...",
     "shareAttackLog": "Compartir registro de ataque",
     "send": "Enviar mensaje",
-    "cancelReply": "Cancelar respuesta"
+    "cancelReply": "Cancelar respuesta",
+    "keyboardHint": "Intro para enviar · Mayús+Intro para una nueva línea · Intro añade líneas en bloques de código",
+    "offline": "Reconectando… Tu mensaje permanecerá aquí.",
+    "invalidContent": "No se pudo preparar el mensaje. Acórtalo o elimina el formato no compatible e inténtalo de nuevo."
   },
   "members": {
     "title": "Gestionar miembros del grupo",
@@ -87,7 +112,8 @@
     },
     "actionFailed": "Error: {{message}}",
     "unknownError": "Error desconocido",
-    "actionError": "No se pudo actualizar al miembro. Inténtalo de nuevo."
+    "actionError": "No se pudo actualizar al miembro. Inténtalo de nuevo.",
+    "roster": "Miembros del grupo"
   },
   "share": {
     "title": "Compartir registro de ataque",
@@ -104,7 +130,8 @@
     "victory": "Victoria",
     "defeat": "Derrota",
     "share": "Compartir",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "retry": "Reintentar"
   },
   "newMessageModal": {
     "titleCreateGroup": "Crear chat grupal",
@@ -119,5 +146,20 @@
     "createGroup": "Crear grupo",
     "addPeople": "Añadir personas",
     "send": "Enviar mensaje"
+  },
+  "format": {
+    "bold": "Negrita",
+    "italic": "Cursiva",
+    "strike": "Tachado",
+    "code": "Código en línea",
+    "codeBlock": "Bloque de código",
+    "quote": "Cita",
+    "link": "Añadir enlace",
+    "unlink": "Quitar enlace",
+    "linkUrl": "URL del enlace",
+    "saveLink": "Guardar enlace",
+    "externalLink": "Abrir enlace en otra pestaña",
+    "internalLink": "Abrir enlace en esta pestaña",
+    "toolbar": "Formato del mensaje"
   }
 }

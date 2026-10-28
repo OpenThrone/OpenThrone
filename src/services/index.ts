@@ -27,6 +27,7 @@ export * from './Era.service';
 export * from './FriendTransfer.service';
 export * from './GameEvent.service';
 export * from './General.service';
+export * from './KingdomMorale.service';
 export * from './Messaging.service';
 export * from './Moderation.service';
 export * from './Recruitment.service';

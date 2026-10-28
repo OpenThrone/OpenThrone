@@ -9,6 +9,9 @@ import {
   forceExpiration,
   ForcePolicySchema,
   isForceContractUsable,
+  MERCENARY_ARMY_SHARE_PERCENT,
+  mercenaryShareCap,
+  mercenaryTierFeatureKey,
   parseForceLoadout,
   planForceEnforcement,
   splitForcePillage,
@@ -107,6 +110,26 @@ describe('temporary force contracts', () => {
     ).toThrow('Unknown equipment');
     // Spies have no shield in the existing catalogue; do not invent one.
     expect(parseForceLoadout('SPY', kit('SPY'))).toHaveLength(5);
+  });
+});
+
+describe('mercenary unlock tiers and army share', () => {
+  test('each tier maps to its economy upgrade feature', () => {
+    expect(mercenaryTierFeatureKey(1)).toBe('MERCENARY_HALL');
+    expect(mercenaryTierFeatureKey(2)).toBe('MERCENARY_COMPANIES');
+    expect(mercenaryTierFeatureKey(3)).toBe('MERCENARY_ELITE');
+    expect(() => mercenaryTierFeatureKey(0)).toThrow('Invalid mercenary tier');
+    expect(() => mercenaryTierFeatureKey(4)).toThrow('Invalid mercenary tier');
+  });
+  test('the share cap floors at half the trained army and never rounds up', () => {
+    expect(MERCENARY_ARMY_SHARE_PERCENT).toBe(50);
+    expect(mercenaryShareCap(0)).toBe(0);
+    expect(mercenaryShareCap(1)).toBe(0);
+    expect(mercenaryShareCap(2)).toBe(1);
+    expect(mercenaryShareCap(199)).toBe(99);
+    expect(mercenaryShareCap(200)).toBe(100);
+    expect(() => mercenaryShareCap(-1)).toThrow();
+    expect(() => mercenaryShareCap(1.5)).toThrow();
   });
 });
 

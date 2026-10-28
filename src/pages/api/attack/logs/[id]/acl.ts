@@ -52,6 +52,7 @@ async function handler(
   } catch (error) {
     if (
       error.message?.includes('do not have permission') ||
+      error.message?.includes('Only battle participants') ||
       error.message?.includes('not a participant') ||
       error.message?.includes('Chat room not found')
     ) {

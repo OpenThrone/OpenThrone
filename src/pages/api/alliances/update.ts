@@ -9,7 +9,8 @@ const UpdateAllianceSchema = z.object({
   allianceId: z.number().int().positive(),
   motto: z.string().optional(),
   comments: z.string().optional(),
-  avatar: z.string().optional(),
+  avatar: z.string().max(2048).optional(),
+  bannerimg: z.string().max(2048).optional(),
   join_mode: z.enum(['OPEN', 'REQUEST_TO_JOIN', 'INVITE_ONLY']).optional(),
   roster_visibility: z.enum(['PUBLIC', 'MEMBERS_ONLY']).optional(),
 });

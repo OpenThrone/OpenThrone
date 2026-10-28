@@ -10,6 +10,7 @@ import {
   mercenaryOffer,
   MercenaryService,
 } from '@/services/Mercenary.service';
+import { TemporaryForceLedgerService } from '@/services/TemporaryForceLedger.service';
 import { createUser } from '@/services/User.service';
 import { resetUserRelations } from '@/services/UserDefaults.service';
 import { parseCombatReplay } from '@/utils/combatReplay';
@@ -24,6 +25,37 @@ const hire = (quantity = 10, operationId = randomUUID()) =>
     { userId, type: 'OFFENSE', level: 1, quantity, termDays: 3, operationId },
     now,
   );
+const hireAs = (
+  input: Omit<
+    Parameters<typeof MercenaryService.hire>[0],
+    'userId' | 'operationId'
+  >,
+) =>
+  MercenaryService.hire(
+    { userId, operationId: randomUUID(), ...input } as Parameters<
+      typeof MercenaryService.hire
+    >[0],
+    now,
+  );
+const change = (
+  input: Omit<
+    Parameters<typeof MercenaryService.change>[0],
+    'userId' | 'operationId'
+  > & { contractId: number },
+) =>
+  MercenaryService.change(
+    { userId, operationId: randomUUID(), ...input } as Parameters<
+      typeof MercenaryService.change
+    >[0],
+    now,
+  );
+const setEconomy = (economy_level: number) =>
+  prisma.users.update({ where: { id: userId }, data: { economy_level } });
+const setTrainedUnits = (quantity: number) =>
+  prisma.userUnit.updateMany({
+    where: { userId, isMercenary: false },
+    data: { quantity },
+  });
 beforeEach(async () => {
   await resetDatabase();
   userId = (
@@ -38,9 +70,14 @@ beforeEach(async () => {
         recruit_link: 'merc',
         gold: 1000000000n,
         fort_level: 12,
+        economy_level: 6, // Meat Market: every mercenary tier unlocked
       },
     })
   ).id;
+  // Own trained army backing the 50% share cap (citizens/workers excluded).
+  await prisma.userUnit.create({
+    data: { userId, type: 'DEFENSE', level: 1, quantity: 1000 },
+  });
 });
 
 describe('playable mercenaries', () => {
@@ -52,7 +89,9 @@ describe('playable mercenaries', () => {
     expect(
       (await prisma.users.findUniqueOrThrow({ where: { id: userId } })).gold,
     ).toBe(1000000000n - 10n * (offer.mobilization + 3n * offer.dailyPrice));
-    expect(await prisma.userUnit.count({ where: { userId } })).toBe(0);
+    expect(
+      await prisma.userUnit.count({ where: { userId, isMercenary: true } }),
+    ).toBe(0);
     expect(await prisma.userItem.count({ where: { userId } })).toBe(0);
     const roster = contractRoster([contract], [], now);
     const strength = calculateCombatStrength(
@@ -154,7 +193,9 @@ describe('playable mercenaries', () => {
       (await prisma.users.findUniqueOrThrow({ where: { id: userId } }))
         .wounded_units,
     ).toEqual([]);
-    expect(await prisma.userUnit.count()).toBe(0);
+    expect(
+      await prisma.userUnit.count({ where: { userId, isMercenary: true } }),
+    ).toBe(0);
   });
   test('tier eligibility, ownership, expiry and reset cannot turn contracts permanent', async () => {
     await prisma.users.update({
@@ -226,7 +267,18 @@ describe('playable mercenaries', () => {
     );
     await prisma.users.update({
       where: { id: attacker.id },
-      data: { gold: 100000000n },
+      data: { gold: 100000000n, economy_level: 6 },
+    });
+    // Trained DEFENSE backs the share cap without joining the attack;
+    // createUser already seeded a zero-quantity row.
+    await prisma.userUnit.updateMany({
+      where: {
+        userId: attacker.id,
+        type: 'DEFENSE',
+        level: 1,
+        isMercenary: false,
+      },
+      data: { quantity: 400 },
     });
     await prisma.users.update({
       where: { id: defender.id },
@@ -283,5 +335,127 @@ describe('playable mercenaries', () => {
       }),
     ).toBe(0);
     expect([first.id, second.id]).toHaveLength(2);
+  });
+  test('hiring and renewal name the economy upgrade each tier needs', async () => {
+    await setEconomy(3);
+    await expect(hire(1)).rejects.toThrow('Mercenaries unlock with the Tavern');
+    await expect(
+      hireAs({ type: 'OFFENSE', level: 2, quantity: 1, termDays: 1 }),
+    ).rejects.toThrow('Mercenary tier 2 unlocks with the Copper Mine');
+    await expect(
+      hireAs({ type: 'OFFENSE', level: 3, quantity: 1, termDays: 1 }),
+    ).rejects.toThrow('Mercenary tier 3 unlocks with the Meat Market');
+    await setEconomy(4); // Tavern open: tier 1 hireable again.
+    const contract = await hire(10);
+    await setEconomy(3);
+    await expect(
+      change({ contractId: contract.id, termDays: 1 }),
+    ).rejects.toThrow('Mercenaries unlock with the Tavern');
+    // Dismissal stays available for contracts held before the lock.
+    await expect(change({ contractId: contract.id })).resolves.toMatchObject({
+      id: contract.id,
+      status: 'DISMISSED',
+    });
+    expect(await prisma.forceContract.count()).toBe(1);
+  });
+  test('tier 2 and 3 renewals keep requiring their own upgrade', async () => {
+    await setEconomy(5); // Copper Mine: tier 2 open, tier 3 still locked.
+    const contract = await hireAs({
+      type: 'DEFENSE',
+      level: 2,
+      quantity: 5,
+      termDays: 1,
+    });
+    await expect(
+      change({ contractId: contract.id, termDays: 1 }),
+    ).resolves.toMatchObject({ id: contract.id });
+    await setEconomy(4); // Below the Copper Mine again.
+    await expect(
+      change({ contractId: contract.id, termDays: 1 }),
+    ).rejects.toThrow('Mercenary tier 2 unlocks with the Copper Mine');
+  });
+  test('the army-share cap counts every role and floors at half the trained army', async () => {
+    await setTrainedUnits(0);
+    await expect(hire(1)).rejects.toThrow('Mercenary limit reached');
+    await setTrainedUnits(10); // 10 trained -> 5 allowed
+    await expect(hire(6)).rejects.toThrow('Mercenary limit reached');
+    await hire(5); // Landing exactly on the cap is allowed.
+    await expect(
+      hireAs({ type: 'DEFENSE', level: 1, quantity: 1, termDays: 1 }),
+    ).rejects.toThrow('Mercenary limit reached');
+    const share = await MercenaryService.armyShare(userId, now);
+    expect(share).toEqual({ trainedUnits: 10, mercenaries: 5, allowed: 5 });
+    await setTrainedUnits(400); // 400 trained -> 200 allowed
+    await hireAs({ type: 'SPY', level: 1, quantity: 100, termDays: 1 });
+    expect(await MercenaryService.armyShare(userId, now)).toEqual({
+      trainedUnits: 400,
+      mercenaries: 105,
+      allowed: 200,
+    });
+  });
+  test('mercenaries can never be contributed to an alliance army', async () => {
+    const leader = await prisma.users.create({
+      data: {
+        email: 'alliance-leader@example.test',
+        display_name: 'Alliance leader',
+        password_hash: 'synthetic',
+        race: 'HUMAN',
+        class: 'FIGHTER',
+        locale: 'en',
+        recruit_link: 'alliance-leader',
+        fort_level: 12,
+      },
+    });
+    const alliance = await prisma.alliances.create({
+      data: {
+        name: 'Merc block',
+        leader_id: leader.id,
+        alliance_roles: { create: { name: 'Member' } },
+      },
+      include: { alliance_roles: true },
+    });
+    await prisma.alliance_memberships.create({
+      data: {
+        alliance_id: alliance.id,
+        user_id: userId,
+        role_id: alliance.alliance_roles[0]!.id,
+      },
+    });
+    const contract = await hire(10);
+    // Projected roster rows use negative ids and fail order validation
+    // outright; they are not real UserUnit rows.
+    const projected = contractRoster([contract], [], now)[0]!;
+    expect(projected.id).toBe(-contract.id);
+    await expect(
+      TemporaryForceLedgerService.contribute({
+        allianceId: alliance.id,
+        userId,
+        unitId: projected.id,
+        quantity: 1,
+        equipment: [],
+        operationId: randomUUID(),
+      }),
+    ).rejects.toThrow('unitId');
+    // Even a legacy mercenary-flagged permanent row cannot be contributed.
+    const legacy = await prisma.userUnit.create({
+      data: {
+        userId,
+        type: 'OFFENSE',
+        level: 1,
+        quantity: 50,
+        isMercenary: true,
+      },
+    });
+    await expect(
+      TemporaryForceLedgerService.contribute({
+        allianceId: alliance.id,
+        userId,
+        unitId: legacy.id,
+        quantity: 1,
+        equipment: [],
+        operationId: randomUUID(),
+      }),
+    ).rejects.toThrow('Insufficient permanent troops');
+    expect(await prisma.forceReserve.count()).toBe(0);
   });
 });

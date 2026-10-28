@@ -21,6 +21,7 @@ import { GameCard } from '@/components/game/GameCard';
 import { SectionHeading } from '@/components/game/SectionHeading';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
+import { avatarFramingStyle, splitAvatarFraming } from '@/utils/avatarFraming';
 
 interface RelationRow {
   id: number;
@@ -140,7 +141,20 @@ export const AllianceDiplomacy = ({
   const row = (rel: RelationRow, actions: React.ReactNode) => (
     <Group key={rel.id} justify="space-between" wrap="nowrap">
       <Group gap="sm" wrap="nowrap">
-        <Avatar src={rel.other_alliance_avatar} size="sm" radius="xl" />
+        <Avatar
+          src={splitAvatarFraming(rel.other_alliance_avatar).src}
+          styles={{
+            image: avatarFramingStyle(
+              splitAvatarFraming(rel.other_alliance_avatar).framing ?? {
+                x: 50,
+                y: 50,
+                zoom: 1,
+              },
+            ),
+          }}
+          size="sm"
+          radius="xl"
+        />
         <Text
           component="a"
           href={`/alliances/${rel.other_alliance_id}`}

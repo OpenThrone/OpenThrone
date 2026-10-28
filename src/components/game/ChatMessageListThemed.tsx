@@ -18,7 +18,6 @@ import {
   Menu,
   Modal,
   Paper,
-  ScrollArea,
   Skeleton,
   Stack,
   Switch,
@@ -38,13 +37,19 @@ import React, {
 } from 'react';
 
 import AttackLogShareModal from '@/components/AttackLogShareModal';
+import ChatMessageBody from '@/components/game/ChatMessageBody';
+import ChatTimeline from '@/components/game/ChatTimeline';
 import NewMessageModal from '@/components/NewMessageModal';
 import { useUser } from '@/context/users';
+import { useChatOutbox } from '@/hooks/useChatOutbox';
+import useChatTyping from '@/hooks/useChatTyping';
 import useSocket from '@/hooks/useSocket';
 import { alertService } from '@/services/Alert.service';
 import type { ChatMessage, FrontendRoom } from '@/types/typings';
+import { mergeChatMessages } from '@/utils/chatDelivery';
 import { logError, logInfo } from '@/utils/logger';
 
+import ChatMembersPopover from './ChatMembersPopover';
 import ChatMessageGroupThemed from './ChatMessageGroupThemed';
 import ChatMessageInputThemed from './ChatMessageInputThemed';
 import styles from './ChatThemed.module.css';
@@ -54,6 +59,11 @@ interface ChatMessageListThemedProps {
   messages: ChatMessage[];
   isLoading: boolean;
   roomInfo?: FrontendRoom | null;
+  hasMore?: boolean;
+  loadingOlder?: boolean;
+  onLoadOlder?: () => void;
+  onJumpToMessage?: (messageId: number) => void;
+  onSentFromHistory?: () => void;
 }
 
 const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
@@ -61,6 +71,11 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
   messages,
   roomInfo,
   isLoading,
+  hasMore,
+  loadingOlder,
+  onLoadOlder,
+  onJumpToMessage,
+  onSentFromHistory,
 }) => {
   const { t } = useTranslation('messaging');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(messages);
@@ -69,8 +84,7 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
     setPrevMessages(messages);
     setChatMessages(messages);
   }
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const { user, markRoomAsRead } = useUser();
+  const { user } = useUser();
   const currentUserId = user?.id;
   const {
     socket,
@@ -79,9 +93,36 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
     emitRemoveReaction,
     emitMarkAsRead,
   } = useSocket(user?.id);
+  const { typingNames, onTyping } = useChatTyping(
+    socket,
+    selectedRoomId,
+    currentUserId ?? null,
+    Boolean(isConnected),
+  );
 
+  const sender = useMemo(
+    () =>
+      user
+        ? {
+            id: user.id,
+            display_name: user.displayName,
+            avatar: user.avatar,
+            is_online: true,
+          }
+        : undefined,
+    [user?.id, user?.displayName, user?.avatar],
+  );
+  const { outbox, send, retry } = useChatOutbox({
+    socket,
+    isConnected,
+    sender,
+    messages,
+  });
+  const timelineMessages = useMemo(
+    () => mergeChatMessages(chatMessages, outbox, selectedRoomId),
+    [chatMessages, outbox, selectedRoomId],
+  );
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
-  const [isCreatingGroupFromDM, setIsCreatingGroupFromDM] = useState(false);
   const [isManageMembersModalOpen, setIsManageMembersModalOpen] =
     useState(false);
   const [isMemberActionLoading, setIsMemberActionLoading] = useState(false);
@@ -93,12 +134,75 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const messageElementRefs = useRef<Map<number, HTMLElement>>(new Map());
   const messagesMarkedAsRead = useRef<Set<number>>(new Set());
+  const unreadSnapshotRoom = useRef<number | null>(null);
+  const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<
+    number | null
+  >(null);
+  const pendingJumpId = useRef<number | null>(null);
+
+  const scrollToMessage = useCallback((element: HTMLElement) => {
+    const viewport = scrollViewportRef.current;
+    if (!viewport) return;
+    const elementRect = element.getBoundingClientRect();
+    const viewportRect = viewport.getBoundingClientRect();
+    const nextScrollTop =
+      viewport.scrollTop +
+      elementRect.top -
+      viewportRect.top -
+      viewport.clientHeight / 2 +
+      element.clientHeight / 2;
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    viewport.scrollTo({
+      top: nextScrollTop,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
+    element.setAttribute('data-highlight', 'true');
+    window.setTimeout(() => element.removeAttribute('data-highlight'), 1600);
+    element.focus({ preventScroll: true });
+  }, []);
 
   useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [chatMessages]);
+    if (!selectedRoomId || !currentUserId || isLoading || !messages.length)
+      return;
+    if (unreadSnapshotRoom.current === selectedRoomId) return;
+    unreadSnapshotRoom.current = selectedRoomId;
+    const firstUnread = messages.find(
+      (message) =>
+        message.senderId !== currentUserId &&
+        !message.readBy?.some((reader) => reader.userId === currentUserId),
+    );
+    setFirstUnreadMessageId(firstUnread?.id ?? null);
+  }, [currentUserId, isLoading, messages, selectedRoomId]);
+
+  useEffect(() => {
+    pendingJumpId.current = null;
+  }, [selectedRoomId]);
+
+  const handleJumpToMessage = useCallback(
+    (messageId: number) => {
+      const element = document.getElementById(`chat-message-${messageId}`);
+      if (element) {
+        pendingJumpId.current = null;
+        scrollToMessage(element);
+        return;
+      }
+      pendingJumpId.current = messageId;
+      onJumpToMessage?.(messageId);
+    },
+    [onJumpToMessage, scrollToMessage],
+  );
+
+  useEffect(() => {
+    if (pendingJumpId.current === null) return;
+    const target = document.getElementById(
+      `chat-message-${pendingJumpId.current}`,
+    );
+    if (!target) return;
+    pendingJumpId.current = null;
+    scrollToMessage(target);
+  }, [scrollToMessage, timelineMessages]);
 
   useEffect(() => {
     if (
@@ -115,6 +219,7 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
     }
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      if (document.visibilityState !== 'visible') return;
       const messagesToMark: number[] = [];
       entries.forEach((entry) => {
         if (
@@ -164,8 +269,18 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
       }
     });
 
+    const handleVisibility = () => {
+      if (document.visibilityState !== 'visible') return;
+      observerRef.current?.disconnect();
+      messageElementRefs.current.forEach((element) =>
+        observerRef.current?.observe(element),
+      );
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
     const markedRef = messagesMarkedAsRead.current;
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
       if (observerRef.current) {
         observerRef.current.disconnect();
         observerRef.current = null;
@@ -183,26 +298,27 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
   const handleShareAttackLog = async (logId: number) => {
     if (!selectedRoomId || !socket || !isConnected || !currentUserId) {
       alertService.error(t('share.cannotShare'));
-      return;
+      return false;
     }
-    logInfo(
-      `Emitting sendMessage to share attack log ${logId} in room ${selectedRoomId}`,
-    );
-    socket.emit('sendMessage', {
-      roomId: selectedRoomId,
-      content: `Shared Attack Log #${logId}`,
+    const accepted = send(selectedRoomId, {
+      content: t('message.sharedAttackLog', { id: logId }),
       messageType: 'ATTACK_LOG_SHARE',
       sharedAttackLogId: logId,
+      replyToMessage: replyingToMessage,
     });
-    setIsShareModalOpen(false);
-    markRoomAsRead(selectedRoomId);
+    if (accepted) {
+      onSentFromHistory?.();
+      setIsShareModalOpen(false);
+      setReplyingToMessage(null);
+    }
+    return accepted;
   };
 
   const groupedMessages = useMemo(() => {
     const groups: ChatMessage[][] = [];
     let currentGroup: ChatMessage[] = [];
-    chatMessages.forEach((message, index) => {
-      const previousMessage = chatMessages[index - 1];
+    timelineMessages.forEach((message, index) => {
+      const previousMessage = timelineMessages[index - 1];
       const isSameSender = previousMessage?.senderId === message.senderId;
       const currentSentAt = message.sentAt
         ? new Date(message.sentAt).getTime()
@@ -215,7 +331,14 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
           ? currentSentAt - previousSentAt
           : Infinity;
       const withinTimeThreshold = timeDiff < 60000;
-      if (isSameSender && withinTimeThreshold) {
+      if (
+        isSameSender &&
+        withinTimeThreshold &&
+        !message.deliveryState &&
+        !message.deletedAt &&
+        !previousMessage?.deletedAt &&
+        !previousMessage?.deliveryState
+      ) {
         currentGroup.push(message);
       } else {
         if (currentGroup.length > 0) groups.push(currentGroup);
@@ -224,7 +347,7 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
     });
     if (currentGroup.length > 0) groups.push(currentGroup);
     return groups;
-  }, [chatMessages]);
+  }, [timelineMessages]);
 
   const handleToggleReaction = useCallback(
     (messageId: number, clickedReaction: string) => {
@@ -329,6 +452,12 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
 
   const renderMessageContent = useCallback(
     (message: ChatMessage) => {
+      if (message.deletedAt)
+        return (
+          <Text fs="italic" c="var(--ot-muted)" size="sm">
+            {t('message.removed')}
+          </Text>
+        );
       if (
         message.messageType === 'ATTACK_LOG_SHARE' &&
         message.sharedAttackLog
@@ -348,7 +477,12 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
           </Link>
         );
       }
-      return message.content;
+      return (
+        <ChatMessageBody
+          content={message.content}
+          richContent={message.richContent}
+        />
+      );
     },
     [t],
   );
@@ -383,9 +517,9 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
     }
     return (
       <Stack gap="lg" py="md">
-        {groupedMessages.map((group, idx) => (
+        {groupedMessages.map((group) => (
           <ChatMessageGroupThemed
-            key={`group-${idx}`}
+            key={group[0].clientMessageId ?? group[0].id}
             group={group}
             isCurrentUser={group[0].senderId === currentUserId}
             currentUserId={currentUserId}
@@ -393,9 +527,17 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
             setReplyingToMessage={setReplyingToMessage}
             renderMessageContent={renderMessageContent}
             messageElementRefs={messageElementRefs}
+            onJumpToMessage={handleJumpToMessage}
+            firstUnreadMessageId={firstUnreadMessageId}
+            onRetry={retry}
+            canRetry={
+              isConnected &&
+              (roomInfo?.participants?.find((p) => p.id === currentUserId)
+                ?.canWrite ??
+                false)
+            }
           />
         ))}
-        <div ref={bottomRef} />
       </Stack>
     );
   }, [
@@ -405,6 +547,11 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
     handleToggleReaction,
     setReplyingToMessage,
     renderMessageContent,
+    handleJumpToMessage,
+    firstUnreadMessageId,
+    retry,
+    isConnected,
+    roomInfo?.participants,
     t,
   ]);
 
@@ -421,7 +568,18 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <Paper p="md" className={styles.messagesHeader} withBorder={false}>
+      <Paper
+        p="md"
+        className={styles.messagesHeader}
+        styles={{
+          root: {
+            border: 0,
+            borderBottom: '1px solid var(--ot-line)',
+            boxShadow: 'none',
+          },
+        }}
+        withBorder={false}
+      >
         <div className="flex w-full items-center justify-between">
           <Group gap="xs">
             {roomInfo?.isDirect ? (
@@ -447,6 +605,11 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
             <div>
               <Text fw={600} size="lg" className={styles.roomTitle}>
                 {roomInfo?.name || t('conversation.fallbackName')}
+              </Text>
+              <Text size="xs" c="dimmed" role="status">
+                {isConnected
+                  ? t('conversation.connected')
+                  : t('conversation.reconnecting')}
               </Text>
               {roomInfo?.isDirect && (
                 <Text
@@ -479,6 +642,13 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
             </div>
           </Group>
           <Group gap="xs">
+            {roomInfo && !roomInfo.isDirect && (
+              <ChatMembersPopover
+                key={roomInfo.id}
+                participants={roomInfo.participants ?? []}
+                currentUserId={currentUserId}
+              />
+            )}
             {roomInfo?.isDirect && (
               <Tooltip label={t('conversation.createGroup')}>
                 <ActionIcon
@@ -486,7 +656,6 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
                   color="yellow"
                   aria-label={t('conversation.createGroup')}
                   onClick={() => {
-                    setIsCreatingGroupFromDM(true);
                     setIsAddUserModalOpen(true);
                   }}
                 >
@@ -502,7 +671,6 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
                     color="yellow"
                     aria-label={t('conversation.addMembers')}
                     onClick={() => {
-                      setIsCreatingGroupFromDM(false);
                       setIsAddUserModalOpen(true);
                     }}
                   >
@@ -510,69 +678,59 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
                   </ActionIcon>
                 </Tooltip>
               )}
-            <Menu shadow="md" width={200} position="bottom-end">
-              <Menu.Target>
-                <ActionIcon
-                  variant="subtle"
-                  color="yellow"
-                  aria-label={t('conversation.options')}
-                >
-                  <FontAwesomeIcon icon={faEllipsisV} />
-                </ActionIcon>
-              </Menu.Target>
-              <Menu.Dropdown>
-                {roomInfo?.isAdmin && !roomInfo.isDirect && (
-                  <>
-                    <Menu.Label>
-                      {t('conversation.menu.adminControls')}
-                    </Menu.Label>
-                    <Menu.Item
-                      onClick={() => setIsManageMembersModalOpen(true)}
-                    >
-                      {t('conversation.menu.manageMembers')}
-                    </Menu.Item>
-                    <Menu.Item>
-                      {t('conversation.menu.editGroupInfo')}
-                    </Menu.Item>
-                    <Menu.Divider />
-                  </>
-                )}
-                <Menu.Item>{t('conversation.menu.searchMessages')}</Menu.Item>
-                <Menu.Item>
-                  {t('conversation.menu.muteNotifications')}
-                </Menu.Item>
-                {roomInfo?.isAdmin && !roomInfo.isDirect && (
-                  <Menu.Item color="red">
-                    {t('conversation.menu.deleteGroup')}
+            {roomInfo?.isAdmin && !roomInfo.isDirect && (
+              <Menu shadow="md" width={200} position="bottom-end">
+                <Menu.Target>
+                  <ActionIcon
+                    variant="subtle"
+                    aria-label={t('conversation.options')}
+                  >
+                    <FontAwesomeIcon icon={faEllipsisV} />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item onClick={() => setIsManageMembersModalOpen(true)}>
+                    {t('conversation.menu.manageMembers')}
                   </Menu.Item>
-                )}
-                {roomInfo?.isDirect && (
-                  <Menu.Item color="red">
-                    {t('conversation.menu.deleteConversation')}
-                  </Menu.Item>
-                )}
-              </Menu.Dropdown>
-            </Menu>
+                </Menu.Dropdown>
+              </Menu>
+            )}
           </Group>
         </div>
       </Paper>
 
-      <div className="flex-1 overflow-hidden">
-        <ScrollArea
-          viewportRef={scrollViewportRef}
-          className={styles.messageArea}
-          type="auto"
-        >
-          {renderedMessageArea}
-        </ScrollArea>
-      </div>
+      <ChatTimeline
+        roomId={selectedRoomId}
+        messages={timelineMessages}
+        currentUserId={currentUserId}
+        viewportRef={scrollViewportRef}
+        hasMore={hasMore}
+        loadingOlder={loadingOlder}
+        onLoadOlder={onLoadOlder}
+        firstUnreadMessageId={firstUnreadMessageId}
+      >
+        {renderedMessageArea}
+      </ChatTimeline>
+
+      {typingNames.length > 0 && (
+        <Text size="xs" c="dimmed" px="md" py={4} role="status">
+          {typingNames.length <= 3
+            ? t('conversation.typing', { names: typingNames.join(', ') })
+            : t('conversation.typingSeveral', {
+                names: typingNames.slice(0, 3).join(', '),
+                count: typingNames.length - 3,
+              })}
+        </Text>
+      )}
 
       <ChatMessageInputThemed
         selectedRoomId={selectedRoomId}
-        socket={socket}
         isConnected={isConnected}
-        currentUserId={currentUserId}
-        markRoomAsRead={markRoomAsRead}
+        onSendMessage={(draft) => {
+          const accepted = send(selectedRoomId, draft);
+          if (accepted) onSentFromHistory?.();
+          return accepted;
+        }}
         replyingToMessage={replyingToMessage}
         setReplyingToMessage={setReplyingToMessage}
         setIsShareModalOpen={setIsShareModalOpen}
@@ -580,15 +738,15 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
           roomInfo?.participants?.find((p) => p.id === currentUserId)
             ?.canWrite ?? false
         }
+        onTyping={onTyping}
       />
 
       <NewMessageModal
         opened={isAddUserModalOpen}
         onClose={() => {
           setIsAddUserModalOpen(false);
-          setIsCreatingGroupFromDM(false);
         }}
-        existingChatId={isCreatingGroupFromDM ? undefined : selectedRoomId}
+        existingChatId={selectedRoomId}
         existingUsers={roomInfo?.participants?.map((p) => p.id)}
         isDirectMessage={roomInfo?.isDirect}
       />

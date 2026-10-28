@@ -2,7 +2,7 @@ import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
-import { PermissionType } from '@/lib/prisma-exports';
+import { PermissionType, Prisma } from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp, logAction } from '@/utils/auditLogger';
@@ -40,6 +40,7 @@ async function handler(
       where: { id: context.body.messageId },
       data: {
         content: context.body.content,
+        richContent: Prisma.DbNull,
         originalContent: existing.originalContent ?? existing.content,
         editReason: context.body.reason,
         moderatedByUserId: Number(staffUserId),

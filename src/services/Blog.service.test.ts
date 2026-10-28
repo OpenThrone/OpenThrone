@@ -14,6 +14,7 @@ const publishedPost = {
   content: 'Published news',
   postedby_id: 1,
   created_timestamp: new Date('2026-10-03T12:00:00Z'),
+  publishedAt: new Date('2026-10-04T12:00:00Z'),
   status: 'PUBLISHED',
   kind: 'NEWS',
   isPinned: true,
@@ -47,12 +48,47 @@ describe('public news publication boundaries', () => {
     });
     const { post } = await BlogService.getPost(42, 7);
     expect(post?.created_timestamp).toBe('2026-10-03T12:00:00.000Z');
+    expect(post?.publishedAt).toBe('2026-10-04T12:00:00.000Z');
     expect(post?.isRead).toBe(true);
     expect(post?.isPinned).toBe(true);
     expect(mockPrisma.blog_posts.findUnique.mock.calls[0][0].where).toEqual({
       id: 42,
       status: 'PUBLISHED',
     });
+  });
+
+  it('serializes publication dates and orders both anonymous and signed-in feeds', async () => {
+    mockPrisma.blog_posts.findMany.mockResolvedValue([
+      {
+        ...publishedPost,
+        id: 1,
+        isPinned: false,
+        created_timestamp: new Date('2026-10-20T12:00:00Z'),
+        publishedAt: new Date('2026-10-20T12:00:00Z'),
+      },
+      {
+        ...publishedPost,
+        id: 2,
+        isPinned: false,
+        created_timestamp: new Date('2026-10-19T12:00:00Z'),
+        publishedAt: null,
+      },
+      {
+        ...publishedPost,
+        id: 3,
+        isPinned: false,
+        created_timestamp: new Date('2026-10-10T12:00:00Z'),
+        publishedAt: new Date('2026-10-23T12:00:00Z'),
+      },
+      publishedPost,
+    ]);
+    for (const userId of [undefined, 7]) {
+      const { posts } = await BlogService.getPosts(userId);
+      expect(posts.map((post) => post.id)).toEqual([42, 3, 1, 2]);
+      expect(posts[1].publishedAt).toBe('2026-10-23T12:00:00.000Z');
+      expect(posts[3].publishedAt).toBeNull();
+      expect(() => JSON.stringify(posts)).not.toThrow();
+    }
   });
 
   it('defaults the news feed to published posts', async () => {

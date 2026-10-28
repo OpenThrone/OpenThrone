@@ -14,12 +14,12 @@ import React, { useEffect, useState } from 'react';
 
 import { useUser } from '@/context/users';
 import type { Log } from '@/types/typings';
-import { logDebug, logError } from '@/utils/logger';
+import { logError } from '@/utils/logger';
 
 interface AttackLogShareModalProps {
   opened: boolean;
   onClose: () => void;
-  onShare: (logId: number) => void;
+  onShare: (logId: number) => Promise<boolean>;
 }
 
 const ROWS_PER_PAGE = 5;
@@ -36,14 +36,19 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [activePage, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [reload, setReload] = useState(0);
+  const [sharingId, setSharingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (opened && user?.id) {
+      const controller = new AbortController();
       setLoading(true);
       setError(null);
 
       // Fetch user's attack logs
-      fetch(`/api/attack/logs?limit=${ROWS_PER_PAGE}&page=${activePage - 1}`)
+      fetch(`/api/attack/logs?limit=${ROWS_PER_PAGE}&page=${activePage - 1}`, {
+        signal: controller.signal,
+      })
         .then((res) => {
           if (!res.ok) {
             throw new Error('Failed to fetch attack logs');
@@ -51,35 +56,47 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
           return res.json();
         })
         .then((data) => {
-          logDebug('API response:', data);
+          if (controller.signal.aborted) return;
           if (data.data && Array.isArray(data.data)) {
             setAttackLogs(data.data);
             setTotalPages(Math.ceil(data.total / ROWS_PER_PAGE));
           } else {
-            logError('Unexpected data format:', data);
             throw new Error('Invalid data format');
           }
         })
         .catch((err) => {
+          if (controller.signal.aborted) return;
           logError('Error fetching attack logs:', err);
           setError(t('share.loadFailed'));
           setAttackLogs([]);
           setTotalPages(0);
         })
-        .finally(() => setLoading(false));
-    } else {
-      // Reset when modal is closed or user is not available
-      setAttackLogs([]);
-      setLoading(false);
-      setError(null);
-      setPage(1);
-      setTotalPages(0);
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+      return () => controller.abort();
     }
-  }, [opened, user?.id, activePage, t]); // Re-fetch when page changes
+    // Reset when modal is closed or user is not available
+    setAttackLogs([]);
+    setLoading(false);
+    setError(null);
+    setPage(1);
+    setTotalPages(0);
+  }, [opened, user?.id, activePage, t, reload]); // Re-fetch when page changes
 
-  const handleShareClick = (logId: number) => {
-    onShare(logId);
-    onClose();
+  const handleShareClick = async (logId: number) => {
+    if (sharingId !== null) return;
+    setSharingId(logId);
+    setError(null);
+    try {
+      if (await onShare(logId)) onClose();
+      else setError(t('share.cannotShare'));
+    } catch (err) {
+      logError('Error sharing attack log', err);
+      setError(t('share.cannotShare'));
+    } finally {
+      setSharingId(null);
+    }
   };
 
   const rows = attackLogs.map((log) => {
@@ -118,7 +135,12 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
           {isVictory ? t('share.victory') : t('share.defeat')}
         </Table.Td>
         <Table.Td>
-          <Button size="xs" onClick={() => handleShareClick(log.id)}>
+          <Button
+            size="xs"
+            loading={sharingId === log.id}
+            disabled={sharingId !== null}
+            onClick={() => handleShareClick(log.id)}
+          >
             {t('share.share')}
           </Button>
         </Table.Td>
@@ -127,7 +149,15 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
   });
 
   return (
-    <Modal opened={opened} onClose={onClose} title={t('share.title')} size="lg">
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title={t('share.title')}
+      size="lg"
+      closeOnClickOutside={sharingId === null}
+      closeOnEscape={sharingId === null}
+      withCloseButton={sharingId === null}
+    >
       {loading && (
         <Group justify="center" p="xl">
           <Loader size="md" />
@@ -137,6 +167,13 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
       {error && (
         <Alert color="red" title={t('share.error')} role="alert">
           {error}
+          <Button
+            mt="sm"
+            variant="light"
+            onClick={() => setReload((value) => value + 1)}
+          >
+            {t('share.retry')}
+          </Button>
         </Alert>
       )}
 
@@ -176,7 +213,11 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
       )}
 
       <Group justify="flex-end" mt="md">
-        <Button variant="default" onClick={onClose}>
+        <Button
+          variant="default"
+          onClick={onClose}
+          disabled={sharingId !== null}
+        >
           {t('share.cancel')}
         </Button>
       </Group>

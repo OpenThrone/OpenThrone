@@ -18,10 +18,12 @@ import type { Locales } from '@/types/typings';
 import type {
   ArmoryItem,
   ArmoryQuantities,
+  ArmoryTierCounts,
   ArmoryUpgradeConversion,
 } from '@/utils/armoryOrder';
 import {
   armoryCategoryKeys,
+  armorySlotReadiness,
   ownedSlotCoverage,
   planArmoryLoadout,
   planArmoryUpgrades,
@@ -36,6 +38,7 @@ interface ArmoryLoadoutPlannerProps {
   onUpgrade: (conversions: ArmoryUpgradeConversion[]) => Promise<void>;
   upgrading?: boolean;
   units: number;
+  unitTiers: ArmoryTierCounts;
   gold: bigint;
   locale?: Locales;
   disabled?: boolean;
@@ -49,6 +52,7 @@ export const ArmoryLoadoutPlanner = ({
   onUpgrade,
   upgrading,
   units,
+  unitTiers,
   gold,
   locale,
   disabled,
@@ -86,7 +90,13 @@ export const ArmoryLoadoutPlanner = ({
     const choice = items.find((item) => item.id === choiceFor(category, items));
     return choice ? [choice] : [];
   });
-  const plan = planArmoryLoadout(selected, allItems, quantities, units, gold);
+  const plan = planArmoryLoadout(
+    selected,
+    allItems,
+    quantities,
+    unitTiers,
+    gold,
+  );
   const upgradePlan = planArmoryUpgrades(
     selected,
     allItems,
@@ -177,7 +187,10 @@ export const ArmoryLoadoutPlanner = ({
                     {mode === 'fill'
                       ? t('armory.slotPreview', {
                           owned: toLocale(
-                            ownedSlotCoverage(items[0], allItems),
+                            armorySlotReadiness(
+                              categories[category] ?? items,
+                              unitTiers,
+                            ).covered,
                             locale,
                           ),
                           quantity: toLocale(
@@ -257,8 +270,13 @@ export const ArmoryLoadoutPlanner = ({
                   onClick={() =>
                     setQuantities(
                       (prev) =>
-                        planArmoryLoadout(selected, allItems, prev, units, gold)
-                          .quantities,
+                        planArmoryLoadout(
+                          selected,
+                          allItems,
+                          prev,
+                          unitTiers,
+                          gold,
+                        ).quantities,
                     )
                   }
                 >

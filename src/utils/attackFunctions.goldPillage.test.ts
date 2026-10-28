@@ -103,6 +103,26 @@ describe('exact bounded raid gold', () => {
     ).toBe(0n);
   });
 
+  it('a breach that happened only under garrison fatigue still yields loot (#204)', () => {
+    const attacker = fighter('OFFENSE', 1000, 0n);
+    const defender = fighter('DEFENSE', 100, 1_000_000n);
+    // 2000 attack pressure never beats 2000 rested defense, but it beats the
+    // fatigued contest value 2000 * 0.85 = 1700. The loot gate must see the
+    // SAME contest value the assault saw, or a fatigued breach would pay 0.
+    const rested = calculateLoot(attacker, defender, 10, () => 0.5, {
+      ...raid,
+      attackPressure: 2000,
+      defensePressure: 2000,
+    });
+    const fatigued = calculateLoot(attacker, defender, 10, () => 0.5, {
+      ...raid,
+      attackPressure: 2000,
+      defensePressure: 2000 * 0.85,
+    });
+    expect(rested).toBe(0n); // the rested wall holds: no loot
+    expect(fatigued > 0n).toBe(true); // the fatigued breach pays
+  });
+
   it('a standing fort and a protected shield reduce a successful raid cap', () => {
     // Level 1 on both sides: full shield (0.1x) and a neutral gold-level modifier.
     const attacker = fighter('OFFENSE', 1000, 0n, 1);

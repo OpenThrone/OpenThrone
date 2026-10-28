@@ -77,6 +77,7 @@ export const getServerSideProps = async (context: { locale?: string }) =>
             'common',
             'battle',
             'home',
+            'kingdom',
             'navigation',
             'structures',
             'alliances',
@@ -87,6 +88,7 @@ export const getServerSideProps = async (context: { locale?: string }) =>
             'social',
             'how-to-play',
             'admin-activity',
+            'admin-content',
           ])),
         },
       };

@@ -22,7 +22,8 @@
   "displayName": "Display name",
   "userNumber": "User #{{id}}",
   "signalTypes": {
-    "LINKED_ACCOUNT_ACTIVITY": "Linked account activity"
+    "LINKED_ACCOUNT_ACTIVITY": "Linked account activity",
+    "DEFECTOR_FARMING": "Defector farming"
   },
   "acknowledge": "Acknowledge",
   "dismiss": "Dismiss",

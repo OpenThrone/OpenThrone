@@ -1,13 +1,6 @@
-import {
-  faEdit,
-  faNewspaper,
-  faScroll,
-  faThumbtack,
-  faTrash,
-} from '@fortawesome/free-solid-svg-icons';
+import { faNewspaper, faThumbtack } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  ActionIcon,
   Alert,
   Badge,
   Box,
@@ -32,6 +25,7 @@ import { useEffect, useState } from 'react';
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { ContentPostActions } from '@/components/admin/ContentPostActions';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import panelClasses from '@/components/game/Panels.module.css';
@@ -439,51 +433,13 @@ const ContentManagementPage = () => {
                       </Text>
                     </Table.Td>
                     <Table.Td>
-                      <Group gap={4} wrap="nowrap">
-                        <ActionIcon
-                          size="sm"
-                          variant="subtle"
-                          color="gray"
-                          onClick={() => openEditPost(p)}
-                          aria-label={t('content.edit')}
-                        >
-                          <FontAwesomeIcon icon={faEdit} size="xs" />
-                        </ActionIcon>
-                        {p.status !== 'ARCHIVED' && (
-                          <ActionIcon
-                            size="sm"
-                            variant="subtle"
-                            color="orange"
-                            onClick={() => handleStatusChange(p.id, 'ARCHIVED')}
-                            aria-label={t('content.archive')}
-                          >
-                            <FontAwesomeIcon icon={faScroll} size="xs" />
-                          </ActionIcon>
-                        )}
-                        {p.status === 'DRAFT' && (
-                          <ActionIcon
-                            size="sm"
-                            variant="subtle"
-                            color="green"
-                            onClick={() =>
-                              handleStatusChange(p.id, 'PUBLISHED')
-                            }
-                            aria-label={t('content.publish')}
-                            title={t('content.publish')}
-                          >
-                            <FontAwesomeIcon icon={faNewspaper} size="xs" />
-                          </ActionIcon>
-                        )}
-                        <ActionIcon
-                          size="sm"
-                          variant="subtle"
-                          color="red"
-                          onClick={() => setDeleteTarget(p.id)}
-                          aria-label={t('content.delete')}
-                        >
-                          <FontAwesomeIcon icon={faTrash} size="xs" />
-                        </ActionIcon>
-                      </Group>
+                      <ContentPostActions
+                        status={p.status}
+                        onEdit={() => openEditPost(p)}
+                        onArchive={() => handleStatusChange(p.id, 'ARCHIVED')}
+                        onPublish={() => handleStatusChange(p.id, 'PUBLISHED')}
+                        onDelete={() => setDeleteTarget(p.id)}
+                      />
                     </Table.Td>
                   </Table.Tr>
                 ))}

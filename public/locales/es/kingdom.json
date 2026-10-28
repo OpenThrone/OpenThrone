@@ -1,0 +1,70 @@
+{
+  "morale": {
+    "label": "Moral del reino",
+    "steady": "Firme",
+    "restless": "Inquieta: los ciudadanos se van",
+    "mutinous": "Motimosa: las tropas se amotinan y los mercenarios rechazan los contratos",
+    "explain": "¿Qué mueve la moral?",
+    "tooltip": "La moral sube cuando inicias sesión cada día, ganas una defensa y le das al reino tiempo para recuperarse. Disminuye cuando pierdes una defensa, no puedes pagar a tus mercenarios o te ausentas varios días.",
+    "ariaLabel": "Moral del reino {{percent}} de 100: {{state}}"
+  },
+  "desertions": {
+    "title": "Registro de deserción",
+    "loading": "Leyendo el registro...",
+    "error": "No se pudo leer el registro de deserción.",
+    "empty": "Nadie ha dejado tu reino.",
+    "justNow": "ahora mismo",
+    "more": "y {{count}} más",
+    "events": {
+      "citizens_one": "{{count}} ciudadano dejó el reino",
+      "citizens_other": "{{count}} ciudadanos dejaron el reino",
+      "abandon_one": "{{count}} soldado del Nivel {{level}} {{unit}} abandonó el reino",
+      "abandon_other": "{{count}} soldados del Nivel {{level}} {{unit}} abandonaron el reino",
+      "defectLost_one": "{{count}} soldado del Nivel {{level}} {{unit}} desertó al enemigo",
+      "defectLost_other": "{{count}} soldados del Nivel {{level}} {{unit}} desertaron al enemigo",
+      "defectReceived_one": "{{count}} desertor se unió a tu reino como ciudadano",
+      "defectReceived_other": "{{count}} desertores se unieron a tu reino como ciudadanos",
+      "mercenary_one": "{{count}} mercenario del Nivel {{level}} {{unit}} abandonó el contrato",
+      "mercenary_other": "{{count}} mercenarios del Nivel {{level}} {{unit}} abandonaron el contrato"
+    }
+  },
+  "dungeon": {
+    "title": "Mazmorra",
+    "loading": "Revisando las celdas...",
+    "error": "No se pudo leer la mazmorra.",
+    "locked": "Bloqueado: requiere {{name}} (fortificación de nivel {{level}}).",
+    "heldTitle": "Cautivos en tu mazmorra",
+    "heldEmpty": "Tu mazmorra no retiene cautivos y ninguna de tus tropas está cautiva.",
+    "capacity": "{{held}} / {{max}} cautivos",
+    "heldRow_one": "{{count}} {{unit}} de Nivel {{level}} tomado de {{player}}",
+    "heldRow_other": "{{count}} {{unit}} de Nivel {{level}} tomados de {{player}}",
+    "ransomHint": "Rescate {{price}} — te quedas {{share}}",
+    "convertReady": "Convertir por {{cost}}",
+    "convertIn": "Convertible en {{hours}} h",
+    "convertHelp": "Los cautivos pueden convertirse tras 72 horas en la mazmorra.",
+    "release": "Liberar",
+    "convert": "Convertir",
+    "mineTitle": "Tus tropas en mazmorras enemigas",
+    "mineRow_one": "{{count}} {{unit}} de Nivel {{level}} retenido por {{player}}",
+    "mineRow_other": "{{count}} {{unit}} de Nivel {{level}} retenidos por {{player}}",
+    "ransom": "Rescatar",
+    "ransomPrice": "Rescatar por {{price}}",
+    "escapesIn": "escapa en {{hours}} h",
+    "actionDone_one": "{{count}} cautivo procesado.",
+    "actionDone_other": "{{count}} cautivos procesados."
+  },
+  "reanimation": {
+    "label": "Reanimados hoy",
+    "status": "{{risen}} / {{cap}}",
+    "locked": "La reanimación duerme — tus caídos se alzan de nuevo a partir de un {{name}} (fortificación nivel {{level}}).",
+    "fortFallback": "fortificación nivel {{level}}"
+  },
+  "unitTypes": {
+    "CITIZEN": "Ciudadano",
+    "WORKER": "Trabajador",
+    "OFFENSE": "Ofensiva",
+    "DEFENSE": "Defensa",
+    "SPY": "Espía",
+    "SENTRY": "Centinela"
+  }
+}

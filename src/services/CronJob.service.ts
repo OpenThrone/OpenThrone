@@ -11,8 +11,11 @@ import {
   divertIncomeToLoans,
   settleLoanTreasuryCredits,
 } from '@/services/AllianceLoan.service';
+import { loadProtectionContext } from '@/services/BattleProtection.service';
+import { CaptiveService } from '@/services/Captives.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
+import { KingdomMoraleService } from '@/services/KingdomMorale.service';
 import { pruneLoginTelemetry } from '@/services/LoginTelemetry.service';
 import { MercenaryService } from '@/services/Mercenary.service';
 import { getUpdatedStatus } from '@/services/User.service';
@@ -186,6 +189,9 @@ export class CronJobService {
         })),
         multiplier: dailyCitizenMultiplier,
       };
+      // Kingdom morale (#205) reuses the shared protection rule for its
+      // exemptions; loaded once so every account in this run shares it.
+      const moraleContext = await loadProtectionContext();
       // Only ids are read up front; every per-user write re-reads that user
       // under a row lock so concurrent player actions are never overwritten.
       const allUsers = await prisma.users.findMany({
@@ -198,6 +204,7 @@ export class CronJobService {
       const queue = allUsers.map((singleUser) => ({
         userId: singleUser.id,
         healed: false,
+        moraleDone: false,
         attempts: 0,
       }));
 
@@ -238,11 +245,33 @@ export class CronJobService {
               `Failed to update user ${currentTask.userId} after 3 attempts.`,
             );
           }
+          continue;
+        }
+
+        // Morale drift and desertion run once per user per day after the
+        // growth update, under the same per-user lock pattern. Failures are
+        // logged inside the service and never block the daily run.
+        if (!currentTask.moraleDone) {
+          currentTask.moraleDone = true;
+          const morale = await KingdomMoraleService.processDailyKingdomMorale(
+            currentTask.userId,
+            moraleContext,
+            eraToken,
+          );
+          if (morale === 'stale') continue;
         }
       }
 
       // Perform daily cleanup
       await this.doDailyCleanup();
+      try {
+        // Dungeon escapes (#210): captives held past 7 days — and captives of
+        // a captor who lost the dungeon — walk home as citizens. Runs in the
+        // same daily pass as morale/desertion; failures are logged per row.
+        await CaptiveService.processDailyCaptives();
+      } catch (error) {
+        logError('Daily captive escape pass failed', { error });
+      }
       try {
         await runInactivitySweep({ dryRun: false });
       } catch {

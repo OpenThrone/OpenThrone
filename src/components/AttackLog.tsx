@@ -3,6 +3,7 @@ import {
   faMinus,
   faPlus,
   faRedo,
+  faShareNodes,
   faSort,
   faSortDown,
   faSortUp,
@@ -13,6 +14,7 @@ import router from 'next/router';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useMemo, useState } from 'react';
 
+import { ReportShareModal } from '@/components/battle/ReportShareModal';
 import { DefenseAdvisory } from '@/components/DefenseAdvisory';
 import { StyledTable } from '@/components/game/StyledTable';
 import type { Log } from '@/types/typings';
@@ -101,6 +103,7 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
   viewerID,
 }) => {
   const { t } = useTranslation('battle');
+  const [sharingLogId, setSharingLogId] = useState<number | null>(null);
   const [openModalId, setOpenModalId] = useState<string | null>(null);
   const [collapsedLogs, setCollapsedLogs] = useState<Record<string, boolean>>(
     {},
@@ -209,183 +212,208 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
     ];
 
   return (
-    <StyledTable
-      ariaLabel={
-        type === 'defense'
-          ? t('warHistory.defenseLog')
-          : t('warHistory.attackLog')
-      }
-      headerRowProps={{ 'data-testid': 'table-row' }}
-      headers={sortHeaders.map(({ column, label, key }) => (
-        <MemoizedSortableHeader
-          key={key}
-          column={column}
-          label={label}
-          onSort={handleSort}
-          currentSort={sortColumn}
-          currentDirection={sortDirection}
+    <>
+      {sharingLogId !== null && (
+        <ReportShareModal
+          logId={sharingLogId}
+          opened
+          onClose={() => setSharingLogId(null)}
         />
-      ))}
-    >
-      {logs.length === 0 ? (
-        <Table.Tr data-testid="table-row">
-          <Table.Td
-            colSpan={6}
-            className="text-center"
-            style={{ borderColor: 'var(--ot-line)' }}
-          >
-            {t('warHistory.noBattles')}
-          </Table.Td>
-        </Table.Tr>
-      ) : (
-        sortedLogs.map((log) => {
-          const profileId =
-            type === 'defense' ? log.attacker_id : log.defender_id;
-          const modalLabel =
-            type === 'defense'
-              ? t('battleReport.attackBack')
-              : t('battleReport.attackAgain');
-          const yourLosses =
-            type === 'defense'
-              ? log.stats.defender_losses
-              : log.stats.attacker_losses;
-          const enemyLosses =
-            type === 'defense'
-              ? log.stats.attacker_losses
-              : log.stats.defender_losses;
+      )}
+      <StyledTable
+        ariaLabel={
+          type === 'defense'
+            ? t('warHistory.defenseLog')
+            : t('warHistory.attackLog')
+        }
+        headerRowProps={{ 'data-testid': 'table-row' }}
+        headers={sortHeaders.map(({ column, label, key }) => (
+          <MemoizedSortableHeader
+            key={key}
+            column={column}
+            label={label}
+            onSort={handleSort}
+            currentSort={sortColumn}
+            currentDirection={sortDirection}
+          />
+        ))}
+      >
+        {logs.length === 0 ? (
+          <Table.Tr data-testid="table-row">
+            <Table.Td
+              colSpan={6}
+              className="text-center"
+              style={{ borderColor: 'var(--ot-line)' }}
+            >
+              {t('warHistory.noBattles')}
+            </Table.Td>
+          </Table.Tr>
+        ) : (
+          sortedLogs.map((log) => {
+            const profileId =
+              type === 'defense' ? log.attacker_id : log.defender_id;
+            const modalLabel =
+              type === 'defense'
+                ? t('battleReport.attackBack')
+                : t('battleReport.attackAgain');
+            const yourLosses =
+              type === 'defense'
+                ? log.stats.defender_losses
+                : log.stats.attacker_losses;
+            const enemyLosses =
+              type === 'defense'
+                ? log.stats.attacker_losses
+                : log.stats.defender_losses;
 
-          const isViewerDefender =
-            type === 'defense' &&
-            log.type === 'attack' &&
-            viewerID === log.defender_id;
-          const showDefenseAdvisory =
-            !(collapsedLogs[log.id] ?? true) &&
-            getDefenseAdvisory(log.stats, isViewerDefender) !== null;
+            const isViewerDefender =
+              type === 'defense' &&
+              log.type === 'attack' &&
+              viewerID === log.defender_id;
+            const showDefenseAdvisory =
+              !(collapsedLogs[log.id] ?? true) &&
+              getDefenseAdvisory(log.stats, isViewerDefender) !== null;
 
-          return (
-            <React.Fragment key={log.id}>
-              <Table.Tr data-testid="table-row">
-                <Table.Td
-                  style={{ borderColor: 'var(--ot-line)', width: '20px' }}
-                >
-                  <UnstyledButton
-                    onClick={() => toggleCollapse(log.id.toString())}
-                    aria-expanded={!(collapsedLogs[log.id] ?? true)}
-                    aria-label={
-                      (collapsedLogs[log.id] ?? true)
-                        ? t('warHistory.showDetails')
-                        : t('warHistory.hideDetails')
-                    }
-                    className="focus:outline-none"
+            return (
+              <React.Fragment key={log.id}>
+                <Table.Tr data-testid="table-row">
+                  <Table.Td
+                    style={{ borderColor: 'var(--ot-line)', width: '20px' }}
                   >
-                    <FontAwesomeIcon
-                      icon={(collapsedLogs[log.id] ?? true) ? faPlus : faMinus}
-                      size="sm"
-                    />
-                  </UnstyledButton>
-                </Table.Td>
-                <PlayerOutcome
-                  log={log}
-                  type={type}
-                  collapsed={collapsedLogs[log.id] ?? true}
-                />
-                <Table.Td style={{ borderColor: 'var(--ot-line)' }}>
-                  <StatsList
-                    stats={log.stats}
+                    <UnstyledButton
+                      onClick={() => toggleCollapse(log.id.toString())}
+                      aria-expanded={!(collapsedLogs[log.id] ?? true)}
+                      aria-label={
+                        (collapsedLogs[log.id] ?? true)
+                          ? t('warHistory.showDetails')
+                          : t('warHistory.hideDetails')
+                      }
+                      className="focus:outline-none"
+                    >
+                      <FontAwesomeIcon
+                        icon={
+                          (collapsedLogs[log.id] ?? true) ? faPlus : faMinus
+                        }
+                        size="sm"
+                      />
+                    </UnstyledButton>
+                  </Table.Td>
+                  <PlayerOutcome
+                    log={log}
                     type={type}
-                    subType={log.type}
                     collapsed={collapsedLogs[log.id] ?? true}
                   />
-                </Table.Td>
-                <Table.Td style={{ borderColor: 'var(--ot-line)' }}>
-                  <Stack align="center" justify="center" gap="sm">
-                    <Stack gap={2} align="center">
-                      <Text size="xs" c="dimmed" tt="uppercase">
-                        {t('warHistory.yourLosses')}
-                      </Text>
-                      <LossesList
-                        losses={yourLosses ?? EMPTY_LOSSES}
-                        showUnits={!(collapsedLogs[log.id] ?? true)}
-                      />
-                    </Stack>
-                    <Stack gap={2} align="center">
-                      <Text size="xs" c="dimmed" tt="uppercase">
-                        {t('warHistory.enemyLosses')}
-                      </Text>
-                      <LossesList losses={enemyLosses ?? EMPTY_LOSSES} />
-                    </Stack>
-                    {!(collapsedLogs[log.id] ?? true) && (
+                  <Table.Td style={{ borderColor: 'var(--ot-line)' }}>
+                    <StatsList
+                      stats={log.stats}
+                      type={type}
+                      subType={log.type}
+                      collapsed={collapsedLogs[log.id] ?? true}
+                    />
+                  </Table.Td>
+                  <Table.Td style={{ borderColor: 'var(--ot-line)' }}>
+                    <Stack align="center" justify="center" gap="sm">
                       <Stack gap={2} align="center">
                         <Text size="xs" c="dimmed" tt="uppercase">
-                          {t('warHistory.fortDamage')}
+                          {t('warHistory.yourLosses')}
                         </Text>
-                        <span>
-                          {log.stats.fortDamage ??
-                            (log.stats.forthpAtStart || 0) -
-                              (log.stats.forthpAtEnd || 0)}
-                        </span>
+                        <LossesList
+                          losses={yourLosses ?? EMPTY_LOSSES}
+                          showUnits={!(collapsedLogs[log.id] ?? true)}
+                        />
                       </Stack>
-                    )}
-                  </Stack>
-                </Table.Td>
-                <Table.Td
-                  style={{
-                    borderColor: 'var(--ot-line)',
-                    textAlign: 'center',
-                  }}
-                >
-                  <AnimatedButtons
-                    buttons={[
-                      {
-                        icon: faRedo,
-                        label: modalLabel,
-                        onClick: () => toggleModal(profileId.toString()),
-                        color: 'blue',
-                        tooltip: modalLabel,
-                        ariaLabel: modalLabel,
-                      },
-                      {
-                        icon: faEye,
-                        label: t('warHistory.viewBattle'),
-                        onClick: () => router.push(`/battle/results/${log.id}`),
-                        color: 'teal',
-                        tooltip: t('warHistory.viewBattleDetails'),
-                        ariaLabel: t('warHistory.viewBattle'),
-                      },
-                    ]}
-                    orientation="vertical"
-                    spacing="xs"
-                  />
-                  <Modal
-                    isOpen={openModalId === profileId.toString()}
-                    toggleModal={() => toggleModal(profileId.toString())}
-                    profileID={profileId}
-                    targetName={
-                      type === 'defense'
-                        ? log.attackerPlayer?.display_name
-                        : log.defenderPlayer?.display_name
-                    }
-                  />
-                </Table.Td>
-              </Table.Tr>
-              {showDefenseAdvisory && (
-                <Table.Tr>
+                      <Stack gap={2} align="center">
+                        <Text size="xs" c="dimmed" tt="uppercase">
+                          {t('warHistory.enemyLosses')}
+                        </Text>
+                        <LossesList losses={enemyLosses ?? EMPTY_LOSSES} />
+                      </Stack>
+                      {!(collapsedLogs[log.id] ?? true) && (
+                        <Stack gap={2} align="center">
+                          <Text size="xs" c="dimmed" tt="uppercase">
+                            {t('warHistory.fortDamage')}
+                          </Text>
+                          <span>
+                            {log.stats.fortDamage ??
+                              (log.stats.forthpAtStart || 0) -
+                                (log.stats.forthpAtEnd || 0)}
+                          </span>
+                        </Stack>
+                      )}
+                    </Stack>
+                  </Table.Td>
                   <Table.Td
-                    colSpan={6}
-                    style={{ borderColor: 'var(--ot-line)' }}
+                    style={{
+                      borderColor: 'var(--ot-line)',
+                      textAlign: 'center',
+                    }}
                   >
-                    <DefenseAdvisory
-                      stats={log.stats}
-                      isViewerDefender={isViewerDefender}
+                    <AnimatedButtons
+                      buttons={[
+                        ...(viewerID === log.attacker_id ||
+                        viewerID === log.defender_id
+                          ? [
+                              {
+                                icon: faShareNodes,
+                                label: t('sharing.title'),
+                                onClick: () => setSharingLogId(Number(log.id)),
+                                color: 'yellow' as const,
+                                tooltip: t('sharing.title'),
+                                ariaLabel: t('sharing.title'),
+                              },
+                            ]
+                          : []),
+                        {
+                          icon: faRedo,
+                          label: modalLabel,
+                          onClick: () => toggleModal(profileId.toString()),
+                          color: 'blue' as const,
+                          tooltip: modalLabel,
+                          ariaLabel: modalLabel,
+                        },
+                        {
+                          icon: faEye,
+                          label: t('warHistory.viewBattle'),
+                          onClick: () =>
+                            router.push(`/battle/results/${log.id}`),
+                          color: 'teal' as const,
+                          tooltip: t('warHistory.viewBattleDetails'),
+                          ariaLabel: t('warHistory.viewBattle'),
+                        },
+                      ]}
+                      orientation="vertical"
+                      spacing="xs"
+                    />
+                    <Modal
+                      isOpen={openModalId === profileId.toString()}
+                      toggleModal={() => toggleModal(profileId.toString())}
+                      profileID={profileId}
+                      targetName={
+                        type === 'defense'
+                          ? log.attackerPlayer?.display_name
+                          : log.defenderPlayer?.display_name
+                      }
                     />
                   </Table.Td>
                 </Table.Tr>
-              )}
-            </React.Fragment>
-          );
-        })
-      )}
-    </StyledTable>
+                {showDefenseAdvisory && (
+                  <Table.Tr>
+                    <Table.Td
+                      colSpan={6}
+                      style={{ borderColor: 'var(--ot-line)' }}
+                    >
+                      <DefenseAdvisory
+                        stats={log.stats}
+                        isViewerDefender={isViewerDefender}
+                      />
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </React.Fragment>
+            );
+          })
+        )}
+      </StyledTable>
+    </>
   );
 };
 

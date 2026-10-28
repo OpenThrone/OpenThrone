@@ -6,9 +6,14 @@ import { useState } from 'react';
 import ConfirmationModal, {
   type ConfirmationTone,
 } from '@/components/ConfirmationModal';
+import {
+  GoldTransferModal,
+  type TransferLimits,
+} from '@/components/GoldTransferModal';
 import { AvatarFramingEditor } from '@/components/profile/AvatarFramingEditor';
 import {
   mockAction,
+  MockClicks,
   ShowcaseSection,
   Specimen,
 } from '@/components/showcase/Showcase';
@@ -68,20 +73,46 @@ const SAMPLE_PORTRAIT = '/assets/images/santee.webp';
 const SAMPLE_FRAMING: AvatarFraming = { x: 50, y: 30, zoom: 1.2 };
 const MOCK_TARGET_ID = 202;
 
+/** Mock daily transfer limits: the player has the Coal Mine. */
+const UNLOCKED_LIMITS: TransferLimits = {
+  unlocked: true,
+  sendPerDay: '250000',
+  receivePerDay: '3000000',
+  feePercent: 5,
+  sentToday: '40000',
+  receivedToday: '120000',
+};
+
+/** Mock daily transfer limits: gold transfers are still locked. */
+const LOCKED_LIMITS: TransferLimits = {
+  unlocked: false,
+  sendPerDay: '0',
+  receivePerDay: '0',
+  feePercent: 5,
+  sentToday: '0',
+  receivedToday: '0',
+};
+
+const MOCK_TRANSFER_GOLD = BigInt(750000);
+
 const LIVE_ONLY_MODALS = [
   'modal.tsx (attack): fetches the attack recommendation when opened.',
-  'GoldRequestModal and GoldTransferModal: submit real gold requests and transfers.',
-  'NewMessageModal: searches players as you type and creates rooms.',
+  'GoldRequestModal: submits real gold requests.',
+  'NewMessageModal: live search and room creation; its shared dialog is shown in Chat & messaging with mock data.',
   'SessionModal: lists recruitment sessions as soon as it opens.',
 ];
 
 export default function ModalsSection() {
   const { t } = useTranslation('battle');
+  const { t: tSocial } = useTranslation('social');
   const [confirmation, setConfirmation] = useState<ConfirmationExample | null>(
     null,
   );
   const [framingOpen, setFramingOpen] = useState(false);
   const [spyOpen, setSpyOpen] = useState(false);
+  const [transferState, setTransferState] = useState<
+    'unlocked' | 'locked' | null
+  >(null);
 
   // The spy dialog posts the mission from its send button; mock that one click.
   const spySendLabels = [
@@ -190,6 +221,43 @@ export default function ModalsSection() {
             targetName="Grukk the Vile"
           />
         </div>
+      </Specimen>
+
+      <Specimen
+        name="GoldTransferModal"
+        usedOn={['/userprofile/[id]']}
+        wide
+        note="Shows the daily allowance, the destroyed fee and the locked state. The limits are mock data (no request) and the send button is mocked."
+      >
+        <MockClicks labels={[tSocial('goldTransfer.submit')]}>
+          <Group gap="xs">
+            <Button
+              variant="default"
+              size="xs"
+              onClick={() => setTransferState('unlocked')}
+            >
+              Transfer gold (unlocked)
+            </Button>
+            <Button
+              variant="default"
+              size="xs"
+              onClick={() => setTransferState('locked')}
+            >
+              Transfer gold (locked)
+            </Button>
+          </Group>
+          <GoldTransferModal
+            isOpen={transferState !== null}
+            onClose={() => setTransferState(null)}
+            targetUserId={MOCK_TARGET_ID}
+            targetUserName="Grukk the Vile"
+            userGold={MOCK_TRANSFER_GOLD}
+            onTransferComplete={() => mockAction('Transfer gold')()}
+            limitsOverride={
+              transferState === 'locked' ? LOCKED_LIMITS : UNLOCKED_LIMITS
+            }
+          />
+        </MockClicks>
       </Specimen>
 
       <Specimen

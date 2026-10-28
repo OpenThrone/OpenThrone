@@ -22,7 +22,8 @@
   "displayName": "Nombre visible",
   "userNumber": "Usuario n.º {{id}}",
   "signalTypes": {
-    "LINKED_ACCOUNT_ACTIVITY": "Actividad de cuentas vinculadas"
+    "LINKED_ACCOUNT_ACTIVITY": "Actividad de cuentas vinculadas",
+    "DEFECTOR_FARMING": "Explotación de desertores"
   },
   "acknowledge": "Confirmar",
   "dismiss": "Descartar",

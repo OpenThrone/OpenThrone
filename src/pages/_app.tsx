@@ -52,7 +52,10 @@ const namespaceMatchers: Array<{
   { matches: (path) => path === '/', namespaces: ['landing'] },
   { matches: (path) => path === '/faq', namespaces: ['faq'] },
   { matches: (path) => path.startsWith('/account'), namespaces: ['account'] },
-  { matches: (path) => path.startsWith('/home'), namespaces: ['home'] },
+  {
+    matches: (path) => path.startsWith('/home'),
+    namespaces: ['home', 'kingdom'],
+  },
   {
     matches: (path) => path.startsWith('/home/admin'),
     namespaces: [

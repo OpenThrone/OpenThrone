@@ -8,7 +8,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   ActionIcon,
   Avatar,
-  Badge,
+  Button,
+  Divider,
   Group,
   Indicator,
   Paper,
@@ -17,6 +18,7 @@ import {
   Stack,
   Text,
   Tooltip,
+  UnstyledButton,
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import React from 'react';
@@ -32,6 +34,10 @@ interface ChatMessageGroupThemedProps {
   handleToggleReaction: (messageId: number, reaction: string) => void;
   setReplyingToMessage: (message: ChatMessage | null) => void;
   renderMessageContent: (message: ChatMessage) => React.ReactNode;
+  onRetry?: (clientMessageId: string) => void;
+  canRetry?: boolean;
+  onJumpToMessage?: (messageId: number) => void;
+  firstUnreadMessageId?: number | null;
   messageElementRefs: React.MutableRefObject<Map<number, HTMLElement>>;
 }
 
@@ -45,6 +51,10 @@ const ChatMessageGroupThemedComponent: React.FC<
   setReplyingToMessage,
   renderMessageContent,
   messageElementRefs,
+  onRetry,
+  canRetry = true,
+  onJumpToMessage,
+  firstUnreadMessageId,
 }) => {
   const { t, i18n } = useTranslation('messaging');
   const lastMessageInGroup = group[group.length - 1];
@@ -86,10 +96,14 @@ const ChatMessageGroupThemedComponent: React.FC<
         </Indicator>
       )}
       <Paper
-        p="md"
-        radius="lg"
         className={`${styles.messageBubble} ${isCurrentUser ? styles.messageBubbleOutgoing : ''}`}
-        style={{ maxWidth: '72%', wordBreak: 'break-word' }}
+        styles={{
+          root: {
+            background: 'var(--chat-bubble-bg)',
+            border: 0,
+            boxShadow: 'none',
+          },
+        }}
         withBorder={false}
       >
         {!isCurrentUser && (
@@ -107,77 +121,152 @@ const ChatMessageGroupThemedComponent: React.FC<
               }
             };
             return (
-              <div
-                key={message.id}
-                ref={messageRefCallback}
-                data-message-id={message.id}
-              >
-                {message.replyToMessage && (
-                  <Paper
-                    p="xs"
-                    mb="xs"
-                    radius="sm"
-                    className={styles.replyBlock}
-                  >
-                    <Text size="xs" c="dimmed">
-                      {t('message.replyingTo', {
-                        name: message.replyToMessage.sender.display_name,
-                      })}
-                    </Text>
-                    <Text size="sm" lineClamp={2} fs="italic">
-                      {message.replyToMessage.content}
-                    </Text>
-                  </Paper>
+              <React.Fragment key={message.id}>
+                {firstUnreadMessageId === message.id && (
+                  <Divider
+                    label={t('conversation.unreadDivider')}
+                    labelPosition="center"
+                    my="xs"
+                  />
                 )}
-                <Text size="md">{renderMessageContent(message)}</Text>
-                {message.reactions && message.reactions.length > 0 && (
-                  <Group gap={4} mt={4} wrap="wrap">
-                    {Object.entries(
-                      message.reactions.reduce(
-                        (acc, r) => {
-                          acc[r.reaction] = (acc[r.reaction] || 0) + 1;
-                          return acc;
-                        },
-                        {} as Record<string, number>,
-                      ),
-                    ).map(([reaction, count]) => {
-                      const reactors = message.reactions
-                        .filter((r) => r.reaction === reaction)
-                        .map((r) =>
-                          r.userId === currentUserId
-                            ? t('message.you')
-                            : r.userDisplayName,
-                        )
-                        .join(', ');
-                      const isCurrentUserReaction = message.reactions.some(
-                        (r) =>
-                          r.userId === currentUserId && r.reaction === reaction,
-                      );
-                      return (
-                        <Tooltip
-                          key={reaction}
-                          label={reactors}
-                          position="top"
-                          withArrow
-                        >
-                          <Badge
-                            size="sm"
-                            radius="sm"
-                            variant={isCurrentUserReaction ? 'filled' : 'light'}
-                            color={isCurrentUserReaction ? 'yellow' : 'gray'}
-                            onClick={() =>
-                              handleToggleReaction(message.id, reaction)
-                            }
-                            style={{ cursor: 'pointer' }}
+                <div
+                  id={`chat-message-${message.id}`}
+                  tabIndex={-1}
+                  ref={messageRefCallback}
+                  data-message-id={message.id}
+                >
+                  {message.replyToMessage && (
+                    <UnstyledButton
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        textAlign: 'start',
+                      }}
+                      disabled={
+                        !onJumpToMessage ||
+                        !message.replyToMessage.id ||
+                        !message.replyToMessage.content
+                      }
+                      aria-label={
+                        message.replyToMessage.content
+                          ? t('message.jumpToOriginal')
+                          : t('conversation.originalUnavailable')
+                      }
+                      title={
+                        message.replyToMessage.content
+                          ? undefined
+                          : t('conversation.originalUnavailable')
+                      }
+                      onClick={() => {
+                        if (message.replyToMessage) {
+                          onJumpToMessage?.(message.replyToMessage.id);
+                        }
+                      }}
+                    >
+                      <Paper
+                        p="xs"
+                        mb="xs"
+                        radius="sm"
+                        className={styles.replyBlock}
+                        styles={{
+                          root: {
+                            background: 'var(--ot-inset)',
+                            border: 0,
+                            borderInlineStart: '1px solid var(--ot-accent)',
+                            boxShadow: 'none',
+                          },
+                        }}
+                      >
+                        <Text size="xs" c="dimmed">
+                          {t('message.replyingTo', {
+                            name: message.replyToMessage.sender.display_name,
+                          })}
+                        </Text>
+                        <Text size="sm" lineClamp={2} fs="italic">
+                          {message.replyToMessage.content ||
+                            t('message.removed')}
+                        </Text>
+                      </Paper>
+                    </UnstyledButton>
+                  )}
+                  <div className={styles.messageContent}>
+                    {renderMessageContent(message)}
+                  </div>
+                  {message.deliveryState && (
+                    <Group gap="xs" mt="xs" role="status">
+                      <Text size="xs" c="var(--ot-muted)">
+                        {message.deliveryState === 'pending'
+                          ? t('message.pending')
+                          : t(
+                              `message.deliveryErrors.${message.deliveryError ?? 'unconfirmed'}`,
+                            )}
+                      </Text>
+                      {message.deliveryState === 'failed' &&
+                        onRetry &&
+                        message.clientMessageId && (
+                          <Button
+                            variant="subtle"
+                            size="compact-xs"
+                            disabled={!canRetry}
+                            onClick={() => onRetry(message.clientMessageId)}
                           >
-                            {reaction} {count.toLocaleString(i18n.language)}
-                          </Badge>
-                        </Tooltip>
-                      );
-                    })}
-                  </Group>
-                )}
-              </div>
+                            {t('message.retry')}
+                          </Button>
+                        )}
+                    </Group>
+                  )}
+                  {!message.deletedAt &&
+                    message.reactions &&
+                    message.reactions.length > 0 && (
+                      <Group gap={4} mt={4} wrap="wrap">
+                        {Object.entries(
+                          message.reactions.reduce(
+                            (acc, r) => {
+                              acc[r.reaction] = (acc[r.reaction] || 0) + 1;
+                              return acc;
+                            },
+                            {} as Record<string, number>,
+                          ),
+                        ).map(([reaction, count]) => {
+                          const reactors = message.reactions
+                            .filter((r) => r.reaction === reaction)
+                            .map((r) =>
+                              r.userId === currentUserId
+                                ? t('message.you')
+                                : r.userDisplayName,
+                            )
+                            .join(', ');
+                          const isCurrentUserReaction = message.reactions.some(
+                            (r) =>
+                              r.userId === currentUserId &&
+                              r.reaction === reaction,
+                          );
+                          return (
+                            <Tooltip
+                              key={reaction}
+                              label={reactors}
+                              position="top"
+                              withArrow
+                            >
+                              <UnstyledButton
+                                className={styles.reaction}
+                                aria-pressed={isCurrentUserReaction}
+                                aria-label={t('message.reactWith', {
+                                  emoji: reaction,
+                                })}
+                                onClick={() =>
+                                  handleToggleReaction(message.id, reaction)
+                                }
+                              >
+                                {reaction} {count.toLocaleString(i18n.language)}
+                              </UnstyledButton>
+                            </Tooltip>
+                          );
+                        })}
+                      </Group>
+                    )}
+                </div>
+              </React.Fragment>
             );
           })}
         </Stack>
@@ -187,6 +276,7 @@ const ChatMessageGroupThemedComponent: React.FC<
               {formatMessageTime(lastMessageInGroup?.sentAt)}
             </Text>
             {isCurrentUser &&
+              !lastMessageInGroup.deliveryState &&
               (() => {
                 const readers = (lastMessageInGroup.readBy || [])
                   .filter((r) => r.userId !== currentUserId)
@@ -207,61 +297,74 @@ const ChatMessageGroupThemedComponent: React.FC<
                       <FontAwesomeIcon
                         icon={isReadByOthers ? faCheckDouble : faCheck}
                         size="xs"
-                        color={isReadByOthers ? '#f5d86a' : '#d1d5db'}
+                        color={
+                          isReadByOthers
+                            ? 'var(--ot-heading)'
+                            : 'var(--ot-muted)'
+                        }
                       />
                     </span>
                   </Tooltip>
                 );
               })()}
           </Group>
-          <Group gap={2} align="center" className={styles.messageActions}>
-            <Tooltip label={t('message.reply')} position="top" withArrow>
-              <ActionIcon
-                size="xs"
-                variant="subtle"
-                onClick={() => setReplyingToMessage(lastMessageInGroup)}
-                aria-label={t('message.reply')}
-              >
-                <FontAwesomeIcon icon={faComment} />
-              </ActionIcon>
-            </Tooltip>
-            <Popover width={200} position="bottom-end" withArrow shadow="md">
-              <Popover.Target>
-                <ActionIcon
-                  size="xs"
-                  variant="subtle"
-                  aria-label={t('message.addReaction')}
+          {!lastMessageInGroup.deliveryState &&
+            !lastMessageInGroup.deletedAt && (
+              <Group gap={2} align="center" className={styles.messageActions}>
+                <Tooltip label={t('message.reply')} position="top" withArrow>
+                  <ActionIcon
+                    size="xs"
+                    variant="subtle"
+                    onClick={() => setReplyingToMessage(lastMessageInGroup)}
+                    aria-label={t('message.reply')}
+                  >
+                    <FontAwesomeIcon icon={faComment} />
+                  </ActionIcon>
+                </Tooltip>
+                <Popover
+                  width={200}
+                  position="bottom-end"
+                  withArrow
+                  shadow="md"
                 >
-                  <FontAwesomeIcon icon={faSmile} />
-                </ActionIcon>
-              </Popover.Target>
-              <Popover.Dropdown p="xs">
-                <SimpleGrid cols={6} spacing="xs">
-                  {['👍', '❤️', '😂', '😮', '😢', '😠'].map((emoji) => {
-                    const currentUserReaction =
-                      lastMessageInGroup.reactions?.find(
-                        (r) => r.userId === currentUserId,
-                      );
-                    const isSelected = currentUserReaction?.reaction === emoji;
-                    return (
-                      <ActionIcon
-                        key={emoji}
-                        variant={isSelected ? 'light' : 'subtle'}
-                        color={isSelected ? 'yellow' : 'gray'}
-                        aria-label={t('message.reactWith', { emoji })}
-                        aria-pressed={isSelected}
-                        onClick={() =>
-                          handleToggleReaction(lastMessageInGroup.id, emoji)
-                        }
-                      >
-                        <Text size="lg">{emoji}</Text>
-                      </ActionIcon>
-                    );
-                  })}
-                </SimpleGrid>
-              </Popover.Dropdown>
-            </Popover>
-          </Group>
+                  <Popover.Target>
+                    <ActionIcon
+                      size="xs"
+                      variant="subtle"
+                      aria-label={t('message.addReaction')}
+                    >
+                      <FontAwesomeIcon icon={faSmile} />
+                    </ActionIcon>
+                  </Popover.Target>
+                  <Popover.Dropdown p="xs">
+                    <SimpleGrid cols={6} spacing="xs">
+                      {['👍', '❤️', '😂', '😮', '😢', '😠'].map((emoji) => {
+                        const currentUserReaction =
+                          lastMessageInGroup.reactions?.find(
+                            (r) => r.userId === currentUserId,
+                          );
+                        const isSelected =
+                          currentUserReaction?.reaction === emoji;
+                        return (
+                          <ActionIcon
+                            key={emoji}
+                            variant={isSelected ? 'light' : 'subtle'}
+                            color={isSelected ? 'yellow' : 'gray'}
+                            aria-label={t('message.reactWith', { emoji })}
+                            aria-pressed={isSelected}
+                            onClick={() =>
+                              handleToggleReaction(lastMessageInGroup.id, emoji)
+                            }
+                          >
+                            <Text size="lg">{emoji}</Text>
+                          </ActionIcon>
+                        );
+                      })}
+                    </SimpleGrid>
+                  </Popover.Dropdown>
+                </Popover>
+              </Group>
+            )}
         </Group>
       </Paper>
       {isCurrentUser && (

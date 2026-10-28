@@ -69,6 +69,15 @@ export const DEFAULT_USER_SCALARS = {
   defense_pressure_date: null,
   spy_pressure_today: 0,
   spy_pressure_date: null,
+  // A fresh era starts a fresh kingdom: morale resets and no floor is set (#205).
+  kingdom_morale: 100,
+  desertion_floor: null,
+  // ...and the next era's daily morale pass is armed again.
+  kingdom_morale_day: null,
+  // The next era's dead start unrisen: the reanimation ledger resets too (#211).
+  reanimated_today: 0,
+  reanimation_day: null,
+  reanimation_cap: 0,
   wounded_units: [],
   fort_level: 1,
   fort_hitpoints: Fortifications[0].hitpoints,

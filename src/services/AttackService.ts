@@ -1,6 +1,14 @@
 import { randomUUID } from 'crypto';
 
 import { HouseUpgrades, UnitTypes } from '@/constants';
+import { hasFeature } from '@/constants/FeatureUnlocks';
+import {
+  applyMoraleDelta,
+  KINGDOM_MORALE_DEFAULT,
+  MORALE_DEFENSE_LOST,
+  MORALE_DEFENSE_WON,
+  repelledPressureRecovery,
+} from '@/constants/KingdomMorale';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { BattleUser } from '@/models/BattleUser';
@@ -21,10 +29,17 @@ import {
   applyProtectionContext,
   loadProtectionContext,
 } from '@/services/BattleProtection.service';
+import { CaptiveService } from '@/services/Captives.service';
 import { hasForbiddenForceTarget } from '@/services/ForceLifecycle.service';
 import { divertForcePillageInTx } from '@/services/ForcePillage.service';
-import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
+import { getBattleGameEventContext } from '@/services/GameEventRuntime.service';
+import {
+  reanimatedUnitsTotal,
+  type ReanimationBattleOutcome,
+  ReanimationService,
+} from '@/services/Reanimation.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
+import { getActiveAccountStatus } from '@/services/User.service';
 import { combatSnapshot } from '@/utils/adminCombat';
 import {
   calculateBattleExperience,
@@ -153,7 +168,8 @@ export const AttackService = {
       }
 
       const runtimeConfig = await getRuntimeConfig();
-      const eventModifiers = await getGameEventModifiers();
+      const { modifiers: eventModifiers, snapshot: gameEvents } =
+        await getBattleGameEventContext();
       if (!runtimeConfig.enableAttacking) {
         return {
           status: 'failed',
@@ -357,7 +373,11 @@ export const AttackService = {
               pressureDateKey === todayKey
                 ? DefensePlayer.defensePressureToday
                 : 0;
-            DefensePlayer.defensePressureToday = currentDefensePressure;
+            // Garrison fatigue reads this; with ENABLE_GARRISON_FATIGUE off the
+            // battle (and its replay) sees no pressure. Today's pressure is
+            // still recorded from currentDefensePressure below.
+            DefensePlayer.defensePressureToday =
+              runtimeConfig.enableGarrisonFatigue ? currentDefensePressure : 0;
             if (
               AttackPlayer.defensePressureDate &&
               getOTDayKey(new Date(AttackPlayer.defensePressureDate)) !==
@@ -381,6 +401,22 @@ export const AttackService = {
 
             const defenderGoldAtStart = BigInt(DefensePlayer.gold);
             const defenderProtected = DefensePlayer.isProtected();
+            // Why the defender was (or was not) protected, for diagnostics.
+            const defenderProtectionStatus =
+              DefensePlayer.getProtectionStatus();
+            const defenderProtection = defenderProtectionStatus
+              ? {
+                  protected: defenderProtectionStatus.protected,
+                  reason: defenderProtectionStatus.reason,
+                  endsAt:
+                    defenderProtectionStatus.endsAt?.toISOString() ?? null,
+                  level: defenderProtectionStatus.level,
+                  levelLimit: defenderProtectionStatus.levelLimit,
+                  population: defenderProtectionStatus.population,
+                  populationThreshold:
+                    defenderProtectionStatus.populationThreshold,
+                }
+              : null;
             const combatRandom = createCombatRandom('attack');
             const startOfAttack = {
               Attacker: captureCombatUser(AttackPlayer),
@@ -424,6 +460,8 @@ export const AttackService = {
                 0,
               );
 
+            // HP of units killed outright (losses after the wounded split), not
+            // the damage dealt; see stats.damage_audit for damage in/applied/capped.
             const attackerUnitDamageDealt = calculateHpDamageFromLosses(
               resolvedBattle.Losses.Defender,
             );
@@ -455,6 +493,78 @@ export const AttackService = {
             DefensePlayer.fortHitpoints = fortHpAtEnd;
 
             const isAttackerWinner = resolvedBattle.result === 'WIN';
+
+            // Kingdom morale (#205) exemptions are computed once, before the
+            // log is written, because the captive hook below needs the same
+            // verdict: protected new players and non-ACTIVE defenders
+            // (vacation etc.) never lose morale OR captives.
+            const defenderExemptFromMorale =
+              defenderProtected ||
+              (await getActiveAccountStatus(defenderId, tx)) !== null;
+
+            // Dungeon captives (#210): a won battle that breached the fort
+            // takes 10% of the defender's killed combat units captive when
+            // the attacker runs a dungeon. Capture never changes the battle's
+            // outcome or loot; units beyond the dungeon's capacity die as
+            // before. The attacker row is locked above, so the capacity read
+            // is authoritative. While the dungeon is hidden from players
+            // (SHOW_DUNGEON off) nothing is captured: those units simply die,
+            // exactly as they do for the defender either way.
+            let captivesTaken = 0;
+            if (
+              runtimeConfig.showDungeon &&
+              isAttackerWinner &&
+              fortHpAtEnd <= 0 &&
+              !defenderExemptFromMorale &&
+              hasFeature(
+                {
+                  economyLevel: attackerUser.economy_level ?? 0,
+                  fortLevel: attackerUser.fort_level ?? 0,
+                  race: attackerUser.race,
+                },
+                'DUNGEON',
+              )
+            ) {
+              captivesTaken = await CaptiveService.captureFromBattle(tx, {
+                captorId: attackerId,
+                sourceId: defenderId,
+                eraId: attackerUser.currentEraId,
+                captorFortLevel: attackerUser.fort_level ?? 0,
+                killedUnits: resolvedBattle.Losses.Defender.units,
+              });
+            }
+
+            // Undead reanimation (#211): every UNDEAD side with the feature
+            // raises a share of its own fallen and of the enemy's dead as
+            // level-1 units, capped per OT day at 2% of its trained combat
+            // army. The same exemptions the morale pass and the captives hook
+            // use skip it entirely: nothing happens against protected or
+            // non-ACTIVE defenders. The grants themselves are applied to the
+            // rosters AFTER updateUserUnits below, which rewrites every stack
+            // from the battle's survivors.
+            let reanimation: ReanimationBattleOutcome = {
+              attacker: [],
+              defender: [],
+            };
+            if (runtimeConfig.enableReanimation && !defenderExemptFromMorale) {
+              reanimation = await ReanimationService.reanimateFromBattle(tx, {
+                attacker: {
+                  userId: attackerId,
+                  fortLevel: attackerUser.fort_level ?? 0,
+                  economyLevel: attackerUser.economy_level ?? 0,
+                  race: attackerUser.race,
+                },
+                defender: {
+                  userId: defenderId,
+                  fortLevel: defenderUser.fort_level ?? 0,
+                  economyLevel: defenderUser.economy_level ?? 0,
+                  race: defenderUser.race,
+                },
+                attackerKilledUnits: resolvedBattle.Losses.Attacker.units,
+                defenderKilledUnits: resolvedBattle.Losses.Defender.units,
+                captivesTaken,
+              });
+            }
 
             resolvedBattle.experienceGained.attacker = Math.min(
               2147483647 - AttackPlayer.experience,
@@ -527,6 +637,7 @@ export const AttackService = {
                 attacker_losses_total: attackerLossesTotal,
                 defender_losses_total: defenderLossesTotal,
                 stats: {
+                  gameEvents,
                   adminSnapshots: {
                     version: 1,
                     before: {
@@ -623,6 +734,9 @@ export const AttackService = {
                   mitigation_log: JSON.stringify(
                     (resolvedBattle as any).mitigationLog ?? [],
                   ),
+                  damage_audit: JSON.stringify(
+                    (resolvedBattle as any).damageAudit ?? null,
+                  ),
                   mitigation_summary: JSON.stringify(
                     (resolvedBattle as any).casualtySummary?.mitigation ?? null,
                   ),
@@ -637,6 +751,21 @@ export const AttackService = {
                   fort_breached: !!((resolvedBattle as any).finalFortHP <= 0),
                   defender_fort_level: DefensePlayer.fortLevel,
                   defender_protected: defenderProtected,
+                  defender_protection: defenderProtection,
+                  // Garrison fatigue applied to the defender's power (#204),
+                  // as a whole percent, for "Garrison fatigue: -X%" display.
+                  defender_fatigue_percent:
+                    resolvedBattle.defenderFatiguePercent,
+                  // Dungeon captives taken by the attacker (#210), for the
+                  // "Captives taken: N" report line on both sides.
+                  captives_taken: captivesTaken,
+                  // Undead reanimation (#211): how many fallen rose for each
+                  // side. The report redaction shows each side only its own
+                  // count, so the opponent never learns it.
+                  reanimated_units: {
+                    attacker: reanimatedUnitsTotal(reanimation.attacker),
+                    defender: reanimatedUnitsTotal(reanimation.defender),
+                  },
                 },
                 // Connect to users via relation fields
                 attackerPlayer: { connect: { id: attackerId } },
@@ -741,6 +870,50 @@ export const AttackService = {
               tx,
             );
 
+            // Undead reanimation (#211): the risen dead join the rosters only
+            // now — updateUserUnits above rewrites every stack from the
+            // battle's in-memory survivors and deletes stacks outside that
+            // roster, so an earlier write would be lost. Same transaction, so
+            // the grants can never be half-applied.
+            await ReanimationService.applyReanimatedUnits(
+              tx,
+              attackerId,
+              reanimation.attacker,
+            );
+            await ReanimationService.applyReanimatedUnits(
+              tx,
+              defenderId,
+              reanimation.defender,
+            );
+
+            // Undead reanimation (#211): the cached army stats below must
+            // reflect the persisted roster, but the in-memory survivors do
+            // not include the level-1 stacks the grants just wrote. A side
+            // that received units re-reads its locked row here (the roster
+            // writes above are already visible in this transaction) and
+            // recomputes its stats from that roster — the same
+            // getDetailedArmyStat calculation the survivors path uses; a
+            // side without grants keeps its survivors' stats.
+            const statSourceAfterGrants = async (
+              userId: number,
+              grants: ReanimationBattleOutcome['attacker'],
+              fallback: BattleUser,
+            ): Promise<BattleUser> => {
+              if (reanimatedUnitsTotal(grants) <= 0) return fallback;
+              const freshUser = await getUserById(userId, tx);
+              return freshUser ? new BattleUser(freshUser) : fallback;
+            };
+            const attackerStatSource = await statSourceAfterGrants(
+              attackerId,
+              reanimation.attacker,
+              AttackPlayer,
+            );
+            const defenderStatSource = await statSourceAfterGrants(
+              defenderId,
+              reanimation.defender,
+              DefensePlayer,
+            );
+
             // Increment stats for both users
             await incrementUserStats(
               attackerId,
@@ -761,16 +934,22 @@ export const AttackService = {
             );
 
             // Use the new public method to get detailed stats with totalStats property
-            const newAttOffense = AttackPlayer.getDetailedArmyStat('OFFENSE');
-            const newAttDefense = AttackPlayer.getDetailedArmyStat('DEFENSE');
-            const newAttSpying = AttackPlayer.getDetailedArmyStat('SPY');
-            const newAttSentry = AttackPlayer.getDetailedArmyStat('SENTRY');
+            const newAttOffense =
+              attackerStatSource.getDetailedArmyStat('OFFENSE');
+            const newAttDefense =
+              attackerStatSource.getDetailedArmyStat('DEFENSE');
+            const newAttSpying = attackerStatSource.getDetailedArmyStat('SPY');
+            const newAttSentry =
+              attackerStatSource.getDetailedArmyStat('SENTRY');
 
             // Use the new public method to get detailed stats with totalStats property
-            const newDefOffense = DefensePlayer.getDetailedArmyStat('OFFENSE');
-            const newDefDefense = DefensePlayer.getDetailedArmyStat('DEFENSE');
-            const newDefSpying = DefensePlayer.getDetailedArmyStat('SPY');
-            const newDefSentry = DefensePlayer.getDetailedArmyStat('SENTRY');
+            const newDefOffense =
+              defenderStatSource.getDetailedArmyStat('OFFENSE');
+            const newDefDefense =
+              defenderStatSource.getDetailedArmyStat('DEFENSE');
+            const newDefSpying = defenderStatSource.getDetailedArmyStat('SPY');
+            const newDefSentry =
+              defenderStatSource.getDetailedArmyStat('SENTRY');
 
             // An attacker with an open alliance loan sends a share of the
             // pillage to the treasury; the attacker row is locked above.
@@ -792,6 +971,18 @@ export const AttackService = {
               tx,
             );
 
+            // Kingdom morale (#205): defenses harden morale when they hold and
+            // crack when they fall. Protected new players and non-ACTIVE
+            // defenders (vacation etc.) are exempt — the same rule the daily
+            // morale pass applies — so battle never moves their morale. The
+            // defender row is locked above, so this write is authoritative
+            // inside the same battle transaction. (defenderExemptFromMorale
+            // was computed before the attack log was written, above.)
+            const defenderMoraleAfter = applyMoraleDelta(
+              Number(defenderUser.kingdom_morale ?? KINGDOM_MORALE_DEFAULT),
+              isAttackerWinner ? MORALE_DEFENSE_LOST : MORALE_DEFENSE_WON,
+            );
+
             await updateUser(
               defenderId,
               {
@@ -802,7 +993,21 @@ export const AttackService = {
                 defense: newDefDefense.totalStats.MeleeDefPower,
                 spy: newDefSpying.totalStats.MeleeAtkPower,
                 sentry: newDefSentry.totalStats.MeleeDefPower,
-                defense_pressure_today: currentDefensePressure + committedTurns,
+                // Exempt defenders keep their morale; the delta is skipped
+                // both when the wall holds (+2) and when it falls (-3).
+                ...(defenderExemptFromMorale
+                  ? {}
+                  : { kingdom_morale: defenderMoraleAfter }),
+                // Garrison fatigue (#204): pressure accrues per turn defended,
+                // but a repelled attack refunds only half its turns (it nets
+                // +ceil(turns/2)), so it never erases the pressure earlier
+                // attackers built up today.
+                defense_pressure_today: isAttackerWinner
+                  ? currentDefensePressure + committedTurns
+                  : repelledPressureRecovery(
+                      currentDefensePressure,
+                      committedTurns,
+                    ),
                 defense_pressure_date: new Date(),
               } satisfies Prisma.usersUpdateInput,
               tx,

@@ -41,6 +41,8 @@ export interface FullUserData {
   bio: string | null;
   colorScheme: string | null;
   economy_level: number;
+  /** Kingdom morale, 0-100 (#205). */
+  kingdom_morale: number;
   avatar: string | null;
   locale: Locales;
   stats: any;
@@ -274,6 +276,7 @@ export class UserDataService {
       bio: user.bio,
       colorScheme: user.colorScheme,
       economy_level: user.economy_level,
+      kingdom_morale: user.kingdom_morale,
       avatar: user.avatar,
       locale: user.locale as Locales,
       stats:

@@ -23,7 +23,11 @@ const AssassinateResult = ({ battle, viewerID, lastGenerated = undefined }) => {
   const target = t(
     TARGET_KEYS[spy.unit ?? spy.targetUnit] ?? 'spyReport.targets.units',
   );
-  const view = isViewerDefender ? 'defender' : 'attacker';
+  const view = isViewerDefender
+    ? 'defender'
+    : viewerID === attackerPlayer?.id
+      ? 'attacker'
+      : 'shared';
 
   const lines = [
     t(`spyReport.assassination.${view}.sent`, {

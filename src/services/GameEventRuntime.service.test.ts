@@ -227,3 +227,31 @@ describe('game event validation', () => {
     ).toBe(false);
   });
 });
+
+describe('battle game event snapshot', () => {
+  it('captures names and combined modifiers from the same event read', async () => {
+    invalidateGameEventModifiers();
+    mockPrisma.gameEvent = {
+      findMany: vi
+        .fn()
+        .mockResolvedValue([
+          row({ xpMultiplier: 2 }, { id: 25, name: 'Double XP' }),
+          row({ xpMultiplier: 3 }, { id: 26, name: 'XP boost' }),
+        ]),
+    };
+    const { getBattleGameEventContext } =
+      await import('@/services/GameEventRuntime.service');
+    const { modifiers, snapshot } = await getBattleGameEventContext();
+    expect(modifiers.xpMultiplier).toBe(6);
+    expect(snapshot.appliedXpMultiplier).toBe(6);
+    expect(snapshot.events.map((event) => event.name)).toEqual([
+      'Double XP',
+      'XP boost',
+    ]);
+    expect(mockPrisma.gameEvent.findMany).toHaveBeenCalledTimes(1);
+    invalidateGameEventModifiers();
+    mockPrisma.gameEvent.findMany.mockResolvedValue([]);
+    await getBattleGameEventContext();
+    expect(snapshot.events[0].effects.xpMultiplier).toBe(2);
+  });
+});

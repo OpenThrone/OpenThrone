@@ -28,6 +28,19 @@ export interface RuntimeConfig {
   /** Players may message each other; when off only admins and moderators can. */
   enableMessaging: boolean;
   enableEnemies: boolean;
+  /** Low morale makes citizens, troops and mercenaries desert (daily pass). */
+  enableDesertion: boolean;
+  /** Undead raise units from battles. */
+  enableReanimation: boolean;
+  /** Repeated attacks in a day weaken the defender (down to 85% power). */
+  enableGarrisonFatigue: boolean;
+  /** Players see the kingdom morale meter and desertion log on the overview. */
+  showKingdomMorale: boolean;
+  /**
+   * Players see the dungeon (captives and ransoms) panel on the overview, and
+   * battles take captives. Off: captured units are killed instead.
+   */
+  showDungeon: boolean;
   disableLogin: boolean;
   disableRegistration: boolean;
   maintenance: { enabled: boolean; message: string };
@@ -125,6 +138,11 @@ export async function getRuntimeConfig(
         enableSocial: values.ENABLE_SOCIAL as boolean,
         enableMessaging: values.ENABLE_MESSAGING as boolean,
         enableEnemies: values.ENABLE_ENEMIES as boolean,
+        enableDesertion: values.ENABLE_DESERTION as boolean,
+        enableReanimation: values.ENABLE_REANIMATION as boolean,
+        enableGarrisonFatigue: values.ENABLE_GARRISON_FATIGUE as boolean,
+        showKingdomMorale: values.SHOW_KINGDOM_MORALE as boolean,
+        showDungeon: values.SHOW_DUNGEON as boolean,
         disableLogin: values.DISABLE_LOGIN as boolean,
         disableRegistration: values.DISABLE_REGISTRATION as boolean,
         maintenance: values.MAINTENANCE_MODE as RuntimeConfig['maintenance'],

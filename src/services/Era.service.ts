@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
+import { CaptiveService } from '@/services/Captives.service';
 import {
   ERA_TRANSACTION_OPTIONS,
   lockEraLifecycle,
@@ -295,6 +296,9 @@ export const startNewEra = async (
         lastHealedAt: new Date(),
       },
     });
+    // Dungeon captives (#210) are all freed without returning: the reset
+    // wipes every army anyway. The captive event ledger stays as history.
+    await CaptiveService.clearCaptivesForEra(tx);
     await tx.forceEvent.updateMany({
       where: { action: 'PILLAGE_PENDING' },
       data: { action: 'PILLAGE_CANCELLED' },

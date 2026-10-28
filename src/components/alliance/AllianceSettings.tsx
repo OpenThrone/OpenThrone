@@ -20,6 +20,7 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import useSWR from 'swr';
 
+import { AllianceArtworkEditor } from '@/components/alliance/AllianceArtworkEditor';
 import { AllianceInvitePanel } from '@/components/alliance/AllianceInvites';
 import { classLabel, raceLabel } from '@/components/alliance/allianceLabels';
 import { allianceRequest } from '@/components/alliance/allianceStanding';
@@ -96,7 +97,6 @@ export const AllianceSettings = ({
     initialValues: {
       motto: alliance.motto || '',
       comments: alliance.comments || '',
-      avatar: alliance.avatar || '',
       // Map enum values carefully. If backend gave string, it works.
       join_mode: (alliance as any).join_mode || 'OPEN',
       roster_visibility: (alliance as any).roster_visibility || 'PUBLIC',
@@ -241,6 +241,36 @@ export const AllianceSettings = ({
             </Table.ScrollContainer>
           )}
         </GameCard>
+      )}
+
+      {canEdit && (
+        <AllianceArtworkEditor
+          avatar={alliance.avatar}
+          bannerimg={alliance.bannerimg}
+          onSave={async (changes) => {
+            const data = new FormData();
+            if (changes.avatarFraming)
+              data.append(
+                'avatarFraming',
+                JSON.stringify(changes.avatarFraming),
+              );
+            if (changes.bannerFraming)
+              data.append(
+                'bannerFraming',
+                JSON.stringify(changes.bannerFraming),
+              );
+            if (changes.avatar) data.append('avatar', changes.avatar);
+            if (changes.bannerimg) data.append('bannerimg', changes.bannerimg);
+            if (changes.removeAvatar) data.append('removeAvatar', 'true');
+            if (changes.removeBanner) data.append('removeBanner', 'true');
+            const response = await fetch(
+              `/api/alliances/${alliance.id}/artwork`,
+              { method: 'POST', body: data },
+            );
+            if (!response.ok) throw new Error('Artwork update failed');
+            await onUpdate?.();
+          }}
+        />
       )}
 
       {/* General Settings Section */}

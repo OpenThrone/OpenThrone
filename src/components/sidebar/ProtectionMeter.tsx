@@ -31,7 +31,12 @@ export const ProtectionMeter = React.memo(function ProtectionMeter({
   const percent = Math.round(progress.share * 100);
 
   return (
-    <Stack gap={4} role="group" aria-label={t('sidebar.protection.label')}>
+    <Stack
+      gap={4}
+      role="group"
+      aria-label={t('sidebar.protection.label')}
+      data-tour-id="protection"
+    >
       <Text size="xs" fw={600} lh={1.3}>
         {headline}
       </Text>

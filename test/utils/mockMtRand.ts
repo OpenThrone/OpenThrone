@@ -8,9 +8,14 @@ export const mtRandImpl = {
 export function installMockMtRand(vi: any) {
   // Provide both a named export `mtRand` and a default export so tests that import
   // either form continue to work when the module is mocked.
+  // Callers that pass their own seeded `random` (combat replays) keep it: a
+  // leaked mock must never swap a seeded stream for Math.random, or two
+  // replays of the same battle diverge.
+  const mocked = (min = 0, max = 1, random?: () => number) =>
+    random ? min + random() * (max - min) : mtRandImpl.fn(min, max);
   vi.mock('@/utils/mtrand', () => ({
-    mtRand: (...args: any[]) => mtRandImpl.fn(...args),
-    default: (...args: any[]) => mtRandImpl.fn(...args),
+    mtRand: mocked,
+    default: mocked,
   }));
 }
 

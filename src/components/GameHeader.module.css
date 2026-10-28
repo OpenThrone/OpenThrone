@@ -6,6 +6,85 @@
 }
 
 .wall { object-fit: cover; object-position: center; z-index: -1; }
+
+/* Animated wall over the still; it fades in once playback starts. */
+.loop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+.loop[data-playing] { opacity: 1; }
+
+/* Fort-damage atmosphere over the wall: fire glow (tier 1+) and embers (tier 2+). */
+.fx {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  -webkit-mask-image: linear-gradient(to top, #000 35%, transparent 95%);
+  mask-image: linear-gradient(to top, #000 35%, transparent 95%);
+  --fx-glow: 0.18;
+  --fx-embers: 0;
+}
+[data-fort-damage='2'] .fx { --fx-glow: 0.34; --fx-embers: 0.55; }
+[data-fort-damage='3'] .fx { --fx-glow: 0.55; --fx-embers: 1; }
+
+.glow {
+  position: absolute;
+  inset: 30% -10% -20%;
+  background:
+    radial-gradient(40% 60% at 22% 100%, rgba(255, 120, 30, 0.9), transparent 70%),
+    radial-gradient(45% 70% at 78% 100%, rgba(255, 80, 20, 0.8), transparent 70%);
+  opacity: var(--fx-glow);
+  animation: fx-flicker 3.2s ease-in-out infinite alternate;
+}
+
+/* Tiled spark field taller than the header; translating one tile loops seamlessly. */
+.embers {
+  position: absolute;
+  inset: 0 0 -160px;
+  background-image:
+    radial-gradient(1.5px 1.5px at 18px 140px, #ffd27a, transparent),
+    radial-gradient(1px 1px at 71px 96px, #ffb347, transparent),
+    radial-gradient(2px 2px at 133px 38px, #ff9a3c, transparent),
+    radial-gradient(1px 1px at 196px 122px, #ffe2a0, transparent),
+    radial-gradient(1.5px 1.5px at 248px 64px, #ff8a2a, transparent);
+  background-size: 280px 160px;
+  opacity: var(--fx-embers);
+  animation: fx-rise 7s linear infinite;
+  will-change: transform;
+}
+.embersFar {
+  background-size: 200px 160px;
+  background-position: 90px 0;
+  opacity: calc(var(--fx-embers) * 0.6);
+  animation-duration: 11s;
+  filter: blur(0.5px);
+}
+
+@keyframes fx-flicker {
+  0% { opacity: var(--fx-glow); }
+  35% { opacity: calc(var(--fx-glow) * 0.75); }
+  60% { opacity: calc(var(--fx-glow) * 1.1); }
+  100% { opacity: calc(var(--fx-glow) * 0.85); }
+}
+@keyframes fx-rise {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(12px, -160px, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow, .embers { animation: none; }
+}
 .wordmark {
   margin: 0;
   color: var(--ot-heading);

@@ -187,6 +187,7 @@ enum CheatSignalType {
   LINKED_ACCOUNT_ACTIVITY
   CHAT_SPAM
   ALLIANCE_BANK_ABUSE
+  DEFECTOR_FARMING
 }
 
 enum AllianceJoinMode {
@@ -275,6 +276,18 @@ model users {
   defense_pressure_date                 DateTime?                @db.Timestamptz(3)
   spy_pressure_today                    Int                      @default(0)
   spy_pressure_date                     DateTime?                @db.Timestamptz(3)
+  /// Kingdom morale 0-100 (#205): drives citizen departure, desertion and defection.
+  kingdom_morale                        Int                      @default(100)
+  /// Trained-army size recorded the first time morale dropped below the desertion threshold this era; cleared only on era reset.
+  desertion_floor                       Int?
+  /// OT day key (YYYY-MM-DD) the daily morale pass last applied for; guards one application per player per OT day.
+  kingdom_morale_day                    String?
+  /// Undead reanimation (#211): units that rose again this OT day, across all battles.
+  reanimated_today                      Int                      @default(0)
+  /// OT day key (YYYY-MM-DD) the reanimation ledger was last reset for; guards the daily cap like kingdom_morale_day guards the morale pass.
+  reanimation_day                       String?
+  /// The day's cap: 2% of the trained combat army measured at the first battle of the OT day.
+  reanimation_cap                       Int                      @default(0)
   wounded_units                         Json                     @default("[]")
   last_active                           DateTime?                @db.Timestamptz(3)
   last_gameplay_at                      DateTime?                @db.Timestamptz(3)
@@ -335,6 +348,8 @@ model users {
   event_citizens_received               Int                      @default(0)
   protection_forfeited_era_id           Int?
   achievements                          Json?                    @default("{}")
+  /// New-player tutorial progress ({@link TutorialState}); account-wide so clearing browser data cannot replay it. Null until the player first answers the offer.
+  tutorial_state                        Json?
   currentEra                            Era?                     @relation("CurrentUserEra", fields: [currentEraId], references: [id])
 
   // New relations to structured data
@@ -408,6 +423,16 @@ model users {
   battle_upgrades    Json? // Don't delete yet
   structure_upgrades Json? // Don't delete yet
   bonus_points       Json? // Don't delete yet
+
+  // Kingdom morale (#205)
+  desertionEvents       DesertionEvent[] @relation("DesertionEvents")
+  desertionsReceived    DesertionEvent[] @relation("DesertionDefections")
+
+  // Dungeon captives (#210)
+  captivesHeld          Captive[]       @relation("CaptivesHeld")
+  captivesLost          Captive[]       @relation("CaptivesLost")
+  captiveEventsAsCaptor CaptiveEvent[]  @relation("CaptorCaptiveEvents")
+  captiveEventsAsSource CaptiveEvent[]  @relation("SourceCaptiveEvents")
 
   // Bot user system fields (see .sisyphus/plans/bot-users-system.md)
   // isBot is non-null with default false so scheduler queries can use WHERE isBot = true efficiently.
@@ -596,6 +621,7 @@ model advisor_messages {
 model attack_log_acl {
   id                      Int        @id @default(autoincrement())
   attack_log_id           Int
+  is_public               Boolean    @default(false)
   shared_with_user_id     Int?
   shared_with_alliance_id Int?
   attack_log              attack_log @relation(fields: [attack_log_id], references: [id])
@@ -789,7 +815,9 @@ model ChatMessage {
   id                Int      @id @default(autoincrement())
   roomId            Int // ChatRoom ID
   senderId          Int // User who sent the message
-  content           String // Message content
+  content           String // Plain text for notifications and search
+  richContent       Json? // Versioned, validated rich message document
+  clientMessageId   String? @db.VarChar(64) // Stable across send retries
   sentAt            DateTime @default(now())
   messageType       String   @default("TEXT") // Added: e.g., TEXT, ATTACK_LOG_SHARE
   replyToMessageId  Int? // Added for replies
@@ -812,7 +840,9 @@ model ChatMessage {
   readBy    ChatMessageReadStatus[] // Added for read receipts
   reports   Report[]
 
+  @@unique([roomId, senderId, clientMessageId])
   @@index([roomId, sentAt])
+  @@index([roomId, id])
   @@index([replyToMessageId]) // Added index
   @@index([sharedAttackLogId]) // Added index
 }
@@ -985,6 +1015,81 @@ enum UnitType {
   DEFENSE
   SPY
   SENTRY
+}
+
+// Kingdom morale desertion ledger (#205). One row per unit row that left a
+// kingdom on a given day; defectors also point at the player who received them.
+enum DesertionEventKind {
+  ABANDON
+  DEFECT
+  CITIZENS
+  MERCENARY
+}
+
+model DesertionEvent {
+  id              Int                @id @default(autoincrement())
+  userId          Int
+  eraId           Int?
+  kind            DesertionEventKind
+  unitType        UnitType
+  unitLevel       Int
+  quantity        Int
+  defectedToUserId Int?
+  createdAt       DateTime           @default(now()) @db.Timestamptz(3)
+  user            users              @relation("DesertionEvents", fields: [userId], references: [id], onDelete: Cascade)
+  defectedTo      users?             @relation("DesertionDefections", fields: [defectedToUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([defectedToUserId, createdAt])
+}
+
+// Dungeon captives (#210, #205 phase 4). One row per unit row taken captive
+// in a battle; ransom, release, conversion and escape all consume whole rows.
+model Captive {
+  id         Int      @id @default(autoincrement())
+  captorId   Int
+  sourceId   Int
+  unitType   UnitType
+  unitLevel  Int
+  quantity   Int
+  capturedAt DateTime @db.Timestamptz(3)
+  eraId      Int?
+  captor     users    @relation("CaptivesHeld", fields: [captorId], references: [id], onDelete: Cascade)
+  source     users    @relation("CaptivesLost", fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([captorId, eraId])
+  @@index([sourceId, eraId])
+  @@index([capturedAt])
+}
+
+// Captive ledger (#210): captures, ransoms, releases, conversions and escapes.
+// Ransom/release/convert rows carry the caller's operationId for idempotency.
+enum CaptiveEventKind {
+  CAPTURED
+  RANSOMED
+  RELEASED
+  CONVERTED
+  ESCAPED
+}
+
+model CaptiveEvent {
+  id           Int             @id @default(autoincrement())
+  captorId     Int
+  sourceId     Int?
+  eraId        Int?
+  kind         CaptiveEventKind
+  unitType     UnitType
+  unitLevel    Int
+  quantity     Int
+  gold         BigInt          @default(0)
+  operationKey String?         @unique
+  details      Json?
+  createdAt    DateTime        @default(now()) @db.Timestamptz(3)
+  captor       users           @relation("CaptorCaptiveEvents", fields: [captorId], references: [id], onDelete: Cascade)
+  source       users?          @relation("SourceCaptiveEvents", fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@index([captorId, createdAt])
+  @@index([sourceId, createdAt])
 }
 
 // ---------------------------

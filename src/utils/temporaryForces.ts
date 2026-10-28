@@ -1,11 +1,16 @@
 import { z } from 'zod';
 
+import type { FeatureKey } from '@/constants/FeatureUnlocks';
 import { ItemTypes } from '@/constants/Items';
 import { UnitTypes } from '@/constants/Units';
 
 export const FORCE_DAY_MS = 86_400_000;
 export const MAX_FORCE_QUANTITY = 1_000_000;
 export const MAX_FORCE_TERM_DAYS = 30;
+/** Surviving mercenaries per role, including wounded troops. */
+export const MERCENARY_ROLE_CAP = 100;
+/** Total surviving mercenaries as a share of the player's own trained army. */
+export const MERCENARY_ARMY_SHARE_PERCENT = 50;
 // Matches the existing alliance war-tax ceiling. Values remain balance-tunable.
 export const MAX_FORCE_PILLAGE_BPS = 2_500;
 
@@ -77,6 +82,25 @@ export const assertForceTierUnlocked = (
     fortLevel < (unit.fortLevel ?? 1)
   )
     throw new Error('Unit tier is not unlocked');
+};
+
+/** The economy feature a mercenary tier needs beyond the hall itself. */
+export const mercenaryTierFeatureKey = (level: number): FeatureKey => {
+  const keys = {
+    1: 'MERCENARY_HALL',
+    2: 'MERCENARY_COMPANIES',
+    3: 'MERCENARY_ELITE',
+  } as const;
+  const key = keys[level as 1 | 2 | 3];
+  if (!key) throw new Error('Invalid mercenary tier');
+  return key;
+};
+
+/** Maximum surviving mercenaries for a player's own trained army size. */
+export const mercenaryShareCap = (trainedUnits: number): number => {
+  if (!Number.isSafeInteger(trainedUnits) || trainedUnits < 0)
+    throw new Error('Invalid trained army size');
+  return Math.floor((trainedUnits * MERCENARY_ARMY_SHARE_PERCENT) / 100);
 };
 
 export const ForcePolicySchema = z

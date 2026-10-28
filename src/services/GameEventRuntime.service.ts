@@ -118,3 +118,31 @@ export async function getGameEventModifiers(
     })),
   );
 }
+
+/** Capture the same event set used to calculate a battle's modifiers. */
+export async function getBattleGameEventContext(
+  db?: Pick<Prisma.TransactionClient, 'gameEvent'>,
+) {
+  const events = await getRunningGameEvents(db);
+  const modifiers = combineEventEffects(
+    events.map((event) => ({
+      config: event.effects,
+      eraBound: event.eraBound,
+    })),
+  );
+  return {
+    modifiers,
+    snapshot: {
+      version: 1 as const,
+      capturedAt: new Date().toISOString(),
+      events: events.map((event) => ({
+        id: event.id,
+        name: event.name,
+        startsAt: event.startsAt.toISOString(),
+        endsAt: event.endsAt?.toISOString() ?? null,
+        effects: event.effects,
+      })),
+      appliedXpMultiplier: modifiers.xpMultiplier,
+    },
+  };
+}

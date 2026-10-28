@@ -1,6 +1,8 @@
+import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { withLockedChatRoom } from '@/services/chatRoomGuards';
+import { readBattleGameEvents } from '@/utils/battleGameEvents';
 import { projectDefenseAdvisoryFacts } from '@/utils/defenseAdvisory';
 import { getLevelFromXP } from '@/utils/utilities';
 
@@ -9,8 +11,8 @@ import { getLevelFromXP } from '@/utils/utilities';
  *
  * Read access: the attacker, the defender, a user the log was shared with, or a
  * current member of an alliance the log was shared with. Nobody else (staff
- * included). Anyone who may read a log may share it on to a chat room they
- * currently belong to.
+ * included). Only battle participants may grant or revoke access. Public shares
+ * also allow anonymous readers, using the same shared-view redaction.
  *
  * Redaction is allowlist-based: every field returned is picked explicitly.
  */
@@ -19,6 +21,7 @@ export type AttackLogViewerRole = 'attacker' | 'defender' | 'shared';
 
 /** Describes one ACL row as needed for read checks. */
 export interface AttackLogAclEntry {
+  is_public?: boolean;
   shared_with_user_id: number | null;
   shared_with_alliance_id: number | null;
 }
@@ -34,6 +37,7 @@ export interface AttackLogAccessSubject {
 
 /** Prisma select for the ACL fields used by read checks. */
 export const ATTACK_LOG_ACL_SELECT = {
+  is_public: true,
   shared_with_user_id: true,
   shared_with_alliance_id: true,
 } as const;
@@ -62,7 +66,7 @@ export async function getAttackLogViewerRole(
   client: Prisma.TransactionClient = prisma,
   currentAllianceIds?: number[],
 ): Promise<AttackLogViewerRole | null> {
-  if (!log || !isPositiveId(userId)) return null;
+  if (!log) return null;
   if (log.attacker_id === userId) return 'attacker';
   if (log.defender_id === userId) return 'defender';
 
@@ -72,6 +76,9 @@ export async function getAttackLogViewerRole(
       where: { attack_log_id: log.id },
       select: ATTACK_LOG_ACL_SELECT,
     }));
+
+  if (acl.some((entry) => entry.is_public)) return 'shared';
+  if (!isPositiveId(userId)) return null;
 
   if (acl.some((entry) => entry.shared_with_user_id === userId)) {
     return 'shared';
@@ -166,8 +173,8 @@ export async function getRoomShareRecipientIds(
 }
 
 /**
- * Grants per-user read access to the other current members of a room. The caller
- * must already have verified that the sharer can read the log.
+ * Grants access to a participant’s room: individual grants for ordinary rooms,
+ * membership-bound grants for alliance rooms. Participation is checked again.
  */
 export async function grantAttackLogAccessToRoom(
   attackLogId: number,
@@ -180,7 +187,54 @@ export async function grantAttackLogAccessToRoom(
       grantAttackLogAccessToRoom(attackLogId, sharerId, roomId, tx),
     );
   }
+  await client.$queryRaw`SELECT id FROM attack_log WHERE id = ${attackLogId} FOR UPDATE`;
+  const log = await client.attack_log.findUnique({
+    where: { id: attackLogId },
+    select: { attacker_id: true, defender_id: true },
+  });
+  if (!log || (log.attacker_id !== sharerId && log.defender_id !== sharerId)) {
+    throw new Error('Only battle participants may share this report');
+  }
   const recipientIds = await getRoomShareRecipientIds(sharerId, roomId, client);
+  const room = await client.chatRoom.findUnique({
+    where: { id: roomId },
+    select: { allianceId: true },
+  });
+  // An alliance room grants membership-bound access, never permanent user ACLs.
+  if (room?.allianceId) {
+    const membership = await client.alliance_memberships.findUnique({
+      where: {
+        unique_alliance_user: {
+          alliance_id: room.allianceId,
+          user_id: sharerId,
+        },
+      },
+      include: { role: true, alliance: { select: { leader_id: true } } },
+    });
+    if (
+      !membership ||
+      !hasAlliancePermission(
+        membership.alliance.leader_id,
+        sharerId,
+        membership.role,
+        'share_reports',
+      )
+    ) {
+      throw new Error(
+        'You do not have permission to share reports with the alliance',
+      );
+    }
+    await client.attack_log_acl.createMany({
+      data: [
+        {
+          attack_log_id: attackLogId,
+          shared_with_alliance_id: room.allianceId,
+        },
+      ],
+      skipDuplicates: true,
+    });
+    return { newUserIds: [], existingUserIds: [] };
+  }
   if (recipientIds.length === 0) {
     return { newUserIds: [], existingUserIds: [] };
   }
@@ -203,6 +257,7 @@ export async function grantAttackLogAccessToRoom(
         attack_log_id: attackLogId,
         shared_with_user_id: userId,
       })),
+      skipDuplicates: true,
     });
   }
 
@@ -460,6 +515,10 @@ export function redactBattleStatsForViewer(
     }),
     pillagedGold: toAmount(stats.pillagedGold),
     fortDamage: Math.max(0, fortStart - fortEnd),
+    // Garrison fatigue (#204) is shown to both sides; legacy rows have none.
+    defender_fatigue_percent: toNumber(stats.defender_fatigue_percent),
+    // Dungeon captives taken by the attacker (#210); legacy rows have none.
+    captives_taken: toNumber(stats.captives_taken),
     attacker_losses: pickLosses(stats.attacker_losses, role === 'attacker'),
     defender_losses: pickLosses(stats.defender_losses, role === 'defender'),
     combat_summary: {
@@ -505,6 +564,9 @@ export function redactBattleStatsForViewer(
       turns: nonnegative(stats.turns),
     };
     out.turns = toNumber(stats.turns);
+    // Undead reanimation (#211): only the Undead player's own risen count;
+    // the opponent and shared viewers never learn how many rose.
+    out.reanimated_units = toNumber(asRecord(stats.reanimated_units).attacker);
     if (stats.netPillageGold !== undefined) {
       out.netPillageGold = toAmount(stats.netPillageGold);
       out.forcePillageContribution = toAmount(stats.forcePillageContribution);
@@ -515,6 +577,8 @@ export function redactBattleStatsForViewer(
     out.defense_advisory = projectDefenseAdvisoryFacts(stats);
     out.forthpAtStart = fortStart;
     out.forthpAtEnd = fortEnd;
+    // Undead reanimation (#211): the defender's own risen count only.
+    out.reanimated_units = toNumber(asRecord(stats.reanimated_units).defender);
   }
   return out;
 }
@@ -573,10 +637,14 @@ export function redactAttackLogForViewer(
     defender_id: log.defender_id,
     attackerPlayer: pickPlayer(log.attackerPlayer),
     defenderPlayer: pickPlayer(log.defenderPlayer),
-    stats:
-      type === 'attack'
+    stats: {
+      ...(type === 'attack'
         ? redactBattleStatsForViewer(stats, role)
-        : { spyResults: redactSpyResultsForViewer(stats.spyResults, role) },
+        : { spyResults: redactSpyResultsForViewer(stats.spyResults, role) }),
+      ...(readBattleGameEvents(stats.gameEvents)
+        ? { gameEvents: readBattleGameEvents(stats.gameEvents) }
+        : {}),
+    },
   };
 }
 

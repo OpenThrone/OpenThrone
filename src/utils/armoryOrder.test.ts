@@ -3,6 +3,8 @@ import { describe, expect, it } from 'bun:test';
 import type { ArmoryItem } from '@/utils/armoryOrder';
 import {
   armoryOrderCost,
+  armorySlotReadiness,
+  armoryUpgradeHint,
   maxArmoryQuantity,
   planArmoryLoadout,
   planArmoryUpgrades,
@@ -29,7 +31,7 @@ const item = (
 });
 
 describe('Armory purchase planning', () => {
-  it('caps Max at missing coverage across all tiers and pending purchases', () => {
+  it('caps Max at units the item tier can wear, net of stock and pending purchases', () => {
     const dagger = item('dagger', 'WEAPON', 10, 20);
     const sword = { ...item('sword', 'WEAPON', 20, 30), level: 2 };
     expect(
@@ -37,7 +39,17 @@ describe('Armory purchase planning', () => {
         dagger,
         [dagger, sword],
         { sword: 10, dagger: 5 },
-        100,
+        { 1: 100 },
+        5000n,
+      ),
+    ).toBe(80);
+    // Level 2 stock covers Level 2 units; only the dagger's remaining gap is open.
+    expect(
+      maxArmoryQuantity(
+        dagger,
+        [dagger, sword],
+        { sword: 10, dagger: 5 },
+        { 2: 100 },
         5000n,
       ),
     ).toBe(40);
@@ -45,10 +57,12 @@ describe('Armory purchase planning', () => {
   it('counts shared inventory tiers once when named gear overlaps', () => {
     const dagger = item('dagger', 'WEAPON', 10, 30);
     const sword = item('sword', 'WEAPON', 20, 30);
-    expect(maxArmoryQuantity(dagger, [dagger, sword], {}, 50, 1000n)).toBe(20);
     expect(
-      planArmoryLoadout([dagger], [dagger, sword], {}, 50, 1000n).quantities
-        .dagger,
+      maxArmoryQuantity(dagger, [dagger, sword], {}, { 1: 50 }, 1000n),
+    ).toBe(20);
+    expect(
+      planArmoryLoadout([dagger], [dagger, sword], {}, { 1: 50 }, 1000n)
+        .quantities.dagger,
     ).toBe(20);
   });
   it('reserves gold across slots and tabs, excluding the row being replaced', () => {
@@ -59,20 +73,32 @@ describe('Armory purchase planning', () => {
         dagger,
         [dagger, shield],
         { shield: 3, dagger: 2 },
-        100,
+        { 1: 100 },
         100n,
       ),
     ).toBe(4);
     expect(
-      maxArmoryQuantity(dagger, [dagger, shield], { shield: 10 }, 100, 100n),
+      maxArmoryQuantity(
+        dagger,
+        [dagger, shield],
+        { shield: 10 },
+        { 1: 100 },
+        100n,
+      ),
     ).toBe(0);
   });
   it('handles zero units, surplus gear, free gear, and locked gear', () => {
     const dagger = item('dagger', 'WEAPON', 0, 5);
-    expect(maxArmoryQuantity(dagger, [dagger], {}, 10, 0n)).toBe(5);
-    expect(maxArmoryQuantity(dagger, [dagger], {}, 0, 0n)).toBe(0);
+    expect(maxArmoryQuantity(dagger, [dagger], {}, { 1: 10 }, 0n)).toBe(5);
+    expect(maxArmoryQuantity(dagger, [dagger], {}, {}, 0n)).toBe(0);
     expect(
-      maxArmoryQuantity({ ...dagger, enabled: false }, [dagger], {}, 10, 10n),
+      maxArmoryQuantity(
+        { ...dagger, enabled: false },
+        [dagger],
+        {},
+        { 1: 10 },
+        10n,
+      ),
     ).toBe(0);
   });
   it('prepares balanced coverage with partial gold and existing inventory', () => {
@@ -82,7 +108,7 @@ describe('Armory purchase planning', () => {
       [dagger, shield],
       [dagger, shield],
       {},
-      10,
+      { 1: 10 },
       140n,
     );
     expect(plan.coverage).toBe(6);
@@ -97,7 +123,7 @@ describe('Armory purchase planning', () => {
       [dagger],
       [dagger, sword, shield],
       { sword: 4, shield: 2 },
-      10,
+      { 1: 10 },
       100n,
     );
     expect(plan.quantities).toEqual({ dagger: 6, shield: 2 });
@@ -107,8 +133,13 @@ describe('Armory purchase planning', () => {
     const dagger = item('dagger', 'WEAPON', 10, 15);
     const shield = item('shield', 'SHIELD', 20, 2);
     expect(
-      planArmoryLoadout([dagger, shield], [dagger, shield], {}, 10, 1000n)
-        .quantities,
+      planArmoryLoadout(
+        [dagger, shield],
+        [dagger, shield],
+        {},
+        { 1: 10 },
+        1000n,
+      ).quantities,
     ).toEqual({ dagger: 0, shield: 8 });
   });
 });
@@ -201,5 +232,47 @@ describe('Armory upgrade planning', () => {
         100n,
       ).count,
     ).toBe(0);
+  });
+  it('counts a unit only with gear at its own level or below', () => {
+    const dagger = item('dagger', 'WEAPON', 10, 6);
+    const sword = { ...item('sword', 'WEAPON', 20, 4), level: 2 };
+    const ready = armorySlotReadiness([dagger, sword], { 1: 4, 2: 6 });
+    expect(ready).toMatchObject({
+      covered: 10,
+      units: 10,
+      missing: 0,
+      complete: true,
+    });
+    expect(ready.coveredByTier).toEqual({ 1: 4, 2: 6 });
+    const highTierOnly = { ...sword, ownedItems: 6, level: 3 };
+    const mismatch = armorySlotReadiness([highTierOnly], { 1: 4, 3: 2 });
+    expect(mismatch).toMatchObject({
+      covered: 2,
+      units: 6,
+      missing: 4,
+      complete: false,
+    });
+    expect(mismatch.coveredByTier).toEqual({ 1: 0, 3: 2 });
+    expect(armorySlotReadiness([dagger], { 1: 0 }).complete).toBe(false);
+    expect(armorySlotReadiness([], { 1: 5 }).missing).toBe(5);
+  });
+  it('suggests the highest unlocked tier that fits units without it', () => {
+    const dagger = item('dagger', 'WEAPON', 10, 0);
+    const hatchet = { ...item('hatchet', 'WEAPON', 20, 0), level: 2 };
+    const quarterstaff = { ...item('quarterstaff', 'WEAPON', 30, 5), level: 3 };
+    const slot = [dagger, hatchet, quarterstaff];
+    expect(armoryUpgradeHint(slot, { 1: 3, 2: 4, 3: 2 })).toEqual({
+      tier: 2,
+      fits: 4,
+    });
+    expect(armoryUpgradeHint(slot, { 1: 3, 2: 4, 3: 8 })).toEqual({
+      tier: 3,
+      fits: 3,
+    });
+    expect(armoryUpgradeHint([dagger], { 1: 0 })).toBeNull();
+  });
+  it('never offers tiers no unit can wear', () => {
+    const mace = { ...item('mace', 'WEAPON', 40, 0), level: 4 };
+    expect(armoryUpgradeHint([mace], { 1: 5, 2: 5, 3: 5 })).toBeNull();
   });
 });

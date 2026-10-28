@@ -1,9 +1,13 @@
 import { Button } from '@mantine/core';
 import type { MouseEvent, ReactNode } from 'react';
+import { useState } from 'react';
 
 import AssassinateResult from '@/components/AssassinateResult';
 import AttackResults from '@/components/attackResult';
+import { BattleGameEventContext } from '@/components/battle/BattleGameEventContext';
+import { GarrisonFatigueNotice } from '@/components/battle/GarrisonFatigueNotice';
 import { ReportHeader } from '@/components/battle/ReportHeader';
+import { ReportSharingControls } from '@/components/battle/ReportSharingControls';
 import BattleTestResults from '@/components/BattleTestResults';
 import InfiltrationResult from '@/components/InfiltrationResult';
 import IntelResult from '@/components/IntelResult';
@@ -14,6 +18,7 @@ import {
   Specimen,
 } from '@/components/showcase/Showcase';
 import type { RedactedAttackLog } from '@/services/AttackLogAccess.service';
+import type { ReportSharingState } from '@/services/ReportSharing.service';
 
 const ATTACKER_ID = 101;
 const DEFENDER_ID = 202;
@@ -78,6 +83,7 @@ const ATTACK_VICTORY: RedactedAttackLog = {
       ],
     },
     defender_losses: { total: 214 },
+    defender_fatigue_percent: 12,
     combat_summary: {
       attackerDamageHp: 18450,
       defenderDamageHp: 9120,
@@ -290,7 +296,7 @@ const SIMULATION = {
 function MockButtons({ children }: { children: ReactNode }) {
   const onClickCapture = (event: MouseEvent<HTMLDivElement>) => {
     const button = (event.target as HTMLElement).closest('button');
-    if (!button) return;
+    if (!button || button.hasAttribute('data-report-event-details')) return;
     event.preventDefault();
     event.stopPropagation();
     mockAction(button.textContent?.trim() || 'report action')();
@@ -310,6 +316,42 @@ function ReportFrame({ children }: { children: ReactNode }) {
 const FOLLOW_UP_NOTE =
   'Follow-up buttons (attack again, send more spies) are mocked; the real dialogs post missions.';
 
+function ReportSharingDemo() {
+  const [search, setSearch] = useState('');
+  const [state, setState] = useState<ReportSharingState>({
+    isPublic: false,
+    canReportThreat: false,
+    alliances: [{ id: 7, name: 'Silver Vigil', alreadyShared: true }],
+    grants: [
+      { id: 1, kind: 'alliance', name: 'Silver Vigil' },
+      { id: 2, kind: 'player', name: 'Thalia Dawnspear' },
+    ],
+  });
+  return (
+    <ReportSharingControls
+      state={state}
+      search={search}
+      onSearch={setSearch}
+      players={
+        search.length >= 2 &&
+        'Thalia Dawnspear'.toLowerCase().includes(search.toLowerCase())
+          ? [{ id: 303, display_name: 'Thalia Dawnspear' }]
+          : []
+      }
+      onAction={async (action) => {
+        if (action.action === 'public')
+          setState((value) => ({ ...value, isPublic: action.enabled }));
+        if (action.action === 'revoke')
+          setState((value) => ({
+            ...value,
+            grants: value.grants.filter((g) => g.id !== action.grantId),
+          }));
+        mockAction('Update report access')();
+      }}
+    />
+  );
+}
+
 export default function BattleReportsSection() {
   return (
     <ShowcaseSection
@@ -317,6 +359,67 @@ export default function BattleReportsSection() {
       title="Battle & spy reports"
       description="The redacted attack and spy reports a player reads after a mission, fed with mock attack_log rows in the shape redactAttackLogForViewer returns."
     >
+      <Specimen
+        name="Historical game events"
+        usedOn={[REPORT_PAGE]}
+        wide
+        note="Compact reward annotations open saved event details. The full victory report below shows their position beside Spoils of War."
+      >
+        <BattleGameEventContext
+          value={{
+            version: 1,
+            capturedAt: '2026-10-24T12:00:00.000Z',
+            appliedXpMultiplier: 2,
+            events: [
+              {
+                id: 1,
+                name: 'Double XP Weekend',
+                startsAt: '2026-10-23T00:00:00.000Z',
+                endsAt: '2026-10-26T00:00:00.000Z',
+                effects: { xpMultiplier: 2 },
+              },
+            ],
+          }}
+        />
+        <BattleGameEventContext value={undefined} />
+      </Specimen>
+      <Specimen
+        name="Report sharing"
+        usedOn={[REPORT_PAGE, '/battle/history']}
+        wide
+        note="Participant-only controls with a single searchable player picker; type Thalia to try keyboard selection. Sample grants and mock actions make no API calls."
+      >
+        <ReportSharingDemo />
+      </Specimen>
+      <Specimen
+        framed={false}
+        name="Assassination: shared viewer"
+        usedOn={[REPORT_PAGE]}
+        wide
+        note="A recipient is neither combatant. Wording stays neutral and follow-up actions are hidden."
+      >
+        <ReportFrame>
+          <AssassinateResult
+            battle={ASSASSINATION_REPORT}
+            lastGenerated={LAST_GENERATED}
+            viewerID={999}
+          />
+        </ReportFrame>
+      </Specimen>
+      <Specimen
+        framed={false}
+        name="Infiltration: shared viewer"
+        usedOn={[REPORT_PAGE]}
+        wide
+      >
+        <ReportFrame>
+          <InfiltrationResult
+            battle={INFILTRATION_REPORT}
+            lastGenerated={LAST_GENERATED}
+            viewerID={999}
+          />
+        </ReportFrame>
+      </Specimen>
       <Specimen
         framed={false}
         name="ReportHeader (outcome band + participants)"
@@ -366,6 +469,14 @@ export default function BattleReportsSection() {
       </Specimen>
 
       <Specimen
+        name="Garrison fatigue line"
+        usedOn={[REPORT_PAGE]}
+        note="battle/GarrisonFatigueNotice: the defender's garrison was worn down by earlier defences today. Both sides read it from the same report; the percentage comes from the log's defender_fatigue_percent."
+      >
+        <GarrisonFatigueNotice percent={12} />
+      </Specimen>
+
+      <Specimen
         framed={false}
         name="AttackResults: victory (viewer is attacker)"
         usedOn={[REPORT_PAGE]}
@@ -373,7 +484,29 @@ export default function BattleReportsSection() {
         wide
       >
         <ReportFrame>
-          <AttackResults battle={ATTACK_VICTORY} viewerID={ATTACKER_ID} />
+          <AttackResults
+            battle={{
+              ...ATTACK_VICTORY,
+              stats: {
+                ...ATTACK_VICTORY.stats,
+                gameEvents: {
+                  version: 1,
+                  capturedAt: '2026-10-22T22:40:12.565Z',
+                  appliedXpMultiplier: 10,
+                  events: [
+                    {
+                      id: 25,
+                      name: 'Testing XP Multiplier',
+                      startsAt: '2026-10-22T22:36:00.000Z',
+                      endsAt: '2026-10-24T22:36:00.000Z',
+                      effects: { xpMultiplier: 10 },
+                    },
+                  ],
+                },
+              },
+            }}
+            viewerID={ATTACKER_ID}
+          />
         </ReportFrame>
       </Specimen>
 

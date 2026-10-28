@@ -193,6 +193,7 @@ function ArmoryOrderDemo() {
           mockAction(`upgrade ${conversions.length} item stacks`)()
         }
         units={ARMORY_UNITS}
+        unitTiers={{ 1: ARMORY_UNITS }}
         gold={ARMORY_GOLD}
         locale="en-US"
       />

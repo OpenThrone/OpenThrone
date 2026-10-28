@@ -41,6 +41,8 @@ import MainArea from '@/components/MainArea';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
+import { useAnnouncementOrder } from '@/hooks/useAnnouncementOrder';
+import { useTutorialState } from '@/hooks/useTutorialState';
 import { alertService } from '@/services/Alert.service';
 import type { Locales, PlayerRace } from '@/types/typings';
 import { logError } from '@/utils/logger';
@@ -61,6 +63,8 @@ interface PasswordErrors {
 
 const Settings = () => {
   const { t, i18n } = useTranslation('home');
+  const { t: tCommon } = useTranslation('common');
+  const [announcementOrder, setAnnouncementOrder] = useAnnouncementOrder();
   const { t: tLore } = useTranslation('how-to-play');
   const router = useRouter();
   const locales: Locales[] = ['en-US', 'es-ES', 'de-DE'];
@@ -69,6 +73,7 @@ const Settings = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { user, forceUpdate } = useUser();
+  const { dispatch: dispatchTutorial } = useTutorialState();
   const { data: sessionData } = useSession();
   // /api/general/getUser strips email; the auth session carries it instead
   const sessionEmail = (sessionData?.user?.email as string) ?? '';
@@ -340,6 +345,11 @@ const Settings = () => {
       setSavingForm(null);
     }
   };
+
+  const restartTutorial = useCallback(async () => {
+    await dispatchTutorial({ type: 'restart' });
+    router.push('/home/overview');
+  }, [dispatchTutorial, router]);
 
   const updateLocale = async () => {
     setSavingForm('options');
@@ -646,6 +656,25 @@ const Settings = () => {
 
         <Grid.Col span={{ base: 12, sm: 6 }}>
           <GameCard title={t('settings.gameOptions')} icon={faGear}>
+            <Select
+              mb="md"
+              label={tCommon('announcementsFeed.orderLabel')}
+              description={tCommon('announcementsFeed.orderDescription')}
+              value={announcementOrder}
+              onChange={(value) =>
+                setAnnouncementOrder(value === 'newest' ? 'newest' : 'priority')
+              }
+              data={[
+                {
+                  value: 'priority',
+                  label: tCommon('announcementsFeed.orderPriority'),
+                },
+                {
+                  value: 'newest',
+                  label: tCommon('announcementsFeed.orderNewest'),
+                },
+              ]}
+            />
             <Text>{t('settings.localeFormatting')}</Text>
             <Select
               value={locale}
@@ -681,6 +710,14 @@ const Settings = () => {
               disabled={savingForm !== null}
             >
               {t('settings.save')}
+            </Button>
+            <Space h="lg" />
+            <Text>{tCommon('walkthrough.settings.label')}</Text>
+            <Text size="sm" c="dimmed" mb="xs">
+              {tCommon('walkthrough.settings.description')}
+            </Text>
+            <Button variant="default" onClick={restartTutorial}>
+              {tCommon('walkthrough.settings.restart')}
             </Button>
           </GameCard>
         </Grid.Col>

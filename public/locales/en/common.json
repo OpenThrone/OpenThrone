@@ -508,42 +508,167 @@
   },
   "walkthrough": {
     "offer": {
-      "title": "Take the first-turn tour?",
-      "body": "A short optional walkthrough will point out the menu, advisor, stats, Training, Armory, Bank, and leave you on Attack."
+      "title": "Welcome to your realm",
+      "body": "Want a quick guided tour? It explains each page as you visit it, starting with the Overview, and points you to the next one. You can pause it or turn it off at any time.",
+      "returningTitle": "Pick up the tour?",
+      "returningBody": "You paused the tour earlier. Continue where you left off?"
     },
-    "skip": "Skip",
-    "start": "Start tour",
-    "close": "Close walkthrough",
+    "start": "Start the tour",
     "back": "Back",
     "next": "Next",
-    "finish": "Finish",
-    "menu": {
-      "title": "The command menu",
-      "body": "Use this bar to move between Home, Battle, Structures, Alliances, and the wider realm."
+    "finish": "Got it",
+    "notNow": "Not now",
+    "progress": "Step {{current}} of {{total}}",
+    "options": {
+      "label": "Tour options",
+      "skipPage": "Skip this page",
+      "snooze": "Remind me tomorrow",
+      "dismiss": "Don't show again"
     },
-    "sidebar": {
-      "title": "Your kingdom ledger",
-      "body": "The sidebar keeps gold, citizens, level, turns, the advisor, player search, and the turn timer close at hand."
+    "settings": {
+      "label": "Tutorial",
+      "description": "Replay the guided tour from the beginning.",
+      "restart": "Restart tutorial"
     },
-    "overview": {
-      "title": "Read the realm at a glance",
-      "body": "Overview is the pulse check: wealth, population, army size, banked gold, and progress toward the next level."
+    "actions": {
+      "openTraining": "Open Training",
+      "openAttack": "See Attack",
+      "openArmory": "Show me the Armory",
+      "openBank": "Show me the Bank"
     },
-    "training": {
-      "title": "Train citizens with intent",
-      "body": "Workers create gold, offensive units win attacks, defensive units protect your people, and spy roles control information."
+    "strategy": {
+      "label": "Starting army",
+      "steady": {
+        "title": "Steady start (recommended)",
+        "body": "Half workers for gold, half defense to stay safe."
+      },
+      "balanced": {
+        "title": "Balanced",
+        "body": "Workers, defense and a squad of offense."
+      },
+      "raider": {
+        "title": "Raider",
+        "body": "Half offense so you can attack sooner."
+      },
+      "filled": "Order filled in below. Train it now, or Skip to adjust it yourself.",
+      "train": "Train & continue"
     },
-    "armory": {
-      "title": "Equip before you march",
-      "body": "The Armory turns trained units into real power. Buy offense to hit harder and defense to hold your ground."
+    "chapters": {
+      "overview": {
+        "menu": {
+          "title": "The command menu",
+          "body": "Move between Home, Battle and Structures here. You only see what you can use right now: Battle Upgrades and Structure Upgrades appear once you unlock them (Structure Upgrades at level 5, with the Village)."
+        },
+        "sidebar": {
+          "title": "Your kingdom ledger",
+          "body": "The sidebar keeps your gold, citizens, level and turns in view, plus the advisor, player search and the turn timer."
+        },
+        "protection": {
+          "title": "You are protected",
+          "body": "As a new player, attacks against you only take a small share of your gold. Protection ends at the first of these: about {{days}} days from now, your population reaching {{population}}, or level {{levelLimit}}. Use the time to build."
+        },
+        "stats": {
+          "title": "The realm at a glance",
+          "body": "Overview shows your gold, army size and progress to the next level. Check it whenever you log in."
+        },
+        "next": {
+          "title": "Where to next?",
+          "body": "Open Battle in the menu. Training turns citizens into units, and Attack is where you pick fights. Choose one and the tour will explain that page."
+        }
+      },
+      "attack": {
+        "targets": {
+          "title": "Choose your targets",
+          "body": "Players you can attack are listed here. Compare level, gold and defense before you spend attack turns."
+        },
+        "needOffense": {
+          "title": "You need Offense units to attack",
+          "body": "Citizens barely fight. Train Offense units first, and keep some Defense at home. Training is the next stop."
+        }
+      },
+      "training": {
+        "how": {
+          "title": "Turn citizens into an army",
+          "body": "Your untrained citizens become units here. Enter a quantity next to a unit, check the cost in the order bar, then press Train. Untraining refunds part of the cost."
+        },
+        "balance": {
+          "title": "Build a balanced army",
+          "body": "Workers earn gold, Defense protects your people and fort, Offense wins attacks. Going all-in on one role leaves you exposed or broke, so mix them."
+        },
+        "strategy": {
+          "title": "Pick a starting plan",
+          "body": "Not sure where to start? Pick a plan and the order is filled in for you. Train & continue spends the gold right away, so Skip if you would rather set the order yourself."
+        },
+        "next": {
+          "title": "Gear up next",
+          "body": "Units hit harder with weapons and armor. Want to learn about the Armory?"
+        }
+      },
+      "armory": {
+        "gear": {
+          "title": "Equip your units",
+          "body": "Buy weapons and armor here. Offense gear raises your attack and Defense gear raises your defense. Gear only helps units you have trained."
+        },
+        "next": {
+          "title": "One more stop",
+          "body": "Gold in your hands can be stolen. Want to see how the Bank protects it?"
+        }
+      },
+      "bank": {
+        "protect": {
+          "title": "Bank what you can't defend",
+          "body": "Deposits keep your gold safe from attackers. Bank spare gold each day while your workers and structures keep income flowing."
+        }
+      }
     },
-    "bank": {
-      "title": "Bank what you cannot defend",
-      "body": "Gold in hand is useful but exposed. Deposits protect wealth while workers and structures keep income moving."
-    },
-    "attack": {
-      "title": "Choose your first target",
-      "body": "You are ready to scout the battlefield. Compare levels, gold, and risk before spending attack turns."
+    "skip": "Skip",
+    "learn": {
+      "title": "Learn",
+      "subtitle": "Replay the guided lessons any time, or read the full guides.",
+      "lessonsTitle": "Guided lessons",
+      "guidesTitle": "Guides",
+      "status": {
+        "active": "The tutorial is on: each lesson plays when you visit its page.",
+        "snoozed": "The tutorial is paused and will offer itself again tomorrow.",
+        "off": "The tutorial is switched off. Replaying a lesson turns it back on."
+      },
+      "seen": "Completed",
+      "unseen": "Not seen yet",
+      "open": "Open",
+      "replay": "Replay",
+      "restart": "Restart the whole tutorial",
+      "lessons": {
+        "overview": {
+          "title": "Your kingdom at a glance",
+          "summary": "The menu, the sidebar and the Overview page."
+        },
+        "attack": {
+          "title": "Choosing targets",
+          "summary": "How the Attack page works and what you need to fight."
+        },
+        "training": {
+          "title": "Training an army",
+          "summary": "Turn citizens into workers and soldiers, with starting plans."
+        },
+        "armory": {
+          "title": "Equipping units",
+          "summary": "Weapons and armor that make trained units stronger."
+        },
+        "bank": {
+          "title": "Banking gold",
+          "summary": "Keeping your gold safe from raiders."
+        }
+      },
+      "guides": {
+        "howToPlay": {
+          "title": "How to Play",
+          "summary": "The core loop, races, army, economy and alliances."
+        },
+        "faq": {
+          "title": "FAQ",
+          "summary": "Answers to common questions."
+        }
+      }
     }
   },
   "player": {
@@ -625,6 +750,13 @@
         "killed_one": "You lost {{count}} of your {{target}}.",
         "killed_other": "You lost {{count}} of your {{target}}.",
         "noKills": "None of your {{target}} were harmed."
+      },
+      "shared": {
+        "sent_one": "{{attacker}} sent {{count}} assassin after {{defender}}’s {{target}}.",
+        "sent_other": "{{attacker}} sent {{count}} assassins after {{defender}}’s {{target}}.",
+        "killed_one": "The assassins killed {{count}} of the target’s {{target}}.",
+        "killed_other": "The assassins killed {{count}} of the target’s {{target}}.",
+        "noKills": "None of the target’s {{target}} were harmed."
       }
     },
     "infiltration": {
@@ -639,8 +771,17 @@
         "sent_other": "{{attacker}} sent {{count}} infiltrators against your fort.",
         "damage": "Your fort took {{damage}} damage.",
         "caught": "Your sentries caught them before they reached the fort."
+      },
+      "shared": {
+        "sent_one": "{{attacker}} sent {{count}} infiltrator against {{defender}}’s fort.",
+        "sent_other": "{{attacker}} sent {{count}} infiltrators against {{defender}}’s fort.",
+        "damage": "The target’s fort took {{damage}} damage.",
+        "caught": "The target’s sentries caught the infiltrators before they reached the fort."
       }
-    }
+    },
+    "sharedSpiesLost_one": "The attacker lost {{count}} spy.",
+    "sharedSpiesLost_other": "The attacker lost {{count}} spies.",
+    "sharedNoSpiesLost": "All of the attacker’s spies returned safely."
   },
   "report": {
     "title": "File a Report",
@@ -680,5 +821,29 @@
     "reminder_one": "You have {{count}} alliance obligation due within 24 hours.",
     "reminder_other": "You have {{count}} alliance obligations due within 24 hours.",
     "review": "Review dues and fines"
-  }
+  },
+  "announcementsFeed": {
+    "showActive": "Show active announcements ({{count}})",
+    "showDismissed": "Show dismissed announcements ({{count}})",
+    "dismissed": "Dismissed",
+    "restore": "Restore",
+    "orderLabel": "Announcement order",
+    "orderDescription": "Saved automatically for this player on this device.",
+    "orderPriority": "Highest priority first",
+    "orderNewest": "Newest first",
+  "title": "Announcements",
+  "priority": "Highest priority first",
+  "filter": "Filter announcements by severity",
+  "ALL": "All",
+  "CRITICAL": "Critical",
+  "WARNING": "Warning",
+  "INFO": "Info",
+  "SUCCESS": "Success",
+  "page": "{{current}} of {{total}}",
+  "goToPage": "Go to announcement {{page}}",
+  "next": "Next announcement",
+  "previous": "Previous announcement",
+  "first": "First announcement",
+  "last": "Last announcement"
+}
 }

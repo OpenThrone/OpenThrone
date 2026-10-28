@@ -207,3 +207,27 @@ In-game `MainArea` page titles retain Chomsky, the metallic gold gradient, and b
 In `src/pages/home/settings.tsx`, the current email uses a semantic label/value pair: a smaller muted label and a larger semibold address that can wrap without overflowing. The new-email label and confirmation note belong to the Mantine input. Vacation Mode preserves the original introduction and four original rule sentences in their original order, followed by the requested gold-production and remaining-vacations sentences. Visible bullets, spacing, and bold emphasis within each sentence improve scanning without label prefixes, shorthand, columns, or row dividers. Mantine list styles explicitly preserve disc markers against CSS resets, and text wraps on narrow screens. The remaining-vacations sentence uses translated singular and plural forms.
 
 Gold production continues through the existing turn processor. The remaining count loads from the authenticated, uncached `/api/account/vacation-availability` endpoint; the read and activation paths share `AccountService.getVacationAvailability`. Starting vacation is disabled while the count is unknown or exhausted, and a failed load displays a reload instruction. The restored original copy says once every quarter; the existing backend instead enforces four vacations per calendar year. This copy restoration does not change that backend policy. The game-card framing, two-week duration, and early-return behavior remain unchanged.
+
+### Dispatch archive, report access, and alliance artwork
+
+The news archive reuses the War Room dispatch accordion: pinned-first titles,
+category/date/read metadata, a four-line preview and a link to the full article.
+Public visitors do not receive unread badges. Read-state changes retain their
+open accordion and expose pending and error states.
+
+Battle and spy reports use the actual viewer's role. Participants receive
+personal wording; shared and public readers receive neutral participant names
+and no combat follow-up controls. A single participant-only sharing dialog
+manages player, membership-bound alliance, and explicitly confirmed public
+access. Alliance notes and target calls remain available from that dialog.
+Revoking access retains the participants' inherent access and any independent
+grants. The artwork editor uses Mantine file inputs and previews with a separate
+save action, available to leaders and roles holding `edit_profile`. Uploaded
+images use bounded dimensions, content-derived formats and hashed filenames.
+
+Alliance photos and banners preserve their source image and store a bounded
+focal point and zoom using the existing `#frame=x,y,zoom` convention. Crop
+previews support pointer dragging, labelled zoom/position sliders, arrow keys,
+reset and cancel. Applying a crop only updates the local preview; Save artwork
+persists it. Profiles, alliance browse cards and diplomacy avatars honor that
+framing, including when an existing image is reframed without a new upload.
