@@ -1,21 +1,44 @@
-import { AUTO_RECRUIT_ENABLED } from '@/constants/AutoRecruit';
 // pages/api/recruit/startSession.ts
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { withAuth } from '@/middleware/auth';
+import {
+  AUTO_RECRUIT_DISABLED,
+  canAutoRecruit,
+} from '@/services/AutoRecruitAccess.service';
+import {
+  isRecruitmentCaptchaRequired,
+  verifyRecruitmentCaptcha,
+} from '@/services/RecruitmentCaptcha.service';
 import type { AuthenticatedRequest } from '@/types/api';
+import { getIpAddress } from '@/utils/ipUtils';
 
 const handler = async (req: AuthenticatedRequest, res) => {
-  if (!AUTO_RECRUIT_ENABLED)
-    return res.status(503).json({
-      error: 'Auto-Recruit is currently disabled.',
-      code: 'AUTO_RECRUIT_DISABLED',
-    });
+  if (!(await canAutoRecruit(req.session?.user?.id)))
+    return res.status(503).json(AUTO_RECRUIT_DISABLED);
   if (req.method !== 'POST') {
     return res
       .status(405)
       .json({ error: 'Method not allowed', code: 'METHOD_NOT_FOUND' });
   }
+  // One Turnstile check opens the session; recruits inside it are tied to
+  // this session in the reward transaction and skip the per-recruit check.
+  if (isRecruitmentCaptchaRequired()) {
+    const token = req.body?.captchaToken;
+    if (typeof token !== 'string' || !token) {
+      return res.status(400).json({
+        error: 'Verification is required to start a session.',
+        code: 'CAPTCHA_REQUIRED',
+      });
+    }
+    if (!(await verifyRecruitmentCaptcha(token, getIpAddress(req)))) {
+      return res.status(400).json({
+        error: 'Captcha verification failed.',
+        code: 'CAPTCHA_FAILED',
+      });
+    }
+  }
+
   let userId = 0;
   const { session } = req;
   if (session) {

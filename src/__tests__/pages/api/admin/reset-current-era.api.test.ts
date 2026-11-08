@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it, mock, vi } from 'bun:test';
 
-const guardOptions = vi.fn();
+// Recorded once at handler load; a plain array survives the per-test mock clear.
+const guardOptions: any[] = [];
 const productionService = require('../../../../services/EraResetSchedule.service');
 
 const serviceStub: any = {
@@ -11,7 +12,7 @@ const productionGuard = require('../../../../middleware/apiGuard');
 
 const guardStub = {
   withApiGuard: (options: any) => {
-    guardOptions(options);
+    guardOptions.push(options);
     return (handler: any) => async (req: any, res: any) => {
       try {
         const body = options.bodySchema.parse(req.body);
@@ -72,7 +73,7 @@ describe('POST /api/admin/game/reset-current-era', () => {
       res,
     );
 
-    expect(guardOptions).toHaveBeenCalledWith(
+    expect(guardOptions).toContainEqual(
       expect.objectContaining({ authMode: 'admin', methods: ['POST'] }),
     );
     expect(serviceStub.startImmediateEraReset).toHaveBeenCalledWith({

@@ -8,6 +8,7 @@ import type {
 } from '@/lib/prisma-exports';
 import { Prisma } from '@/lib/prisma-exports';
 import { AdminService } from '@/services/Admin.service';
+import { eraseAuthoredMessages } from '@/services/PrivacyRetention.service';
 import { getActiveAccountStatus } from '@/services/User.service';
 import { resolveColorScheme } from '@/services/UserDefaults.service';
 import { logActionStrict } from '@/utils/auditLogger';
@@ -301,6 +302,15 @@ export class AccountAnonymizationService {
       where: { userId, status: { in: ['PENDING', 'SENDING'] } },
       data: { status: 'SKIPPED' },
     });
+    // Discord identity and queued DMs go with the account. Subscription
+    // billing is cancelled after commit (endSupporterBilling) and by the
+    // daily supporter job.
+    await tx.discordOutbox.deleteMany({ where: { userId } });
+    await tx.discordLinkCode.deleteMany({ where: { userId } });
+    await tx.discordLink.deleteMany({ where: { userId } });
+    // Words the player wrote to others go too; avatar files are deleted
+    // after commit by the caller (deleteUserAvatarFiles).
+    await eraseAuthoredMessages(tx, userId);
     await tx.accountInactivityNotice.updateMany({
       where: { userId, completedAt: null },
       data: { completedAt: now },

@@ -75,6 +75,8 @@ export class BaseUser {
 
   public stamina: number;
 
+  public staminaUpdatedAt: Date;
+
   public defensePressureToday: number;
 
   public defensePressureDate: Date | string | null;
@@ -104,6 +106,7 @@ export class BaseUser {
 
     this.attackTurns = safeUser?.attack_turns ?? 0;
     this.stamina = safeUser?.stamina ?? 100;
+    this.staminaUpdatedAt = safeUser?.staminaUpdatedAt ?? new Date();
     this.defensePressureToday = safeUser?.defense_pressure_today ?? 0;
     this.defensePressureDate = safeUser?.defense_pressure_date ?? null;
     this.spyPressureToday = safeUser?.spy_pressure_today ?? 0;
@@ -158,6 +161,7 @@ export class BaseUser {
       gold: this.gold,
       attackTurns: this.attackTurns,
       stamina: this.stamina,
+      staminaUpdatedAt: this.staminaUpdatedAt,
       defensePressureToday: this.defensePressureToday,
       defensePressureDate: this.defensePressureDate,
       spyPressureToday: this.spyPressureToday,

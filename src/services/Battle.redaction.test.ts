@@ -158,6 +158,8 @@ describe('redactAttackLogForViewer: attack reports', () => {
         pillagedGold: '500',
         fortDamage: 100,
         defender_fatigue_percent: 0,
+        attacker_fatigue_percent: 0,
+        stamina_cost: 0,
         // Dungeon captives (#210); legacy rows have none.
         captives_taken: 0,
         attacker_losses: { total: 5 },
@@ -172,6 +174,19 @@ describe('redactAttackLogForViewer: attack reports', () => {
         },
       },
     });
+  });
+
+  it('shows army fatigue and the stamina charged to every viewer', () => {
+    const log = attackLog();
+    Object.assign(log.stats, {
+      attacker_fatigue_percent: 16,
+      stamina_cost: 5,
+    });
+    for (const role of ['shared', 'attacker', 'defender'] as const) {
+      const out = redactAttackLogForViewer(log, role).stats;
+      expect(out.attacker_fatigue_percent).toBe(16);
+      expect(out.stamina_cost).toBe(5);
+    }
   });
 
   it('adds only own-side detail for the attacker and the defender', () => {
@@ -244,11 +259,14 @@ describe('redactAttackLogForViewer: attack reports', () => {
     // number, these equalities fail.
     Object.assign(log.stats, {
       reanimated_units: { attacker: 12, defender: 7 },
+      necropolis_bonus: { attacker: 3, defender: 2 },
     });
     const asAttacker = redactAttackLogForViewer(log, 'attacker').stats;
     expect(asAttacker.reanimated_units).toBe(12);
+    expect(asAttacker.necropolis_bonus).toBe(3);
     const asDefender = redactAttackLogForViewer(log, 'defender').stats;
     expect(asDefender.reanimated_units).toBe(7);
+    expect(asDefender.necropolis_bonus).toBe(2);
     // A shared report (a shared viewer or an anonymous public reader) carries
     // no count at all, so the opponent never learns how many rose.
     const asShared = redactAttackLogForViewer(log, 'shared').stats;

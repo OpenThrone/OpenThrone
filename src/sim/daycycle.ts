@@ -1,4 +1,6 @@
+import { multiplyCount } from '../constants/gameEvents';
 import { V5_COMBAT_CONSTANTS } from '../utils/balance/v5Combat';
+import { DEFAULT_STAMINA_RULES, staminaCost } from '../utils/stamina';
 import { applyDecision, makeDailyDecisions } from './behaviors';
 import {
   battleDailyBudget,
@@ -21,6 +23,38 @@ import {
   type InvariantContext,
   SimulationConfigError,
 } from './invariants';
+import {
+  allocateBonusPoints,
+  applyBattleMorale,
+  applyDailyMorale,
+  applyDefection,
+  type EventDiscounts,
+  spendOnArmy,
+} from './liveEconomy';
+import {
+  applyMercenaryLosses,
+  captureFromBattle,
+  desertMercenaries,
+  mercenaryRoster,
+  processCaptives,
+  startMercenaryDay,
+} from './liveForces';
+import {
+  activeEvent,
+  areAllied,
+  bankBeforeLogoff,
+  buyNextStructure,
+  healWounded,
+  houseIndex,
+  isProtectedLive,
+  liveDailyCitizens,
+  liveIncomeBonus,
+  liveRepairCost,
+  MAX_ROUNDS_PER_SESSION,
+  planSessionTicks,
+  recordWounded,
+} from './liveRules';
+import { createLivePowerEstimator } from './liveTargeting';
 import { createSimPlayer } from './presets';
 import {
   createDefaultRandom,
@@ -232,13 +266,14 @@ function clonePlayer(player: PlayerState): PlayerState {
   };
 }
 
-function convertPlayerToSim(player: PlayerState) {
+function convertPlayerToSim(player: PlayerState, live = false) {
   return createSimPlayer({
     id: player.id,
     displayName: player.displayName,
     level: player.level,
     xp: player.xp,
-    houseLevel: player.houseLevel,
+    // The battle code expects the 0-based HouseUpgrades index.
+    houseLevel: live ? houseIndex(player) : player.houseLevel,
     race: player.race,
     playerClass: player.playerClass,
     gold: player.gold,
@@ -253,6 +288,17 @@ function convertPlayerToSim(player: PlayerState) {
       attack: player.bonuses.attack,
       defense: player.bonuses.defense,
     },
+    live: live
+      ? {
+          inventory: player.inventory ?? [],
+          structureUpgrades: [
+            { type: 'ARMORY', level: player.armoryLevel ?? 1 },
+            { type: 'OFFENSE', level: player.offenseStructureLevel ?? 1 },
+          ],
+          battleUpgrades: player.battleUpgrades ?? [],
+          mercenaries: mercenaryRoster(player),
+        }
+      : undefined,
   });
 }
 
@@ -415,6 +461,12 @@ function createPopulationMetrics(): PopulationMetrics {
 
 function processDailyReset(state: SimulationState): void {
   const ctx = { day: state.day + 1, playerId: '' };
+  const random = createValidatedRandom(
+    state.config.random ?? createDefaultRandom(),
+  );
+  const event = activeEvent(state.config.event, state.day + 1);
+  // Defectors each recipient has accepted today, across deserting kingdoms.
+  const defectorsReceived = new Map<string, number>();
   for (const player of state.players.values()) {
     if (player.status !== 'active') continue;
     ctx.playerId = player.id;
@@ -427,8 +479,44 @@ function processDailyReset(state: SimulationState): void {
     player.defensePressureToday = 0;
     player.spyPressureToday = 0;
     resetDefenderDailyLedger(player);
-    player.units.citizen += calculateRecruitBonus(player);
     player.maximumBankDeposits = calculateMaximumBankDeposits(player);
+    if (state.config.live) {
+      player.units.citizen += multiplyCount(
+        liveDailyCitizens(player),
+        event?.citizenMultiplier ?? 1,
+        random,
+      );
+      healWounded(player);
+      const mercenaryMorale = startMercenaryDay(player, state.day);
+      if (state.config.dungeon) {
+        processCaptives(player, state.players, state.day);
+      }
+      // One combined daily morale change, then both desertion checks (KingdomMorale.service).
+      const { deserted, defectors } = applyDailyMorale(player, mercenaryMorale);
+      desertMercenaries(player);
+      if (deserted > 0) {
+        if (player.simStats) player.simStats.deserted += deserted;
+        // Defectors go to whoever attacked this player most in the last day.
+        const top = Array.from(player.incomingAttackHistory.entries()).sort(
+          (a, b) => b[1].length - a[1].length,
+        )[0];
+        const recipient = top ? state.players.get(top[0]) : undefined;
+        if (recipient && top[1].length > 0) {
+          const received = defectorsReceived.get(recipient.id) ?? 0;
+          defectorsReceived.set(
+            recipient.id,
+            received + applyDefection(recipient, defectors, received),
+          );
+        }
+      }
+      player.sessionTicks = planSessionTicks(
+        player.activity ?? 'regular',
+        getTicksPerDay(state.config),
+        random,
+      );
+    } else {
+      player.units.citizen += calculateRecruitBonus(player);
+    }
   }
 }
 
@@ -448,15 +536,27 @@ async function processTurnTick(
     (player) => player.status === 'active',
   );
 
+  const liveIncome = state.config.live === true;
+  const event = activeEvent(state.config.event, state.day + 1);
   for (const player of players) {
-    const turnIncome = calculateTurnIncome(player);
+    const baseIncome = liveIncome
+      ? Math.ceil(
+          calculateTurnIncome(player) * (1 + liveIncomeBonus(player) / 100),
+        )
+      : calculateTurnIncome(player);
+    // As CronJob.service: the event gold multiplier, rounded down.
+    const turnIncome = event
+      ? Math.floor(baseIncome * event.goldMultiplier)
+      : baseIncome;
     player.gold += turnIncome;
     invariantContext.playerId = player.id;
     assertPlayerGold(player, invariantContext);
-    player.attackTurns += 1;
+    const turnsThisTick = 1 + (event?.extraTurnsPerTick ?? 0);
+    player.attackTurns += turnsThisTick;
+    if (player.simStats) player.simStats.turnsGenerated += turnsThisTick;
     player.stamina = Math.min(player.maxStamina, player.stamina + 1);
     dayResult.totalTurnIncome += turnIncome;
-    dayResult.attackTurnsGenerated += 1;
+    dayResult.attackTurnsGenerated += turnsThisTick;
 
     player.bankDepositHistory = trimTickHistory(
       player.bankDepositHistory,
@@ -488,24 +588,46 @@ async function processTurnTick(
   let fortDamageThisTick = 0;
   let attackTurnsSpentThisTick = 0;
 
-  for (const currentPlayer of shuffled) {
-    const population = Array.from(state.players.values());
+  const live = state.config.live === true;
+  const tickOfDay = currentTick - state.day * getTicksPerDay(state.config);
+  const discounts = {
+    unit: event?.unitCostDiscountPercent ?? 0,
+    armory: event?.armoryCostDiscountPercent ?? 0,
+  };
+  // Defense strengths for live target estimates, computed once per tick.
+  const defenseCache = new Map<string, number>();
+
+  // One round of decisions. Returns whether the player attacked or spied.
+  const runRound = async (currentPlayer: PlayerState): Promise<boolean> => {
+    let acted = false;
+    // Alliance members leave each other alone.
+    const population = Array.from(state.players.values()).filter(
+      (player) =>
+        !live || player === currentPlayer || !areAllied(currentPlayer, player),
+    );
     const legacyDecision = makeDailyDecisions(currentPlayer, population, {
       attackLevelRange,
       currentDay: state.day,
       random,
+      forceAct: live,
+      livePower: live
+        ? createLivePowerEstimator(currentPlayer, defenseCache)
+        : undefined,
     });
-    const decision = eraOptions?.personaManagedEconomy
-      ? {
-          ...legacyDecision,
-          recruitment: {},
-          upgradeSpy: undefined,
-          upgradeSentry: undefined,
-          upgradeEconomy: undefined,
-          repairFort: undefined,
-          bankGold: undefined,
-        }
-      : legacyDecision;
+    // Live players buy structures and bank through liveRules instead.
+    const managedDecision = {
+      ...legacyDecision,
+      upgradeSpy: undefined,
+      upgradeSentry: undefined,
+      upgradeEconomy: undefined,
+      repairFort: undefined,
+      bankGold: undefined,
+    };
+    // Live players train and equip through liveEconomy at login and logoff.
+    const decision =
+      eraOptions?.personaManagedEconomy || live
+        ? { ...managedDecision, recruitment: {} }
+        : legacyDecision;
 
     for (const intel of decision.intelMissions) {
       const target = state.players.get(intel.target);
@@ -531,7 +653,6 @@ async function processTurnTick(
       );
       currentPlayer.dailyLimits.intelUsed++;
       currentPlayer.attackTurns = Math.max(0, currentPlayer.attackTurns - 1);
-      currentPlayer.stamina = Math.max(0, currentPlayer.stamina - 1);
       target.spyPressureToday += 1;
       recordSpyMissionTick(
         currentPlayer,
@@ -545,19 +666,29 @@ async function processTurnTick(
       applySpyCasualtyDeltas(target, result.defenderCasualtyDeltas);
       result.day = state.day;
       currentPlayer.intelCache.set(target.id, result);
+      if (live && result.success && currentPlayer.allianceId) {
+        // Alliance members share fresh spy reports.
+        for (const ally of state.players.values()) {
+          if (ally !== currentPlayer && areAllied(ally, currentPlayer)) {
+            ally.intelCache.set(target.id, result);
+          }
+        }
+      }
       dayResult.totalIntelMissions++;
       intelAttempts++;
       if (result.success) intelSuccesses++;
+      if (currentPlayer.simStats) currentPlayer.simStats.turnsSpent += 1;
+      acted = true;
     }
 
     for (const attack of decision.attacks) {
       const target = state.players.get(attack.target);
       if (!target || target.status !== 'active') continue;
+      if (live && areAllied(currentPlayer, target)) continue;
       const shield = eraOptions?.rebuildShields.get(target.id);
       if (shield && !shield.expired) continue;
       if (!canAttackByLevel(currentPlayer, target, attackLevelRange)) continue;
       if (currentPlayer.attackTurns < attack.turns) continue;
-      if (currentPlayer.stamina < attack.turns) continue;
       if (
         getRecentAttackCount(
           currentPlayer,
@@ -575,11 +706,16 @@ async function processTurnTick(
       assertPlayerGold(target, invariantContext);
       sanitizePlayerState(currentPlayer);
       sanitizePlayerState(target);
-      const attackerSim = convertPlayerToSim(currentPlayer);
-      const defenderSim = convertPlayerToSim(target);
+      const attackerSim = convertPlayerToSim(currentPlayer, live);
+      const defenderSim = convertPlayerToSim(target, live);
+      const targetProtected = live && isProtectedLive(target, state.day);
       const result = await runSingleBattle(attackerSim, defenderSim, {
         ...createBattleConfigFromBalance(state.config.balance),
-        ...battleDailyBudget(target),
+        ...battleDailyBudget(
+          target,
+          live ? { isProtected: targetProtected } : undefined,
+        ),
+        ...(live ? { isDefenderProtected: targetProtected } : {}),
         maxTurns: Math.min(attack.turns, MAX_SIM_ATTACK_TURNS),
         random,
         rulesetId: eraOptions?.rulesetId,
@@ -606,11 +742,24 @@ async function processTurnTick(
       }
 
       recordBattleOnLedger(target, result);
+      if (event) {
+        // As AttackService: event XP for both sides, rounded down.
+        result.attackerXp = Math.floor(result.attackerXp * event.xpMultiplier);
+        result.defenderXp = Math.floor(result.defenderXp * event.xpMultiplier);
+      }
       currentPlayer.attackTurns = Math.max(
         0,
         currentPlayer.attackTurns - attack.turns,
       );
-      currentPlayer.stamina = Math.max(0, currentPlayer.stamina - attack.turns);
+      currentPlayer.stamina = Math.max(
+        0,
+        currentPlayer.stamina -
+          staminaCost(
+            attack.turns,
+            DEFAULT_STAMINA_RULES,
+            currentPlayer.offenseStructureLevel ?? 1,
+          ),
+      );
       currentPlayer.dailyLimits.attacksUsed++;
       recordAttack(currentPlayer, target.id, currentTick, windowTicks);
       recordIncomingAttack(target, currentPlayer.id, currentTick, windowTicks);
@@ -635,16 +784,16 @@ async function processTurnTick(
         assertPlayerGold(target, invariantContext);
         Object.assign(
           currentPlayer,
-          gainXp(currentPlayer, result.attackerXp, false),
+          gainXp(currentPlayer, result.attackerXp, false, live),
         );
-        Object.assign(target, gainXp(target, result.defenderXp, false));
+        Object.assign(target, gainXp(target, result.defenderXp, false, live));
         attackWins++;
       } else {
         Object.assign(
           currentPlayer,
-          gainXp(currentPlayer, result.attackerXp, false),
+          gainXp(currentPlayer, result.attackerXp, false, live),
         );
-        Object.assign(target, gainXp(target, result.defenderXp, false));
+        Object.assign(target, gainXp(target, result.defenderXp, false, live));
         attackLosses++;
       }
       dayResult.totalXpAwarded += result.attackerXp + result.defenderXp;
@@ -700,8 +849,96 @@ async function processTurnTick(
         0,
         target.units.worker - result.defenderCasualties.worker,
       );
+      if (live) {
+        const pick = (
+          wounded: PlayerState['units'] | undefined,
+          keys: Array<keyof PlayerState['units']>,
+        ) => Object.fromEntries(keys.map((key) => [key, wounded?.[key] ?? 0]));
+        recordWounded(
+          currentPlayer,
+          pick(result.attackerWounded, ['soldier', 'knight', 'berserker']),
+        );
+        recordWounded(
+          target,
+          pick(result.defenderWounded, [
+            'soldier',
+            'knight',
+            'berserker',
+            'guard',
+            'archer',
+            'royalGuard',
+            'citizen',
+            'worker',
+          ]),
+        );
+        const attackerWon = result.winner === 'attacker';
+        applyBattleMorale(target, attackerWon, targetProtected);
+        if (currentPlayer.simStats) {
+          currentPlayer.simStats.attacks += 1;
+          currentPlayer.simStats.turnsSpent += attack.turns;
+          if (attackerWon) {
+            currentPlayer.simStats.attackWins += 1;
+            currentPlayer.simStats.lootGained += result.loot;
+          }
+        }
+        if (target.simStats) {
+          target.simStats.defenses += 1;
+          if (attackerWon) target.simStats.lootLost += result.loot;
+          else target.simStats.defenseWins += 1;
+        }
+      }
+      acted = true;
+
+      const fortWasStanding = target.fortHp > 0;
       target.fortHp = Math.max(0, target.fortHp - result.fortDamage);
       target.defensePressureToday += attack.turns;
+      if (live) {
+        const killedOnly = (
+          losses: Record<number, number> | undefined,
+          wounded: Record<number, number> | undefined,
+        ) =>
+          Object.fromEntries(
+            Object.entries(losses ?? {}).map(([id, count]) => [
+              id,
+              count - (wounded?.[Number(id)] ?? 0),
+            ]),
+          );
+        applyMercenaryLosses(
+          currentPlayer,
+          killedOnly(
+            result.attackerMercenaryLosses,
+            result.attackerMercenaryWounded,
+          ),
+          result.attackerMercenaryWounded,
+        );
+        applyMercenaryLosses(
+          target,
+          killedOnly(
+            result.defenderMercenaryLosses,
+            result.defenderMercenaryWounded,
+          ),
+          result.defenderMercenaryWounded,
+        );
+        if (state.config.dungeon) {
+          const killed = Object.fromEntries(
+            Object.entries(result.defenderCasualties).map(([key, count]) => [
+              key,
+              count -
+                (result.defenderWounded?.[key as keyof PlayerState['units']] ??
+                  0),
+            ]),
+          );
+          captureFromBattle({
+            attacker: currentPlayer,
+            defender: target,
+            attackerWon: result.winner === 'attacker',
+            fortBreached: target.fortHp <= 0,
+            defenderProtected: targetProtected,
+            killed,
+            day: state.day,
+          });
+        }
+      }
 
       dayResult.totalAttacks++;
       dayResult.totalLootTransferred += result.loot;
@@ -720,7 +957,8 @@ async function processTurnTick(
         result.defenderCasualties.worker;
       dayResult.avgTurnsPerAttack += attack.turns;
       fortDamageThisTick += result.fortDamage;
-      if (target.fortHp <= 0) {
+      // Count the attack that brings the walls down, not every hit after.
+      if (fortWasStanding && target.fortHp <= 0) {
         dayResult.fortBreaches++;
       }
       if (attack.turns <= 5) dayResult.lowTurnAttacks++;
@@ -755,6 +993,37 @@ async function processTurnTick(
     assertPlayerGold(currentPlayer, invariantContext);
     sanitizePlayerState(currentPlayer);
     assertPlayerGold(currentPlayer, invariantContext);
+    return acted;
+  };
+
+  for (const currentPlayer of shuffled) {
+    if (!live) {
+      await runRound(currentPlayer);
+      continue;
+    }
+    // Live players act only while logged in, spending held turns in rounds.
+    if (!currentPlayer.sessionTicks?.has(tickOfDay)) continue;
+    if (currentPlayer.simStats) currentPlayer.simStats.sessions += 1;
+    allocateBonusPoints(currentPlayer);
+    spendOnArmy(
+      currentPlayer,
+      getTicksPerDay(state.config),
+      discounts,
+      state.day,
+    );
+    for (let round = 0; round < MAX_ROUNDS_PER_SESSION; round++) {
+      if (!(await runRound(currentPlayer))) break;
+    }
+    invariantContext.playerId = currentPlayer.id;
+    finishLiveSession(
+      currentPlayer,
+      currentTick,
+      getTicksPerDay(state.config),
+      dayResult,
+      discounts,
+      state.day,
+    );
+    assertPlayerGold(currentPlayer, invariantContext);
   }
 
   dayResult.attackTurnsSpent += attackTurnsSpentThisTick;
@@ -764,6 +1033,33 @@ async function processTurnTick(
     dayResult.avgFortDamage += fortDamageThisTick;
   }
   return { intelAttempts, intelSuccesses };
+}
+
+/** Before logging off a live player repairs, buys structures and banks gold. */
+function finishLiveSession(
+  player: PlayerState,
+  currentTick: number,
+  ticksPerDay: number,
+  dayResult: DayResult,
+  discounts: EventDiscounts,
+  day: number,
+): void {
+  const repairCost = liveRepairCost(player);
+  if (repairCost > 0 && repairCost <= (player.gold + player.goldInBank) * 0.5) {
+    const fromHand = Math.min(player.gold, repairCost);
+    player.gold -= fromHand;
+    player.goldInBank -= repairCost - fromHand;
+    player.fortHp = player.fortMaxHp;
+  }
+  for (let purchases = 0; purchases < 3; purchases++) {
+    if (buyNextStructure(player) <= 0) break;
+  }
+  spendOnArmy(player, ticksPerDay, discounts, day);
+  dayResult.totalBankDeposits += bankBeforeLogoff(
+    player,
+    currentTick,
+    ticksPerDay,
+  );
 }
 
 function finalizeDayMetrics(

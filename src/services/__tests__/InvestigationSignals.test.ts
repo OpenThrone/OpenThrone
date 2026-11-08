@@ -29,6 +29,7 @@ const sample = {
   defender_losses_total: 10,
   snapshots: balanced,
   turns: 10,
+  stamina_cost: 10,
 };
 
 beforeAll(async () => {
@@ -177,6 +178,13 @@ describe('read-only investigation detectors', () => {
   test('does not flag consistent combat, missing history, or unsafe values', () => {
     expect(inspectCombatAccounting(sample).mismatches).toEqual({});
     expect(
+      inspectCombatAccounting({ ...sample, stamina_cost: 7 }).mismatches,
+    ).toMatchObject({ staminaObserved: '10', staminaExpected: '7' });
+    expect(
+      inspectCombatAccounting({ ...sample, stamina_cost: undefined })
+        .mismatches,
+    ).toEqual({});
+    expect(
       inspectCombatAccounting({ ...sample, snapshots: null }).eligible,
     ).toBe(false);
     const bad = structuredClone(balanced);
@@ -205,11 +213,16 @@ describe('read-only investigation detectors', () => {
   });
   test('period boundaries omit records outside the chosen window', async () => {
     await db.exec("UPDATE bank_history SET date_time=now()-interval '40 days'");
-    const report = await getInvestigationSignals(30);
-    expect(
-      report.findings.some((f) =>
-        ['ACCOUNT_FEEDING', 'TRANSFER_RING'].includes(f.type),
-      ),
-    ).toBe(false);
+    try {
+      const report = await getInvestigationSignals(30);
+      expect(
+        report.findings.some((f) =>
+          ['ACCOUNT_FEEDING', 'TRANSFER_RING'].includes(f.type),
+        ),
+      ).toBe(false);
+    } finally {
+      // Every fixture transfer was inserted at now(); restore for other tests.
+      await db.exec('UPDATE bank_history SET date_time=now()');
+    }
   });
 });

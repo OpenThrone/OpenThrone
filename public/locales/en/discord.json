@@ -1,0 +1,38 @@
+{
+  "alert": {
+    "attacks": "⚔️ {{attacker}} attacked {{kingdom}}. {{outcome}} Report: {{url}}",
+    "attackWon": "Your defenses held.",
+    "attackLost": "Your defenses fell.",
+    "spyHits": "🕵️ An enemy spy mission ({{mission}}) targeted {{kingdom}}. Check your reports: {{url}}",
+    "warDeclared": "🚩 {{attacker}} declared war on {{defender}}. Fighting starts {{start}}. {{url}}",
+    "turnCap": "💪 {{kingdom}} is at full stamina. Attack now so recovery isn't wasted: {{url}}",
+    "digest": "📜 Daily report for {{kingdom}}: rank {{rank}}, {{attacks}} attacks and {{spies}} spy missions against you in the last 24 hours, {{wars}} active wars. {{url}}"
+  },
+  "mission": {
+    "INTEL": "intel",
+    "ASSASSINATE": "assassination",
+    "INFILTRATE": "infiltration"
+  },
+  "reply": {
+    "unknownCommand": "Unknown command.",
+    "notLinked": "Link your OpenThrone account first: generate a code at {{url}} and run /link.",
+    "linkInvalid": "That code is invalid or has expired. Generate a new one at {{url}}.",
+    "linkTaken": "This Discord account is already linked to another kingdom. Unlink it there first.",
+    "linked": "Linked to {{kingdom}}. Manage alerts at {{url}}.",
+    "playerNotFound": "No kingdom named {{name}}.",
+    "profile": "**{{name}}**{{badge}}: {{race}} {{class}}, rank {{rank}}{{alliance}}. {{url}}",
+    "inAlliance": ", alliance {{alliance}}",
+    "supporterBadge": " 👑",
+    "stats": "{{era}}: {{players}} kingdoms, {{alliances}} alliances, {{battles}} battles so far.",
+    "leaderboardPlayers": "**Top kingdoms**",
+    "leaderboardAlliances": "**Largest alliances**",
+    "leaderboardAllianceRow": "{{name}}: {{members}} members",
+    "fort": "{{kingdom}}: {{fort}} (level {{level}}), {{hp}} / {{maxHp}} HP.",
+    "noAlliance": "You are not in an alliance.",
+    "myclan": "**{{name}}**{{premium}}: {{members}} members, led by {{leader}}. {{url}}",
+    "premium": " (premium)",
+    "noWars": "{{alliance}} is not at war.",
+    "warRow": "{{attacker}} vs {{defender}}: {{status}} since {{start}}",
+    "error": "Something went wrong. Try again later."
+  }
+}

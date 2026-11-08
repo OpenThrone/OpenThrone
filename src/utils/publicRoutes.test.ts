@@ -7,6 +7,7 @@ describe('public page access', () => {
     for (const path of [
       '/',
       '/about',
+      '/supporter',
       '/how-to-play',
       '/faq',
       '/community/news',
@@ -27,6 +28,8 @@ describe('public page access', () => {
   it('keeps game, administration, and non-public community routes protected', () => {
     for (const path of [
       '/home/overview',
+      '/home/supporter',
+      '/supporter/mock-checkout',
       '/battle/history',
       '/home/admin/content',
       '/community/news/admin',

@@ -16,7 +16,10 @@ import React, { useRef, useState } from 'react';
 
 import AttackRecommendation from '@/components/battle/AttackRecommendation';
 import QuantitySlider from '@/components/battle/QuantitySlider';
+import { ArmyConditionMeter } from '@/components/sidebar/ArmyConditionMeter';
 import { useUser } from '@/context/users';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
+import { readStaminaBalance } from '@/hooks/useStamina';
 import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { logError } from '@/utils/logger';
 import { clampMissionQuantity } from '@/utils/missionQuantity';
@@ -59,6 +62,8 @@ const Modal: React.FC<ModalProps> = ({
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const [requestedTurns, setTurns] = useState(1);
   const { user, forceUpdate } = useUser();
+  const staminaBalance = readStaminaBalance(user);
+  const { config } = useRuntimeConfig();
   const availableTurns =
     typeof user?.attackTurns === 'number' ? user.attackTurns : null;
   const maxTurns = Math.min(
@@ -66,6 +71,9 @@ const Modal: React.FC<ModalProps> = ({
     availableTurns ?? MAX_ATTACK_TURNS,
   );
   const turns = clampMissionQuantity(requestedTurns, 1, maxTurns);
+  const offenseLevel =
+    user?.structure_upgrades?.find((upgrade) => upgrade.type === 'OFFENSE')
+      ?.level ?? 1;
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -98,7 +106,6 @@ const Modal: React.FC<ModalProps> = ({
       setError(t('attack.notEnoughTurns', { count: availableTurns }));
       return;
     }
-
     submittingRef.current = true;
     const reportTab =
       allowNewTab && newTab ? window.open('about:blank', '_blank') : null;
@@ -232,6 +239,14 @@ const Modal: React.FC<ModalProps> = ({
               }}
               inputTestId="attack-turns-input"
             />
+            {staminaBalance && config?.stamina && (
+              <ArmyConditionMeter
+                balance={staminaBalance}
+                rules={config.stamina}
+                turns={turns}
+                offenseUpgradeLevel={offenseLevel}
+              />
+            )}
             {error && (
               <Text size="sm" c="red" role="alert">
                 {error}

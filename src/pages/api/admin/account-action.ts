@@ -9,6 +9,7 @@ import {
   AccountAnonymizationService,
   DELETED_EMAIL_SUFFIX,
 } from '@/services/AccountAnonymization.service';
+import { endSupporterBillingSoon } from '@/services/supporter/AccountBilling.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp, logAction, logActionStrict } from '@/utils/auditLogger';
 import { checkStaffTargetAction, isAdmin } from '@/utils/authorization';
@@ -151,6 +152,9 @@ export const handler = async (
       );
     });
 
+    // A ban or closure stops renewals; refunds stay a separate admin action.
+    if (action === 'BANNED' || action === 'CLOSED')
+      await endSupporterBillingSoon(userId, 'period_end');
     res.status(200).json({ message: `User has been ${action.toLowerCase()}` });
   } catch (error) {
     if (error instanceof AnonymizedAccountConflict)

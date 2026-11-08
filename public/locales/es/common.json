@@ -225,6 +225,21 @@
       "recruitDaily": "Reclutar tu máximo cada día asegurará que tu reino siga creciendo.",
       "wellEquipped": "Una unidad es tan fuerte como el equipo que porta. Asegúrate de que tu ejército esté bien equipado.",
       "fortDefense": "Si tu defensa es inferior al 25 % de tu población no combatiente, podrías perder ciudadanos y trabajadores en un ataque. Mantén tu fortaleza reparada."
+    },
+    "armyCondition": {
+      "label": "Resistencia del ejército",
+      "rested": "Descansado",
+      "weary": "Cansado",
+      "exhausted": "Agotado",
+      "tooltip": "La resistencia baja reduce el ataque del ejército.",
+      "offensePenalty": "Ataque −{{percent}} %",
+      "off": "Resistencia desactivada",
+      "short": "Resistencia",
+      "paused": "Recuperación en pausa",
+      "fullIn": "Completa en {{time}}",
+      "cost": "Cuesta {{cost}} de resistencia → {{state}} ({{offense}} % de ataque)",
+      "rules": "Los ataques la gastan; espiar es gratis. Por debajo de {{threshold}}, el ataque baja; con cero queda en un {{floor}} %.",
+      "learnMore": "Abre la guía completa."
     }
   },
   "footer": {
@@ -347,6 +362,8 @@
     }
   },
   "intelReport": {
+    "unitLevel": "{{name}} · Nv. {{level}}",
+    "mercenary": "Mercenario",
     "observedPopulation": "Población observada",
     "observedTotal": "Observados: {{count}}",
     "unobservedPopulation": "La población no observada es desconocida.",
@@ -824,19 +841,33 @@
     "orderDescription": "Se guarda automáticamente para este jugador en este dispositivo.",
     "orderPriority": "Mayor prioridad primero",
     "orderNewest": "Más recientes primero",
-  "title": "Anuncios",
-  "priority": "Mayor prioridad primero",
-  "filter": "Filtrar anuncios por gravedad",
-  "ALL": "Todos",
-  "CRITICAL": "Crítico",
-  "WARNING": "Advertencia",
-  "INFO": "Información",
-  "SUCCESS": "Éxito",
-  "page": "{{current}} de {{total}}",
-  "goToPage": "Ir al anuncio {{page}}",
-  "next": "Siguiente anuncio",
-  "previous": "Anuncio anterior",
-  "first": "Primer anuncio",
-  "last": "Último anuncio"
-}
+    "title": "Anuncios",
+    "priority": "Mayor prioridad primero",
+    "filter": "Filtrar anuncios por gravedad",
+    "ALL": "Todos",
+    "CRITICAL": "Crítico",
+    "WARNING": "Advertencia",
+    "INFO": "Información",
+    "SUCCESS": "Éxito",
+    "page": "{{current}} de {{total}}",
+    "goToPage": "Ir al anuncio {{page}}",
+    "next": "Siguiente anuncio",
+    "previous": "Anuncio anterior",
+    "first": "Primer anuncio",
+    "last": "Último anuncio"
+  },
+  "stamina": {
+    "disabled": "La resistencia está desactivada. Las acciones no consumen resistencia.",
+    "recoveryPaused": "La regeneración de resistencia está pausada.",
+    "full": "Recuperación completa",
+    "recoveryRate": "Recupera {{amount}} cada {{minutes}} min",
+    "nextIn": "próxima recuperación en {{time}}",
+    "fullIn": "recuperación completa en {{time}}",
+    "guide": {
+      "intro": "La resistencia indica lo descansado que está tu ejército para atacar. Cada ejército tiene hasta {{max}}.",
+      "spend": "Solo los ataques la gastan: {{base}} por ataque más {{perTurn}} por cada turno que uses, así que un ataque de {{turns}} turnos cuesta {{example}}. Las mejoras ofensivas lo reducen hasta la mitad. Espiar es gratis.",
+      "recovery": "Se recupera {{amount}} cada {{minutes}} minutos, así que un ejército agotado vuelve a estar descansado en {{fullTime}}.",
+      "penalty": "Los ataques siempre se realizan, pero por debajo de {{threshold}} de resistencia tu ejército lucha peor: con cero, ataca al {{floor}} %."
+    }
+  }
 }

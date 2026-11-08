@@ -5,6 +5,8 @@ import prisma from '@/lib/prisma';
 import { getUserById, updateUserUnits } from '@/services/AttackDataService';
 import { AttackService } from '@/services/AttackService';
 import { BattleService } from '@/services/Battle.service';
+import { CronJobService } from '@/services/CronJob.service';
+import { ensureActiveEra } from '@/services/Era.service';
 import {
   contractRoster,
   mercenaryOffer,
@@ -17,11 +19,12 @@ import { parseCombatReplay } from '@/utils/combatReplay';
 import { calculateCombatStrength } from '@/utils/combatStrength';
 
 import { resetDatabase } from './db';
+import { hireQuoted } from './hireQuoted';
 
 let userId: number;
 const now = new Date('2026-10-21T12:00:00Z');
 const hire = (quantity = 10, operationId = randomUUID()) =>
-  MercenaryService.hire(
+  hireQuoted(
     { userId, type: 'OFFENSE', level: 1, quantity, termDays: 3, operationId },
     now,
   );
@@ -31,7 +34,7 @@ const hireAs = (
     'userId' | 'operationId'
   >,
 ) =>
-  MercenaryService.hire(
+  hireQuoted(
     { userId, operationId: randomUUID(), ...input } as Parameters<
       typeof MercenaryService.hire
     >[0],
@@ -81,6 +84,36 @@ beforeEach(async () => {
 });
 
 describe('playable mercenaries', () => {
+  test('stored strength counts hired troops and survives a turn update', async () => {
+    const offense = async () =>
+      (await prisma.users.findUniqueOrThrow({ where: { id: userId } })).offense;
+    // The turn job only processes active players of the current era.
+    const era = await ensureActiveEra();
+    await prisma.users.update({
+      where: { id: userId },
+      data: { currentEraId: era.id, last_active: new Date() },
+    });
+    const owned = await offense();
+    // Wall-clock hire: the turn cron reads the roster at the real time.
+    await hireQuoted({
+      userId,
+      type: 'OFFENSE',
+      level: 1,
+      quantity: 20,
+      termDays: 1,
+      operationId: randomUUID(),
+    });
+    const hired = await offense();
+    expect(hired).toBeGreaterThan(owned);
+    const turns = async () =>
+      (await prisma.users.findUniqueOrThrow({ where: { id: userId } }))
+        .attack_turns;
+    const before = await turns();
+    await CronJobService.processTurnUpdates();
+    expect(await turns()).toBeGreaterThan(before);
+    expect(await offense()).toBe(hired);
+  });
+
   test('charges the bundled offer once, projects equipped combat troops, never buys citizens or inventory', async () => {
     const operationId = randomUUID();
     const contract = await hire(10, operationId);
@@ -203,7 +236,7 @@ describe('playable mercenaries', () => {
       data: { fort_level: 1 },
     });
     await expect(
-      MercenaryService.hire(
+      hireQuoted(
         {
           userId,
           type: 'OFFENSE',
@@ -291,11 +324,11 @@ describe('playable mercenaries', () => {
       quantity: 50,
       termDays: 1 as const,
     };
-    const first = await MercenaryService.hire({
+    const first = await hireQuoted({
       ...command,
       operationId: randomUUID(),
     });
-    const second = await MercenaryService.hire({
+    const second = await hireQuoted({
       ...command,
       operationId: randomUUID(),
     });

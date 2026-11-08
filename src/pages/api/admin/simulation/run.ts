@@ -3,17 +3,42 @@ import type { NextApiResponse } from 'next';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { generatePopulation, simulateDay } from '@/sim';
 import { getPlayerPower } from '@/sim/economy';
-import { calculateProgressionPacing } from '@/sim/progression';
+import {
+  allocateBonusPoints,
+  armedShare,
+  spendOnArmy,
+} from '@/sim/liveEconomy';
+import {
+  activeEvent,
+  ACTIVITY_TYPES,
+  applyLiveRulesToPlayer,
+  assignActivityTypes,
+  buyNextStructure,
+  DEFAULT_ACTIVITY_MIX,
+  formAlliances,
+  makeFreshPlayer,
+} from '@/sim/liveRules';
+import {
+  calculateProgressionPacing,
+  projectDaysToLevel100,
+} from '@/sim/progression';
 import type {
+  ActivityMix,
+  ActivityType,
   BalanceParameters,
   DayResult,
   PlayerState,
   PopulationMetrics,
+  SimGameEvent,
   SimulationConfig,
   SimulationState,
   TopPlayerSnapshot,
 } from '@/sim/types';
 import type { AuthenticatedRequest } from '@/types/api';
+import {
+  calculateProgressionXpPerTurn,
+  getDefaultBattleConstants,
+} from '@/utils/attackFunctions';
 import { getRequestIp, logActionStrict } from '@/utils/auditLogger';
 import { logError } from '@/utils/logger';
 
@@ -26,7 +51,33 @@ interface SimulationRequest {
   newPlayersPerInterval: number;
   attackLevelRange: number;
   balance: Partial<BalanceParameters>;
+  activityMix: ActivityMix;
+  event?: SimGameEvent;
+  dungeon: boolean;
+  /** Percent of players in alliances, and how many members each has. */
+  alliances: { share: number; size: number };
   seed?: number;
+}
+
+/** Outcomes for one kind of player, per player and per day present. */
+interface ActivitySummary {
+  activity: ActivityType;
+  players: number;
+  sessionsPerDay: number;
+  attacksPerDay: number;
+  attackWinRate: number;
+  defenseWinRate: number;
+  turnsSpentShare: number;
+  lootGainedPerDay: number;
+  lootLostPerDay: number;
+  medianLevelsGained: number;
+  medianXpPerDay: number;
+  fastestXpPerDay: number;
+  medianDaysToLevel100: number | null;
+  fastestDaysToLevel100: number | null;
+  avgMorale: number;
+  armedShare: number;
+  desertedPerDay: number;
 }
 
 interface ChartPoint {
@@ -81,6 +132,8 @@ interface SimulationSummary {
   pacingPlayerName: string | null;
   projectedDaysToLevel100: number | null;
   projectedMonthsToLevel100: number | null;
+  mercenariesHired: number;
+  captivesTaken: number;
 }
 
 interface SimulationTiming {
@@ -131,6 +184,7 @@ interface PlayerProgressReport extends TopPlayerSnapshot {
 interface SimulationResponse {
   config: SimulationRequest & { effectiveBalance: BalanceParameters };
   summary: SimulationSummary;
+  byActivity: ActivitySummary[];
   dailyResults: DayResult[];
   charts: {
     winRates: ChartPoint[];
@@ -143,12 +197,14 @@ interface SimulationResponse {
   timing: SimulationTiming;
 }
 
+const LIVE_BATTLE_CONSTANTS = getDefaultBattleConstants();
 const DEFAULT_BALANCE: BalanceParameters = {
-  attackerDamageMultiplier: 1.238,
-  defenderCounterDamageMultiplier: 0.83,
-  maxPillageSharePerAttack: 0.22,
-  damageVarianceMin: 0.92,
-  damageVarianceMax: 1.08,
+  attackerDamageMultiplier: LIVE_BATTLE_CONSTANTS.ATTACKER_DAMAGE_MULTIPLIER,
+  defenderCounterDamageMultiplier:
+    LIVE_BATTLE_CONSTANTS.DEFENDER_COUNTER_DAMAGE_MULTIPLIER,
+  maxPillageSharePerAttack: LIVE_BATTLE_CONSTANTS.MAX_PILLAGE_SHARE_PER_ATTACK,
+  damageVarianceMin: LIVE_BATTLE_CONSTANTS.DAMAGE_VARIANCE_MIN,
+  damageVarianceMax: LIVE_BATTLE_CONSTANTS.DAMAGE_VARIANCE_MAX,
 };
 
 function createSeededRandom(seed: number): () => number {
@@ -239,14 +295,180 @@ function snapshotPlayerProgress(
   };
 }
 
-function validateConfig(body: any): SimulationRequest {
+function validateActivityMix(raw: any): ActivityMix {
+  const mix = Object.fromEntries(
+    ACTIVITY_TYPES.map((type) => {
+      const value = Number(raw?.[type]);
+      return [type, Number.isFinite(value) ? clamp(value, 0, 100) : 0];
+    }),
+  ) as ActivityMix;
+  const total = ACTIVITY_TYPES.reduce((sum, type) => sum + mix[type], 0);
+  return total > 0 ? mix : { ...DEFAULT_ACTIVITY_MIX };
+}
+
+/** Clamps an optional game event to the ranges the live admin events page allows. */
+function validateEvent(raw: any, days: number): SimGameEvent | undefined {
+  if (!raw || raw.enabled !== true) return undefined;
+  const num = (value: unknown, fallback: number, min: number, max: number) => {
+    const parsed = Number(value);
+    return clamp(Number.isFinite(parsed) ? parsed : fallback, min, max);
+  };
+  return {
+    startDay: Math.floor(num(raw.startDay, 1, 1, days)),
+    days: Math.floor(num(raw.days, 2, 1, 365)),
+    xpMultiplier: num(raw.xpMultiplier, 1, 0.1, 10),
+    goldMultiplier: num(raw.goldMultiplier, 1, 0.1, 10),
+    extraTurnsPerTick: Math.floor(num(raw.extraTurnsPerTick, 0, 0, 10)),
+    citizenMultiplier: num(raw.citizenMultiplier, 1, 0.1, 10),
+    unitCostDiscountPercent: num(raw.unitCostDiscountPercent, 0, 0, 25),
+    armoryCostDiscountPercent: num(raw.armoryCostDiscountPercent, 0, 0, 25),
+  };
+}
+
+/** Days of recent XP the L100 projection averages. */
+const RECENT_XP_DAYS = 7;
+
+/** Picks an activity type for one late joiner, weighted by the mix. */
+function pickActivity(mix: ActivityMix, random: () => number): ActivityType {
+  const total = ACTIVITY_TYPES.reduce((sum, type) => sum + mix[type], 0);
+  let roll = random() * total;
+  for (const type of ACTIVITY_TYPES) {
+    roll -= mix[type];
+    if (roll < 0) return type;
+  }
+  return ACTIVITY_TYPES[ACTIVITY_TYPES.length - 1];
+}
+
+/**
+ * Spends a player's starting gold the way it would have been spent before the
+ * run: bonus points, structures, then the army. Starting players otherwise
+ * spend their first day catching up.
+ */
+function settleLivePlayer(
+  player: PlayerState,
+  ticksPerDay: number,
+  day: number,
+): void {
+  allocateBonusPoints(player);
+  for (let purchases = 0; purchases < 20; purchases++) {
+    if (buyNextStructure(player) <= 0) break;
+  }
+  spendOnArmy(player, ticksPerDay, undefined, day);
+}
+
+function sumStat(
+  players: Map<string, PlayerState>,
+  key: 'mercenariesHired' | 'captivesTaken',
+): number {
+  let total = 0;
+  for (const player of players.values()) total += player.simStats?.[key] ?? 0;
+  return total;
+}
+
+function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid];
+}
+
+function buildActivitySummaries(
+  players: Map<string, PlayerState>,
+  totalDays: number,
+  currentXpRate: (playerId: string) => number | undefined,
+): ActivitySummary[] {
+  return ACTIVITY_TYPES.map((activity) => {
+    const group = Array.from(players.values()).filter(
+      (player) => player.activity === activity && player.simStats,
+    );
+    let playerDays = 0;
+    let sessions = 0;
+    let attacks = 0;
+    let attackWins = 0;
+    let defenses = 0;
+    let defenseWins = 0;
+    let turnsSpent = 0;
+    let turnsAvailable = 0;
+    let lootGained = 0;
+    let lootLost = 0;
+    let morale = 0;
+    let armed = 0;
+    let deserted = 0;
+    const levelsGained: number[] = [];
+    const xpPerDay: number[] = [];
+    const daysToLevel100: number[] = [];
+    for (const player of group) {
+      const stats = player.simStats!;
+      const days = Math.max(
+        1,
+        totalDays - Math.max(0, player.joinedOnDay ?? 0),
+      );
+      playerDays += days;
+      sessions += stats.sessions;
+      attacks += stats.attacks;
+      attackWins += stats.attackWins;
+      defenses += stats.defenses;
+      defenseWins += stats.defenseWins;
+      turnsSpent += stats.turnsSpent;
+      // Turns held at the start plus one per tick, logged in or not.
+      turnsAvailable += stats.startTurns + stats.turnsGenerated;
+      lootGained += stats.lootGained;
+      lootLost += stats.lootLost;
+      morale += player.kingdomMorale ?? 0;
+      armed += armedShare(player);
+      deserted += stats.deserted;
+      levelsGained.push(player.level - stats.startLevel);
+      const rate = (player.xp - stats.startXp) / days;
+      xpPerDay.push(rate);
+      const projected = projectDaysToLevel100(
+        player.xp,
+        currentXpRate(player.id) ?? rate,
+      );
+      if (projected !== null) daysToLevel100.push(projected);
+    }
+    const perDay = (value: number) => (playerDays > 0 ? value / playerDays : 0);
+    const fastestXp = xpPerDay.length > 0 ? Math.max(...xpPerDay) : 0;
+    return {
+      activity,
+      players: group.length,
+      sessionsPerDay: perDay(sessions),
+      attacksPerDay: perDay(attacks),
+      attackWinRate: attacks > 0 ? attackWins / attacks : 0,
+      defenseWinRate: defenses > 0 ? defenseWins / defenses : 0,
+      turnsSpentShare: turnsAvailable > 0 ? turnsSpent / turnsAvailable : 0,
+      lootGainedPerDay: perDay(lootGained),
+      lootLostPerDay: perDay(lootLost),
+      medianLevelsGained: median(levelsGained),
+      medianXpPerDay: median(xpPerDay),
+      fastestXpPerDay: fastestXp,
+      // Players who gained no XP never get there; they count as never.
+      medianDaysToLevel100:
+        daysToLevel100.length > group.length / 2
+          ? median([
+              ...daysToLevel100,
+              ...Array(group.length - daysToLevel100.length).fill(Infinity),
+            ])
+          : null,
+      fastestDaysToLevel100:
+        daysToLevel100.length > 0 ? Math.min(...daysToLevel100) : null,
+      avgMorale: group.length > 0 ? morale / group.length : 0,
+      armedShare: group.length > 0 ? armed / group.length : 0,
+      desertedPerDay: perDay(deserted),
+    };
+  });
+}
+
+export function validateConfig(body: any): SimulationRequest {
+  const days = clamp(Number(body.days) || 30, 1, 365);
   const minLevel = clamp(Number(body.levelRange?.[0]) || 5, 1, 100);
   const maxLevel = clamp(Number(body.levelRange?.[1]) || 20, 1, 100);
 
   return {
     populationSize: clamp(Number(body.populationSize) || 100, 2, 500),
     levelRange: [Math.min(minLevel, maxLevel), Math.max(minLevel, maxLevel)],
-    days: clamp(Number(body.days) || 30, 1, 365),
+    days,
     turnIntervalMinutes: clamp(Number(body.turnIntervalMinutes) || 30, 5, 240),
     newPlayerIntervalDays: clamp(
       Number(body.newPlayerIntervalDays) || 0,
@@ -259,11 +481,19 @@ function validateConfig(body: any): SimulationRequest {
       50,
     ),
     attackLevelRange: clamp(
-      Number(body.attackLevelRange) ||
-        Number(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE ?? 5),
+      Number.isFinite(Number(body.attackLevelRange))
+        ? Number(body.attackLevelRange)
+        : Number(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE ?? 5),
       0,
       100,
     ),
+    activityMix: validateActivityMix(body.activityMix),
+    event: validateEvent(body.event, days),
+    dungeon: body.dungeon === true,
+    alliances: {
+      share: clamp(Number(body.alliances?.share) || 0, 0, 100),
+      size: clamp(Math.floor(Number(body.alliances?.size) || 5), 2, 50),
+    },
     balance: {
       attackerDamageMultiplier: body.balance?.attackerDamageMultiplier,
       defenderCounterDamageMultiplier:
@@ -272,7 +502,11 @@ function validateConfig(body: any): SimulationRequest {
       damageVarianceMin: body.balance?.damageVarianceMin,
       damageVarianceMax: body.balance?.damageVarianceMax,
     },
-    seed: body.seed != null ? Number(body.seed) : undefined,
+    // Without a seed every turn tick would replay the same default stream,
+    // so pick one and report it back; the run can then be repeated.
+    seed: Number.isFinite(Number(body.seed))
+      ? Number(body.seed)
+      : Math.floor(Math.random() * 2147483646) + 1,
   };
 }
 
@@ -281,6 +515,7 @@ function buildSummary(
   players: Map<string, PlayerState>,
   state: SimulationState,
   playerProgress: PlayerProgressReport[],
+  currentXpRate: (playerId: string) => number | undefined,
 ): SimulationSummary {
   const totalAttacks = dailyResults.reduce(
     (sum, day) => sum + day.totalAttacks,
@@ -310,15 +545,20 @@ function buildSummary(
     (sum, day) => sum + day.attackTurnsSpent,
     0,
   );
+  // Weighted by attacks, so quiet days do not drag the rate down.
   const avgAttackerWinRate =
-    dailyResults.length > 0
-      ? dailyResults.reduce((sum, day) => sum + day.attackerWinRate, 0) /
-        dailyResults.length
+    totalAttacks > 0
+      ? dailyResults.reduce(
+          (sum, day) => sum + day.attackerWinRate * day.totalAttacks,
+          0,
+        ) / totalAttacks
       : 0;
   const avgDefenderWinRate =
-    dailyResults.length > 0
-      ? dailyResults.reduce((sum, day) => sum + day.defenderWinRate, 0) /
-        dailyResults.length
+    totalAttacks > 0
+      ? dailyResults.reduce(
+          (sum, day) => sum + day.defenderWinRate * day.totalAttacks,
+          0,
+        ) / totalAttacks
       : 0;
   const avgAttacksPerDay =
     dailyResults.length > 0 ? totalAttacks / dailyResults.length : 0;
@@ -328,7 +568,10 @@ function buildSummary(
     state.metrics.attackTurnsHeldPerDay.reduce((sum, value) => sum + value, 0) /
     Math.max(state.metrics.attackTurnsHeldPerDay.length, 1);
   const avgXpPerSpentTurn = totalXpAwarded / Math.max(1, totalTurnsSpent);
-  const progressionPacing = calculateProgressionPacing(playerProgress);
+  const progressionPacing = calculateProgressionPacing(
+    playerProgress,
+    currentXpRate,
+  );
 
   let maxLevel = 0;
   let totalLevel = 0;
@@ -363,6 +606,8 @@ function buildSummary(
     pacingPlayerName: progressionPacing.pacingPlayerName,
     projectedDaysToLevel100: progressionPacing.projectedDaysToLevel100,
     projectedMonthsToLevel100: progressionPacing.projectedMonthsToLevel100,
+    mercenariesHired: sumStat(players, 'mercenariesHired'),
+    captivesTaken: sumStat(players, 'captivesTaken'),
   };
 }
 
@@ -414,6 +659,7 @@ function snapshotTopPlayers(
       goldInBank: player.goldInBank,
       status: player.status,
       power: getPlayerPower(player),
+      activity: player.activity,
     }))
     .sort((a, b) => {
       if (b.level !== a.level) return b.level - a.level;
@@ -488,7 +734,7 @@ function buildPlayerProgress(
   });
 }
 
-async function runSimulation(
+export async function runSimulation(
   config: SimulationRequest,
 ): Promise<SimulationResponse> {
   const startedAtMs = Date.now();
@@ -507,7 +753,16 @@ async function runSimulation(
     turnIntervalMinutes: config.turnIntervalMinutes,
     attackLevelRange: config.attackLevelRange,
     random: config.seed != null ? createSeededRandom(config.seed) : undefined,
+    live: true,
+    event: config.event,
+    dungeon: config.dungeon,
   };
+  // A separate stream for population set-up keeps battle rolls independent of it.
+  const setupRandom = createSeededRandom((config.seed ?? 1) + 7919);
+  const ticksPerDay = Math.max(
+    1,
+    Math.floor((24 * 60) / config.turnIntervalMinutes),
+  );
 
   const initialPopulation = generatePopulation(
     config.populationSize,
@@ -515,10 +770,23 @@ async function runSimulation(
     config.seed,
   );
   const players = new Map<string, PlayerState>();
-  for (const player of initialPopulation) {
+  const activities = assignActivityTypes(
+    initialPopulation.length,
+    config.activityMix,
+    setupRandom,
+  );
+  initialPopulation.forEach((player, index) => {
     const clone = clonePlayer(player);
+    applyLiveRulesToPlayer(clone, activities[index], setupRandom);
+    settleLivePlayer(clone, ticksPerDay, 0);
     players.set(clone.id, clone);
-  }
+  });
+  formAlliances(
+    Array.from(players.values()),
+    config.alliances.share,
+    config.alliances.size,
+    setupRandom,
+  );
 
   const state: SimulationState = {
     players,
@@ -531,6 +799,40 @@ async function runSimulation(
 
   let nextPlayerId = config.populationSize;
   const checkpointDays = getCheckpointDays(config.days);
+  // Each player's XP gain on its most recent days, without event bonuses and
+  // at the XP-per-turn rate of the level it reached, for the L100 projection.
+  const recentXp = new Map<string, Array<{ gain: number; level: number }>>();
+  const recordXpDay = (
+    before: Map<string, { xp: number; level: number }>,
+    day: number,
+  ) => {
+    const multiplier = activeEvent(config.event, day)?.xpMultiplier ?? 1;
+    for (const player of state.players.values()) {
+      const start = before.get(player.id);
+      if (!start) continue;
+      const days = recentXp.get(player.id) ?? [];
+      days.push({
+        gain: (player.xp - start.xp) / multiplier,
+        level: start.level,
+      });
+      if (days.length > RECENT_XP_DAYS) days.shift();
+      recentXp.set(player.id, days);
+    }
+  };
+  const currentXpRate = (playerId: string): number | undefined => {
+    const player = state.players.get(playerId);
+    const days = recentXp.get(playerId);
+    if (!player || !days?.length) return undefined;
+    const finalRate = calculateProgressionXpPerTurn(player.level);
+    return (
+      days.reduce(
+        (sum, entry) =>
+          sum +
+          (entry.gain * finalRate) / calculateProgressionXpPerTurn(entry.level),
+        0,
+      ) / days.length
+    );
+  };
   const progressByPlayer = new Map<string, PlayerProgressSnapshot[]>();
   const dayTimings: SimulationTiming['slowestDays'] = [];
 
@@ -561,14 +863,29 @@ async function runSimulation(
         const clone = clonePlayer(joiner);
         clone.id = `player_${nextPlayerId}`;
         clone.displayName = `Player ${nextPlayerId}`;
+        // Late joiners are brand-new accounts, not copies of veterans.
+        makeFreshPlayer(
+          clone,
+          pickActivity(config.activityMix, setupRandom),
+          setupRandom,
+          day,
+        );
+        settleLivePlayer(clone, ticksPerDay, day);
         nextPlayerId += 1;
         state.players.set(clone.id, clone);
         progressByPlayer.set(clone.id, [snapshotPlayerProgress(clone, day)]);
       }
     }
 
+    const xpBefore = new Map(
+      Array.from(state.players.values(), (player) => [
+        player.id,
+        { xp: player.xp, level: player.level },
+      ]),
+    );
     const dayStartedAt = Date.now();
     const dayResult = await simulateDay(state);
+    recordXpDay(xpBefore, dayResult.day);
     dayTimings.push({
       day: dayResult.day,
       elapsedMs: Date.now() - dayStartedAt,
@@ -620,7 +937,18 @@ async function runSimulation(
 
   return {
     config: { ...config, effectiveBalance },
-    summary: buildSummary(dailyResults, state.players, state, playerProgress),
+    summary: buildSummary(
+      dailyResults,
+      state.players,
+      state,
+      playerProgress,
+      currentXpRate,
+    ),
+    byActivity: buildActivitySummaries(
+      state.players,
+      config.days,
+      currentXpRate,
+    ),
     dailyResults,
     charts: buildCharts(dailyResults, state),
     topPlayers,

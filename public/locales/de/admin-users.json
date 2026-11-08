@@ -18,7 +18,12 @@
     "permissions": "Berechtigungen",
     "addNote": "Interne Notiz hinzufügen",
     "notes": "Mitarbeiternotizen",
-    "export": "Benutzerdaten exportieren"
+    "export": "Benutzerdaten exportieren",
+    "record": "Kontodaten",
+    "alliances": "Allianzen",
+    "statusHistory": "Statusverlauf",
+    "gameplay": "Königreich",
+    "derived": "Abgeleitete Stärke"
   },
   "columns": {
     "id": "ID",
@@ -56,7 +61,9 @@
     "staffRoles": "Mitarbeiterrollen",
     "permissions": "Berechtigungen",
     "notes": "Notizen",
-    "operations": "Aktionen"
+    "operations": "Aktionen",
+    "upgrades": "Verbesserungen",
+    "forces": "Söldner und Truppen"
   },
   "editor": {
     "title": "{{username}}",
@@ -86,7 +93,31 @@
     "unknownAuthor": "Unbekannter Mitarbeiter",
     "pinned": "Angeheftet",
     "unknown": "Unbekannt",
-    "noteHelp": "Nur für berechtigte Mitarbeiter sichtbar."
+    "noteHelp": "Nur für berechtigte Mitarbeiter sichtbar.",
+    "rank": "Rang",
+    "lastActive": "Zuletzt aktiv",
+    "createdAt": "Beigetreten",
+    "currentEra": "Aktuelle Ära",
+    "eraJoinedAt": "Ära beigetreten (Schutzbeginn)",
+    "protectionForfeited": "Schutz in der Ära aufgegeben",
+    "start": "Beginn",
+    "end": "Ende",
+    "reason": "Grund",
+    "byAdmin": "Von",
+    "fortLevel": "Festungsstufe",
+    "fortHitpoints": "Festungstrefferpunkte",
+    "max": "Maximum",
+    "stamina": "Ausdauer",
+    "maxStamina": "Maximale Ausdauer",
+    "attackTurns": "Angriffszüge",
+    "houseLevel": "Wohnhausstufe",
+    "economyLevel": "Wirtschaftsstufe",
+    "race": "Volk",
+    "class": "Klasse",
+    "locale": "Sprache",
+    "bio": "Biografie",
+    "derivedHelp": "Wird beim Speichern neu berechnet, wenn Einheiten, Gegenstände, Festung, Erfahrung, Volk oder Klasse geändert werden.",
+    "mercenaryLocked": "Durch Söldnervertrag verwaltet"
   },
   "actions": {
     "edit": "Bearbeiten",
@@ -101,7 +132,8 @@
     "decreaseQuantity": "Anzahl von {{name}} verringern",
     "sortBy": "Nach {{field}} sortieren",
     "endImpersonation": "Identitätsübernahme beenden",
-    "savePermissions": "Berechtigungen speichern"
+    "savePermissions": "Berechtigungen speichern",
+    "reload": "Spieler neu laden"
   },
   "grant": {
     "userSearch": "Spieler suchen",
@@ -118,7 +150,8 @@
     "saved": "Die Benutzerdetails wurden aktualisiert.",
     "impersonating": "Sie sehen ein Konto in einer Identitätsübernahme.",
     "moderatorReadOnly": "Moderatoren können Konten ansehen und Mitarbeiternotizen hinzufügen. Änderungen, Berechtigungen und Identitätsübernahmen sind Administratoren vorbehalten.",
-    "permissionsSaved": "Berechtigungen für {{username}} aktualisiert."
+    "permissionsSaved": "Berechtigungen für {{username}} aktualisiert.",
+    "noChanges": "Keine Änderungen zum Speichern"
   },
   "states": {
     "loading": "Benutzerdaten werden geladen…",
@@ -126,7 +159,9 @@
     "noUsers": "Keine Benutzer passen zu diesen Filtern.",
     "noUnits": "Dieses Konto besitzt keine Einheiten.",
     "noItems": "Dieses Konto besitzt keine Gegenstände.",
-    "noNotes": "Es wurden noch keine Mitarbeiternotizen hinzugefügt."
+    "noNotes": "Es wurden noch keine Mitarbeiternotizen hinzugefügt.",
+    "noAlliances": "Keine Allianz",
+    "noStatusHistory": "Keine Statusänderungen"
   },
   "errors": {
     "title": "Anfrage fehlgeschlagen",
@@ -140,6 +175,7 @@
     "grant": "Berechtigungen konnten nicht aktualisiert werden.",
     "impersonationTitle": "Identitätsübernahme fehlgeschlagen",
     "impersonation": "Die Identitätsübernahme konnte nicht gestartet werden.",
-    "stopImpersonation": "Die Identitätsübernahme konnte nicht beendet werden."
+    "stopImpersonation": "Die Identitätsübernahme konnte nicht beendet werden.",
+    "stale": "Dieser Spieler wurde geändert, seit du den Editor geöffnet hast. Lade neu, um die aktuellen Werte zu sehen. Deine Änderungen wurden nicht gespeichert."
   }
 }

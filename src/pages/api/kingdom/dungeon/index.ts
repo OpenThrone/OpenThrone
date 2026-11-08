@@ -11,6 +11,7 @@ import {
 } from '@/constants/Captives';
 import { FEATURE_REQUIREMENTS } from '@/constants/FeatureUnlocks';
 import { Fortifications } from '@/constants/Fortifications';
+import { raidersCapacity, raidersRansomShare } from '@/constants/RacialPerks';
 import prisma from '@/lib/prisma';
 import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -55,6 +56,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       fort_level: true,
       economy_level: true,
       race: true,
+      racial_perk_tier: true,
       currentEraId: true,
     },
   });
@@ -77,7 +79,11 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     prisma.captive.findMany({
       where: { sourceId: userId, ...eraFilter },
       orderBy: { capturedAt: 'desc' },
-      include: { captor: { select: { display_name: true } } },
+      include: {
+        captor: {
+          select: { display_name: true, race: true, racial_perk_tier: true },
+        },
+      },
     }),
   ]);
 
@@ -85,6 +91,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     row: (typeof heldRows)[number] | (typeof mineRows)[number],
     counterpartName: string,
     asCaptor: boolean,
+    captorTier: number,
   ): DungeonCaptiveView => {
     const ransomPrice =
       ransomPricePerUnit(row.unitType, row.unitLevel) * BigInt(row.quantity);
@@ -96,7 +103,10 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       counterpartName,
       capturedAt: row.capturedAt.toISOString(),
       ransomPrice: ransomPrice.toString(),
-      ransomShare: captorRansomShare(ransomPrice).toString(),
+      ransomShare: (captorTier
+        ? raidersRansomShare(ransomPrice, captorTier)
+        : captorRansomShare(ransomPrice)
+      ).toString(),
       convertCost: asCaptor
         ? (
             convertCostPerUnit(row.unitType, row.unitLevel) *
@@ -110,8 +120,18 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     };
   };
 
-  const held = heldRows.map((row) => view(row, row.source.display_name, true));
-  const mine = mineRows.map((row) => view(row, row.captor.display_name, false));
+  const tier = user.race === 'GOBLIN' ? user.racial_perk_tier : 0;
+  const held = heldRows.map((row) =>
+    view(row, row.source.display_name, true, tier),
+  );
+  const mine = mineRows.map((row) =>
+    view(
+      row,
+      row.captor.display_name,
+      false,
+      row.captor.race === 'GOBLIN' ? row.captor.racial_perk_tier : 0,
+    ),
+  );
 
   return res.status(200).json({
     unlocked:
@@ -123,7 +143,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     fortLevel: user.fort_level,
     requiredFortLevel,
     requiredFortName,
-    capacity: dungeonCapacity(user.fort_level),
+    capacity: raidersCapacity(dungeonCapacity(user.fort_level), tier),
     held,
     heldTotal: held.reduce((sum, row) => sum + row.quantity, 0),
     mine,

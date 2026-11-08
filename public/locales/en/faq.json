@@ -40,6 +40,9 @@
       "title": "What should I check before attacking?",
       "answer": "Review the target, your offensive strength, and the attack turns you plan to commit. Spy information can help you assess a target, but combat carries a risk of losses. After the battle, inspect the report and War History to understand the result before committing more resources."
     },
+    "stamina": {
+      "title": "What is stamina?"
+    },
     "access": {
       "title": "Why might I be unable to sign in?",
       "answer": "Read the message shown on the login page. Access may be restricted while login is disabled; a registered account does not guarantee that play is currently available. Check the public news for announcements. If the message does not explain your problem, ask for help without sharing your password or sign-in codes."

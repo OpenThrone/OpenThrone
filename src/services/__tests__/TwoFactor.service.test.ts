@@ -7,6 +7,11 @@ import {
   resetMockPrisma,
 } from 'test/utils/mockPrisma';
 
+import {
+  decryptTwoFactorSecret,
+  isEncryptedTwoFactorSecret,
+} from '@/utils/twoFactorSecret';
+
 installMockPrisma(vi);
 const {
   beginTwoFactorSetup,
@@ -68,10 +73,14 @@ describe('two-factor enrollment', () => {
     expect(await completeTwoFactorSetup(125, code, await setupToken())).toEqual(
       { success: true },
     );
-    expect(mockPrisma.users.updateMany).toHaveBeenCalledWith({
-      where: { id: 125, twoFactorSecret: null },
-      data: { twoFactorSecret: AUTHENTICATOR_SECRET },
-    });
+    const call = mockPrisma.users.updateMany.mock.calls[0][0];
+    expect(call.where).toEqual({ id: 125, twoFactorSecret: null });
+    // Stored encrypted, never as the plain authenticator secret.
+    expect(call.data.twoFactorSecret).not.toContain(AUTHENTICATOR_SECRET);
+    expect(isEncryptedTwoFactorSecret(call.data.twoFactorSecret)).toBe(true);
+    expect(decryptTwoFactorSecret(call.data.twoFactorSecret)).toBe(
+      AUTHENTICATOR_SECRET,
+    );
   });
 
   it('rejects invalid codes, tampering, expiry, and another account without writes', async () => {

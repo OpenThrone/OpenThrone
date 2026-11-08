@@ -110,6 +110,7 @@ export const STAFF_ROLE_LABELS: Record<StaffRole, string> = {
 const PERMISSION_LABELS: Record<PermissionType, string> = {
   [PermissionType.VIEW_STAFF_DASHBOARD]: 'View Staff Dashboard',
   [PermissionType.VIEW_AUDIT_LOGS]: 'View Audit Logs',
+  [PermissionType.MANAGE_SUPPORTERS]: 'Manage Supporters',
   [PermissionType.MANAGE_USERS]: 'Manage Users',
   [PermissionType.MANAGE_ACCOUNT_STATUS]: 'Manage Account Status',
   [PermissionType.MANAGE_MODERATOR_NOTES]: 'Manage Moderator Notes',

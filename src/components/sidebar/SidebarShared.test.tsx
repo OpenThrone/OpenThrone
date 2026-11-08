@@ -33,7 +33,9 @@ jest.mock('next-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
+// Keep the real formatters (formatOTTime); only the clock inputs are faked.
 jest.mock('@/utils/timefunctions', () => ({
+  ...jest.requireActual('@/utils/timefunctions'),
   getOTTime: jest.fn(),
   getTimeRemaining: jest.fn(),
   getTimeToNextTurn: jest.fn(),

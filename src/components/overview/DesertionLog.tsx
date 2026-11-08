@@ -97,6 +97,7 @@ export interface DesertionLogProps {
  */
 export function DesertionLog({ events, limit = 5 }: DesertionLogProps) {
   const { t, i18n } = useTranslation('kingdom');
+  const [disciplineSaved, setDisciplineSaved] = useState(0);
   const [fetched, setFetched] = useState<DesertionEvent[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading',
@@ -119,6 +120,11 @@ export function DesertionLog({ events, limit = 5 }: DesertionLogProps) {
         }
         const rows = (data as { desertions?: unknown } | null)?.desertions;
         if (cancelled) return;
+        setDisciplineSaved(
+          Number(
+            (data as { disciplineSaved?: number } | null)?.disciplineSaved ?? 0,
+          ),
+        );
         setFetched(
           (Array.isArray(rows) ? rows : [])
             .map(normaliseEvent)
@@ -179,6 +185,11 @@ export function DesertionLog({ events, limit = 5 }: DesertionLogProps) {
       {state === 'error' && (
         <Text size="sm" c="red.4">
           {t('desertions.error')}
+        </Text>
+      )}
+      {state === 'ready' && disciplineSaved > 0 && (
+        <Text size="sm">
+          {t('desertions.disciplineSaved', { count: disciplineSaved })}
         </Text>
       )}
       {state === 'ready' && rows.length === 0 && (

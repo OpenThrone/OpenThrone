@@ -1,7 +1,10 @@
 import type { NextApiResponse } from 'next';
 
-import { AUTO_RECRUIT_ENABLED } from '@/constants/AutoRecruit';
 import { withAuth } from '@/middleware/auth';
+import {
+  AUTO_RECRUIT_DISABLED,
+  canAutoRecruit,
+} from '@/services/AutoRecruitAccess.service';
 import {
   getRandomAutoRecruitUser,
   RECRUITER_DAILY_CAP_ERROR,
@@ -10,11 +13,8 @@ import type { AuthenticatedRequest } from '@/types/api';
 
 /** Returns the next recruit link for the signed-in recruiter's auto-recruit loop. */
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
-  if (!AUTO_RECRUIT_ENABLED)
-    return res.status(503).json({
-      error: 'Auto-Recruit is currently disabled.',
-      code: 'AUTO_RECRUIT_DISABLED',
-    });
+  if (!(await canAutoRecruit(req.session?.user?.id)))
+    return res.status(503).json(AUTO_RECRUIT_DISABLED);
   if (req.method !== 'GET') {
     return res.status(405).end(); // Method not allowed
   }

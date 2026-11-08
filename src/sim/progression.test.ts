@@ -5,6 +5,7 @@ import {
   getLevelFromSimXp,
   getXpFloorForLevel,
   getXpRemainingToLevel100,
+  projectDaysToLevel100,
 } from './progression';
 
 describe('progression helpers', () => {
@@ -36,8 +37,46 @@ describe('progression helpers', () => {
     expect(result.pacingPlayerId).toBe('attacker');
     expect(result.avgXpPerDay).toBe(3000);
     expect(result.projectedDaysToLevel100).toBe(
+      projectDaysToLevel100(90000, 3000),
+    );
+    // XP per turn falls at higher levels, so it takes longer than a straight line.
+    expect(result.projectedDaysToLevel100!).toBeGreaterThan(
       getXpRemainingToLevel100(90000) / 3000,
     );
+  });
+
+  it('projects from the current rate when one is given', () => {
+    const progress = [
+      {
+        id: 'attacker',
+        displayName: 'Attack + Loot',
+        started: { day: 0 },
+        final: { day: 30, xp: 90000 },
+        deltas: { xp: 90000 },
+      },
+    ];
+    const result = calculateProgressionPacing(progress, () => 1500);
+    expect(result.avgXpPerDay).toBe(3000);
+    expect(result.projectedDaysToLevel100).toBe(
+      projectDaysToLevel100(90000, 1500),
+    );
+  });
+
+  it('never reaches L100 when the current rate is zero', () => {
+    const result = calculateProgressionPacing(
+      [
+        {
+          id: 'stalled',
+          displayName: 'Stalled',
+          started: { day: 0 },
+          final: { day: 30, xp: 90000 },
+          deltas: { xp: 90000 },
+        },
+      ],
+      () => 0,
+    );
+    expect(result.projectedDaysToLevel100).toBeNull();
+    expect(result.projectedMonthsToLevel100).toBeNull();
   });
 
   it('returns empty pacing when no tracked player gains XP', () => {

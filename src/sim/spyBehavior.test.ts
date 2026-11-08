@@ -354,8 +354,8 @@ describe('checkSpyEligibility', () => {
       expect(result.reason).toBe('INSUFFICIENT_ATTACK_TURNS');
   });
 
-  it('rejects when attacker has insufficient stamina', () => {
-    const attacker = makeSpyAttacker({ stamina: 1 });
+  it('allows missions at zero stamina', () => {
+    const attacker = makeSpyAttacker({ stamina: 0 });
     const defender = makeSentryDefender();
     const result = checkSpyEligibility({
       attacker,
@@ -368,8 +368,7 @@ describe('checkSpyEligibility', () => {
       tracker: createSpyDayTracker(),
       limits,
     });
-    expect(result.eligible).toBe(false);
-    if ('reason' in result) expect(result.reason).toBe('INSUFFICIENT_STAMINA');
+    expect(result.eligible).toBe(true);
   });
 
   it('rejects once the per-day cap for the mission kind is reached', () => {

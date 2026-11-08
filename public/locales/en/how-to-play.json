@@ -45,7 +45,7 @@
     },
     "undead": {
       "name": "Undead",
-      "description": "+5% offense bonus. Spy operations use a 5% lower stamina-cost multiplier, rounded up per operation."
+      "description": "+5% offense bonus."
     },
     "matchups": "Race bonuses shape your army; no race automatically defeats another. Melee attacks meet melee defense, and ranged attacks meet ranged defense. Scout the enemy and equip troops for the pressure you expect."
   },
@@ -103,6 +103,9 @@
     "spy": {
       "title": "Spy Operations",
       "text": "Send spies to scout enemy troop counts before committing to an attack."
+    },
+    "stamina": {
+      "title": "Stamina"
     }
   },
   "alliances": {

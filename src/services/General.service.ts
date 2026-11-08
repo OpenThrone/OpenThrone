@@ -5,6 +5,7 @@ import type { AccountStatus, PermissionType } from '@/lib/prisma-exports';
 import { getDepositHistory } from '@/services/Bank.service';
 import { loadProtectionContext } from '@/services/BattleProtection.service';
 import { ensureActiveEra } from '@/services/Era.service';
+import { projectUserStamina } from '@/services/Stamina.service';
 import { getUpdatedStatus } from '@/services/User.service';
 import { UserEconomyService } from '@/services/UserEconomyService';
 import type {
@@ -101,15 +102,20 @@ export class GeneralService {
         select: {
           id: true,
           display_name: true,
+          supporter_until: true,
           race: true,
           class: true,
           experience: true,
           gold: true,
           gold_in_bank: true,
           fort_level: true,
+          racial_perk_tier: true,
           fort_hitpoints: true,
           house_level: true,
           attack_turns: true,
+          stamina: true,
+          maxStamina: true,
+          staminaUpdatedAt: true,
           last_active: true,
           bio: true,
           colorScheme: true,
@@ -248,15 +254,20 @@ export class GeneralService {
           select: {
             id: true,
             display_name: true,
+            supporter_until: true,
             race: true,
             class: true,
             experience: true,
             gold: true,
             gold_in_bank: true,
             fort_level: true,
+            racial_perk_tier: true,
             fort_hitpoints: true,
             house_level: true,
             attack_turns: true,
+            stamina: true,
+            maxStamina: true,
+            staminaUpdatedAt: true,
             last_active: true,
             bio: true,
             colorScheme: true,
@@ -416,10 +427,13 @@ export class GeneralService {
         ),
       );
 
+      const stamina = await projectUserStamina(user);
+
       // Construct the DTO
       const responseDto: UserApiResponse = {
         id: user.id,
         display_name: user.display_name,
+        supporterUntil: user.supporter_until?.toISOString() ?? null,
         twoFactorEnabled: !!user.twoFactorSecret,
         race: user.race as PlayerRace,
         class: user.class as PlayerClass,
@@ -427,9 +441,13 @@ export class GeneralService {
         gold: user.gold.toString(),
         gold_in_bank: user.gold_in_bank.toString(),
         fort_level: user.fort_level,
+        racial_perk_tier: user.racial_perk_tier,
         fort_hitpoints: user.fort_hitpoints,
         house_level: user.house_level,
         attack_turns: user.attack_turns,
+        stamina: stamina.stamina,
+        maxStamina: stamina.maxStamina,
+        staminaUpdatedAt: stamina.staminaUpdatedAt.toISOString(),
         UserUnit: user.UserUnit,
         UserItem: user.UserItem,
         UserStructureUpgrade: user.UserStructureUpgrade,

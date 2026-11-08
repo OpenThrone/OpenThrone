@@ -144,10 +144,6 @@ delete require.cache[
 const impersonateStartHandler =
   require('../../../../pages/api/admin/impersonate/start').default;
 
-delete require.cache[require.resolve('../../../../pages/api/admin/start-era')];
-const startEraHandler =
-  require('../../../../pages/api/admin/start-era').default;
-
 const makeRes = () => {
   const res: any = {
     setHeader: vi.fn(),
@@ -300,22 +296,16 @@ describe('ADM-01: era start is admin-only', () => {
     });
   });
 
-  it.each([
-    ['game/eras', () => erasHandler],
-    ['start-era', () => startEraHandler],
-  ])(
-    '%s refuses to start an era when the audit row cannot be written',
-    async (_name, getHandler) => {
-      const res = makeRes();
-      mockPrisma.$transaction = vi.fn(async () => ({ id: 7 }));
-      logActionStrict.mockRejectedValueOnce(new Error('audit down'));
+  it('refuses to start an era when the audit row cannot be written', async () => {
+    const res = makeRes();
+    mockPrisma.$transaction = vi.fn(async () => ({ id: 7 }));
+    logActionStrict.mockRejectedValueOnce(new Error('audit down'));
 
-      await getHandler()(makeReq(ADMIN_ID, { method: 'POST', body: {} }), res);
+    await erasHandler(makeReq(ADMIN_ID, { method: 'POST', body: {} }), res);
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
-    },
-  );
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+  });
 });
 
 describe('ADM-03: user export is admin-only and audited', () => {
@@ -393,6 +383,67 @@ describe('ADM-04: staff email takeover and admin-on-admin edits are blocked', ()
     ...extra,
   });
 
+  const CURRENT_COLUMN: Record<string, string> = {
+    username: 'display_name',
+    email: 'email',
+    gold: 'gold',
+    goldInBank: 'gold_in_bank',
+    experience: 'experience',
+    stamina: 'stamina',
+    maxStamina: 'maxStamina',
+  };
+
+  /**
+   * Expectations an editor that loaded `target` would send: the current value
+   * of every field, unit, item and set in `body`. `overrides` simulates a stale
+   * editor by replacing some of them.
+   */
+  const editorExpectations = (target: any, body: any, overrides: any) => {
+    const fields: Record<string, unknown> = {};
+    for (const section of [body.profile, body.stats, body.gameplay]) {
+      for (const key of Object.keys(section ?? {})) {
+        // Inputs the route does not accept (e.g. derived level) have no base value.
+        if (!(key in CURRENT_COLUMN) && section !== body.gameplay) continue;
+        const value = target[CURRENT_COLUMN[key] ?? key];
+        fields[key] = typeof value === 'bigint' ? value.toString() : value;
+      }
+    }
+    const quantities = (rows: any[] = [], key: (row: any) => string) =>
+      Object.fromEntries(rows.map((row) => [key(row), row.quantity]));
+    return {
+      eraId: target.currentEraId ?? null,
+      fields: { ...fields, ...overrides.fields },
+      units: {
+        ...quantities(
+          target.UserUnit,
+          (r) => `${r.type}:${r.level}:${r.isMercenary}`,
+        ),
+        ...overrides.units,
+      },
+      items: {
+        ...quantities(
+          target.UserItem,
+          (r) => `${r.type}:${r.usage}:${r.level}`,
+        ),
+        ...overrides.items,
+      },
+      ...(body.permissions
+        ? {
+            permissions: (target.permissions ?? []).map((p: any) => p.type),
+          }
+        : {}),
+      ...(body.staffRoles
+        ? {
+            staffRoles: (target.staffRoleAssignments ?? []).map(
+              (a: any) => a.role,
+            ),
+          }
+        : {}),
+      ...('eraId' in overrides ? { eraId: overrides.eraId } : {}),
+      ...(overrides.permissions ? { permissions: overrides.permissions } : {}),
+    };
+  };
+
   const runPut = async (
     actorId: number,
     targetRoles: Array<{ role: string; revokedAt: Date | null }>,
@@ -403,17 +454,49 @@ describe('ADM-04: staff email takeover and admin-on-admin edits are blocked', ()
       grantCount?: number;
       otherAdmins?: number[];
       extraBody?: Record<string, unknown>;
+      userOverrides?: Record<string, unknown>;
+      /** Sent verbatim instead of the editor-style expectations. */
+      rawExpected?: unknown;
     } = {},
   ) => {
     const targetId = options.targetId ?? TARGET_ID;
+    const target: any = makeUserDetails({
+      id: targetId,
+      email: targetEmail,
+      gold: 0n,
+      gold_in_bank: 0n,
+      experience: 0,
+      staffRoleAssignments: targetRoles
+        .filter((row) => row.revokedAt === null)
+        .map((row) => ({ role: row.role })),
+      ...options.userOverrides,
+    });
+    const body: any = putBody(email, options.extraBody);
+    if ('rawExpected' in options) {
+      if (options.rawExpected === undefined) delete body.expected;
+      else body.expected = options.rawExpected;
+    } else {
+      body.expected = editorExpectations(target, body, body.expected ?? {});
+    }
     const update = vi.fn(async () => null);
     const grantUpdateMany = vi.fn(async () => ({ count: 0 }));
     const grantDeleteMany = vi.fn(async () => ({ count: 0 }));
     const tx = makeTx({
       users: {
-        findUnique: vi.fn(async () =>
-          makeUserDetails({ id: targetId, email: targetEmail }),
-        ),
+        findUnique: vi.fn(async () => target),
+        // Post-edit reload used to recompute stored strength stats.
+        findUniqueOrThrow: vi.fn(async () => ({
+          ...makeUserDetails({ id: targetId, email: targetEmail }),
+          experience: 0,
+          fort_level: 1,
+          race: 'HUMAN',
+          class: 'FIGHTER',
+          UserUnit: [],
+          UserItem: [],
+          UserStructureUpgrade: [],
+          UserBattleUpgrade: [],
+          UserBonusPoints: [],
+        })),
         update,
       },
       staffRoleAssignment: {
@@ -437,7 +520,7 @@ describe('ADM-04: staff email takeover and admin-on-admin edits are blocked', ()
       makeReq(actorId, {
         method: 'PUT',
         query: { userId: String(targetId) },
-        body: putBody(email, options.extraBody),
+        body,
       }),
       res,
       { query: { userId: targetId } } as any,
@@ -537,6 +620,211 @@ describe('ADM-04: staff email takeover and admin-on-admin edits are blocked', ()
     ).toBe(true);
   });
 
+  it('takes the shared era lock before the player row lock', async () => {
+    const { res, tx } = await runPut(ADMIN_ID, [], 'target@example.com');
+    expect(res.status).toHaveBeenCalledWith(200);
+    const sql = tx.$queryRaw.mock.calls.map((call: any) => call[0].join('?'));
+    const eraLock = sql.findIndex((q: string) =>
+      q.includes('pg_advisory_xact_lock_shared(684731920)'),
+    );
+    const rowLock = sql.findIndex((q: string) => q.includes('FOR UPDATE'));
+    expect(eraLock).toBeGreaterThanOrEqual(0);
+    expect(eraLock).toBeLessThan(rowLock);
+  });
+
+  it('rejects a stale edit with 409 and writes nothing', async () => {
+    const { res, update, tx } = await runPut(
+      ADMIN_ID,
+      [],
+      'target@example.com',
+      'target@example.com',
+      {
+        userOverrides: {
+          gold: 500n,
+          UserUnit: [
+            { type: 'OFFENSE', level: 1, isMercenary: false, quantity: 7 },
+          ],
+        },
+        extraBody: {
+          stats: { gold: '900' },
+          expected: { fields: { gold: '100' } },
+        },
+      },
+    );
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'STALE' }),
+    );
+    expect(update).not.toHaveBeenCalled();
+    expect(tx.userUnit.updateMany).not.toHaveBeenCalled();
+    expect(logAction).toHaveBeenCalledWith(
+      ADMIN_ID,
+      'ADMIN_USER_UPDATE_DENIED',
+      IP,
+      expect.objectContaining({ reason: 'stale_edit', staleFields: ['gold'] }),
+    );
+  });
+
+  it('rejects an update without expected values with 422', async () => {
+    const { res, update } = await runPut(
+      ADMIN_ID,
+      [],
+      'target@example.com',
+      'target@example.com',
+      {
+        rawExpected: undefined,
+      },
+    );
+    expect(res.status).toHaveBeenCalledWith(422);
+    expect(update).not.toHaveBeenCalled();
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects an update missing the expectation for one field with 422', async () => {
+    const { res, update } = await runPut(
+      ADMIN_ID,
+      [],
+      'target@example.com',
+      'target@example.com',
+      {
+        extraBody: { stats: { gold: '900', experience: 0 } },
+        rawExpected: {
+          eraId: 1,
+          fields: {
+            username: 'target',
+            email: 'target@example.com',
+            experience: 0,
+          },
+          permissions: [],
+        },
+      },
+    );
+    expect(res.status).toHaveBeenCalledWith(422);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Missing expected values for: gold',
+    });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('rejects a stale permission set with 409', async () => {
+    const { res, update, grantUpdateMany } = await runPut(
+      ADMIN_ID,
+      [],
+      'target@example.com',
+      'target@example.com',
+      {
+        userOverrides: { permissions: [{ type: 'MANAGE_USERS' }] },
+        extraBody: {
+          permissions: { permissions: ['MANAGE_USERS', 'MODERATE_CHAT'] },
+          expected: { permissions: [] },
+        },
+      },
+    );
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(update).not.toHaveBeenCalled();
+    expect(grantUpdateMany).not.toHaveBeenCalled();
+    expect(logAction).toHaveBeenCalledWith(
+      ADMIN_ID,
+      'ADMIN_USER_UPDATE_DENIED',
+      IP,
+      expect.objectContaining({
+        reason: 'stale_edit',
+        staleFields: ['permissions'],
+      }),
+    );
+  });
+
+  it('rejects a stale unit quantity with 409', async () => {
+    const { res, tx } = await runPut(
+      ADMIN_ID,
+      [],
+      'target@example.com',
+      'target@example.com',
+      {
+        userOverrides: {
+          UserUnit: [
+            { type: 'OFFENSE', level: 1, isMercenary: false, quantity: 7 },
+          ],
+        },
+        extraBody: {
+          army: {
+            units: [
+              {
+                id: 'OFFENSE:1:false',
+                type: 'OFFENSE',
+                level: 1,
+                isMercenary: false,
+                quantity: 50,
+              },
+            ],
+          },
+          expected: { units: { 'OFFENSE:1:false': 3 } },
+        },
+      },
+    );
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(tx.userUnit.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects an edit loaded in a different era with 409', async () => {
+    const { res, update } = await runPut(
+      ADMIN_ID,
+      [],
+      'target@example.com',
+      'target@example.com',
+      { extraBody: { expected: { eraId: 0 } } },
+    );
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('writes only the fields the editor sent when expectations match', async () => {
+    const { res, update } = await runPut(
+      ADMIN_ID,
+      [],
+      'target@example.com',
+      'target@example.com',
+      {
+        userOverrides: { stamina: 10, maxStamina: 100, gold: 500n },
+        extraBody: {
+          profile: {},
+          stats: {},
+          gameplay: { stamina: 40 },
+          expected: { eraId: 1, fields: { stamina: 10 } },
+        },
+      },
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    const data = update.mock.calls.map((call: any) => call[0].data);
+    expect(data).toEqual([{ stamina: 40 }]);
+  });
+
+  it('rejects lowering experience below the allocated proficiency points', async () => {
+    const { res, update } = await runPut(
+      ADMIN_ID,
+      [],
+      'target@example.com',
+      'target@example.com',
+      {
+        userOverrides: {
+          experience: 1_000_000,
+          UserBonusPoints: [
+            { type: 'OFFENSE', level: 4 },
+            { type: 'DEFENSE', level: 3 },
+          ],
+        },
+        extraBody: { stats: { experience: 0 } },
+      },
+    );
+    expect(res.status).toHaveBeenCalledWith(422);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.stringContaining('7 proficiency points'),
+      }),
+    );
+    expect(update).not.toHaveBeenCalled();
+  });
+
   it('updates exact normalized levels and usages without merging matching types', async () => {
     const { res, tx } = await runPut(
       ADMIN_ID,
@@ -544,6 +832,16 @@ describe('ADM-04: staff email takeover and admin-on-admin edits are blocked', ()
       'target@example.com',
       'target@example.com',
       {
+        userOverrides: {
+          UserUnit: [
+            { type: 'OFFENSE', level: 1, isMercenary: false, quantity: 1 },
+            { type: 'OFFENSE', level: 2, isMercenary: true, quantity: 9 },
+          ],
+          UserItem: [
+            { type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 2 },
+            { type: 'WEAPON', usage: 'DEFENSE', level: 1, quantity: 3 },
+          ],
+        },
         extraBody: {
           army: {
             units: [
@@ -1184,5 +1482,71 @@ describe('admin sensitive chat reads', () => {
       } as any),
     ).rejects.toThrow('audit unavailable');
     expect(res.json).not.toHaveBeenCalled();
+  });
+});
+
+describe('admin ledger removal protections', () => {
+  const ledgerHandler =
+    require('../../../../pages/api/admin/ledgers/[kind]').default;
+  const createdAt = new Date('2020-01-01T00:00:00Z');
+  const request = async (kind: string, row: any) => {
+    const model = kind === 'blocks' ? 'identityBlock' : 'emailSuppression';
+    const tx = makeTx({
+      [model]: {
+        findUnique: vi.fn(async () => row),
+        deleteMany: vi.fn(async () => ({ count: 1 })),
+      },
+    });
+    mockPrisma.$transaction = vi.fn(async (fn: any) => fn(tx));
+    const res = makeRes();
+    await ledgerHandler(
+      makeReq(ADMIN_ID, { method: 'DELETE', query: { kind }, body: { id: 8 } }),
+      res,
+    );
+    return { res, tx, model };
+  };
+  it('refuses active sanctions and anonymization blocks', async () => {
+    for (const reason of ['SANCTION', 'DELETION_COOLDOWN', 'RESERVED_NAME']) {
+      const { res, tx } = await request('blocks', {
+        id: 8,
+        reason,
+        expiresAt: null,
+      });
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(tx.identityBlock.deleteMany).not.toHaveBeenCalled();
+    }
+  });
+  it('refuses recipient opt-outs and complaints', async () => {
+    for (const reason of ['UNSUBSCRIBED', 'COMPLAINT']) {
+      const { res, tx } = await request('suppressions', { id: 8, reason });
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(tx.emailSuppression.deleteMany).not.toHaveBeenCalled();
+    }
+  });
+  it('audits a permitted deletion in the same transaction without raw identity', async () => {
+    const row = {
+      id: 8,
+      kind: 'EMAIL',
+      hash: 'synthetic-hash',
+      reason: 'SANCTION',
+      sourceUserId: 4,
+      createdAt,
+      expiresAt: new Date('2021-01-01T00:00:00Z'),
+    };
+    const { res, tx } = await request('blocks', row);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(tx.identityBlock.deleteMany).toHaveBeenCalledTimes(1);
+    expect(logActionStrict).toHaveBeenCalledWith(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          hash: row.hash,
+          reason: row.reason,
+          kind: row.kind,
+          source: 4,
+          createdAt: createdAt.toISOString(),
+        }),
+      }),
+      tx,
+    );
   });
 });

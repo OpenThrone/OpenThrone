@@ -22,6 +22,7 @@ import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
 import { ALLIANCE_NOTE_MAX_LENGTH } from '@/constants/allianceTreasury';
 import { useUser } from '@/context/users';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
 import { toLocale } from '@/utils/numberFormatting';
@@ -59,6 +60,7 @@ export const LoanSection = ({
   refreshKey,
 }: LoanSectionProps) => {
   const { t } = useTranslation('allianceTreasury');
+  const { config } = useRuntimeConfig();
   const { user, forceUpdate } = useUser();
   const [amount, setAmount] = useState<bigint>(0n);
   const [reason, setReason] = useState('');
@@ -181,7 +183,9 @@ export const LoanSection = ({
           })}
         </Text>
         <Text size="sm" c="dimmed">
-          {t('loan.incomeShare')}
+          {t('loan.incomeShare', {
+            percent: config?.allianceLoanIncomeSharePercent ?? 25,
+          })}
         </Text>
 
         {myOpen ? (

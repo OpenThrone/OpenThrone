@@ -225,6 +225,21 @@
       "recruitDaily": "Wenn Sie jeden Tag die maximale Anzahl rekrutieren, wächst Ihr Königreich stetig weiter.",
       "wellEquipped": "Eine Einheit ist nur so stark wie ihre Ausrüstung. Sorgen Sie dafür, dass Ihre Armee gut ausgerüstet ist.",
       "fortDefense": "Wenn Ihre Verteidigung weniger als 25 % Ihrer nicht kämpfenden Bevölkerung beträgt, können Sie bei einem Angriff Bürger und Arbeiter verlieren. Halten Sie Ihre Festung instand."
+    },
+    "armyCondition": {
+      "label": "Armee-Ausdauer",
+      "rested": "Ausgeruht",
+      "weary": "Müde",
+      "exhausted": "Erschöpft",
+      "tooltip": "Niedrige Ausdauer schwächt die Angriffskraft Ihrer Armee.",
+      "offensePenalty": "Angriff −{{percent}} %",
+      "off": "Ausdauer aus",
+      "short": "Ausdauer",
+      "paused": "Erholung pausiert",
+      "fullIn": "Voll in {{time}}",
+      "cost": "Kostet {{cost}} Ausdauer → {{state}} ({{offense}} % Angriff)",
+      "rules": "Angriffe verbrauchen sie, Spionage ist kostenlos. Unter {{threshold}} sinkt die Angriffskraft, bei null auf {{floor}} %.",
+      "learnMore": "Vollständige Erklärung öffnen."
     }
   },
   "footer": {
@@ -347,6 +362,8 @@
     }
   },
   "intelReport": {
+    "unitLevel": "{{name}} · St. {{level}}",
+    "mercenary": "Söldner",
     "observedPopulation": "Beobachtete Bevölkerung",
     "observedTotal": "Beobachtet: {{count}}",
     "unobservedPopulation": "Die unbeobachtete Bevölkerung ist unbekannt.",
@@ -824,19 +841,33 @@
     "orderDescription": "Wird für diesen Spieler auf diesem Gerät automatisch gespeichert.",
     "orderPriority": "Höchste Priorität zuerst",
     "orderNewest": "Neueste zuerst",
-  "title": "Ankündigungen",
-  "priority": "Höchste Priorität zuerst",
-  "filter": "Ankündigungen nach Schweregrad filtern",
-  "ALL": "Alle",
-  "CRITICAL": "Kritisch",
-  "WARNING": "Warnung",
-  "INFO": "Info",
-  "SUCCESS": "Erfolg",
-  "page": "{{current}} von {{total}}",
-  "goToPage": "Zur Ankündigung {{page}}",
-  "next": "Nächste Ankündigung",
-  "previous": "Vorherige Ankündigung",
-  "first": "Erste Ankündigung",
-  "last": "Letzte Ankündigung"
-}
+    "title": "Ankündigungen",
+    "priority": "Höchste Priorität zuerst",
+    "filter": "Ankündigungen nach Schweregrad filtern",
+    "ALL": "Alle",
+    "CRITICAL": "Kritisch",
+    "WARNING": "Warnung",
+    "INFO": "Info",
+    "SUCCESS": "Erfolg",
+    "page": "{{current}} von {{total}}",
+    "goToPage": "Zur Ankündigung {{page}}",
+    "next": "Nächste Ankündigung",
+    "previous": "Vorherige Ankündigung",
+    "first": "Erste Ankündigung",
+    "last": "Letzte Ankündigung"
+  },
+  "stamina": {
+    "disabled": "Ausdauer ist deaktiviert. Aktionen kosten keine Ausdauer.",
+    "recoveryPaused": "Die Ausdauerregeneration ist pausiert.",
+    "full": "Vollständig erholt",
+    "recoveryRate": "Regeneriert {{amount}} alle {{minutes}} Min.",
+    "nextIn": "nächste Regeneration in {{time}}",
+    "fullIn": "vollständig erholt in {{time}}",
+    "guide": {
+      "intro": "Ausdauer zeigt, wie frisch Ihre Armee für Angriffe ist. Jede Armee hat bis zu {{max}}.",
+      "spend": "Nur Angriffe verbrauchen sie: {{base}} pro Angriff plus {{perTurn}} für jeden eingesetzten Zug, ein Angriff mit {{turns}} Zügen kostet also {{example}}. Angriffsverbesserungen senken diese Kosten bis auf die Hälfte. Spionage ist kostenlos.",
+      "recovery": "Sie füllt sich alle {{minutes}} Minuten um {{amount}} auf. Eine erschöpfte Armee ist nach {{fullTime}} wieder voll ausgeruht.",
+      "penalty": "Angriffe sind immer möglich, doch unter {{threshold}} Ausdauer kämpft Ihre Armee schwächer, bei null nur noch mit {{floor}} % Angriffskraft."
+    }
+  }
 }

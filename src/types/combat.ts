@@ -32,6 +32,8 @@ export interface BattleFormation {
   maxHP: number;
   /** Per-unit combat stats (base + items + upgrades) */
   perUnitStats: PerUnitCombatStats;
+  /** perUnitStats without the share owned or contract gear adds (bonuses kept) */
+  troopStats: PerUnitCombatStats;
   /** Whether this formation represents mercenary units */
   forceContractId?: number;
   forceKind?: 'MERCENARY' | 'ALLIANCE';

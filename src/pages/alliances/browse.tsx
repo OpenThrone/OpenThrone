@@ -66,6 +66,8 @@ const Browse = () => {
             <AllianceCard
               key={alliance.id}
               name={alliance.name}
+              isPremium={alliance.isPremium}
+              premiumUntil={alliance.premiumUntil}
               description={alliance.motto}
               members={alliance._count.members}
               gold={

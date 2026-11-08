@@ -8,6 +8,9 @@ describe('bankLimits', () => {
   });
 
   describe('getMaxDeposit', () => {
+    it('uses a configured cap', () => {
+      expect(getMaxDeposit(100n, 50)).toBe(50n);
+    });
     it('returns 0n for 0n gold', () => {
       expect(getMaxDeposit(0n)).toBe(0n);
     });

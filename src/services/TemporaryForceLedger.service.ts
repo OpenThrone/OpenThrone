@@ -12,6 +12,8 @@ import {
   assertForceBorrowingAllowed,
   returnForceInTx,
 } from '@/services/ForceLifecycle.service';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
+import { recomputeStoredStatsInTx } from '@/utils/adminRecomputeStats';
 import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
 import {
   assertForceTierUnlocked,
@@ -24,7 +26,6 @@ import {
   MAX_FORCE_QUANTITY,
   parseForceLoadout,
 } from '@/utils/temporaryForces';
-import { calculateUserStats } from '@/utils/utilities';
 
 const idSchema = z.number().int().positive();
 const operationSchema = z.string().uuid();
@@ -149,6 +150,17 @@ export class TemporaryForceLedgerService {
     idSchema.parse(allianceId);
     idSchema.parse(actorId);
     const settings = ForcePolicySchema.parse(input);
+    const limits = await getRuntimeConfig();
+    if (
+      settings.roleAllowances.some(
+        (a) =>
+          a.maxBorrowed > (limits.forceMaxQuantity ?? MAX_FORCE_QUANTITY) ||
+          a.maxTermDays > (limits.forceMaxTermDays ?? 30) ||
+          a.pillageRateBps > (limits.forceMaxPillageBps ?? 2500) ||
+          a.loanRateBps > (limits.forceMaxPillageBps ?? 2500),
+      )
+    )
+      throw new Error('Force policy exceeds current limits');
     return prisma.$transaction(async (tx) => {
       await lockEraLifecycleShared(tx);
       await lockAllianceThenUsers(tx, allianceId, [actorId]);
@@ -196,6 +208,9 @@ export class TemporaryForceLedgerService {
     input: z.input<typeof contributionSchema>,
   ) {
     const params = contributionSchema.parse(input);
+    const limits = await getRuntimeConfig(tx);
+    if (params.quantity > (limits.forceMaxQuantity ?? MAX_FORCE_QUANTITY))
+      throw new Error('Force quantity exceeds current limit');
     const command = {
       ...params,
       equipment: canonicalEquipment(params.equipment),
@@ -265,32 +280,7 @@ export class TemporaryForceLedgerService {
     await tx.userUnit.deleteMany({
       where: { id: unitId, userId, isMercenary: false, quantity: 0 },
     });
-    const updatedUser = await tx.users.findUniqueOrThrow({
-      where: { id: userId },
-      include: {
-        UserUnit: true,
-        UserItem: true,
-        UserStructureUpgrade: true,
-        UserBattleUpgrade: true,
-        UserBonusPoints: true,
-      },
-    });
-    const stats = calculateUserStats(
-      updatedUser,
-      updatedUser.UserUnit,
-      'units',
-    );
-    await tx.users.update({
-      where: { id: userId },
-      data: {
-        killing_str: stats.killingStrength,
-        defense_str: stats.defenseStrength,
-        offense: stats.newOffense,
-        defense: stats.newDefense,
-        spy: stats.newSpying,
-        sentry: stats.newSentry,
-      },
-    });
+    await recomputeStoredStatsInTx(tx, userId);
     const loadoutKey = commandHash(equipment);
     const existingReserve = await tx.forceReserve.findUnique({
       where: {
@@ -327,7 +317,7 @@ export class TemporaryForceLedgerService {
         (existingReserve?.woundedQuantity ?? 0) +
         (outstanding?._sum.survivingQuantity ?? 0) +
         quantity >
-      MAX_FORCE_QUANTITY
+      (limits.forceMaxQuantity ?? MAX_FORCE_QUANTITY)
     )
       throw new Error('Reserve capacity includes troops currently on loan');
     const reserve = await tx.forceReserve.upsert({
@@ -364,6 +354,12 @@ export class TemporaryForceLedgerService {
 
   static async requestLoan(input: z.input<typeof requestSchema>) {
     const params = requestSchema.parse(input);
+    const limits = await getRuntimeConfig();
+    if (
+      params.quantity > (limits.forceMaxQuantity ?? MAX_FORCE_QUANTITY) ||
+      params.termDays > (limits.forceMaxTermDays ?? 30)
+    )
+      throw new Error('Force request exceeds current limits');
     return prisma.$transaction(async (tx) => {
       await lockEraLifecycleShared(tx);
       const { allianceId, userId, reserveId, quantity, termDays, operationId } =
@@ -425,7 +421,10 @@ export class TemporaryForceLedgerService {
         },
         _sum: { survivingQuantity: true },
       });
-      const maxBorrowed = allowance?.maxBorrowed ?? MAX_FORCE_QUANTITY;
+      const maxBorrowed = Math.min(
+        allowance?.maxBorrowed ?? limits.forceMaxQuantity ?? MAX_FORCE_QUANTITY,
+        limits.forceMaxQuantity ?? MAX_FORCE_QUANTITY,
+      );
       if ((borrowed._sum.survivingQuantity ?? 0) + quantity > maxBorrowed)
         throw new Error('Borrowing limit exceeded');
       const contract = await tx.forceContract.create({
@@ -479,7 +478,7 @@ export class TemporaryForceLedgerService {
         });
         if (stock.count !== 1) throw new Error('Insufficient alliance reserve');
         const now = new Date();
-        return tx.forceContract.update({
+        const active = await tx.forceContract.update({
           where: { id: contract.id },
           data: {
             status: 'ACTIVE',
@@ -487,6 +486,8 @@ export class TemporaryForceLedgerService {
             expiresAt: forceExpiration(now, termDays),
           },
         });
+        await recomputeStoredStatsInTx(tx, userId);
+        return active;
       }
       return contract;
     }, ALLIANCE_BANK_TX_OPTIONS);
@@ -585,14 +586,16 @@ export class TemporaryForceLedgerService {
       const allowance = settings.roleAllowances.find(
         (entry) => entry.roleId === membership.role_id,
       );
+      const limits = await getRuntimeConfig(tx);
       const currentAllowance = ForcePolicySchema.parse(
         currentPolicy.settings,
       ).roleAllowances.find((entry) => entry.roleId === membership.role_id);
       if (
         contract.termDays >
         Math.min(
-          allowance?.maxTermDays ?? 30,
-          currentAllowance?.maxTermDays ?? 30,
+          limits.forceMaxTermDays ?? 30,
+          allowance?.maxTermDays ?? limits.forceMaxTermDays ?? 30,
+          currentAllowance?.maxTermDays ?? limits.forceMaxTermDays ?? 30,
         )
       )
         throw new Error('Loan term exceeds role allowance');
@@ -608,8 +611,11 @@ export class TemporaryForceLedgerService {
         _sum: { survivingQuantity: true },
       });
       const maxBorrowed = Math.min(
-        allowance?.maxBorrowed ?? MAX_FORCE_QUANTITY,
-        currentAllowance?.maxBorrowed ?? MAX_FORCE_QUANTITY,
+        limits.forceMaxQuantity ?? MAX_FORCE_QUANTITY,
+        allowance?.maxBorrowed ?? limits.forceMaxQuantity ?? MAX_FORCE_QUANTITY,
+        currentAllowance?.maxBorrowed ??
+          limits.forceMaxQuantity ??
+          MAX_FORCE_QUANTITY,
       );
       if (
         (borrowed._sum.survivingQuantity ?? 0) + contract.survivingQuantity >
@@ -637,6 +643,7 @@ export class TemporaryForceLedgerService {
           expiresAt: forceExpiration(now, contract.termDays),
         },
       });
+      await recomputeStoredStatsInTx(tx, contract.userId);
       await event(tx, {
         operationKey: params.operationId,
         allianceId,

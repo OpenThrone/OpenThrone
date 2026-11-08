@@ -1,8 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  Anchor,
   Box,
   Button,
   Center,
+  Checkbox,
   Flex,
   Modal,
   Paper,
@@ -19,7 +21,7 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { getSession, signIn } from 'next-auth/react';
-import { useTranslation } from 'next-i18next';
+import { Trans, useTranslation } from 'next-i18next';
 import { useRef, useState } from 'react';
 import type { FieldErrorsImpl, Merge } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
@@ -28,6 +30,7 @@ import { z } from 'zod';
 
 import LoadingDots from '@/components/loading-dots';
 import { logError } from '@/utils/logger';
+import { safeLoginReturnPath } from '@/utils/loginReturn';
 
 /**
  * Zod schema for user registration data validation.
@@ -49,6 +52,10 @@ const registerSchema = z
     race: z.enum(['HUMAN', 'UNDEAD', 'GOBLIN', 'ELF']),
     /** Selected player class. */
     class: z.enum(['FIGHTER', 'CLERIC', 'ASSASSIN', 'THIEF']),
+    /** 16 or older and has read the Privacy Policy (server checks it too). */
+    acceptTerms: z.literal(true, {
+      errorMap: () => ({ message: 'auth.acceptTermsRequired' }),
+    }),
   })
   .refine((data) => data.password === data.password_confirm, {
     message: 'auth.passwordsDontMatch',
@@ -168,6 +175,7 @@ const Form: React.FC<FormProps> = ({
             password_confirm: '',
             race: 'HUMAN',
             class: 'FIGHTER',
+            acceptTerms: false as unknown as true,
           }
         : {
             email: '',
@@ -305,7 +313,7 @@ const Form: React.FC<FormProps> = ({
         if (session?.user?.twoFactorSetupRecommended) {
           toast(t('auth.twoFactorRecommended'), { icon: '🛡️', duration: 8000 });
         }
-        router.push('/home/overview');
+        router.push(safeLoginReturnPath(router.query.callbackUrl));
         return true;
       }
 
@@ -490,7 +498,8 @@ const Form: React.FC<FormProps> = ({
     fieldError(formErrors.display_name) ||
     fieldError(formErrors.password_confirm) ||
     fieldError(formErrors.race) ||
-    fieldError(formErrors.class);
+    fieldError(formErrors.class) ||
+    fieldError(formErrors.acceptTerms);
 
   const titleColor = layout === 'bare' ? theme.colors.gray[1] : 'gray';
   const bodyColor = layout === 'bare' ? theme.colors.gray[3] : 'gray';
@@ -662,6 +671,38 @@ const Form: React.FC<FormProps> = ({
                     size="md"
                     styles={inputStyles}
                     {...field}
+                    error={fieldError(fieldState.error)}
+                  />
+                )}
+              />
+              <Controller
+                name="acceptTerms"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <Checkbox
+                    id="accept-terms"
+                    mt="md"
+                    required
+                    checked={field.value === true}
+                    onChange={(event) =>
+                      field.onChange(event.currentTarget.checked)
+                    }
+                    onBlur={field.onBlur}
+                    label={
+                      <Trans
+                        t={t}
+                        i18nKey="auth.acceptTerms"
+                        components={{
+                          privacy: (
+                            <Anchor
+                              component={Link}
+                              href="/legal/privacy"
+                              target="_blank"
+                            />
+                          ),
+                        }}
+                      />
+                    }
                     error={fieldError(fieldState.error)}
                   />
                 )}

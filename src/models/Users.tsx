@@ -102,6 +102,8 @@ class UserModel {
   /** User's current fortification level. */
   public fortLevel: number;
 
+  public racialPerkTier: number;
+
   /** User's current fortification hitpoints. */
   public fortHitpoints: number;
 
@@ -113,6 +115,8 @@ class UserModel {
 
   /** User's current stamina. */
   public stamina: number;
+
+  public staminaUpdatedAt: string;
 
   /** User's maximum stamina. */
   public maxStamina: number;
@@ -323,10 +327,12 @@ class UserModel {
       this.gold = BigInt(0);
       this.goldInBank = BigInt(0);
       this.fortLevel = 0;
+      this.racialPerkTier = 0;
       this.fortHitpoints = 0;
       this.houseLevel = 0;
       this.attackTurns = 0;
       this.stamina = 100;
+      this.staminaUpdatedAt = new Date().toISOString();
       this.maxStamina = 100;
       this.last_active = null;
       this.units = [];
@@ -376,10 +382,13 @@ class UserModel {
     this.gold = safeBigInt(safeUserData.gold);
     this.goldInBank = safeBigInt(safeUserData.gold_in_bank);
     this.fortLevel = safeUserData.fort_level ?? 0;
+    this.racialPerkTier = safeUserData.racial_perk_tier ?? 0;
     this.fortHitpoints = safeUserData.fort_hitpoints ?? 0;
     this.houseLevel = safeUserData.house_level ?? 1;
     this.attackTurns = safeUserData.attack_turns ?? 0;
     this.stamina = (safeUserData as any).stamina ?? 100;
+    this.staminaUpdatedAt =
+      (safeUserData as any).staminaUpdatedAt ?? new Date().toISOString();
     this.maxStamina = (safeUserData as any).maxStamina ?? 100;
     this.last_active = safeUserData.last_active
       ? new Date(safeUserData.last_active)

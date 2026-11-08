@@ -33,9 +33,28 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     },
   });
 
+  const moraleEntries = await prisma.bank_history.findMany({
+    where: { to_user_id: userId, history_type: 'KINGDOM_MORALE' },
+    orderBy: { id: 'desc' },
+    take: 50,
+    select: { stats: true },
+  });
+  const latestMorale = moraleEntries.find(
+    (entry) =>
+      entry.stats &&
+      typeof entry.stats === 'object' &&
+      !Array.isArray(entry.stats) &&
+      'moraleAfter' in entry.stats,
+  );
+  const disciplineSaved = Number(
+    (latestMorale?.stats as { disciplineSaved?: number } | null)
+      ?.disciplineSaved ?? 0,
+  );
+
   // Only the fields the ledger renders cross this boundary: no userIds of
   // other kingdoms (loser or recipient) leak with a row.
   return res.status(200).json({
+    disciplineSaved,
     desertions: events.map((event) => ({
       id: event.id,
       kind: event.kind,

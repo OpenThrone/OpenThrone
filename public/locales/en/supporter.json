@@ -1,0 +1,281 @@
+{
+  "patron": "Patron of the Realm",
+  "premiumAlliance": "Premium alliance",
+  "month": "month",
+  "choose": "Choose",
+  "plans": {
+    "supporter_monthly": "Monthly patronage",
+    "supporter_era_pass": "Era pass",
+    "gift_1m": "Gift: 1 month",
+    "gift_3m": "Gift: 3 months",
+    "gift_12m": "Gift: 12 months"
+  },
+  "statusTitle": "Your patronage",
+  "statuses": {
+    "ACTIVE": "Active",
+    "PAST_DUE": "Payment past due",
+    "CANCELED": "Canceled",
+    "EXPIRED": "Expired",
+    "NEVER": "Not a patron yet"
+  },
+  "ends": "Ends {{date}}",
+  "until": "Active until {{date}}",
+  "source": "Source: {{source}}",
+  "payments": "Payment history",
+  "date": "Date",
+  "description": "Description",
+  "amount": "Amount",
+  "status": "Status",
+  "noPayments": "No payments yet.",
+  "redeemTitle": "Redeem a gift",
+  "giftCode": "Gift code",
+  "redeem": "Redeem",
+  "giftWarning": "Save this code now. It will not be shown again.",
+  "copy": "Copy",
+  "copied": "Copied",
+  "title": "Patrons of the Realm",
+  "intro": "Help sustain OpenThrone and wear the patron’s seal.",
+  "pledgeTitle": "A fair realm for everyone",
+  "pledge": "We never sell power, units, gold, turns, or higher caps. Patronage does not change combat.",
+  "gifts": "Give a patronage gift to another kingdom, or sponsor an alliance. Contributions support OpenThrone, not the alliance or its leader.",
+  "faq": "Frequently asked questions",
+  "faqQ": "Does Patron give combat bonuses?",
+  "faqA": "No. Patron does not increase combat stats or daily limits. It adds cosmetics and conveniences, including automatic recruiting within the normal daily limit and Discord alerts. You cannot buy units, gold or turns.",
+  "faqQ2": "Does OpenThrone store my card?",
+  "faqA2": "No. Stripe collects your card details on its own payment page. We do not store your full card number or security code. We keep billing, membership, gift, refund and dispute records linked to your account.",
+  "faqQ3": "How do I cancel?",
+  "faqA3": "Open Manage billing on your Patronage page and cancel the subscription before your renewal date. You keep the access you already paid for.",
+  "faqQ4": "How do Discord alerts work?",
+  "faqA4": "Link Discord in Settings, then use /link with your code in our Discord server. Anyone can turn on the daily digest; Patrons can also turn on event alerts. Allow direct messages from the bot. Quiet hours delay alerts, and delivery depends on Discord.",
+  "terms": "Terms",
+  "refunds": "Refund policy",
+  "login": "Log in",
+  "register": "Register",
+  "loadError": "Could not load supporter information. Please try again.",
+  "retry": "Try again",
+  "billing": "Manage billing",
+  "openAutoRecruit": "Open Auto-Recruit",
+  "badge": "Show my patron badge",
+  "success": "Checkout complete. Your patronage may take a moment to appear.",
+  "pastDue": "Your payment is past due. Update your payment method to keep your patronage.",
+  "expiring": "Your patronage expires within seven days.",
+  "giftsBought": "Gifts bought",
+  "noGifts": "No gifts bought yet.",
+  "testPayment": "TEST PAYMENT",
+  "session": "Session",
+  "payTest": "Pay (test)",
+  "decline": "Simulate card decline",
+  "done": "Continue",
+  "error": "The request failed. Please try again.",
+  "comingSoon": "Patronage is coming soon.",
+  "loading": "Loading…",
+  "sponsorship": {
+    "title": "Alliance sponsorship",
+    "explanation": "Contributions go to OpenThrone, not the alliance or its leader.",
+    "perks": "Premium alliances get a premium mark and Discord war alerts for every member who links Discord.",
+    "pool": "Sponsorship pool: {{amount}}",
+    "activeUntil": "Premium active until {{date}}",
+    "inactive": "Premium is not active.",
+    "contributors": "Top contributors",
+    "amount": "Contribution in dollars (minimum $5)",
+    "contribute": "Contribute"
+  },
+  "updatePayment": "Update payment method",
+  "discord": {
+    "title": "Discord account",
+    "intro": "Link your account to use Discord features.",
+    "step1": "Generate a link code.",
+    "step2": "Join the Discord server.",
+    "step3": "Run /link and paste your code.",
+    "step4": "Allow direct messages from members of our Discord server (right-click the server → Privacy Settings), so the bot can send you alerts.",
+    "generate": "Generate Link Code",
+    "expires": "Expires in {{seconds}} seconds",
+    "linked": "Linked as {{name}} on {{date}}",
+    "unlink": "Unlink",
+    "confirmUnlink": "Unlink your Discord account?",
+    "cancel": "Cancel",
+    "notifications": "Notification preferences",
+    "dailyDigest": "Daily digest",
+    "attacks": "Attacks",
+    "spyHits": "Spy hits",
+    "wars": "Wars",
+    "turnCap": "Stamina full",
+    "quietHoursStart": "Quiet hours start (UTC)",
+    "quietHoursEnd": "Quiet hours end (UTC)",
+    "patronLink": "Become a patron to enable these notifications",
+    "commands": "Discord commands",
+    "command": {
+      "profile": "View player profiles",
+      "stats": "Server statistics",
+      "leaderboard": "Player & alliance rankings",
+      "fort": "Fort status",
+      "myclan": "Alliance info",
+      "war": "Active wars",
+      "link": "Link your account"
+    }
+  },
+  "giftRecipient": "Gift recipient (optional)",
+  "giftRecipientHint": "Choose a kingdom to notify when buying a gift.",
+  "giftRecipientSearch": "Search kingdoms",
+  "recommended": "Recommended",
+  "patronPlans": "Become a Patron",
+  "giftPlans": "Gift a membership",
+  "loginToSupport": "Log in to support",
+  "giftSavings": "{{monthly}} per month · save {{savings}}",
+  "cancels": "Cancels at the end of this period.",
+  "renews": "Renews at the end of this period.",
+  "testBanner": "TEST MODE — no real charge",
+  "summaryUnavailable": "Order summary unavailable. Return to the plans to start again.",
+  "cancel": "Cancel",
+  "benefits": {
+    "title": "What Patron gives you",
+    "badge": "Crown badge beside your name",
+    "alerts": "Discord instant alerts for attacks, spy missions, wars and full stamina",
+    "autoRecruit": "Auto-Recruit up to the daily recruiting limit",
+    "alliance": "Alliance sponsorship",
+    "gifts": "Gift memberships",
+    "pledge": "Perks never give combat power: pay to support, not to win."
+  },
+  "planDetails": {
+    "supporter_monthly": "Renews monthly",
+    "supporter_era_pass": "100 days of patronage",
+    "gift_1m": "One month of patronage, delivered as a gift code",
+    "gift_3m": "A gift code for 3 months",
+    "gift_12m": "A gift code for 12 months"
+  },
+  "sources": {
+    "SUBSCRIPTION": "Subscription",
+    "ONE_TIME": "One-time",
+    "GIFT": "Gift",
+    "COMP": "Complimentary"
+  },
+  "kinds": {
+    "SUBSCRIPTION": "Subscription",
+    "ONE_TIME": "One-time",
+    "GIFT": "Gift",
+    "ALLIANCE_SPONSORSHIP": "Alliance sponsorship"
+  },
+  "paymentStatuses": {
+    "SUCCEEDED": "Succeeded",
+    "REFUNDED": "Refunded",
+    "PARTIALLY_REFUNDED": "Partially refunded",
+    "DISPUTED": "Disputed",
+    "FAILED": "Failed"
+  },
+  "giftStatuses": {
+    "UNREDEEMED": "Unredeemed",
+    "REDEEMED": "Redeemed",
+    "EXPIRED": "Expired",
+    "REVOKED": "Revoked"
+  },
+  "currentPlan": "Current plan",
+  "declined": "The payment was declined. You were not charged; try again or choose another plan.",
+  "checkoutNotice": {
+    "confirming": "Confirming your payment…",
+    "confirmed": "Payment confirmed. Thank you for supporting OpenThrone!",
+    "canceled": "Checkout canceled. You were not charged.",
+    "pending": "Your payment is still being confirmed and will appear shortly.",
+    "subscribed": "You already have an active subscription.",
+    "signedOut": "You're signed out. Sign in to finish confirming your payment.",
+    "priceChanged": "The price changed while this page was open. Review the updated prices and confirm your purchase again."
+  },
+  "legal": {
+    "updated": "Last updated {{date}}",
+    "back": "Back to Patronage",
+    "terms": {
+      "title": "Patronage terms",
+      "intro": "You buy Patron memberships, gift codes and alliance sponsorships from AIOXperts IT Solutions LLC, a Delaware limited liability company that operates OpenThrone. These terms cover those purchases.",
+      "sections": {
+        "eligibility": {
+          "title": "Who can buy",
+          "body": "You must be at least 18 and an adult where you live to make a purchase. If you are younger, a parent or legal guardian must make the purchase and agree to these terms. Purchases are available to people who live in the United States. You must have permission to use the payment method."
+        },
+        "purchase": {
+          "title": "What you are paying for",
+          "body": "Patronage supports OpenThrone. It gives the perks listed on the Patronage page: a badge, Discord alerts, and conveniences such as automatic recruiting within the normal daily limit. It never increases combat stats or daily limits, and you cannot buy units, gold or turns. Your membership gives you access to these features for its stated duration. Perks and in-game items cannot be exchanged for cash; this does not affect refunds required by law. We may update perks to keep the game secure, meet legal requirements or improve it. We will tell you in advance about changes that materially reduce paid benefits."
+        },
+        "billing": {
+          "title": "Prices, renewal and cancellation",
+          "body": "Prices are in US dollars. Any applicable tax is added at checkout and shown before you pay. Monthly Patron renews automatically at the price you accepted at checkout until you cancel. Current prices are shown on the Patronage page. Price changes apply only to new purchases; existing subscribers keep their agreed price. To stop the next renewal, open your Patronage page, select Manage billing, and cancel your subscription; do this before the renewal date. You keep the access you already paid for. Cancelling does not by itself request a refund. If a renewal payment fails, Stripe may retry it, and you keep access for 7 days after the first failed attempt. The era pass gives 100 days of Patron access and continues across era resets. Gift codes add 30, 90 or 360 days when redeemed. Pass and gift time extends your existing access but does not pause monthly charges, and starting a subscription charges you at once even if you already have access. The era pass, gift codes and alliance sponsorships are one-time purchases and do not renew."
+        },
+        "gifts": {
+          "title": "Gift codes",
+          "body": "You can redeem each gift code once. A paid gift code stays valid for at least 5 years from purchase, and never expires where state law requires that. Anyone with the code can redeem it, so share it carefully. Gift codes cannot be exchanged for cash, except where the law requires."
+        },
+        "sponsorship": {
+          "title": "Alliance sponsorships",
+          "body": "A sponsorship is a one-time payment to OpenThrone, not to the alliance or its leader. Each $4.99 credited to the pool adds 30 days of alliance premium; smaller remainders stay in the pool. Your sponsorship stays with the alliance if you leave it."
+        },
+        "accounts": {
+          "title": "Bans, closures and deletion",
+          "body": "If your account is banned or closed, we stop future subscription renewals, and you may lose access to the game and its perks when the restriction starts. Deleting your account ends your access and cancels your subscription. These actions do not automatically issue a refund; your rights to refunds under the law still apply."
+        },
+        "disputes": {
+          "title": "Payment disputes",
+          "body": "If you dispute a payment with your bank, we may suspend the access bought with that payment while the dispute is decided. If the payment is upheld, we restore the remaining access it bought. If the payment is reversed, that access ends. This does not limit your right to dispute a payment."
+        },
+        "privacy": {
+          "title": "Payment data",
+          "body": "Stripe processes your payment. We do not store your full card number or security code. We keep payment identifiers, amounts, currency, status and dates, and related billing records: membership details, gift purchases and redemptions, refunds, disputes, your billing country and state, the terms you agreed to at checkout, and the accounts or alliances involved. Our Privacy Policy explains how we use and keep these records; Stripe has its own privacy policy."
+        },
+        "law": {
+          "title": "Governing law",
+          "body": "Delaware law governs these terms. This does not take away protections that the law where you live gives you. Disputes may be brought in the courts of Delaware, subject to any right you have to use courts elsewhere."
+        },
+        "contact": {
+          "title": "Contact",
+          "body": "For questions about a payment, a refund or these terms, email privacy@openthrone.dev. You do not need a Discord account. Never post card details in public channels."
+        }
+      }
+    },
+    "refunds": {
+      "title": "Refund policy",
+      "intro": "How refunds work for Patron memberships, gift codes and alliance sponsorships.",
+      "sections": {
+        "request": {
+          "title": "Asking for a refund",
+          "body": "Email privacy@openthrone.dev with your kingdom name and the payment date. We refund confirmed duplicate charges and purchases whose promised perks were not supplied. For other refunds, contact us within 14 days of payment. This deadline does not limit your rights under consumer law."
+        },
+        "how": {
+          "title": "How refunds work",
+          "body": "Refunds go back to the original payment method through Stripe and usually arrive within 5 to 10 business days. A full refund removes the remaining access, or the unused gift code, bought with that payment; access from other purchases is not affected. A partial refund does not change your access. A refund does not cancel a monthly subscription unless we confirm that separately."
+        },
+        "cancel": {
+          "title": "Cancelling",
+          "body": "Cancelling stops future renewals and normally leaves your paid access available until it ends. It does not automatically refund an earlier payment. You can still ask for a refund or use your rights under consumer law."
+        },
+        "gifts": {
+          "title": "Gift codes and sponsorships",
+          "body": "You can get a refund for an unredeemed gift code if you ask within 14 days of purchase. We normally do not offer change-of-mind refunds for redeemed codes or for sponsorships already turned into premium time. These limits do not affect refunds required by law."
+        }
+      }
+    }
+  },
+  "consent": {
+    "title": "Before you pay",
+    "monthly": "I agree to pay {{price}} now and every month until I cancel, plus any tax shown at checkout. I can cancel at any time from Manage billing on my Patronage page. Cancelling stops the next charge, and I keep my perks until the paid month ends.",
+    "pass": "I agree to pay {{price}} once, plus any tax shown at checkout, for {{days}} days of Patron access. It does not renew.",
+    "gift": "I agree to pay {{price}} once, plus any tax shown at checkout, for a gift code worth {{days}} days of Patron access. It does not renew. The code can be redeemed once and stays valid for at least 5 years, or never expires where state law requires.",
+    "sponsorship": "I agree to pay {{price}} once, plus any tax shown at checkout, to OpenThrone for the sponsorship pool of {{alliance}}. It does not renew. Each $4.99 in the pool adds 30 days of alliance premium.",
+    "eligibility": "I am 18 or older (or a parent or guardian buying for a player), I live in the United States, I am allowed to use this payment method, and I agree to the Patronage Terms and Refund Policy.",
+    "agree": "I have read and agree to the above.",
+    "continue": "Continue to payment",
+    "usOnly": "Purchases are available to United States residents only."
+  },
+  "signIn": "Sign in",
+  "records": "Records",
+  "chooser": {
+    "title": "Choose your patronage",
+    "mode": "Patronage recipient",
+    "self": "For yourself",
+    "gift": "As a gift",
+    "buyGift": "Buy gift",
+    "giftPlans": {
+      "gift_1m": "1 month",
+      "gift_3m": "3 months",
+      "gift_12m": "12 months"
+    }
+  },
+  "paymentsTab": "Payments",
+  "notPatronHint": "Patronage keeps the realm's lights on. Choose a plan below, or redeem a gift code someone sent you."
+}

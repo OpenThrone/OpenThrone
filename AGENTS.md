@@ -248,9 +248,51 @@ If new Tailwind patterns must persist, update the safelist carefully.
 
 ---
 
-## 10) Testing
+## 10) Testing (Ship Ready for the Human Sweep)
 
-- Add tests only when requested or when risk is high and localized.
+The human's final check on alpha is a sweep, not the first test. Nothing is
+reported as done, merged or deployed until the agent has run all four gates
+below and shown the evidence. "Not tested" is a status to report, never a
+silent gap.
+
+1. **Unit tests.** `bun run test`, `bunx tsc --noEmit -p .` (read the exit
+   output directly; do not grep coloured output) and lint on changed files.
+   Add a focused test for each bug fixed and each server rule added; it must
+   fail without the change. A failure that also fails on the base commit is
+   named with proof (run the same test on the base), not ignored.
+2. **Browser checks.** Run the app against a throwaway database (see
+   "Throwaway test environment" below), never the `.env` staging database.
+   Load every page the change adds or touches in headless Chromium
+   (`puppeteer-core`, as `scripts/design/extract-dom.ts` does): no page
+   crash, no console errors, screenshots saved. Check `de` and `es` for new
+   text. Do not use a hidden preview tab for timing-sensitive checks; hidden
+   tabs are throttled and pages appear to hang.
+3. **UX/UI review.** Look at the screenshots: truncated or wrapping labels,
+   overlap, empty and loading states, error states that leave stale values,
+   keyboard reach and focus of new controls, race themes for styling changes.
+4. **Workflow validation.** Drive each user story end to end through the UI
+   as the real roles: player, moderator, administrator, and two at once
+   where state can race (stale admin edits, price or setting changes while a
+   player has the form open). After each step check the server state (API or
+   database), not only the toast. Admin features (section 14) are tested
+   from the admin side and their effect is checked on the player side.
+
+Fix what the gates find before asking for review or merge, or list it to the
+user as a known issue. Say which findings were product bugs and which were
+seed data or test-script mistakes.
+
+### Throwaway test environment
+
+- Database: a disposable Postgres container (as `scripts/test-integration.sh`
+  starts), migrated with `prisma/integration.config.ts`, seeded with
+  `bun run dev:seed` (`DEV_SEED_*` passwords set to throwaway values).
+- Server: `bun --no-env-file x next build` then `next start` on a spare port,
+  with every database and auth variable set explicitly to throwaway values.
+  Staff logins need `OT_ENFORCE_PRIVILEGED_2FA=false` in this environment only.
+- Remove the container and stop the server when done.
+
+Other rules:
+
 - Use the repo’s configured test runner.
 - Avoid brittle snapshot tests for highly styled UI.
 
@@ -334,7 +376,43 @@ generated, not committed. `design/README.md` covers setup.
 
 ---
 
-## 14) “Done” Checklist
+## 14) Feature Completeness (Admin Parity)
+
+A game feature is not done when players can use it. It ships complete across
+every surface that touches it, or it does not ship. This covers new systems
+(mercenaries, morale, fatigue, fort level/HP, new units, items, structures)
+and new player state added to existing ones.
+
+- **Admin parity is mandatory.** Any new or changed player state (a Prisma
+  column, a JSON field on the user, a new inventory/unit type) must be
+  viewable *and* editable in the admin Edit Player screen
+  (`src/components/UserAdminEditor.tsx`, backed by
+  `src/pages/api/admin/users/[userId].ts`), with server-side validation of the
+  edited values. World-level settings (rates, caps, era options) go in the
+  matching admin page under `src/pages/home/admin*` / `src/pages/api/admin/`.
+- **Inventory the touchpoints before coding.** In the plan or PR description,
+  list each surface and mark it done or explicitly not applicable:
+  1. Data model + migration (defaults and backfill for existing players;
+     every new table gets `ALTER TABLE "X" ENABLE ROW LEVEL SECURITY;` in
+     the same migration, which a unit test enforces)
+  2. Game logic / API (and era reset / new-era start behavior)
+  3. Player UI (pages, sidebar/stats, profiles, battle/spy reports)
+  4. **Admin view + edit** (Edit Player, investigation/overview where relevant)
+  5. Admin audit trail for admin edits, following existing patterns
+  6. `/test` visual guide specimens (section 12)
+  7. i18n keys, How to Play / FAQ copy, `CHANGELOG.md` entry
+  8. Tests for the risky logic
+- **No silent omissions.** If a touchpoint is deferred, say so in the PR and
+  file a Forgejo issue for it; never leave it implied.
+- **Close existing gaps when you touch them.** If you work on a feature whose
+  admin coverage is missing (e.g. Edit Player lacks fort level/HP, mercenaries,
+  morale, fatigue), add it in the same change or file an issue for it.
+- **Reviewers reject PRs** that add player state without admin view/edit, or
+  that lack the touchpoint list.
+
+---
+
+## 15) “Done” Checklist
 
 A change is complete only if:
 
@@ -348,7 +426,9 @@ A change is complete only if:
 - [ ] Visual guide (`/test`) updated for added, removed or restyled components
 - [ ] Visual evidence provided (before and after screenshots) for any UI/styling bug resolutions
 - [ ] Validated locally against a throwaway database (see Local validation before alpha)
+- [ ] Testing gates in section 10 run and passed (unit, browser, UX/UI, workflow), with evidence
 - [ ] Design file re-synced (`bun run design:sync`) once a visual change is merged and deployed to alpha
+- [ ] Feature touchpoints listed in the PR; new player state is viewable and editable in admin Edit Player (section 14)
 
 
 ## Environments and deployment

@@ -118,7 +118,12 @@ const namespaceMatchers: Array<{
 
 const getNamespacesForPath = (path: string) => {
   const basePath = path.split('?')[0] || '/';
-  const namespaces = new Set(['common', 'navigation', 'runtime-controls']);
+  const namespaces = new Set([
+    'common',
+    'navigation',
+    'runtime-controls',
+    'supporter',
+  ]);
   namespaceMatchers.forEach(({ matches, namespaces: entries }) => {
     if (matches(basePath)) {
       entries.forEach((entry) => namespaces.add(entry));

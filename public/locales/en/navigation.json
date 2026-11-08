@@ -18,6 +18,7 @@
     "levels": "Levels",
     "profile": "Profile",
     "settings": "Settings",
+    "patronage": "Patronage",
     "learn": "Learn",
     "administration": "Administration",
     "staffUsers": "User Management",
@@ -43,7 +44,10 @@
     "staffMaintenance": "Maintenance Mode",
     "staffInactiveUsers": "Inactive users",
     "staffAttackLedger": "Attack ledger",
-    "staffBots": "Bot operations"
+    "staffBots": "Bot operations",
+    "staffForces": "Mercenaries and Forces",
+    "staffLedgers": "Ledgers",
+    "staffSupporters": "Supporters"
   },
   "battle": {
     "attack": "Attack",
@@ -82,7 +86,8 @@
     "stats": "Leaderboards",
     "discord": "Discord",
     "github": "GitHub",
-    "faq": "FAQ"
+    "faq": "FAQ",
+    "privacy": "Privacy Policy"
   },
   "actions": {
     "signIn": "Sign In",
@@ -108,6 +113,7 @@
     "content": "Content",
     "analytics": "Analytics",
     "system": "System",
-    "audit": "Audit"
+    "audit": "Audit",
+    "revenue": "Revenue"
   }
 }

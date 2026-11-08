@@ -1,0 +1,46 @@
+{
+  "title": "Mejoras",
+  "loading": "Cargando mejoras",
+  "saved": "Mejoras guardadas",
+  "errors": {
+    "load": "No se pudieron cargar las mejoras",
+    "save": "No se pudieron guardar las mejoras",
+    "bonusOver": "Los puntos asignados superan los {{total}} disponibles en este nivel.",
+    "stale": "Este jugador cambió desde que abriste el editor. No se guardaron tus cambios; vuelve a cargar para ver los valores actuales."
+  },
+  "sections": {
+    "structure": "Mejoras de estructuras",
+    "battle": "Mejoras de combate",
+    "proficiency": "Puntos de competencia",
+    "addUnits": "Añadir unidades que faltan",
+    "addItems": "Añadir objetos que faltan"
+  },
+  "columns": {
+    "type": "Tipo",
+    "level": "Nivel",
+    "upgrade": "Mejora",
+    "quantity": "Cantidad"
+  },
+  "aria": {
+    "structureLevel": "Nivel de estructura de {{type}}",
+    "quantity": "Cantidad de {{name}}",
+    "proficiencyLevel": "Nivel de competencia de {{type}}"
+  },
+  "proficiencyUsed": "{{used}} / {{total}} usados (nivel {{level}})",
+  "fields": {
+    "unit": "Unidad",
+    "item": "Objeto",
+    "chooseUnit": "Elige una unidad",
+    "noUnits": "No faltan unidades",
+    "chooseItem": "Elige un objeto",
+    "noItems": "No faltan objetos"
+  },
+  "actions": {
+    "add": "Añadir",
+    "remove": "Quitar",
+    "reset": "Restablecer",
+    "save": "Guardar mejoras",
+    "reload": "Volver a cargar jugador"
+  },
+  "readOnly": "Solo los administradores pueden cambiar las mejoras."
+}

@@ -38,6 +38,23 @@ const lossTotal = (losses: unknown): number => {
 
 const EMPTY_LOSSES = { total: 0, units: [] };
 
+/** The viewer's own wounded, from a redacted summary or the raw battle stats. */
+const yourWounded = (log: Log, type: string) => {
+  const side = type === 'defense' ? 'defender' : 'attacker';
+  const stats = log.stats as Record<string, any>;
+  const summary = stats?.combat_summary?.[`${side}Wounded`];
+  if (summary) return summary;
+  const units = Array.isArray(stats?.wounded?.[side])
+    ? stats.wounded[side]
+    : [];
+  const total = units.reduce(
+    (sum: number, unit: { quantity?: number }) =>
+      sum + (Number(unit.quantity) || 0),
+    0,
+  );
+  return total ? { total, units } : null;
+};
+
 interface AttackLogTableProps {
   logs: Log[];
   type: string;
@@ -318,6 +335,7 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
                         </Text>
                         <LossesList
                           losses={yourLosses ?? EMPTY_LOSSES}
+                          wounded={yourWounded(log, type)}
                           showUnits={!(collapsedLogs[log.id] ?? true)}
                         />
                       </Stack>

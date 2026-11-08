@@ -8,6 +8,7 @@ const validRegistration = {
   display_name: 'Commander',
   race: 'HUMAN',
   class: 'FIGHTER',
+  acceptTerms: true,
 };
 
 describe('RegisterSchema', () => {
@@ -18,6 +19,13 @@ describe('RegisterSchema', () => {
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it('requires confirming the minimum age and the privacy policy', () => {
+    for (const acceptTerms of [undefined, false, 'true'])
+      expect(
+        RegisterSchema.safeParse({ ...validRegistration, acceptTerms }).success,
+      ).toBe(false);
   });
 
   it('accepts valid registration payloads', () => {

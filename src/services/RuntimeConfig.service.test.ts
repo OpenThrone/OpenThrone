@@ -83,6 +83,28 @@ describe('runtime config snapshot', () => {
     expect(config.externalRecruitIpDailyCap).toBe(3);
   });
 
+  it('reads balance overrides from the runtime snapshot', async () => {
+    mockPrisma.serverSetting.findMany.mockResolvedValue([
+      { key: 'mercenary.hireMultiplier', value: 2 },
+      { key: 'mercenary.dailyPriceRate', value: 0.1 },
+      { key: 'combat.pairDailyLimit', value: 8 },
+      { key: 'era.protectionLevelLimit', value: 12 },
+      { key: 'bank.depositCapPercent', value: 50 },
+      { key: 'friend.dailyReceivedCap', value: 500 },
+      { key: 'alliance.maxPendingGoldRequests', value: 4 },
+    ]);
+    const config = await getRuntimeConfig();
+    expect([
+      config.mercenaryHireMultiplier,
+      config.mercenaryDailyPriceRate,
+      config.pairDailyLimit,
+      config.protectionLevelLimit,
+      config.depositCapPercent,
+      config.friendDailyReceivedCap,
+      config.maxPendingGoldRequests,
+    ]).toEqual([2, 0.1, 8, 12, 50, 500, 4]);
+  });
+
   it('caches for five seconds and reloads after explicit invalidation', async () => {
     let now = 1000;
     dateNowSpy = vi.spyOn(Date, 'now').mockImplementation(() => now);

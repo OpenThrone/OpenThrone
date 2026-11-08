@@ -40,6 +40,9 @@
       "title": "¿Qué debo revisar antes de atacar?",
       "answer": "Revisa el objetivo, tu fuerza ofensiva y los turnos de ataque que vas a usar. La información de espionaje puede ayudarte a evaluar al objetivo, pero el combate puede causar pérdidas. Después, consulta el informe y el Historial de Guerra antes de comprometer más recursos."
     },
+    "stamina": {
+      "title": "¿Qué es la resistencia?"
+    },
     "access": {
       "title": "¿Por qué podría no poder iniciar sesión?",
       "answer": "Lee el mensaje de la página de acceso. Cuando el inicio de sesión está deshabilitado, el acceso puede estar restringido; tener una cuenta registrada no garantiza que se pueda jugar en ese momento. Consulta las noticias públicas. Si el mensaje no explica tu problema, pide ayuda sin compartir tu contraseña ni códigos de acceso."

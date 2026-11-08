@@ -16,6 +16,10 @@ import {
   MORALE_BROKE_MERCENARY_UPKEEP,
   splitDefectors,
 } from '@/constants/KingdomMorale';
+import {
+  disciplineDesertion,
+  disciplineMoraleFloor,
+} from '@/constants/RacialPerks';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { CheatDetectionService } from '@/services/CheatDetection.service';
@@ -202,6 +206,8 @@ export class KingdomMoraleService {
             gold: true,
             kingdom_morale: true,
             kingdom_morale_day: true,
+            race: true,
+            racial_perk_tier: true,
             desertion_floor: true,
             experience: true,
             house_level: true,
@@ -269,7 +275,11 @@ export class KingdomMoraleService {
             brokeMercenaryUpkeep = true;
           }
         }
-        const moraleAfter = applyMoraleDelta(moraleBefore, totalDelta);
+        const tier = row.race === 'HUMAN' ? row.racial_perk_tier : 0;
+        const moraleAfter = Math.max(
+          disciplineMoraleFloor(tier),
+          applyMoraleDelta(moraleBefore, totalDelta),
+        );
 
         const summary = {
           moraleBefore,
@@ -279,6 +289,7 @@ export class KingdomMoraleService {
           defected: 0,
           abandoned: 0,
           mercenariesLost: 0,
+          disciplineSaved: 0,
         };
         const events: Array<Prisma.DesertionEventCreateManyInput> = [];
         let desertionFloorUpdate: number | null | undefined;
@@ -291,7 +302,12 @@ export class KingdomMoraleService {
           for (const unit of row.UserUnit.filter(
             (candidate) => candidate.type === 'CITIZEN',
           )) {
-            const leaving = citizensDesertionQuantity(unit.quantity);
+            const leaving = disciplineDesertion(
+              citizensDesertionQuantity(unit.quantity),
+              tier,
+            );
+            summary.disciplineSaved +=
+              citizensDesertionQuantity(unit.quantity) - leaving;
             if (leaving <= 0) continue;
             await tx.userUnit.update({
               where: { id: unit.id },
@@ -338,9 +354,11 @@ export class KingdomMoraleService {
           }> = [];
           const allowance = armyDesertionAllowance(armyBefore, floorValue);
           const dayLoss = Math.min(
-            armyDesertionQuantity(armyBefore),
+            disciplineDesertion(armyDesertionQuantity(armyBefore), tier),
             allowance,
           );
+          summary.disciplineSaved +=
+            Math.min(armyDesertionQuantity(armyBefore), allowance) - dayLoss;
           const rowLosses = distributeDesertion(
             trainedRows.map((unit) => unit.quantity),
             dayLoss,
@@ -391,13 +409,23 @@ export class KingdomMoraleService {
           if (contracts.length > 0) {
             const contractLosses = distributeDesertion(
               contracts.map((contract) => contract.survivingQuantity),
+              disciplineDesertion(
+                mercenaryDesertionQuantity(
+                  contracts.reduce(
+                    (sum, contract) => sum + contract.survivingQuantity,
+                    0,
+                  ),
+                ),
+                tier,
+              ),
+            );
+            summary.disciplineSaved +=
               mercenaryDesertionQuantity(
                 contracts.reduce(
                   (sum, contract) => sum + contract.survivingQuantity,
                   0,
                 ),
-              ),
-            );
+              ) - contractLosses.reduce((sum, loss) => sum + loss, 0);
             for (let index = 0; index < contracts.length; index += 1) {
               const contract = contracts[index];
               const leaving = contractLosses[index];
@@ -617,7 +645,7 @@ export class KingdomMoraleService {
         if (events.length > 0)
           await tx.desertionEvent.createMany({ data: events });
 
-        if (moraleChanged || events.length > 0) {
+        if (moraleChanged || events.length > 0 || tier > 0) {
           await tx.bank_history.create({
             data: {
               gold_amount: 0n,
@@ -638,6 +666,7 @@ export class KingdomMoraleService {
                 defected: summary.defected,
                 abandoned: summary.abandoned,
                 mercenariesLost: summary.mercenariesLost,
+                disciplineSaved: summary.disciplineSaved,
                 ...(events.length > 0
                   ? { message: desertionSummaryMessage(summary) }
                   : {}),

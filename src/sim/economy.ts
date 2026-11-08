@@ -295,6 +295,7 @@ export function gainXp(
   player: PlayerState,
   xp: number,
   isWinner: boolean,
+  live = false,
 ): PlayerState {
   const finalXp = isWinner ? xp * 1.5 : xp;
   let newPlayer = {
@@ -302,7 +303,13 @@ export function gainXp(
     xp: player.xp + finalXp,
   };
 
-  newPlayer = applyLevelUp(newPlayer);
+  // Live levels grant nothing; structures are bought (see liveRules.ts).
+  newPlayer = live
+    ? {
+        ...newPlayer,
+        level: Math.max(player.level, getLevelFromSimXp(newPlayer.xp)),
+      }
+    : applyLevelUp(newPlayer);
 
   return newPlayer;
 }

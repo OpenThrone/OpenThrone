@@ -33,6 +33,7 @@ import {
 import { lockAllianceChatRooms } from '@/services/chatRoomGuards';
 import { returnMemberForcesInTx } from '@/services/ForceLifecycle.service';
 import { settleForcePillageInTx } from '@/services/ForcePillage.service';
+import { recomputeStoredStatsInTx } from '@/utils/adminRecomputeStats';
 import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
@@ -515,6 +516,7 @@ export class AllianceService {
       const alliances = await prisma.alliances.findMany({
         where: whereCondition,
         include: {
+          sponsorship: { select: { activeUntil: true } },
           leader: {
             select: {
               display_name: true,
@@ -530,6 +532,7 @@ export class AllianceService {
               user: {
                 select: {
                   display_name: true,
+                  supporter_until: true,
                 },
               },
               role: {
@@ -557,7 +560,24 @@ export class AllianceService {
 
       return stringifyObj(alliances).map((alliance) =>
         redactAllianceForViewer(
-          alliance,
+          {
+            ...alliance,
+            isPremium:
+              !!alliance.sponsorship?.activeUntil &&
+              new Date(alliance.sponsorship.activeUntil) > new Date(),
+            premiumUntil: alliance.sponsorship?.activeUntil ?? null,
+            members: alliance.members.map((m: any) =>
+              m.user
+                ? {
+                    ...m,
+                    user: {
+                      ...m.user,
+                      supporterUntil: m.user.supporter_until ?? null,
+                    },
+                  }
+                : m,
+            ),
+          },
           viewerAllianceIds.has(alliance.id) ||
             (viewerId != null && alliance.leader_id === viewerId),
         ),
@@ -579,6 +599,7 @@ export class AllianceService {
       const alliance = await prisma.alliances.findUnique({
         where: { id: allianceId },
         include: {
+          sponsorship: { select: { activeUntil: true } },
           leader: {
             select: {
               display_name: true,
@@ -594,6 +615,7 @@ export class AllianceService {
                 select: {
                   id: true,
                   display_name: true,
+                  supporter_until: true,
                   race: true,
                   class: true,
                   avatar: true,
@@ -626,7 +648,25 @@ export class AllianceService {
         throw new Error('Alliance not found');
       }
 
-      return stringifyObj(alliance);
+      const data = stringifyObj(alliance);
+      return {
+        ...data,
+        isPremium:
+          !!alliance.sponsorship?.activeUntil &&
+          alliance.sponsorship.activeUntil > new Date(),
+        premiumUntil: alliance.sponsorship?.activeUntil?.toISOString() ?? null,
+        members: (data.members ?? []).map((m: any) =>
+          m.user
+            ? {
+                ...m,
+                user: {
+                  ...m.user,
+                  supporterUntil: m.user.supporter_until ?? null,
+                },
+              }
+            : m,
+        ),
+      };
     } catch (error: any) {
       logError('Error getting alliance by ID', { allianceId, error });
       throw error;
@@ -849,8 +889,10 @@ export class AllianceService {
       const borrowerIds = [
         ...new Set(forceRecords.map((contract) => contract.userId)),
       ].sort((a, b) => a - b);
-      for (const userId of borrowerIds)
+      for (const userId of borrowerIds) {
         await returnMemberForcesInTx(tx, allianceId, userId);
+        await recomputeStoredStatsInTx(tx, userId);
+      }
       await tx.forceEvent.deleteMany({
         where: {
           OR: [
@@ -1160,6 +1202,7 @@ export class AllianceService {
         }
 
         await returnMemberForcesInTx(tx, validatedData.allianceId, userId);
+        await recomputeStoredStatsInTx(tx, userId);
         // Remove membership
         await tx.alliance_memberships.delete({
           where: {
@@ -1245,6 +1288,7 @@ export class AllianceService {
         }
 
         await returnMemberForcesInTx(tx, allianceId, validatedData.memberId);
+        await recomputeStoredStatsInTx(tx, validatedData.memberId);
         await tx.alliance_memberships.delete({
           where: { id: memberToKick.id },
         });

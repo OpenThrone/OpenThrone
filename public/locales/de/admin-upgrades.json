@@ -1,0 +1,46 @@
+{
+  "title": "Verbesserungen",
+  "loading": "Verbesserungen werden geladen",
+  "saved": "Verbesserungen gespeichert",
+  "errors": {
+    "load": "Verbesserungen konnten nicht geladen werden",
+    "save": "Verbesserungen konnten nicht gespeichert werden",
+    "bonusOver": "Die zugewiesenen Punkte überschreiten die {{total}} verfügbaren Punkte auf dieser Stufe.",
+    "stale": "Dieser Spieler wurde geändert, seit Sie den Editor geöffnet haben. Ihre Änderungen wurden nicht gespeichert. Laden Sie neu, um die aktuellen Werte zu sehen."
+  },
+  "sections": {
+    "structure": "Gebäude-Verbesserungen",
+    "battle": "Kampf-Verbesserungen",
+    "proficiency": "Fertigkeitspunkte",
+    "addUnits": "Fehlende Einheiten hinzufügen",
+    "addItems": "Fehlende Gegenstände hinzufügen"
+  },
+  "columns": {
+    "type": "Typ",
+    "level": "Stufe",
+    "upgrade": "Verbesserung",
+    "quantity": "Anzahl"
+  },
+  "aria": {
+    "structureLevel": "Gebäudestufe: {{type}}",
+    "quantity": "Anzahl {{name}}",
+    "proficiencyLevel": "Fertigkeitsstufe: {{type}}"
+  },
+  "proficiencyUsed": "{{used}} / {{total}} verwendet (Stufe {{level}})",
+  "fields": {
+    "unit": "Einheit",
+    "item": "Gegenstand",
+    "chooseUnit": "Einheit auswählen",
+    "noUnits": "Keine fehlenden Einheiten",
+    "chooseItem": "Gegenstand auswählen",
+    "noItems": "Keine fehlenden Gegenstände"
+  },
+  "actions": {
+    "add": "Hinzufügen",
+    "remove": "Entfernen",
+    "reset": "Zurücksetzen",
+    "save": "Verbesserungen speichern",
+    "reload": "Spieler neu laden"
+  },
+  "readOnly": "Nur Administratoren können Verbesserungen ändern."
+}

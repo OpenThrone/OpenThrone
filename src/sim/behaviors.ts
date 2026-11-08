@@ -5,6 +5,7 @@ import {
 } from './economy';
 import type { InvariantContext } from './invariants';
 import { assertPlayerGold } from './invariants';
+import type { LivePowerEstimator } from './liveTargeting';
 import { getSpyMissionLimits } from './population';
 import { createDefaultRandom, createValidatedRandom } from './random';
 import {
@@ -24,6 +25,10 @@ export function makeDailyDecisions(
     attackLevelRange?: number;
     currentDay?: number;
     random?: () => number;
+    /** The player is logged in, so it acts instead of rolling for it. */
+    forceAct?: boolean;
+    /** Live rules: how the player estimates battle strength. */
+    livePower?: LivePowerEstimator;
   } = {},
 ): AgentDecision {
   const random = createValidatedRandom(options.random ?? createDefaultRandom());
@@ -37,14 +42,17 @@ export function makeDailyDecisions(
     return decision;
   }
 
-  if (!shouldActThisTick(player, random)) {
+  if (!options.forceAct && !shouldActThisTick(player, random)) {
     return decision;
   }
 
-  const availableAttackTurns = Math.max(
-    0,
-    Math.min(player.attackTurns, player.stamina),
-  );
+  // XP-minded live players wait for stamina, since XP scales with it.
+  const restingForXp =
+    player.behavior.staminaFloor !== undefined &&
+    player.stamina < player.behavior.staminaFloor;
+  const availableAttackTurns = restingForXp
+    ? 0
+    : Math.max(0, Math.min(player.attackTurns, player.stamina));
   const burstBudget = decideBurstTurnBudget(player, availableAttackTurns);
   if (burstBudget <= 0 && player.gold < 250000 && player.units.citizen < 150) {
     return decision;
@@ -56,6 +64,7 @@ export function makeDailyDecisions(
     player.intelCache,
     options.attackLevelRange,
     options.currentDay,
+    options.livePower,
   );
 
   const intelLimit = getSpyMissionLimits(player.spyLevel);

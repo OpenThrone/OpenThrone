@@ -1,0 +1,111 @@
+{
+  "metaTitle": "Privacy Policy - OpenThrone",
+  "metaDescription": "What personal data OpenThrone collects, why, who receives it, how long we keep it, and your rights.",
+  "title": "Privacy Policy",
+  "intro": "This policy explains what personal data OpenThrone collects, why we use it, who receives it, how long we keep it, and the choices and rights you have.",
+  "updated": "Last updated {{date}}",
+  "contactLink": "Email privacy@openthrone.dev",
+  "sections": {
+    "who": {
+      "title": "Who we are",
+      "body": [
+        "OpenThrone (openthrone.dev) is operated by AIOXperts IT Solutions LLC, a Delaware limited liability company in the United States. We decide how your data is used (we are the data controller).",
+        "For any privacy question or request, email privacy@openthrone.dev."
+      ]
+    },
+    "collect": {
+      "title": "What we collect",
+      "body": [
+        "Account details: your email address, display name, password (stored only as a one-way hash), and, if you turn on two-factor sign-in, your authenticator secret (stored encrypted).",
+        "Game and profile data: your kingdom, race and class, settings, optional bio and avatar image, battles, bank and recruiting history, alliance activity, and reports you file.",
+        "Messages: private messages and chat messages you send.",
+        "Technical data: your IP address and browser details when you use the site. We use them for security, abuse and cheat prevention, and rate limiting. Sign-in records keep only one-way fingerprints of your IP address and browser, not the values themselves.",
+        "Payments, if you support OpenThrone: Stripe handles checkout, and your full card number and security code never reach us. We keep Stripe's reference IDs, amounts, currency and tax, your billing country and state, payment status and dates, the terms you agreed to at checkout, and which kingdom or alliance a payment was for.",
+        "Discord, if you link it: your Discord user ID and username, your alert settings, and the alert messages we queue for you.",
+        "Email: which emails we send you and your email preferences."
+      ]
+    },
+    "use": {
+      "title": "How and why we use it",
+      "body": [
+        "To run your account and the game, including showing your kingdom to other players and delivering messages. This is needed to provide the service you signed up for.",
+        "To keep the game fair and safe: detecting cheating and multiple accounts, preventing abuse, moderating chat and reports, and securing accounts. We do this because we have a legitimate interest in a fair, secure game.",
+        "To send email: account and security emails (needed for the service); news and announcements (you can unsubscribe at any time); and battle alerts, only if you turn them on.",
+        "To process payments and keep the records that tax and accounting law requires.",
+        "We do not sell your personal data or share it for cross-context behavioral (targeted) advertising, and we do not build advertising profiles. We do not use third-party analytics or tracking scripts."
+      ]
+    },
+    "cookies": {
+      "title": "Cookies and local storage",
+      "body": [
+        "We use one essential cookie to keep you signed in, plus short-lived cookies that protect sign-in. We do not use analytics or advertising cookies.",
+        "Your browser's local storage keeps display preferences, such as your color scheme and battle simulator settings. It stays on your device.",
+        "Cloudflare's security check (Turnstile), shown on sign-up, sign-in and some forms, may set its own cookies to tell people from bots. Our fonts are served from our own site."
+      ]
+    },
+    "share": {
+      "title": "Who receives your data",
+      "body": [
+        "Other players see what the game shows publicly: your display name, profile, kingdom details, rankings, alliance, and battle reports you or others share.",
+        "Our moderators and administrators can see account and game data, and can read messages and chat when needed for moderation. Their access is logged.",
+        "Service providers who process data for us: Cloudflare (network protection, the Turnstile security check, and image storage), Supabase (database hosting in the United States), Stripe (payments, if you support us), and Discord (alerts and bot replies, only if you link your account). We send email from our own mail server.",
+        "We may disclose data when the law requires it, or to protect players, the game, or our rights."
+      ]
+    },
+    "transfers": {
+      "title": "Where your data is stored",
+      "body": [
+        "We and our service providers are based in, or store data in, the United States. If you play from another country, your data is transferred to the United States because that is needed to provide the game you signed up for. For transfers to our providers, we rely where applicable on the EU-U.S. Data Privacy Framework (and its UK and Swiss extensions) or on standard contractual clauses."
+      ]
+    },
+    "retention": {
+      "title": "How long we keep it",
+      "body": [
+        "Account and game data: while your account exists.",
+        "Battle, bank and recruiting logs: 20 days.",
+        "Sign-in fingerprints: 30 days.",
+        "IP addresses in our administration audit log: 90 days. The record of the action itself is kept for security.",
+        "Discord alert messages: 14 days after they are sent.",
+        "Payment records: as long as tax and accounting law requires.",
+        "Moderation records (reports, notes, sanctions): as long as needed to enforce the rules and handle appeals.",
+        "Anti-abuse fingerprints after an account is deleted: a one-way fingerprint of the email address for 30 days (or until a ban ends), and of the display name permanently, so bans cannot be dodged and names cannot be reused.",
+        "Our servers also keep technical logs, which can include IP addresses, for a limited period for security and troubleshooting.",
+        "Inactive accounts: if you have not signed in for 12 months, we may email you and delete the account 6 months later unless you sign in."
+      ]
+    },
+    "delete": {
+      "title": "Deleting your account",
+      "body": [
+        "You can delete your account from Settings. We then erase your email address, password, authenticator secret, bio, avatar files and Discord link, replace your display name with a random name, and erase the text of private and chat messages you wrote.",
+        "We keep: game history under the random name, so other players' battle records stay intact; payment records required by law; and moderation records.",
+        "To stop people dodging bans or reusing names, we keep a one-way fingerprint of your email address for 30 days (or until a ban ends) and of your display name permanently. These fingerprints cannot be turned back into the original values."
+      ]
+    },
+    "rights": {
+      "title": "Your rights",
+      "body": [
+        "You can ask to access, correct, delete or receive a portable copy of your personal data, and you can object to or ask us to restrict how we use it. Where we rely on your consent, such as battle alert emails, you can withdraw it at any time; this does not affect what we did before. Settings has a 'Download my data' button for a quick copy; email privacy@openthrone.dev for a complete copy or any other request.",
+        "We answer within 30 days and may need to confirm the request comes from the account owner. We will not treat you differently for using these rights. If we decline a request, you can appeal by replying to our answer or by emailing privacy@openthrone.dev with 'Privacy appeal' in the subject; we answer appeals within 45 days.",
+        "If you are in the EEA, the UK or Switzerland, you can also complain to your data protection authority. Residents of US states with privacy laws have the rights those laws give them, including to know, correct, delete and appeal, and we honor them through the same process."
+      ]
+    },
+    "children": {
+      "title": "Age requirement",
+      "body": [
+        "OpenThrone is for people aged 16 and older. We do not knowingly collect data from anyone younger. If you believe someone under 16 has an account, email privacy@openthrone.dev and we will delete it."
+      ]
+    },
+    "security": {
+      "title": "Security",
+      "body": [
+        "We protect data with encrypted connections (HTTPS), hashed passwords, encrypted authenticator secrets, access controls for staff, and audit logs of staff actions. No system is perfectly secure; if a breach affects your data, we will tell you as the law requires."
+      ]
+    },
+    "changes": {
+      "title": "Changes to this policy",
+      "body": [
+        "We update this policy when what we do changes. The date at the top shows the latest version. For important changes, we will announce them in the game or by email before they take effect."
+      ]
+    }
+  }
+}

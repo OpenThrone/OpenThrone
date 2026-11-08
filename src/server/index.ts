@@ -3,6 +3,7 @@ import { isIP } from 'net';
 import next from 'next';
 
 import { initializeSocket } from '@/lib/socket';
+import { startDiscordOutboxWorker } from '@/server/discordOutboxWorker';
 import { startEmailOutboxWorker } from '@/server/emailOutboxWorker';
 import { startEraResetWorker } from '@/server/eraResetWorker';
 import { prepareNextApp } from '@/server/nextStartup';
@@ -38,6 +39,8 @@ const handle = app.getRequestHandler();
   httpServer.once('close', stopEraResetWorker);
   const stopTemporaryForceWorker = startTemporaryForceWorker();
   httpServer.once('close', stopTemporaryForceWorker);
+  const stopDiscordOutboxWorker = startDiscordOutboxWorker();
+  httpServer.once('close', stopDiscordOutboxWorker);
   const missing = missingEmailSecrets();
   if (missing.length)
     logError(`Email configuration missing: ${missing.join(', ')}`);

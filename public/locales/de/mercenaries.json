@@ -2,7 +2,7 @@
   "title": "Söldner",
   "hireTitle": "Bereit ausgerüstete Söldner einstellen",
   "description": "Kaufe vor Ihrem nächsten Feldzug einen temporären Vorteil. Söldner kommen kampfstark ausgerüstet und verbrauchen weder Bürger noch Ihre Vorratsbestände.",
-  "specialization": "Söldner gewinnen 25 % Primärstärke, verlieren 20 % Nebenrollen-Stärke und haben 20 % weniger Lebenspunkte als ihre einheimischen Gegenstücke.",
+  "specialization": "Söldner gewinnen 25 % Primärstärke, verlieren 20 % Nebenrollen-Stärke und haben 20 % weniger Lebenspunkte als ihre einheimischen Gegenstücke. Im Kampf stehen sie in der ersten Reihe und tragen innerhalb ihres Einheitentyps und ihrer Stufe etwa doppelt so viele Verluste wie ihr Anteil.",
   "unit": "Einheit",
   "choose": "Wählen Sie eine Rolle und eine Stufe",
   "quantity": "Menge",

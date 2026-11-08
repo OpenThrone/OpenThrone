@@ -2,6 +2,7 @@ import { Box, Button, Group, SimpleGrid, Text, Title } from '@mantine/core';
 import type { GetStaticProps } from 'next';
 import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
+import { useEffect } from 'react';
 
 import Image from '@/components/ArtworkImage';
 import frameClasses from '@/components/game/FantasyFrame.module.css';
@@ -9,6 +10,7 @@ import MainArea from '@/components/MainArea';
 import PublicHero from '@/components/public/PublicHero';
 import classes from '@/components/public/PublicPages.module.css';
 import SeoHead from '@/components/SeoHead';
+import { useStaminaGuide } from '@/hooks/useStaminaGuide';
 import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const sections = [
@@ -23,6 +25,18 @@ const races = ['elf', 'human', 'goblin', 'undead'] as const;
 
 const HowToPlay = () => {
   const { t } = useTranslation('how-to-play');
+  const staminaGuide = useStaminaGuide();
+  // The browser's own jump to a shared #anchor happens before the layout
+  // settles and lands at the top; scroll again once the page is mounted.
+  useEffect(() => {
+    let id = '';
+    try {
+      id = decodeURIComponent(window.location.hash.slice(1));
+    } catch {
+      return;
+    }
+    if (id) document.getElementById(id)?.scrollIntoView({ behavior: 'auto' });
+  }, []);
   return (
     <>
       <SeoHead title={t('metaTitle')} description={t('metaDescription')} />
@@ -119,7 +133,10 @@ const HowToPlay = () => {
                   key: 'economy',
                   entries: ['bank', 'armory', 'fortifications', 'mines'],
                 },
-                { key: 'combat', entries: ['attack', 'defense', 'spy'] },
+                {
+                  key: 'combat',
+                  entries: ['attack', 'defense', 'spy', 'stamina'],
+                },
               ].map(({ key, entries }) => (
                 <Box
                   component="section"
@@ -135,7 +152,16 @@ const HowToPlay = () => {
                   </Text>
                   <Box component="dl" className={classes.guideDefinitions}>
                     {entries.map((entry) => (
-                      <Box key={entry}>
+                      // Anchors such as #combat-stamina for in-game links.
+                      <Box
+                        key={entry}
+                        id={`${key}-${entry}`}
+                        className={
+                          entry === 'stamina'
+                            ? classes.definitionWide
+                            : undefined
+                        }
+                      >
                         <Text
                           component="dt"
                           className={classes.definitionTitle}
@@ -143,7 +169,9 @@ const HowToPlay = () => {
                           {t(`${key}.${entry}.title`)}
                         </Text>
                         <Text component="dd" className={classes.prose} m={0}>
-                          {t(`${key}.${entry}.text`)}
+                          {entry === 'stamina'
+                            ? staminaGuide
+                            : t(`${key}.${entry}.text`)}
                         </Text>
                       </Box>
                     ))}

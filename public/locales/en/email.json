@@ -20,5 +20,19 @@
   "battleSubject": "Your OpenThrone kingdom was attacked by {{attackerName}}",
   "battleBody": "Commander {{display_name}},\n\nYour kingdom was attacked by {{attackerName}}.\nOutcome: {{outcome}}.\n\nView your battle report: {{reportLink}}",
   "battleVictory": "Victory",
-  "battleDefeat": "Defeat"
+  "battleDefeat": "Defeat",
+  "receiptSubject": "Your OpenThrone Patron purchase",
+  "receiptBody": "Commander {{display_name}},\n\nThank you for supporting OpenThrone. You paid {{amount}} for {{plan}}.\n\n{{renewal}}\n\nWhat you agreed to before paying:\n{{consent}}\n\nManage billing or cancel: {{manageLink}}\nPatronage terms: {{termsLink}}\nRefund policy: {{refundsLink}}\n\nKeep this email as your record. For questions, email privacy@openthrone.dev or ask on our Discord.",
+  "renewalMonthly": "This membership renews every month at {{amount}}, plus any tax, until you cancel. Cancel any time from Manage billing on your Patronage page; cancelling stops the next charge.",
+  "renewalOnce": "This is a one-time payment. It does not renew.",
+  "canceledSubject": "Your Patron membership will not renew",
+  "canceledBody": "Commander {{display_name}},\n\nYour monthly Patron membership is cancelled and will not renew, so you will not be charged again. Your perks last until {{accessUntil}}.\n\nYou can subscribe again any time: {{manageLink}}\nRefund policy: {{refundsLink}}",
+  "supporterPlans": {
+    "supporter_monthly": "Patron (monthly)",
+    "supporter_era_pass": "Patron era pass (100 days)",
+    "gift_1m": "Patron gift code (30 days)",
+    "gift_3m": "Patron gift code (90 days)",
+    "gift_12m": "Patron gift code (360 days)",
+    "alliance_sponsorship": "alliance sponsorship"
+  }
 }

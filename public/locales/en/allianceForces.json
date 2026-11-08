@@ -34,7 +34,7 @@
   "approval": "Loan approval policy",
   "manual": "Manual leadership approval",
   "automatic": "Automatic, within role allowances",
-  "taxRule": "General pillage tax and participating offensive-loan contributions use the higher rate. All alliances combined can collect at most 25% of gross pillage. Gold-loan repayment applies afterward.",
+  "taxRule": "General pillage tax and participating offensive-loan contributions use the higher rate. All alliances combined can collect at most {{percent}}% of gross pillage. Gold-loan repayment applies afterward.",
   "role": "Alliance role",
   "allowance": "Maximum borrowed",
   "maxDays": "Maximum days",

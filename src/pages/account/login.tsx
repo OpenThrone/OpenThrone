@@ -14,6 +14,7 @@ import SeoHead from '@/components/SeoHead';
 import { useLayout } from '@/context/LayoutContext';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { localePrefix } from '@/utils/localeRedirect';
+import { safeLoginReturnPath, withLocalePrefix } from '@/utils/loginReturn';
 import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const Login = () => {
@@ -141,7 +142,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (session?.user) {
     return {
       redirect: {
-        destination: `${localePrefix(context.locale, context.defaultLocale)}/home/overview`,
+        // Callback paths come from router.asPath, which omits the locale.
+        destination: withLocalePrefix(
+          safeLoginReturnPath(context.query.callbackUrl),
+          localePrefix(context.locale, context.defaultLocale),
+        ),
         permanent: false,
       },
     };

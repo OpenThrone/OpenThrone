@@ -3,7 +3,60 @@ import { z } from 'zod';
 import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import prisma from '@/lib/prisma';
 import { WarStatus } from '@/lib/prisma-exports';
+import { enqueueDiscordAlert } from '@/services/discord/DiscordAlerts.service';
+import { discordBotConfigured, siteUrl } from '@/services/discord/DiscordApi';
 import { logError } from '@/utils/logger';
+
+/** Queues a Discord DM for every linked member on both sides. */
+async function notifyWarDeclared(war: {
+  id: number;
+  attacker_alliance_id: number;
+  defender_alliance_id: number | null;
+  defender_user_id: number | null;
+  start_at: Date;
+}) {
+  if (!discordBotConfigured()) return;
+  const allianceIds = [
+    war.attacker_alliance_id,
+    war.defender_alliance_id,
+  ].filter((id): id is number => typeof id === 'number');
+  const [alliances, members, defenderUser] = await Promise.all([
+    prisma.alliances.findMany({
+      where: { id: { in: allianceIds } },
+      select: { id: true, name: true },
+    }),
+    prisma.alliance_memberships.findMany({
+      where: {
+        alliance_id: { in: allianceIds },
+        user: { discordLink: { isNot: null } },
+      },
+      select: { user_id: true },
+    }),
+    war.defender_user_id
+      ? prisma.users.findUnique({
+          where: { id: war.defender_user_id },
+          select: { display_name: true },
+        })
+      : null,
+  ]);
+  const name = (id: number | null) =>
+    alliances.find((alliance) => alliance.id === id)?.name ?? '';
+  const userIds = new Set<number>(members.map((member) => member.user_id));
+  if (war.defender_user_id) userIds.add(war.defender_user_id);
+  for (const userId of userIds)
+    await enqueueDiscordAlert(prisma, {
+      userId,
+      kind: 'wars',
+      eventKey: `war:${war.id}:${userId}`,
+      text: 'alert.warDeclared',
+      vars: {
+        attacker: name(war.attacker_alliance_id),
+        defender: defenderUser?.display_name ?? name(war.defender_alliance_id),
+        start: `${war.start_at.toISOString().replace('T', ' ').slice(0, 16)} UTC`,
+        url: siteUrl(`/alliances/${war.attacker_alliance_id}`),
+      },
+    });
+}
 
 /** Describes the declare war data contract. */
 export interface DeclareWarData {
@@ -119,6 +172,9 @@ export class AllianceWarService {
         },
       });
 
+      await notifyWarDeclared(war).catch(() =>
+        logError('Discord war alert failed', { warId: war.id }),
+      );
       return war;
     } catch (error: any) {
       logError('Error declaring war', { ...validatedData, error });

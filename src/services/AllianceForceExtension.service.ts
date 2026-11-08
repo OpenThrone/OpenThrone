@@ -4,6 +4,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { lockAllianceThenUsers } from '@/services/AllianceBank.service';
 import { assertForceBorrowingAllowed } from '@/services/ForceLifecycle.service';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
 import { forceExpiration, ForcePolicySchema } from '@/utils/temporaryForces';
 
@@ -11,13 +12,16 @@ const schema = z
   .object({
     contractId: z.number().int().positive(),
     actorId: z.number().int().positive(),
-    days: z.number().int().min(1).max(30),
+    days: z.number().int().min(1).max(365),
     approve: z.boolean().default(false),
     operationId: z.string().uuid(),
   })
   .strict();
 export async function extendAllianceForce(input: z.input<typeof schema>) {
   const command = schema.parse(input);
+  const limits = await getRuntimeConfig();
+  if (command.days > (limits.forceMaxTermDays ?? 30))
+    throw new Error('Extension exceeds maximum term');
   const owner = await prisma.forceContract.findUniqueOrThrow({
     where: { id: command.contractId },
   });
@@ -85,23 +89,32 @@ export async function extendAllianceForce(input: z.input<typeof schema>) {
       throw new Error('Contract belongs to another player');
     if (settings.lendingMode === 'ROLE_ALLOWANCE' && !allowance)
       throw new Error('No automatic lending allowance for this role');
-    if (allowance) {
-      const borrowed = await tx.forceContract.aggregate({
-        where: {
-          userId: contract.userId,
-          allianceId: contract.allianceId,
-          eraId: contract.eraId,
-          kind: 'ALLIANCE',
-          status: 'ACTIVE',
-          expiresAt: { gt: now },
-        },
-        _sum: { survivingQuantity: true },
-      });
-      if ((borrowed._sum.survivingQuantity ?? 0) > allowance.maxBorrowed)
-        throw new Error('Current borrowed troops exceed the role allowance');
-    }
+    // Same ceiling as borrowing: all active loans against the smaller of
+    // the runtime force cap and the role allowance.
+    const borrowed = await tx.forceContract.aggregate({
+      where: {
+        userId: contract.userId,
+        allianceId: contract.allianceId,
+        eraId: contract.eraId,
+        kind: 'ALLIANCE',
+        status: 'ACTIVE',
+        expiresAt: { gt: now },
+      },
+      _sum: { survivingQuantity: true },
+    });
+    const forceCap = limits.forceMaxQuantity ?? 1000000;
+    const borrowCap = Math.min(forceCap, allowance?.maxBorrowed ?? forceCap);
+    if ((borrowed._sum.survivingQuantity ?? 0) > borrowCap)
+      throw new Error(
+        allowance && allowance.maxBorrowed < forceCap
+          ? 'Current borrowed troops exceed the role allowance'
+          : 'Loan exceeds the current force quantity limit',
+      );
     const expiresAt = forceExpiration(contract.expiresAt, command.days);
-    const maxDays = Math.min(30, allowance?.maxTermDays ?? 30);
+    const maxDays = Math.min(
+      limits.forceMaxTermDays ?? 30,
+      allowance?.maxTermDays ?? limits.forceMaxTermDays ?? 30,
+    );
     if (expiresAt.getTime() > now.getTime() + maxDays * 86400000)
       throw new Error('Extended loan exceeds the current role term limit');
     const active = command.approve || settings.lendingMode === 'ROLE_ALLOWANCE';

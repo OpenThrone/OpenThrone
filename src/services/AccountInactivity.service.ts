@@ -7,6 +7,7 @@ import {
   enqueueCampaignBatch,
 } from '@/services/AdminEmail.service';
 import { resolveEligibleRecipients } from '@/services/Email.service';
+import { deleteUserAvatarFiles } from '@/services/PrivacyRetention.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { logActionStrict } from '@/utils/auditLogger';
 import { logError } from '@/utils/logger';
@@ -367,6 +368,8 @@ export async function runInactivitySweep({
             },
             { timeout: 30_000 },
           );
+        if (outcome === 'anonymized' && !dryRun)
+          await deleteUserAvatarFiles(notice.userId);
         if (outcome) result[outcome]++;
       } catch {
         result.failed++;

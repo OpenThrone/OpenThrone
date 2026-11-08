@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'bun:test';
 import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 import { silenceLogger } from 'test/utils/silenceLogger';
 
@@ -10,8 +10,11 @@ const { AllianceBankService } = await import('../AllianceBank.service');
 const { AllianceLoanService, divertIncomeToLoans } =
   await import('../AllianceLoan.service');
 const { AllianceService } = await import('../Alliance.service');
+const recompute = await import('@/utils/adminRecomputeStats');
 const { depositGold } = await import('../Bank.service');
 const { computeLoanOwed } = await import('@/constants/allianceTreasury');
+const { invalidateRuntimeConfigCache } =
+  await import('../RuntimeConfig.service');
 
 // Synthetic alliance (#66 phase 3): leader 5; banker 6 (manage_bank);
 // members 8 and 9 (request_gold); member 10 cannot request.
@@ -649,6 +652,21 @@ describe('default', () => {
 });
 
 describe('leaving and being kicked with a loan', () => {
+  let recomputeSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    recomputeSpy = vi
+      .spyOn(recompute, 'recomputeStoredStatsInTx')
+      .mockResolvedValue({
+        offense: 0,
+        defense: 0,
+        spy: 0,
+        sentry: 0,
+        killingStrength: 0,
+        defenseStrength: 0,
+      });
+  });
+  afterEach(() => recomputeSpy.mockRestore());
+
   it('collects from gold then bank on leave', async () => {
     userRows[MEMBER] = { gold: 300n, gold_in_bank: 2_000n };
     const loan = loanFixture();
@@ -715,6 +733,21 @@ describe('disbanding', () => {
 describe('treasury settings', () => {
   const update = (actorId: number, data: any) =>
     AllianceLoanService.updateTreasurySettings(ALLIANCE_ID, actorId, data);
+
+  it('enforces configured treasury bounds', async () => {
+    mockPrisma.serverSetting.findMany.mockResolvedValue([
+      { key: 'alliance.loanTermMaxDays', value: 20 },
+      { key: 'alliance.loanInterestMaxPercent', value: 5 },
+    ]);
+    invalidateRuntimeConfigCache();
+    try {
+      await update(LEADER, { loan_term_days: 20 });
+      await expect(update(LEADER, { loan_interest_pct: 6 })).rejects.toThrow();
+    } finally {
+      mockPrisma.serverSetting.findMany.mockResolvedValue([]);
+      invalidateRuntimeConfigCache();
+    }
+  });
 
   it('lets only the leader change them', async () => {
     expect(await reason(update(BANKER, { loan_term_days: 3 }))).toBe(

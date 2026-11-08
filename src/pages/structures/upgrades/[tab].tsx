@@ -11,6 +11,7 @@ import { TabBar } from '@/components/game/TabBar';
 import HousingTab from '@/components/housing-upgrades';
 import MainArea from '@/components/MainArea';
 import OffenseUpgrade from '@/components/offenseupgrade';
+import { RacialUpgrades } from '@/components/racial-upgrades';
 import { useUser } from '@/context/users';
 
 const UpgradeTab = () => {
@@ -22,6 +23,13 @@ const UpgradeTab = () => {
   const { user, forceUpdate } = useUser();
 
   const { t } = useTranslation('structures');
+  // The racial track is named after the player's own perk (Discipline,
+  // Raiders, Necropolis, Sanctuary); unknown races fall back to the generic tab.
+  const racialLabel = ['ELF', 'HUMAN', 'GOBLIN', 'UNDEAD'].includes(
+    user?.race ?? '',
+  )
+    ? t(`upgrades.perk${user?.race}`)
+    : t('upgrades.tabRacial');
 
   const getTabTitle = (currentTab: string) => {
     switch (currentTab) {
@@ -37,6 +45,8 @@ const UpgradeTab = () => {
         return t('upgrades.titleHousing');
       case 'economy':
         return t('upgrades.titleEconomy');
+      case 'racial':
+        return racialLabel;
       default:
         return t('upgrades.title');
     }
@@ -113,6 +123,18 @@ const UpgradeTab = () => {
         <ClandestineUpgrade
           userLevel={user?.spyLevel}
           fortLevel={user?.fortLevel}
+          forceUpdate={forceUpdate}
+        />
+      ),
+    },
+    {
+      value: 'racial',
+      label: racialLabel,
+      component: (
+        <RacialUpgrades
+          tier={user.racialPerkTier ?? 0}
+          fortLevel={user.fortLevel}
+          race={user.race}
           forceUpdate={forceUpdate}
         />
       ),

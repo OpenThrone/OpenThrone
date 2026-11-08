@@ -9,6 +9,7 @@ import { createUser } from '@/services/User.service';
 import { getOTDayKey } from '@/utils/timefunctions';
 
 import { resetDatabase, setDesertion, setRuntimeSwitch } from './db';
+import { hireQuoted } from './hireQuoted';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
@@ -806,7 +807,7 @@ describe('mercenary hire and renew refusal below morale 20', () => {
     await setUnits(player.id, 'OFFENSE', 100);
 
     await expect(
-      MercenaryService.hire({
+      hireQuoted({
         userId: player.id,
         type: 'OFFENSE',
         level: 1,
@@ -820,7 +821,7 @@ describe('mercenary hire and renew refusal below morale 20', () => {
       where: { id: player.id },
       data: { kingdom_morale: 20 },
     });
-    const contract = await MercenaryService.hire({
+    const contract = await hireQuoted({
       userId: player.id,
       type: 'OFFENSE',
       level: 1,

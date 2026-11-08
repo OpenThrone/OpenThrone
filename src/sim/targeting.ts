@@ -1,4 +1,5 @@
 import { getPlayerPower } from './economy';
+import type { LivePowerEstimator } from './liveTargeting';
 import { getSpyMissionLimits } from './population';
 import { createDefaultRandom, validateRandomDraw } from './random';
 import type {
@@ -17,9 +18,11 @@ export function evaluateTargets(
   intelCache: Map<string, IntelResult>,
   attackLevelRange = Number(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE ?? 5),
   currentDay = 0,
+  /** Live rules: battle strength from what the player can know (liveTargeting.ts). */
+  livePower?: LivePowerEstimator,
 ): TargetEvaluation[] {
   const evaluations: TargetEvaluation[] = [];
-  const attackerPower = getPlayerPower(attacker);
+  const attackerPower = livePower?.attacker ?? getPlayerPower(attacker);
   const activePlayers = population.filter(
     (player) => player.status === 'active',
   );
@@ -62,10 +65,12 @@ export function evaluateTargets(
     // Unobserved troop types retain the existing estimate; a partial report
     // must not turn missing fields into a wiped-out army.
     const observed = hasIntel ? cachedIntel?.defenderInfo : undefined;
-    const targetPower = getPlayerPower({
-      ...target,
-      units: { ...target.units, ...observed?.units },
-    });
+    const targetPower = livePower
+      ? livePower.target(target, hasIntel)
+      : getPlayerPower({
+          ...target,
+          units: { ...target.units, ...observed?.units },
+        });
     if (targetPower < attackerPower * 0.05) continue;
 
     let estimatedWinRate = 0.5;

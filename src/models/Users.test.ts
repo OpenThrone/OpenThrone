@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { normUnits } from 'test/utils/testFixtures';
 
 import { EconomyUpgrades, Fortifications } from '@/constants';
@@ -7,7 +7,15 @@ import { stringifyObj } from '@/utils/numberFormatting';
 import userData from '../../__mocks__/userData';
 import UserModel from './Users';
 
+// Tests reassign fields on the shared fixture; restore it so order never matters.
+const pristineUserData = structuredClone(userData);
+
 describe('UserModel', () => {
+  beforeEach(() => {
+    for (const key of Object.keys(userData)) delete (userData as any)[key];
+    Object.assign(userData, structuredClone(pristineUserData));
+  });
+
   it('should correctly instantiate with default values when no userData is provided', () => {
     const user = new UserModel(null);
     expect(user.id).toBe(0);

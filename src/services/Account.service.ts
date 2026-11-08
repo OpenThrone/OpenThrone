@@ -9,6 +9,8 @@ import type { BonusPointsType } from '@/lib/prisma-exports';
 import { rateLimiter } from '@/lib/rate-limiter';
 import UserModel from '@/models/Users';
 import { sendImmediate } from '@/services/Email.service';
+import { deleteUserAvatarFiles } from '@/services/PrivacyRetention.service';
+import { endSupporterBillingSoon } from '@/services/supporter/AccountBilling.service';
 import type { AvatarFraming } from '@/utils/avatarFraming';
 import { withAvatarFraming } from '@/utils/avatarFraming';
 import { logError } from '@/utils/logger';
@@ -803,6 +805,8 @@ export class AccountService {
           initiatedBy: 'SELF',
         });
       });
+      await endSupporterBillingSoon(userId, 'now');
+      await deleteUserAvatarFiles(userId);
 
       return { message: 'Account data removed successfully.' };
     } catch (error: any) {

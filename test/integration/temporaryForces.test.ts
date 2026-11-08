@@ -487,6 +487,33 @@ describe('temporary force ownership ledger on PostgreSQL', () => {
     expect((await reserve()).available).toBe(5);
     await expect(loan(6)).rejects.toThrow();
   });
+  test('borrower stored strength rises when a loan activates and falls when it returns', async () => {
+    const offense = async () =>
+      (await prisma.users.findUniqueOrThrow({ where: { id: borrowerId } }))
+        .offense;
+    await donate();
+    const request = await loan(5);
+    expect(await offense()).toBe(0);
+    await approve(request.id);
+    const lent = await offense();
+    expect(lent).toBeGreaterThan(0);
+    await recall(request.id);
+    expect(await offense()).toBe(0);
+    await Ledger.savePolicy(allianceId, donorId, {
+      lendingMode: 'ROLE_ALLOWANCE',
+      roleAllowances: [
+        {
+          roleId,
+          maxBorrowed: 10,
+          maxTermDays: 7,
+          pillageRateBps: 0,
+          loanRateBps: 0,
+        },
+      ],
+    });
+    await loan(5);
+    expect(await offense()).toBe(lent);
+  });
   test('switching to automatic mode cannot activate a pending manual request', async () => {
     await donate();
     const request = await loan(5);

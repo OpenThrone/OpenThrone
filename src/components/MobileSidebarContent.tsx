@@ -22,12 +22,17 @@ import { useTranslation } from 'next-i18next';
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import classes from '@/components/MobileSidebarContent.module.css';
+import { SupporterBadge } from '@/components/player/SupporterBadge';
 import { ActiveEventsBanner } from '@/components/sidebar/ActiveEventsBanner';
+import { ArmyConditionMeter } from '@/components/sidebar/ArmyConditionMeter';
 import { ProtectionMeter } from '@/components/sidebar/ProtectionMeter';
 import { SidebarTimeInfo } from '@/components/sidebar/SidebarShared';
 import { useUser } from '@/context/users';
 import { useActiveGameEvents } from '@/hooks/useActiveGameEvents';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { useSidebarData } from '@/hooks/useSidebarData';
+import { readStaminaBalance } from '@/hooks/useStamina';
+import { useSupporterStatus } from '@/hooks/useSupporterStatus';
 import { getAvatarSrc } from '@/utils/utilities';
 
 import { GoldRequestNotificationModal } from './GoldRequestNotificationModal';
@@ -44,6 +49,9 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
   const { t } = useTranslation('common');
   const { events: activeEvents } = useActiveGameEvents();
   const { user, forceUpdate, loading: userLoading } = useUser();
+  const { data: supporterStatus } = useSupporterStatus();
+  const { config } = useRuntimeConfig();
+  const staminaBalance = readStaminaBalance(user);
 
   const {
     advisorMessages,
@@ -150,6 +158,17 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
 
   return (
     <div className={classes.root}>
+      {user && (
+        <Text fw={700}>
+          {user.displayName}
+          <SupporterBadge
+            supporter={{
+              supporterUntil: supporterStatus?.activeUntil,
+              badgeVisible: supporterStatus?.badgeVisible,
+            }}
+          />
+        </Text>
+      )}
       {/* Advisor ledger card (FINDING-45). */}
       <GameCard
         title={t('sidebar.advisor')}
@@ -217,6 +236,15 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
           action={refreshAction}
           stats={stats}
         />
+      )}
+      {!userLoading && staminaBalance && config?.stamina && (
+        <GameCard title={t('sidebar.armyCondition.label')} goldAccent={false}>
+          <ArmyConditionMeter
+            showLabel={false}
+            balance={staminaBalance}
+            rules={config.stamina}
+          />
+        </GameCard>
       )}
       {!userLoading && user?.protection?.protected && (
         <GameCard title={t('sidebar.protection.label')} goldAccent={false}>

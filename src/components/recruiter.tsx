@@ -1,7 +1,7 @@
 import { Box, Text } from '@mantine/core';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useTranslation } from 'next-i18next';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import Image from '@/components/ArtworkImage';
 import { GameCard } from '@/components/game/GameCard';
@@ -9,15 +9,23 @@ import { getAssetPath, getLevelFromXP } from '@/utils/utilities';
 
 const Recruiter = ({ user, showCaptcha, onSuccess, status }) => {
   const { t } = useTranslation('common');
+  const firedRef = useRef(false);
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+  const succeedOnce = (token?: string) => {
+    if (firedRef.current) return;
+    firedRef.current = true;
+    onSuccessRef.current(token);
+  };
   useEffect(() => {
     if (!showCaptcha) {
       // Automatically succeed after 3 seconds if no captcha is required
       const timeout = setTimeout(() => {
-        onSuccess();
+        succeedOnce();
       }, 3000);
       return () => clearTimeout(timeout);
     }
-  }, [showCaptcha, onSuccess]);
+  }, [showCaptcha]);
 
   return (
     <GameCard title={t('recruit.targetTitle')}>
@@ -50,7 +58,7 @@ const Recruiter = ({ user, showCaptcha, onSuccess, status }) => {
             <div className="flex items-center justify-center">
               <Turnstile
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
-                onSuccess={onSuccess}
+                onSuccess={succeedOnce}
               />
             </div>
           )}

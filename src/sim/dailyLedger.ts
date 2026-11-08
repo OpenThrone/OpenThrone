@@ -33,14 +33,12 @@ export function resetDefenderDailyLedger(player: PlayerState): void {
   player.defenderLedger = createDefenderDailyLedger();
 }
 
-function dailyThroughput(defender: PlayerState): number {
+function dailyThroughput(defender: PlayerState, live = false): number {
+  // Live rules store the 1-based house level; HouseUpgrades is 0-based.
+  const houseIndex = Math.floor(defender.houseLevel ?? 0) - (live ? 1 : 0);
   const houseCitizens =
-    HouseUpgrades[
-      Math.max(
-        0,
-        Math.floor(defender.houseLevel ?? 0),
-      ) as keyof typeof HouseUpgrades
-    ]?.citizensDaily ?? 1;
+    HouseUpgrades[Math.max(0, houseIndex) as keyof typeof HouseUpgrades]
+      ?.citizensDaily ?? 1;
   return calculateDailyReplacementThroughput({
     houseCitizens: Number(houseCitizens),
     race: defender.race,
@@ -48,21 +46,24 @@ function dailyThroughput(defender: PlayerState): number {
 }
 
 /** Budgets a battle against `defender` must respect today. */
-export function battleDailyBudget(defender: PlayerState): {
+export function battleDailyBudget(
+  defender: PlayerState,
+  live?: { isProtected: boolean },
+): {
   defenderDailyCasualtyRemaining: number;
   defenderDailyGoldRemaining: number;
 } {
   const ledger = getDefenderLedger(defender);
   return {
     defenderDailyCasualtyRemaining: calculateDefenderDailyCasualtyRemaining({
-      dailyThroughput: dailyThroughput(defender),
+      dailyThroughput: dailyThroughput(defender, live !== undefined),
       casualtiesToday: ledger.casualtiesToday,
     }),
     defenderDailyGoldRemaining: Number(
       calculateDefenderDailyGoldRemaining({
         goldOnHand: BigInt(Math.max(0, Math.floor(defender.gold))),
         goldTakenToday: BigInt(Math.max(0, Math.floor(ledger.goldTakenToday))),
-        isDefenderProtected: defender.level <= 9,
+        isDefenderProtected: live?.isProtected ?? defender.level <= 9,
       }),
     ),
   };
@@ -75,13 +76,15 @@ export function recordBattleOnLedger(
     defenderCasualties: Partial<UnitCounts>;
     loot: number;
     winner: string;
+    /** Live rules: mercenary losses, which AttackService also counts. */
+    defenderMercenaryLosses?: Record<number, number>;
   },
 ): void {
   const ledger = getDefenderLedger(defender);
-  const losses = Object.values(result.defenderCasualties).reduce<number>(
-    (sum, count) => sum + Math.max(0, Number(count) || 0),
-    0,
-  );
+  const losses = [
+    ...Object.values(result.defenderCasualties),
+    ...Object.values(result.defenderMercenaryLosses ?? {}),
+  ].reduce<number>((sum, count) => sum + Math.max(0, Number(count) || 0), 0);
   ledger.casualtiesToday += losses;
   if (result.winner === 'attacker') {
     ledger.goldTakenToday += Math.max(0, result.loot);

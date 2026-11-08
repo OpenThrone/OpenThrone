@@ -57,6 +57,18 @@ describe('getProtectionStatus', () => {
     expect(status.endsAt?.getTime()).toBe(NOW.getTime() + 12 * DAY);
   });
 
+  it('ends at the configured level', () => {
+    const user = fresh({ experience: xpForLevel(5) });
+    expect(
+      getProtectionStatus(user, ERA, { ...SETTINGS, levelLimit: 5 }, NOW)
+        .reason,
+    ).toBe('LEVEL');
+    expect(
+      getProtectionStatus(user, ERA, { ...SETTINGS, levelLimit: 6 }, NOW)
+        .reason,
+    ).toBe('ACTIVE');
+  });
+
   it('ends after the configured number of days', () => {
     const joined = new Date(NOW.getTime() - 14 * DAY);
     const status = getProtectionStatus(

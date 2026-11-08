@@ -2,23 +2,24 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 
-import { AUTO_RECRUIT_ENABLED } from '@/constants/AutoRecruit';
 import { withAuth } from '@/middleware/auth';
+import {
+  AUTO_RECRUIT_DISABLED,
+  canAutoRecruit,
+} from '@/services/AutoRecruitAccess.service';
 import { getValidUsersForRecruitment } from '@/services/Recruitment.service';
 import { getSession, updateSessionActivity } from '@/services/Sessions.service';
-import { logError } from '@/utils/logger'; // Import logger at the top
-import { mtRand as mtrand } from '@/utils/mtrand';
+import { pickRecruitTarget } from '@/utils/autoRecruitFlow';
+import { logError } from '@/utils/logger';
 
 const GetRandomUserSchema = z.object({
   sessionId: z.number().int().optional(),
+  excludeUserId: z.number().int().positive().optional(),
 });
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (!AUTO_RECRUIT_ENABLED)
-    return res.status(503).json({
-      error: 'Auto-Recruit is currently disabled.',
-      code: 'AUTO_RECRUIT_DISABLED',
-    });
+  if (!(await canAutoRecruit((req as any).session?.user?.id)))
+    return res.status(503).json(AUTO_RECRUIT_DISABLED);
   // Cast req to any to access session property added by middleware
   const { session } = req as any;
   const recruiterID = Number(session?.user?.id ?? 0);
@@ -34,7 +35,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       details: validatedBody.error.flatten().fieldErrors,
     });
   }
-  const { sessionId } = validatedBody.data;
+  const { sessionId, excludeUserId } = validatedBody.data;
 
   if (req.method === 'POST') {
     if (!sessionId) {
@@ -87,10 +88,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   // Select a random user from the *filtered* list
-  const randomUserIndex = Math.floor(
-    mtrand(0, actuallyRecruitableUsers.length - 1),
-  );
-  const randomUser = actuallyRecruitableUsers[randomUserIndex];
+  const randomUser = pickRecruitTarget(actuallyRecruitableUsers, excludeUserId);
 
   // This check should theoretically not be needed now, but keep as safeguard
   if (!randomUser) {

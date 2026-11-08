@@ -116,10 +116,14 @@
     "sessionControls": "Session Controls",
     "clickStart": "Click Start to begin the Auto-Recruit session.",
     "startSession": "Start Recruiting",
+    "verifyToStart": "Confirm you're not a bot to start the session.",
+    "verificationFailed": "Verification failed. Please try again.",
     "manageSessions": "Manage Sessions",
     "sessionStatus": "Session Status",
     "loadingNextUser": "Loading next user...",
     "loadingNextUserCountdown": "Loading next user in {{count}}s...",
+    "sessionRecruitCount": "Recruited {{count}} kingdoms this session.",
+    "tooManySkips": "Too many kingdoms became unavailable. Please start a new session.",
     "sessionComplete": "Session Complete",
     "sessionEnded": "Session ended",
     "startNewSession": "Start New Session",
@@ -140,6 +144,10 @@
     "errorVerifyingSession": "Error verifying session.",
     "errorStartingSession": "Error starting recruitment session.",
     "sessionInvalid": "Invalid session. Please start a new session.",
-    "disabled": "Auto-Recruit is currently disabled."
+    "disabled": "Auto-Recruit is currently disabled.",
+    "supporterOnly": "Auto-Recruit is a Patron perk. It recruits up to the same daily limit as recruiting by hand.",
+    "becomeSupporter": "Become a Patron",
+    "doneForToday": "You've recruited every kingdom you can today. Recruits reset at the start of the next game day.",
+    "dailyCapReached": "You've reached your daily recruit limit. It resets at the start of the next game day."
   }
 }

@@ -260,7 +260,9 @@
       "WITHDRAWN": "Withdrawn"
     },
     "errorDisplayNameTaken": "That display name is unavailable.",
-    "displayNameMax": "Display name must be at most 50 characters."
+    "displayNameMax": "Display name must be at most 50 characters.",
+    "acceptTerms": "I am 16 or older and have read the <privacy>Privacy Policy</privacy>.",
+    "acceptTermsRequired": "You must be 16 or older and confirm you have read the Privacy Policy."
   },
   "deleteRequest": {
     "title": "Delete Your Account",

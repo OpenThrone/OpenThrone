@@ -15,6 +15,7 @@ import {
   MEMBER_DAILY_CAP_MAX,
   MEMBER_DAILY_CAP_MIN,
 } from '@/constants/allianceTreasury';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
 
@@ -34,6 +35,13 @@ export const TreasurySettingsCard = ({
     loan_interest_pct?: number;
     member_daily_cap?: string | number;
   };
+  const { config } = useRuntimeConfig();
+  const termMin = config?.allianceLoanTermMinDays ?? LOAN_TERM_DAYS_MIN;
+  const termMax = config?.allianceLoanTermMaxDays ?? LOAN_TERM_DAYS_MAX;
+  const interestMax =
+    config?.allianceLoanInterestMaxPercent ?? LOAN_INTEREST_PCT_MAX;
+  const capMin = config?.allianceMemberDailyCapMin ?? MEMBER_DAILY_CAP_MIN;
+  const capMax = config?.allianceMemberDailyCapMax ?? MEMBER_DAILY_CAP_MAX;
   const [termDays, setTermDays] = useState<number>(
     stored.loan_term_days ?? LOAN_TERM_DAYS_DEFAULT,
   );
@@ -52,12 +60,12 @@ export const TreasurySettingsCard = ({
   const [loading, setLoading] = useState(false);
 
   const valid =
-    termDays >= LOAN_TERM_DAYS_MIN &&
-    termDays <= LOAN_TERM_DAYS_MAX &&
+    termDays >= termMin &&
+    termDays <= termMax &&
     interest >= LOAN_INTEREST_PCT_MIN &&
-    interest <= LOAN_INTEREST_PCT_MAX &&
-    cap >= MEMBER_DAILY_CAP_MIN &&
-    cap <= MEMBER_DAILY_CAP_MAX;
+    interest <= interestMax &&
+    cap >= capMin &&
+    cap <= capMax;
 
   const save = async () => {
     if (!valid || loading) return;
@@ -86,16 +94,16 @@ export const TreasurySettingsCard = ({
       <SimpleGrid cols={{ base: 1, sm: 3 }}>
         <NumberInput
           label={t('settings.termDays')}
-          min={LOAN_TERM_DAYS_MIN}
-          max={LOAN_TERM_DAYS_MAX}
+          min={termMin}
+          max={termMax}
           allowDecimal={false}
           value={termDays}
           onChange={(v) => setTermDays(Number(v))}
         />
         <NumberInput
-          label={t('settings.interest')}
+          label={t('settings.interest', { max: interestMax })}
           min={LOAN_INTEREST_PCT_MIN}
-          max={LOAN_INTEREST_PCT_MAX}
+          max={interestMax}
           allowDecimal={false}
           suffix="%"
           value={interest}
@@ -104,8 +112,8 @@ export const TreasurySettingsCard = ({
         <NumberInput
           label={t('settings.dailyCap')}
           description={t('settings.dailyCapHint')}
-          min={MEMBER_DAILY_CAP_MIN}
-          max={MEMBER_DAILY_CAP_MAX}
+          min={capMin}
+          max={capMax}
           allowDecimal={false}
           thousandSeparator=","
           value={cap}

@@ -1,0 +1,38 @@
+{
+  "alert": {
+    "attacks": "⚔️ {{attacker}} hat {{kingdom}} angegriffen. {{outcome}} Bericht: {{url}}",
+    "attackWon": "Deine Verteidigung hat gehalten.",
+    "attackLost": "Deine Verteidigung ist gefallen.",
+    "spyHits": "🕵️ Eine feindliche Spionagemission ({{mission}}) hatte {{kingdom}} zum Ziel. Prüfe deine Berichte: {{url}}",
+    "warDeclared": "🚩 {{attacker}} hat {{defender}} den Krieg erklärt. Die Kämpfe beginnen {{start}}. {{url}}",
+    "turnCap": "💪 {{kingdom}} hat volle Ausdauer. Greif jetzt an, damit keine Erholung verloren geht: {{url}}",
+    "digest": "📜 Tagesbericht für {{kingdom}}: Rang {{rank}}, {{attacks}} Angriffe und {{spies}} Spionagemissionen gegen dich in den letzten 24 Stunden, {{wars}} aktive Kriege. {{url}}"
+  },
+  "mission": {
+    "INTEL": "Aufklärung",
+    "ASSASSINATE": "Attentat",
+    "INFILTRATE": "Infiltration"
+  },
+  "reply": {
+    "unknownCommand": "Unbekannter Befehl.",
+    "notLinked": "Verknüpfe zuerst dein OpenThrone-Konto: Erzeuge einen Code unter {{url}} und nutze /link.",
+    "linkInvalid": "Dieser Code ist ungültig oder abgelaufen. Erzeuge einen neuen unter {{url}}.",
+    "linkTaken": "Dieses Discord-Konto ist bereits mit einem anderen Königreich verknüpft. Hebe die Verknüpfung dort zuerst auf.",
+    "linked": "Mit {{kingdom}} verknüpft. Benachrichtigungen verwaltest du unter {{url}}.",
+    "playerNotFound": "Kein Königreich namens {{name}}.",
+    "profile": "**{{name}}**{{badge}}: {{race}} {{class}}, Rang {{rank}}{{alliance}}. {{url}}",
+    "inAlliance": ", Allianz {{alliance}}",
+    "supporterBadge": " 👑",
+    "stats": "{{era}}: {{players}} Königreiche, {{alliances}} Allianzen, bisher {{battles}} Schlachten.",
+    "leaderboardPlayers": "**Beste Königreiche**",
+    "leaderboardAlliances": "**Größte Allianzen**",
+    "leaderboardAllianceRow": "{{name}}: {{members}} Mitglieder",
+    "fort": "{{kingdom}}: {{fort}} (Stufe {{level}}), {{hp}} / {{maxHp}} TP.",
+    "noAlliance": "Du bist in keiner Allianz.",
+    "myclan": "**{{name}}**{{premium}}: {{members}} Mitglieder, geführt von {{leader}}. {{url}}",
+    "premium": " (Premium)",
+    "noWars": "{{alliance}} führt keinen Krieg.",
+    "warRow": "{{attacker}} gegen {{defender}}: {{status}} seit {{start}}",
+    "error": "Etwas ist schiefgelaufen. Versuche es später erneut."
+  }
+}

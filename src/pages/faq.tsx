@@ -7,16 +7,18 @@ import MainArea from '@/components/MainArea';
 import PublicHero from '@/components/public/PublicHero';
 import classes from '@/components/public/PublicPages.module.css';
 import SeoHead from '@/components/SeoHead';
+import { useStaminaGuide } from '@/hooks/useStaminaGuide';
 import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const QUESTIONS = {
   starting: ['game', 'race', 'firstSteps'],
-  strategy: ['training', 'bank', 'combat'],
+  strategy: ['training', 'bank', 'combat', 'stamina'],
   help: ['access', 'password', 'report'],
 } as const;
 
 export default function Faq() {
   const { t } = useTranslation('faq');
+  const staminaGuide = useStaminaGuide();
 
   return (
     <>
@@ -60,7 +62,9 @@ export default function Faq() {
                       </Accordion.Control>
                       <Accordion.Panel>
                         <Text className={classes.prose}>
-                          {t(`questions.${question}.answer`)}
+                          {question === 'stamina'
+                            ? staminaGuide
+                            : t(`questions.${question}.answer`)}
                         </Text>
                         {question === 'password' && (
                           <Group className={classes.actions}>

@@ -154,13 +154,22 @@ function simPlayerToBattleUser(player: SimPlayer) {
     fortHitpoints: player.fortHp,
     gold: BigInt(player.gold),
     units: createRoster(player.units),
-    mercenaries: [],
-    items: createBattleItems(player),
-    structure_upgrades: [],
-    battle_upgrades: [
-      { type: 'OFFENSE', level: player.upgrades.offense, quantity: 1 },
-      { type: 'DEFENSE', level: player.upgrades.defense, quantity: 1 },
-    ],
+    mercenaries: player.live?.mercenaries ?? [],
+    // Live rules pass the player's real equipment, structures and battle upgrades.
+    items: player.live
+      ? player.live.inventory.map((item, index) => ({
+          id: index + 1,
+          userId: 0,
+          ...item,
+        }))
+      : createBattleItems(player),
+    structure_upgrades: player.live?.structureUpgrades ?? [],
+    battle_upgrades: player.live
+      ? player.live.battleUpgrades
+      : [
+          { type: 'OFFENSE', level: player.upgrades.offense, quantity: 1 },
+          { type: 'DEFENSE', level: player.upgrades.defense, quantity: 1 },
+        ],
     attackBonus: player.bonuses.attack,
     defenseBonus: player.bonuses.defense,
   };
@@ -173,12 +182,14 @@ function battleResultToMetrics(
   armyCost: number,
 ): BattleMetrics {
   const casualtySummary = result.casualtySummary ?? {};
+  // The raw loss rows (killed only, after the wounded split) keep each
+  // mercenary row's contract id; the summary merges them by unit type.
   const attackerCas = [
-    ...(casualtySummary.attacker ?? []),
+    ...(result.Losses?.Attacker?.units ?? casualtySummary.attacker ?? []),
     ...(casualtySummary.wounded?.attacker ?? []),
   ];
   const defenderCas = [
-    ...(casualtySummary.defender ?? []),
+    ...(result.Losses?.Defender?.units ?? casualtySummary.defender ?? []),
     ...(casualtySummary.wounded?.defender ?? []),
   ];
 
@@ -215,11 +226,22 @@ function battleResultToMetrics(
     worker: 0,
   };
 
+  // Mercenary rows belong to contracts, not the player's own units.
+  const mercenaryLosses = (rows: any[]) => {
+    const losses: Record<number, number> = {};
+    for (const row of rows) {
+      if (row.forceContractId == null) continue;
+      losses[row.forceContractId] =
+        (losses[row.forceContractId] ?? 0) + (row.quantity ?? 0);
+    }
+    return losses;
+  };
   for (const [rows, totals] of [
     [attackerCas, attackerCasualties],
     [defenderCas, defenderCasualties],
   ] as const) {
     for (const casualty of rows) {
+      if (casualty.forceContractId != null) continue;
       const mapping = UNIT_MAPPING.find(
         (entry) =>
           entry.type === casualty.type && entry.level === casualty.level,
@@ -239,6 +261,21 @@ function battleResultToMetrics(
       defender.units[key] - defenderCasualties[key],
     );
   }
+
+  const woundedCounts = (rows: any[] | undefined): UnitCounts => {
+    const totals = Object.fromEntries(
+      UNIT_MAPPING.map(({ key }) => [key, 0]),
+    ) as unknown as UnitCounts;
+    for (const casualty of rows ?? []) {
+      if (casualty.forceContractId != null) continue;
+      const mapping = UNIT_MAPPING.find(
+        (entry) =>
+          entry.type === casualty.type && entry.level === casualty.level,
+      );
+      if (mapping) totals[mapping.key] += casualty.quantity ?? 0;
+    }
+    return totals;
+  };
 
   const initialFortHp = defender.fortHp;
   const finalFortHp =
@@ -265,6 +302,16 @@ function battleResultToMetrics(
     defenderXp: Math.max(0, Number(xp.defender ?? 0)),
     attackerUnitsRemaining,
     defenderUnitsRemaining,
+    attackerWounded: woundedCounts(casualtySummary.wounded?.attacker),
+    defenderWounded: woundedCounts(casualtySummary.wounded?.defender),
+    attackerMercenaryLosses: mercenaryLosses(attackerCas),
+    defenderMercenaryLosses: mercenaryLosses(defenderCas),
+    attackerMercenaryWounded: mercenaryLosses(
+      casualtySummary.wounded?.attacker ?? [],
+    ),
+    defenderMercenaryWounded: mercenaryLosses(
+      casualtySummary.wounded?.defender ?? [],
+    ),
   };
 }
 
@@ -540,12 +587,24 @@ export function printResults(results: SimulationResults): void {
 function playerStateToSpyUser(player: PlayerState): SpyMissionUser {
   const user = simPlayerToBattleUser(player);
   const upgrade = SpyUpgrades.find((entry) => entry.level === player.spyLevel);
+  // Live rules carry a real inventory, including spy and sentry gear.
+  const liveItems = player.inventory?.map((item, index) => ({
+    id: index + 1,
+    userId: 0,
+    ...item,
+  }));
   return {
     ...user,
+    ...(liveItems ? { items: liveItems } : {}),
+    // Live mercenaries are hired for offense and defense only, never spy roles.
+    mercenaries: [],
     goldInBank: BigInt(player.goldInBank),
     structure_upgrades: [
       { type: 'SPY', level: player.spyLevel },
       { type: 'SENTRY', level: player.sentryLevel },
+      ...(player.armoryLevel
+        ? [{ type: 'ARMORY', level: player.armoryLevel }]
+        : []),
     ],
     spyBonus: player.bonuses.spy,
     sentryBonus: player.bonuses.sentry,

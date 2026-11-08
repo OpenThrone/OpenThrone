@@ -175,13 +175,16 @@ const calculateUserStats = (
   const defenseStrength =
     detailed.totalStats.MeleeDefPower + detailed.totalStats.RangedDefPower;
 
+  // Same values the turn cron and combat store (UserModel.updateStats);
+  // getArmyStat returns 0 for SPY/SENTRY and adds ranged power.
+  newUModel.updateStats();
   return {
     killingStrength,
     defenseStrength,
-    newOffense: newUModel.getArmyStat('OFFENSE'),
-    newDefense: newUModel.getArmyStat('DEFENSE'),
-    newSpying: newUModel.getArmyStat('SPY'),
-    newSentry: newUModel.getArmyStat('SENTRY'),
+    newOffense: newUModel.offense,
+    newDefense: newUModel.defense,
+    newSpying: newUModel.spy,
+    newSentry: newUModel.sentry,
   };
 };
 

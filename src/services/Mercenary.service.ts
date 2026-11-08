@@ -14,6 +14,8 @@ import {
 import prisma from '@/lib/prisma';
 import type { ForceContract, Prisma, UserUnit } from '@/lib/prisma-exports';
 import { returnForceInTx } from '@/services/ForceLifecycle.service';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
+import { recomputeStoredStatsInTx } from '@/utils/adminRecomputeStats';
 import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
 import {
   assertForceTierUnlocked,
@@ -35,6 +37,7 @@ const hireSchema = z
     quantity: z.number().int().min(1).max(MERCENARY_ROLE_CAP),
     termDays: terms,
     operationId: z.string().uuid(),
+    expectedTotal: z.string().regex(/^\d{1,30}$/),
   })
   .strict();
 const changeSchema = z
@@ -56,6 +59,7 @@ export type ForceWound = { forceContractId?: number; quantity?: number };
 export function mercenaryOffer(
   type: z.infer<typeof ForceRoleSchema>,
   level: number,
+  rates = { hireMultiplier: 1.25, dailyPriceRate: 0.05 },
 ) {
   const unit = UnitTypes.find((u) => u.type === type && u.level === level);
   if (!unit) throw new Error('Invalid mercenary tier');
@@ -74,8 +78,8 @@ export function mercenaryOffer(
     name: unit.name,
     fortLevel: unit.fortLevel,
     equipment,
-    mobilization: BigInt(Math.ceil(unit.cost * 1.25)),
-    dailyPrice: BigInt(Math.ceil((unit.cost + kitCost) * 0.05)),
+    mobilization: BigInt(Math.ceil(unit.cost * rates.hireMultiplier)),
+    dailyPrice: BigInt(Math.ceil((unit.cost + kitCost) * rates.dailyPriceRate)),
   };
 }
 
@@ -176,6 +180,12 @@ async function armyShareInTx(
   };
 }
 
+export class MercenaryPriceChangedError extends Error {
+  constructor() {
+    super('Price changed, review the new price');
+  }
+}
+
 export class MercenaryService {
   static async expireInTx(tx: Tx, userId: number, now = new Date()) {
     const expired = await tx.forceContract.findMany({
@@ -205,6 +215,7 @@ export class MercenaryService {
         },
       });
     }
+    if (expired.length) await recomputeStoredStatsInTx(tx, userId, now);
   }
 
   static async list(userId: number) {
@@ -297,10 +308,21 @@ export class MercenaryService {
         throw new Error(
           `Mercenary limit reached: contracts may cover at most ${MERCENARY_ARMY_SHARE_PERCENT}% of your trained army (${share.allowed} allowed)`,
         );
-      const offer = mercenaryOffer(command.type, command.level);
+      const runtime = await getRuntimeConfig(tx);
+      if (
+        command.quantity > (runtime.forceMaxQuantity ?? 1000000) ||
+        command.termDays > (runtime.forceMaxTermDays ?? 30)
+      )
+        throw new Error('Maximum force limit exceeded');
+      const offer = mercenaryOffer(command.type, command.level, {
+        hireMultiplier: runtime.mercenaryHireMultiplier ?? 1.25,
+        dailyPriceRate: runtime.mercenaryDailyPriceRate ?? 0.05,
+      });
       const cost =
         BigInt(command.quantity) *
         (offer.mobilization + BigInt(command.termDays) * offer.dailyPrice);
+      if (cost !== BigInt(command.expectedTotal))
+        throw new MercenaryPriceChangedError();
       if (user.gold < cost) throw new Error('Insufficient gold');
       const contract = await tx.forceContract.create({
         data: {
@@ -334,6 +356,7 @@ export class MercenaryService {
           details: { commandHash: hash },
         },
       });
+      await recomputeStoredStatsInTx(tx, user.id, now);
       return contract;
     });
   }
@@ -387,9 +410,10 @@ export class MercenaryService {
       let gold = 0n;
       let updated: ForceContract;
       if (command.termDays) {
+        const maxDays = (await getRuntimeConfig(tx)).forceMaxTermDays ?? 30;
         const expiresAt = forceExpiration(contract.expiresAt, command.termDays);
-        if (expiresAt.getTime() > now.getTime() + 30 * 86400000)
-          throw new Error('Contract cannot extend beyond 30 days');
+        if (expiresAt.getTime() > now.getTime() + maxDays * 86400000)
+          throw new Error('Contract exceeds maximum term');
         gold =
           contract.unitPriceGold *
           BigInt(contract.survivingQuantity) *

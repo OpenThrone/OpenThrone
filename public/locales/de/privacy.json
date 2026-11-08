@@ -1,0 +1,111 @@
+{
+  "metaTitle": "Datenschutzerklärung - OpenThrone",
+  "metaDescription": "Welche personenbezogenen Daten OpenThrone erhebt, wofür, wer sie erhält, wie lange wir sie speichern und welche Rechte du hast.",
+  "title": "Datenschutzerklärung",
+  "intro": "Diese Erklärung beschreibt, welche personenbezogenen Daten OpenThrone erhebt, wofür wir sie nutzen, wer sie erhält, wie lange wir sie speichern und welche Wahlmöglichkeiten und Rechte du hast.",
+  "updated": "Zuletzt aktualisiert: {{date}}",
+  "contactLink": "E-Mail an privacy@openthrone.dev",
+  "sections": {
+    "who": {
+      "title": "Wer wir sind",
+      "body": [
+        "OpenThrone (openthrone.dev) wird von AIOXperts IT Solutions LLC betrieben, einer Gesellschaft mit beschränkter Haftung aus Delaware in den USA. Wir entscheiden, wie deine Daten verwendet werden (wir sind der Verantwortliche).",
+        "Für Fragen oder Anfragen zum Datenschutz schreib an privacy@openthrone.dev."
+      ]
+    },
+    "collect": {
+      "title": "Was wir erheben",
+      "body": [
+        "Kontodaten: deine E-Mail-Adresse, dein Anzeigename, dein Passwort (nur als nicht umkehrbarer Hash gespeichert) und, wenn du die Zwei-Faktor-Anmeldung aktivierst, dein Authenticator-Geheimnis (verschlüsselt gespeichert).",
+        "Spiel- und Profildaten: dein Königreich, Volk und Klasse, Einstellungen, optionale Biografie und Avatarbild, Schlachten, Bank- und Rekrutierungsverlauf, Allianzaktivität und von dir eingereichte Meldungen.",
+        "Nachrichten: private Nachrichten und Chatnachrichten, die du sendest.",
+        "Technische Daten: deine IP-Adresse und Browserdaten, wenn du die Seite nutzt. Wir verwenden sie für Sicherheit, zur Verhinderung von Missbrauch und Betrug sowie zur Begrenzung von Anfragen. Anmeldeprotokolle speichern nur nicht umkehrbare Fingerabdrücke deiner IP-Adresse und deines Browsers, nicht die Werte selbst.",
+        "Zahlungen, wenn du OpenThrone unterstützt: Stripe wickelt den Bezahlvorgang ab, und deine vollständige Kartennummer und der Sicherheitscode erreichen uns nie. Wir speichern die Referenz-IDs von Stripe, Beträge, Währung und Steuern, dein Rechnungsland und deinen Bundesstaat, Zahlungsstatus und Daten, die beim Bezahlen akzeptierten Bedingungen sowie für welches Königreich oder welche Allianz eine Zahlung war.",
+        "Discord, wenn du es verknüpfst: deine Discord-Benutzer-ID und deinen Benutzernamen, deine Benachrichtigungseinstellungen und die Benachrichtigungen, die wir für dich in die Warteschlange stellen.",
+        "E-Mail: welche E-Mails wir dir senden und deine E-Mail-Einstellungen."
+      ]
+    },
+    "use": {
+      "title": "Wie und warum wir sie nutzen",
+      "body": [
+        "Um dein Konto und das Spiel zu betreiben, einschließlich der Anzeige deines Königreichs für andere Spieler und der Zustellung von Nachrichten. Das ist nötig, um den Dienst zu erbringen, für den du dich angemeldet hast.",
+        "Um das Spiel fair und sicher zu halten: Betrug und Mehrfachkonten erkennen, Missbrauch verhindern, Chat und Meldungen moderieren und Konten schützen. Wir tun das, weil wir ein berechtigtes Interesse an einem fairen, sicheren Spiel haben.",
+        "Um E-Mails zu senden: Konto- und Sicherheits-E-Mails (für den Dienst nötig); Neuigkeiten und Ankündigungen (du kannst dich jederzeit abmelden); und Kampfmeldungen, nur wenn du sie aktivierst.",
+        "Um Zahlungen abzuwickeln und die Aufzeichnungen aufzubewahren, die das Steuer- und Handelsrecht verlangt.",
+        "Wir verkaufen deine personenbezogenen Daten nicht und geben sie nicht für seitenübergreifende (zielgerichtete) Werbung weiter, und wir erstellen keine Werbeprofile. Wir nutzen keine Analyse- oder Tracking-Skripte von Drittanbietern."
+      ]
+    },
+    "cookies": {
+      "title": "Cookies und lokaler Speicher",
+      "body": [
+        "Wir verwenden ein notwendiges Cookie, um dich angemeldet zu halten, sowie kurzlebige Cookies, die die Anmeldung schützen. Wir verwenden keine Analyse- oder Werbe-Cookies.",
+        "Der lokale Speicher deines Browsers hält Anzeigeeinstellungen, etwa dein Farbschema und die Einstellungen des Kampfsimulators. Er bleibt auf deinem Gerät.",
+        "Die Sicherheitsprüfung von Cloudflare (Turnstile) bei Registrierung, Anmeldung und einigen Formularen kann eigene Cookies setzen, um Menschen von Bots zu unterscheiden. Unsere Schriften liefern wir von unserer eigenen Seite aus."
+      ]
+    },
+    "share": {
+      "title": "Wer deine Daten erhält",
+      "body": [
+        "Andere Spieler sehen, was das Spiel öffentlich zeigt: deinen Anzeigenamen, dein Profil, Königreichsdaten, Ranglisten, deine Allianz und Kampfberichte, die du oder andere teilen.",
+        "Unsere Moderatoren und Administratoren können Konto- und Spieldaten sehen und Nachrichten und Chats lesen, wenn die Moderation es erfordert. Ihr Zugriff wird protokolliert.",
+        "Dienstleister, die Daten in unserem Auftrag verarbeiten: Cloudflare (Netzwerkschutz, die Turnstile-Prüfung und Bildspeicher), Supabase (Datenbank-Hosting in den USA), Stripe (Zahlungen, wenn du uns unterstützt) und Discord (Benachrichtigungen und Bot-Antworten, nur wenn du dein Konto verknüpfst). E-Mails versenden wir über unseren eigenen Mailserver.",
+        "Wir können Daten offenlegen, wenn das Gesetz es verlangt oder um Spieler, das Spiel oder unsere Rechte zu schützen."
+      ]
+    },
+    "transfers": {
+      "title": "Wo deine Daten gespeichert werden",
+      "body": [
+        "Wir und unsere Dienstleister sitzen in den USA oder speichern Daten dort. Wenn du aus einem anderen Land spielst, werden deine Daten in die USA übermittelt, weil das für das Spiel, für das du dich angemeldet hast, nötig ist. Für Übermittlungen an unsere Dienstleister stützen wir uns, soweit anwendbar, auf das EU-US Data Privacy Framework (und seine Erweiterungen für das Vereinigte Königreich und die Schweiz) oder auf Standardvertragsklauseln."
+      ]
+    },
+    "retention": {
+      "title": "Wie lange wir sie speichern",
+      "body": [
+        "Konto- und Spieldaten: solange dein Konto besteht.",
+        "Kampf-, Bank- und Rekrutierungsprotokolle: 20 Tage.",
+        "Anmelde-Fingerabdrücke: 30 Tage.",
+        "IP-Adressen in unserem Administrations-Auditprotokoll: 90 Tage. Der Eintrag zur Aktion selbst bleibt aus Sicherheitsgründen erhalten.",
+        "Discord-Benachrichtigungen: 14 Tage nach dem Versand.",
+        "Zahlungsaufzeichnungen: so lange, wie das Steuer- und Handelsrecht es verlangt.",
+        "Moderationsdaten (Meldungen, Notizen, Sanktionen): so lange, wie es zur Durchsetzung der Regeln und für Einsprüche nötig ist.",
+        "Fingerabdrücke gegen Missbrauch nach einer Kontolöschung: ein nicht umkehrbarer Fingerabdruck der E-Mail-Adresse für 30 Tage (oder bis eine Sperre endet) und des Anzeigenamens dauerhaft, damit Sperren nicht umgangen und Namen nicht wiederverwendet werden.",
+        "Unsere Server führen außerdem technische Protokolle, die IP-Adressen enthalten können, für einen begrenzten Zeitraum zur Sicherheit und Fehlersuche.",
+        "Inaktive Konten: Wenn du dich 12 Monate nicht anmeldest, können wir dir schreiben und das Konto 6 Monate später löschen, sofern du dich nicht anmeldest."
+      ]
+    },
+    "delete": {
+      "title": "Dein Konto löschen",
+      "body": [
+        "Du kannst dein Konto in den Einstellungen löschen. Dann löschen wir deine E-Mail-Adresse, dein Passwort, dein Authenticator-Geheimnis, deine Biografie, deine Avatardateien und deine Discord-Verknüpfung, ersetzen deinen Anzeigenamen durch einen zufälligen Namen und löschen den Text der privaten und Chatnachrichten, die du geschrieben hast.",
+        "Wir behalten: den Spielverlauf unter dem zufälligen Namen, damit die Kampfaufzeichnungen anderer Spieler vollständig bleiben; gesetzlich vorgeschriebene Zahlungsaufzeichnungen; und Moderationsdaten.",
+        "Damit niemand Sperren umgeht oder Namen wiederverwendet, behalten wir einen nicht umkehrbaren Fingerabdruck deiner E-Mail-Adresse für 30 Tage (oder bis eine Sperre endet) und deines Anzeigenamens dauerhaft. Diese Fingerabdrücke lassen sich nicht in die ursprünglichen Werte zurückverwandeln."
+      ]
+    },
+    "rights": {
+      "title": "Deine Rechte",
+      "body": [
+        "Du kannst Auskunft, Berichtigung, Löschung oder eine übertragbare Kopie deiner personenbezogenen Daten verlangen und der Nutzung widersprechen oder ihre Einschränkung verlangen. Wo wir uns auf deine Einwilligung stützen, etwa bei E-Mails zu Kampfmeldungen, kannst du sie jederzeit widerrufen; das berührt nicht, was wir vorher getan haben. In den Einstellungen gibt es die Schaltfläche „Meine Daten herunterladen“ für eine schnelle Kopie; schreib an privacy@openthrone.dev für eine vollständige Kopie oder jede andere Anfrage.",
+        "Wir antworten innerhalb von 30 Tagen und müssen eventuell bestätigen, dass die Anfrage vom Kontoinhaber stammt. Wir behandeln dich nicht anders, weil du diese Rechte nutzt. Lehnen wir eine Anfrage ab, kannst du Einspruch einlegen, indem du auf unsere Antwort antwortest oder an privacy@openthrone.dev mit dem Betreff „Datenschutz-Einspruch“ schreibst; Einsprüche beantworten wir innerhalb von 45 Tagen.",
+        "Wenn du im EWR, im Vereinigten Königreich oder in der Schweiz bist, kannst du dich auch bei deiner Datenschutzbehörde beschweren. Einwohner von US-Bundesstaaten mit Datenschutzgesetzen haben die Rechte, die diese Gesetze gewähren, darunter Auskunft, Berichtigung, Löschung und Einspruch, und wir achten sie über dasselbe Verfahren."
+      ]
+    },
+    "children": {
+      "title": "Mindestalter",
+      "body": [
+        "OpenThrone ist für Personen ab 16 Jahren. Wir erheben wissentlich keine Daten von Jüngeren. Wenn du glaubst, dass jemand unter 16 ein Konto hat, schreib an privacy@openthrone.dev, und wir löschen es."
+      ]
+    },
+    "security": {
+      "title": "Sicherheit",
+      "body": [
+        "Wir schützen Daten mit verschlüsselten Verbindungen (HTTPS), gehashten Passwörtern, verschlüsselten Authenticator-Geheimnissen, Zugriffskontrollen für das Team und Auditprotokollen ihrer Aktionen. Kein System ist vollkommen sicher; wenn ein Vorfall deine Daten betrifft, informieren wir dich, wie es das Gesetz verlangt."
+      ]
+    },
+    "changes": {
+      "title": "Änderungen dieser Erklärung",
+      "body": [
+        "Wir aktualisieren diese Erklärung, wenn sich ändert, was wir tun. Das Datum oben zeigt die aktuelle Fassung. Wichtige Änderungen kündigen wir vor ihrem Inkrafttreten im Spiel oder per E-Mail an."
+      ]
+    }
+  }
+}

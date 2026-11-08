@@ -1,0 +1,46 @@
+{
+  "title": "Upgrades",
+  "loading": "Loading upgrades",
+  "saved": "Upgrades saved",
+  "errors": {
+    "load": "Failed to load upgrades",
+    "save": "Failed to save upgrades",
+    "bonusOver": "Allocated points exceed the {{total}} available at this level.",
+    "stale": "This player changed since you opened the editor. Your edits were not saved; reload to see current values."
+  },
+  "sections": {
+    "structure": "Structure upgrades",
+    "battle": "Battle upgrades",
+    "proficiency": "Proficiency points",
+    "addUnits": "Add missing units",
+    "addItems": "Add missing items"
+  },
+  "columns": {
+    "type": "Type",
+    "level": "Level",
+    "upgrade": "Upgrade",
+    "quantity": "Quantity"
+  },
+  "aria": {
+    "structureLevel": "{{type}} structure level",
+    "quantity": "{{name}} quantity",
+    "proficiencyLevel": "{{type}} proficiency level"
+  },
+  "proficiencyUsed": "{{used}} / {{total}} used (level {{level}})",
+  "fields": {
+    "unit": "Unit",
+    "item": "Item",
+    "chooseUnit": "Choose a unit",
+    "noUnits": "No missing units",
+    "chooseItem": "Choose an item",
+    "noItems": "No missing items"
+  },
+  "actions": {
+    "add": "Add",
+    "remove": "Remove",
+    "reset": "Reset",
+    "save": "Save upgrades",
+    "reload": "Reload player"
+  },
+  "readOnly": "Only administrators can change upgrades."
+}

@@ -78,6 +78,8 @@ function player(
     gold,
     attack_turns: 250,
     stamina: 100,
+    maxStamina: 100,
+    staminaUpdatedAt: new Date(),
     defense_pressure_today: 0,
     defense_pressure_date: new Date(),
     spy_pressure_today: 0,
@@ -158,6 +160,13 @@ beforeEach(() => {
   mockPrisma.users.findUnique = vi.fn(
     async ({ where }: { where: { id: number } }) =>
       players[where.id] ? structuredClone(players[where.id]) : null,
+  );
+  // The post-battle strength refresh reads the roster with contracts.
+  mockPrisma.users.findUniqueOrThrow = vi.fn(
+    async ({ where }: { where: { id: number } }) => ({
+      forceContracts: [],
+      ...structuredClone(players[where.id]),
+    }),
   );
   mockPrisma.users.update = vi.fn(
     async ({
@@ -392,7 +401,82 @@ describe('live combat persistence and replay', () => {
     }
   });
 
+  test('recovers elapsed stamina before charging the shared attack cost', async () => {
+    players[1].stamina = 2;
+    players[1].staminaUpdatedAt = new Date(Date.now() - 20 * 60_000);
+    const result = await AttackService.executeAttack(1, 2, 10);
+    expect(result.status).toBe('success');
+    expect(players[1].stamina).toBe(5);
+  });
+
+  test('disabled stamina allows an attack without spending', async () => {
+    players[1].stamina = 0;
+    const rows = await mockPrisma.serverSetting.findMany();
+    mockPrisma.serverSetting.findMany.mockResolvedValue([
+      ...rows,
+      { key: 'stamina.enabled', value: false },
+    ]);
+    const result = await AttackService.executeAttack(1, 2, 10);
+    expect(result.status).toBe('success');
+    expect(players[1].stamina).toBe(0);
+  });
+
+  test('an exhausted army may attack and records fatigue without spending below zero', async () => {
+    players[1].stamina = 0;
+    const result = await AttackService.executeAttack(1, 2, 10);
+    expect(result.status).toBe('success');
+    expect(players[1].stamina).toBe(0);
+    expect(logs[0].stats).toMatchObject({
+      stamina_cost: 0,
+      attacker_fatigue_percent: 20,
+    });
+  });
+
+  test('offensive upgrades reduce the committed stamina cost', async () => {
+    (players[1].UserStructureUpgrade as Array<unknown>).push({
+      id: 19,
+      userId: 1,
+      type: 'OFFENSE',
+      level: 22,
+    });
+    const result = await AttackService.executeAttack(1, 2, 10);
+    expect(result.status).toBe('success');
+    expect(players[1].stamina).toBe(96);
+    expect(logs[0].stats).toMatchObject({ stamina_cost: 4 });
+  });
+
+  test('spy missions cost no stamina', async () => {
+    players[1].stamina = 0;
+    players[1].race = 'GOBLIN';
+    const updatedAt = players[1].staminaUpdatedAt;
+    const result = await SpyService.executeSpyMission(1, 2, 10, 'INTEL');
+    expect(result.status).toBe('success');
+    expect(players[1].stamina).toBe(0);
+    expect(players[1].staminaUpdatedAt).toEqual(updatedAt);
+  });
+
+  test('replay preserves the fatigue settings and pre-attack stamina', async () => {
+    players[1].stamina = 25;
+    mockPrisma.serverSetting.findMany.mockResolvedValue([
+      { key: 'ENABLE_ATTACKING', value: true },
+      { key: 'stamina.penaltyThreshold', value: 80 },
+      { key: 'stamina.minOffensePercent', value: 60 },
+    ]);
+    const result = await AttackService.executeAttack(1, 2, 10);
+    expect(result.status).toBe('success');
+    const replay = parseCombatReplay(logs[0].stats.replay);
+    expect(replay).toMatchObject({
+      staminaPenaltyThreshold: 80,
+      staminaMinMultiplier: 0.6,
+      attacker: { stamina: 25 },
+    });
+    players = {};
+    const retest = await BattleService.retestBattle(logs[0].id);
+    expect(retest.canonicalOutcome).toEqual(logs[0].stats.canonical_outcome);
+  });
+
   test('transfers loot once, conserves casualties, and replays without current profiles', async () => {
+    players[1].stamina = 25;
     players[2].gold = 9007199254740993n;
     const before = structuredClone(players);
     const response = await AttackService.executeAttack(1, 2, 10);
@@ -408,7 +492,7 @@ describe('live combat persistence and replay', () => {
     );
     expect(transfers.map((row) => row.gold_amount)).toEqual([loot]);
     expect(players[1].attack_turns).toBe(240);
-    expect(players[1].stamina).toBe(90);
+    expect(players[1].stamina).toBe(18);
     expect(log.stats.endTurns).toBe(240);
     const attackerDeaths: { total: number; units: UnitLoss[] } = JSON.parse(
       log.stats.attacker_losses!,
@@ -440,6 +524,7 @@ describe('live combat persistence and replay', () => {
     );
     expect(JSON.stringify(log.stats)).not.toContain('private-account-hash');
     expect(JSON.stringify(log.stats)).not.toContain('private-totp-secret');
+    expect(replay.attacker.stamina).toBe(25);
     expect(replay.attacker.gold).toBe(before[1].gold.toString());
     expect(replay.defender.gold).toBe(before[2].gold.toString());
 
@@ -634,6 +719,15 @@ describe('live combat persistence and replay', () => {
     const result = await BattleService.retestBattle(90);
     expect(result.exactReplay).toBe(false);
     expect(result.replayMode).toBe('UNAVAILABLE');
+    expect(result).not.toHaveProperty('newGold');
+  });
+
+  test('replays sealed under an earlier combat formula are unavailable, not a server error', async () => {
+    expect((await AttackService.executeAttack(1, 2, 1)).status).toBe('success');
+    logs[0].stats.replay!.formulaVersion = 'combat-v7';
+    const result = await BattleService.retestBattle(logs[0].id);
+    expect(result.replayMode).toBe('UNAVAILABLE');
+    expect(result.exactReplay).toBe(false);
     expect(result).not.toHaveProperty('newGold');
   });
 

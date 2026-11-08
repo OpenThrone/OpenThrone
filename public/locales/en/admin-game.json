@@ -97,7 +97,8 @@
     "gold": "Gold",
     "power": "Power",
     "runFailed": "The simulation could not be run.",
-    "errorTitle": "Simulation error"
+    "errorTitle": "Simulation error",
+    "modelLimits": "Battles and spy missions use the live combat code. Players log in on the schedule set by the activity mix and follow the live rules: structure prices and requirements, unit tiers by fort, items for every unit line, battle upgrades, mercenaries, bonus points, healing wounded units, kingdom morale with desertion, and battle protection. Grinders wait for stamina, since battle XP scales with it. Optional: a game event, the dungeon, and alliances, whose members share spy reports and never attack each other. Not modelled: alliance lent troops, loans and treasury requests. Who attacks whom is a heuristic that uses only what a player could know. The starting players get generated mid-era armies and spend their gold before day 1; late joiners start as new accounts. Use the results to compare settings with each other, not as forecasts."
   },
   "loadingError": "Unable to load this data.",
   "statusCode": "Request failed ({{status}}).",

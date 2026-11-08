@@ -109,7 +109,7 @@ function roleMultiplier(user: CombatStrengthUser, type: UnitType): number {
   }
 }
 
-interface Allocation extends BattleFormation {
+interface Allocation extends Omit<BattleFormation, 'troopStats'> {
   baseStats: CalculatedStrength;
   itemStats: CalculatedStrength;
   upgradeStats: CalculatedStrength;
@@ -376,12 +376,20 @@ export function buildCombatFormations(
 ): BattleFormation[] {
   return allocate(user, unitType, options).map(
     ({
-      baseStats: _base,
-      itemStats: _items,
-      upgradeStats: _upgrades,
+      baseStats,
+      itemStats,
+      upgradeStats,
       equippedSlots: _slots,
       ...formation
-    }) => formation,
+    }) => {
+      const troopStats = { ...formation.perUnitStats };
+      for (const key of STAT_KEYS) {
+        const raw = baseStats[key] + itemStats[key] + upgradeStats[key];
+        troopStats[key] =
+          raw > 0 ? (troopStats[key] * (raw - itemStats[key])) / raw : 0;
+      }
+      return { ...formation, troopStats };
+    },
   );
 }
 

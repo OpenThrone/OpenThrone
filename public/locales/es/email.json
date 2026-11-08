@@ -20,5 +20,19 @@
   "battleSubject": "{{attackerName}} ha atacado tu reino de OpenThrone",
   "battleBody": "Comandante {{display_name}},\n\n{{attackerName}} ha atacado tu reino.\nResultado: {{outcome}}.\n\nConsulta el informe de batalla: {{reportLink}}",
   "battleVictory": "Victoria",
-  "battleDefeat": "Derrota"
+  "battleDefeat": "Derrota",
+  "receiptSubject": "Tu compra de Patrón en OpenThrone",
+  "receiptBody": "Comandante {{display_name}}:\n\nGracias por apoyar OpenThrone. Has pagado {{amount}} por {{plan}}.\n\n{{renewal}}\n\nLo que aceptaste antes de pagar:\n{{consent}}\n\nGestionar facturación o cancelar: {{manageLink}}\nCondiciones del mecenazgo: {{termsLink}}\nPolítica de reembolsos: {{refundsLink}}\n\nGuarda este correo como justificante. Para cualquier pregunta, escribe a privacy@openthrone.dev o pregúntanos en Discord.",
+  "renewalMonthly": "Esta membresía se renueva cada mes por {{amount}}, más impuestos, hasta que la canceles. Cancela cuando quieras desde Gestionar facturación en tu página de Mecenazgo; cancelar detiene el siguiente cobro.",
+  "renewalOnce": "Es un pago único. No se renueva.",
+  "canceledSubject": "Tu membresía de Patrón no se renovará",
+  "canceledBody": "Comandante {{display_name}}:\n\nTu membresía mensual de Patrón está cancelada y no se renovará, así que no se te volverá a cobrar. Tus ventajas duran hasta el {{accessUntil}}.\n\nPuedes volver a suscribirte cuando quieras: {{manageLink}}\nPolítica de reembolsos: {{refundsLink}}",
+  "supporterPlans": {
+    "supporter_monthly": "Patrón (mensual)",
+    "supporter_era_pass": "Pase de era de Patrón (100 días)",
+    "gift_1m": "Código de regalo de Patrón (30 días)",
+    "gift_3m": "Código de regalo de Patrón (90 días)",
+    "gift_12m": "Código de regalo de Patrón (360 días)",
+    "alliance_sponsorship": "patrocinio de alianza"
+  }
 }

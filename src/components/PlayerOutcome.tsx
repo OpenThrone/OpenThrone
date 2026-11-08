@@ -1,5 +1,13 @@
-import { faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCheck,
+  faCrosshairs,
+  faEye,
+  faKhanda,
+  faUserSecret,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Badge } from '@mantine/core';
 import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
 
@@ -33,6 +41,14 @@ const renderOutcome = (
   );
 };
 
+/** Attacks and each spy mission get their own label and icon in war logs. */
+const MISSION_BADGES = {
+  attack: { icon: faKhanda, color: 'red' },
+  INTEL: { icon: faEye, color: 'teal' },
+  ASSASSINATE: { icon: faCrosshairs, color: 'grape' },
+  INFILTRATE: { icon: faUserSecret, color: 'indigo' },
+} as const;
+
 const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({
   log,
   type,
@@ -55,6 +71,19 @@ const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({
         <Link href={`/userprofile/${playerId}`} className="text-white">
           {player?.display_name || t('warHistory.unknownPlayer')}
         </Link>
+        {MISSION_BADGES[log.type] && (
+          <Badge
+            ml="xs"
+            size="sm"
+            variant="light"
+            color={MISSION_BADGES[log.type].color}
+            leftSection={
+              <FontAwesomeIcon icon={MISSION_BADGES[log.type].icon} />
+            }
+          >
+            {t(`warHistory.missionType.${log.type}`)}
+          </Badge>
+        )}
         <br />
         {formattedDate}
         {!collapsed && (

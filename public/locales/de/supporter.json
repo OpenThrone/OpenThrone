@@ -1,0 +1,281 @@
+{
+  "patron": "Förderer des Reiches",
+  "premiumAlliance": "Premium-Allianz",
+  "month": "Monat",
+  "choose": "Auswählen",
+  "plans": {
+    "supporter_monthly": "Monatliche Förderung",
+    "supporter_era_pass": "Ära-Pass",
+    "gift_1m": "Geschenk: 1 Monat",
+    "gift_3m": "Geschenk: 3 Monate",
+    "gift_12m": "Geschenk: 12 Monate"
+  },
+  "statusTitle": "Deine Förderung",
+  "statuses": {
+    "ACTIVE": "Aktiv",
+    "PAST_DUE": "Zahlung überfällig",
+    "CANCELED": "Gekündigt",
+    "EXPIRED": "Abgelaufen",
+    "NEVER": "Du bist noch kein Förderer"
+  },
+  "ends": "Endet am {{date}}",
+  "until": "Aktiv bis {{date}}",
+  "source": "Quelle: {{source}}",
+  "payments": "Zahlungsverlauf",
+  "date": "Datum",
+  "description": "Beschreibung",
+  "amount": "Betrag",
+  "status": "Status",
+  "noPayments": "Noch keine Zahlungen.",
+  "redeemTitle": "Geschenk einlösen",
+  "giftCode": "Geschenkcode",
+  "redeem": "Einlösen",
+  "giftWarning": "Speichere diesen Code jetzt. Er wird nicht erneut angezeigt.",
+  "copy": "Kopieren",
+  "copied": "Kopiert",
+  "title": "Förderer des Reiches",
+  "intro": "Hilf, OpenThrone zu erhalten, und trage das Förderersiegel.",
+  "pledgeTitle": "Ein faires Reich für alle",
+  "pledge": "Wir verkaufen niemals Macht, Einheiten, Gold, Züge oder höhere Limits. Eine Förderung verändert den Kampf nicht.",
+  "gifts": "Verschenke eine Förderung an ein anderes Königreich oder unterstütze eine Allianz. Beiträge unterstützen OpenThrone, nicht die Allianz oder ihre Führung.",
+  "faq": "Häufig gestellte Fragen",
+  "faqQ": "Gibt Patron Kampfboni?",
+  "faqA": "Nein. Patron erhöht weder Kampfwerte noch Tageslimits. Es bringt Kosmetik und Annehmlichkeiten, darunter automatische Rekrutierung innerhalb des normalen Tageslimits und Discord-Meldungen. Einheiten, Gold oder Züge kannst du nicht kaufen.",
+  "faqQ2": "Speichert OpenThrone meine Karte?",
+  "faqA2": "Nein. Stripe erfasst deine Kartendaten auf seiner eigenen Zahlungsseite. Wir speichern weder deine vollständige Kartennummer noch den Sicherheitscode. Wir speichern Abrechnungs-, Mitgliedschafts-, Geschenk-, Erstattungs- und Streitfalldaten zu deinem Konto.",
+  "faqQ3": "Wie kündige ich?",
+  "faqA3": "Öffne Zahlungen verwalten auf deiner Förderseite und kündige das Abo vor dem Verlängerungsdatum. Bereits bezahlten Zugang behältst du.",
+  "faqQ4": "Wie funktionieren Discord-Meldungen?",
+  "faqA4": "Verknüpfe Discord in den Einstellungen und nutze /link mit deinem Code auf unserem Discord-Server. Den Tagesbericht kann jeder aktivieren; Patrons können zusätzlich Ereignismeldungen aktivieren. Erlaube Direktnachrichten vom Bot. Ruhezeiten verzögern Meldungen, und die Zustellung hängt von Discord ab.",
+  "terms": "Nutzungsbedingungen",
+  "refunds": "Rückerstattungsrichtlinie",
+  "login": "Anmelden",
+  "register": "Registrieren",
+  "loadError": "Förderungsinformationen konnten nicht geladen werden. Bitte versuche es erneut.",
+  "retry": "Erneut versuchen",
+  "billing": "Zahlungen verwalten",
+  "openAutoRecruit": "Automatische Rekrutierung öffnen",
+  "badge": "Mein Fördererabzeichen anzeigen",
+  "success": "Zahlung abgeschlossen. Es kann einen Moment dauern, bis deine Förderung angezeigt wird.",
+  "pastDue": "Deine Zahlung ist überfällig. Aktualisiere deine Zahlungsmethode, damit deine Förderung bestehen bleibt.",
+  "expiring": "Deine Förderung läuft innerhalb von sieben Tagen ab.",
+  "giftsBought": "Gekaufte Geschenke",
+  "noGifts": "Noch keine Geschenke gekauft.",
+  "testPayment": "TESTZAHLUNG",
+  "session": "Sitzung",
+  "payTest": "Bezahlen (Test)",
+  "decline": "Kartenablehnung simulieren",
+  "done": "Weiter",
+  "error": "Die Anfrage ist fehlgeschlagen. Bitte versuche es erneut.",
+  "comingSoon": "Förderungen sind bald verfügbar.",
+  "loading": "Wird geladen…",
+  "sponsorship": {
+    "title": "Allianzförderung",
+    "explanation": "Beiträge gehen an OpenThrone, nicht an die Allianz oder ihre Führung.",
+    "perks": "Premium-Allianzen erhalten ein Premium-Zeichen und Discord-Kriegsmeldungen für jedes Mitglied, das Discord verknüpft.",
+    "pool": "Fördertopf: {{amount}}",
+    "activeUntil": "Premium aktiv bis {{date}}",
+    "inactive": "Premium ist nicht aktiv.",
+    "contributors": "Größte Unterstützer",
+    "amount": "Beitrag in Dollar (mindestens 5 $)",
+    "contribute": "Beitragen"
+  },
+  "updatePayment": "Zahlungsmethode aktualisieren",
+  "discord": {
+    "title": "Discord-Konto",
+    "intro": "Verknüpfe dein Konto, um Discord-Funktionen zu nutzen.",
+    "step1": "Erzeuge einen Verknüpfungscode.",
+    "step2": "Tritt dem Discord-Server bei.",
+    "step3": "Führe /link aus und füge deinen Code ein.",
+    "step4": "Erlaube Direktnachrichten von Mitgliedern unseres Discord-Servers (Rechtsklick auf den Server → Privatsphäre-Einstellungen), damit der Bot dir Meldungen schicken kann.",
+    "generate": "Verknüpfungscode erzeugen",
+    "expires": "Läuft in {{seconds}} Sekunden ab",
+    "linked": "Als {{name}} am {{date}} verknüpft",
+    "unlink": "Verknüpfung aufheben",
+    "confirmUnlink": "Möchtest du die Verknüpfung deines Discord-Kontos aufheben?",
+    "cancel": "Abbrechen",
+    "notifications": "Benachrichtigungseinstellungen",
+    "dailyDigest": "Tägliche Zusammenfassung",
+    "attacks": "Angriffe",
+    "spyHits": "Spionageangriffe",
+    "wars": "Kriege",
+    "turnCap": "Volle Ausdauer",
+    "quietHoursStart": "Beginn der Ruhezeit (UTC)",
+    "quietHoursEnd": "Ende der Ruhezeit (UTC)",
+    "patronLink": "Werde Förderer, um diese Benachrichtigungen zu aktivieren",
+    "commands": "Discord-Befehle",
+    "command": {
+      "profile": "Spielerprofile ansehen",
+      "stats": "Serverstatistiken",
+      "leaderboard": "Ranglisten für Spieler und Allianzen",
+      "fort": "Status der Festung",
+      "myclan": "Allianzinformationen",
+      "war": "Aktive Kriege",
+      "link": "Dein Konto verknüpfen"
+    }
+  },
+  "giftRecipient": "Beschenkter (optional)",
+  "giftRecipientHint": "Wähle ein Königreich aus, das beim Kauf eines Geschenks benachrichtigt werden soll.",
+  "giftRecipientSearch": "Königreiche suchen",
+  "recommended": "Empfohlen",
+  "patronPlans": "Patron werden",
+  "giftPlans": "Mitgliedschaft verschenken",
+  "loginToSupport": "Zum Unterstützen anmelden",
+  "giftSavings": "{{monthly}} pro Monat · {{savings}} sparen",
+  "cancels": "Endet nach diesem Zeitraum.",
+  "renews": "Verlängert sich nach diesem Zeitraum.",
+  "testBanner": "TESTMODUS — keine echte Zahlung",
+  "summaryUnavailable": "Bestellübersicht nicht verfügbar. Kehre zu den Angeboten zurück.",
+  "cancel": "Abbrechen",
+  "benefits": {
+    "title": "Was Patron bietet",
+    "badge": "Kronenabzeichen neben deinem Namen",
+    "alerts": "Sofortige Discord-Meldungen zu Angriffen, Spionagemissionen, Kriegen und voller Ausdauer",
+    "autoRecruit": "Automatische Rekrutierung bis zum täglichen Rekrutierungslimit",
+    "alliance": "Allianz-Sponsoring",
+    "gifts": "Geschenkte Mitgliedschaften",
+    "pledge": "Vorteile geben keine Kampfstärke: Unterstützen statt Siegen kaufen."
+  },
+  "planDetails": {
+    "supporter_monthly": "Monatliche Verlängerung",
+    "supporter_era_pass": "100 Tage Patron",
+    "gift_1m": "Ein Monat Patronat als Geschenkcode",
+    "gift_3m": "Geschenkcode für 3 Monate",
+    "gift_12m": "Geschenkcode für 12 Monate"
+  },
+  "sources": {
+    "SUBSCRIPTION": "Abonnement",
+    "ONE_TIME": "Einmalzahlung",
+    "GIFT": "Geschenk",
+    "COMP": "Kostenlos gewährt"
+  },
+  "kinds": {
+    "SUBSCRIPTION": "Abonnement",
+    "ONE_TIME": "Einmalzahlung",
+    "GIFT": "Geschenk",
+    "ALLIANCE_SPONSORSHIP": "Allianz-Sponsoring"
+  },
+  "paymentStatuses": {
+    "SUCCEEDED": "Erfolgreich",
+    "REFUNDED": "Erstattet",
+    "PARTIALLY_REFUNDED": "Teilweise erstattet",
+    "DISPUTED": "Angefochten",
+    "FAILED": "Fehlgeschlagen"
+  },
+  "giftStatuses": {
+    "UNREDEEMED": "Nicht eingelöst",
+    "REDEEMED": "Eingelöst",
+    "EXPIRED": "Abgelaufen",
+    "REVOKED": "Widerrufen"
+  },
+  "currentPlan": "Aktueller Plan",
+  "declined": "Die Zahlung wurde abgelehnt. Dir wurde nichts berechnet; versuche es erneut oder wähle einen anderen Plan.",
+  "checkoutNotice": {
+    "confirming": "Deine Zahlung wird bestätigt…",
+    "confirmed": "Zahlung bestätigt. Danke, dass du OpenThrone unterstützt!",
+    "canceled": "Bezahlvorgang abgebrochen. Dir wurde nichts berechnet.",
+    "pending": "Deine Zahlung wird noch bestätigt und erscheint in Kürze.",
+    "subscribed": "Du hast bereits ein aktives Abonnement.",
+    "signedOut": "Du bist abgemeldet. Melde dich an, um deine Zahlung abschließend zu bestätigen.",
+    "priceChanged": "Der Preis hat sich geändert, während diese Seite geöffnet war. Prüfe die aktualisierten Preise und bestätige deinen Kauf erneut."
+  },
+  "legal": {
+    "updated": "Zuletzt aktualisiert: {{date}}",
+    "back": "Zurück zur Förderung",
+    "terms": {
+      "title": "Förderbedingungen",
+      "intro": "Du kaufst Patron-Mitgliedschaften, Geschenkcodes und Allianz-Sponsorings von AIOXperts IT Solutions LLC, einer Gesellschaft mit beschränkter Haftung aus Delaware, die OpenThrone betreibt. Diese Bedingungen gelten für diese Käufe.",
+      "sections": {
+        "eligibility": {
+          "title": "Wer kaufen darf",
+          "body": "Für einen Kauf musst du mindestens 18 Jahre alt und an deinem Wohnort volljährig sein. Bist du jünger, muss ein Elternteil oder Vormund den Kauf tätigen und diesen Bedingungen zustimmen. Käufe sind für Personen mit Wohnsitz in den USA möglich. Du musst berechtigt sein, die Zahlungsmethode zu nutzen."
+        },
+        "purchase": {
+          "title": "Wofür du bezahlst",
+          "body": "Die Förderung unterstützt OpenThrone. Sie gibt die auf der Förderseite genannten Vorteile: ein Abzeichen, Discord-Meldungen und Annehmlichkeiten wie automatische Rekrutierung innerhalb des normalen Tageslimits. Sie erhöht nie Kampfwerte oder Tageslimits, und du kannst keine Einheiten, kein Gold und keine Züge kaufen. Deine Mitgliedschaft gibt dir für die angegebene Dauer Zugang zu diesen Funktionen. Vorteile und Spielgegenstände können nicht in Geld umgetauscht werden; gesetzliche Erstattungen bleiben unberührt. Wir können Vorteile anpassen, um das Spiel sicher zu halten, rechtliche Vorgaben zu erfüllen oder es zu verbessern. Änderungen, die bezahlte Vorteile wesentlich verringern, kündigen wir vorher an."
+        },
+        "billing": {
+          "title": "Preise, Verlängerung und Kündigung",
+          "body": "Die Preise sind in US-Dollar. Anfallende Steuern werden beim Bezahlen hinzugefügt und vorher angezeigt. Monatlicher Patron verlängert sich automatisch zum beim Kauf bestätigten Preis, bis du kündigst. Aktuelle Preise stehen auf der Förderseite. Preisänderungen gelten nur für neue Käufe; bestehende Abonnenten behalten ihren vereinbarten Preis. Um die nächste Verlängerung zu stoppen, öffne deine Förderseite, wähle Zahlungen verwalten und kündige dein Abo vor dem Verlängerungsdatum. Bereits bezahlten Zugang behältst du. Die Kündigung ist für sich kein Erstattungsantrag. Schlägt eine Verlängerungszahlung fehl, kann Stripe sie erneut versuchen, und du behältst den Zugang 7 Tage ab dem ersten fehlgeschlagenen Versuch. Der Ära-Pass gibt 100 Tage Patron-Zugang und gilt über Ära-Neustarts hinweg. Geschenkcodes fügen beim Einlösen 30, 90 oder 360 Tage hinzu. Pass- und Geschenkzeit verlängert deinen bestehenden Zugang, pausiert aber keine Monatsabbuchungen, und ein neues Abo wird sofort belastet, auch wenn du schon Zugang hast. Ära-Pass, Geschenkcodes und Allianz-Sponsorings sind Einmalkäufe und verlängern sich nicht."
+        },
+        "gifts": {
+          "title": "Geschenkcodes",
+          "body": "Jeder Geschenkcode kann einmal eingelöst werden. Ein bezahlter Geschenkcode gilt mindestens 5 Jahre ab Kauf und läuft nie ab, wo das Recht des Bundesstaats es verlangt. Jeder, der den Code hat, kann ihn einlösen, also teile ihn sorgfältig. Geschenkcodes können nicht in Geld umgetauscht werden, außer wo das Gesetz es verlangt."
+        },
+        "sponsorship": {
+          "title": "Allianz-Sponsorings",
+          "body": "Ein Sponsoring ist eine Einmalzahlung an OpenThrone, nicht an die Allianz oder ihre Führung. Je 4,99 $ im Topf bringen der Allianz 30 Tage Premium; kleinere Reste bleiben im Topf. Dein Sponsoring bleibt bei der Allianz, wenn du sie verlässt."
+        },
+        "accounts": {
+          "title": "Sperren, Schließungen und Löschung",
+          "body": "Wird dein Konto gesperrt oder geschlossen, stoppen wir künftige Abo-Verlängerungen, und du kannst mit Beginn der Einschränkung den Zugang zum Spiel und seinen Vorteilen verlieren. Löschst du dein Konto, endet dein Zugang und dein Abo wird gekündigt. Diese Maßnahmen lösen keine automatische Erstattung aus; deine gesetzlichen Erstattungsrechte bleiben bestehen."
+        },
+        "disputes": {
+          "title": "Zahlungsstreitigkeiten",
+          "body": "Wenn du eine Zahlung bei deiner Bank anfechtest, können wir den mit dieser Zahlung gekauften Zugang aussetzen, bis entschieden ist. Bleibt die Zahlung bestehen, stellen wir den verbleibenden Zugang wieder her. Wird die Zahlung zurückgebucht, endet dieser Zugang. Dein Recht, eine Zahlung anzufechten, bleibt unberührt."
+        },
+        "privacy": {
+          "title": "Zahlungsdaten",
+          "body": "Stripe wickelt deine Zahlung ab. Wir speichern weder deine vollständige Kartennummer noch den Sicherheitscode. Wir speichern Zahlungs-IDs, Beträge, Währung, Status und Daten sowie zugehörige Abrechnungsdaten: Mitgliedschaftsdetails, Geschenkkäufe und -einlösungen, Erstattungen, Streitfälle, dein Rechnungsland und deinen Bundesstaat, die beim Bezahlen akzeptierten Bedingungen und die beteiligten Konten oder Allianzen. Unsere Datenschutzerklärung erklärt, wie wir diese Daten nutzen und speichern; für Stripe gilt dessen eigene Datenschutzerklärung."
+        },
+        "law": {
+          "title": "Anwendbares Recht",
+          "body": "Für diese Bedingungen gilt das Recht von Delaware. Schutzrechte, die dir das Recht an deinem Wohnort gewährt, bleiben bestehen. Streitigkeiten können vor den Gerichten in Delaware geführt werden, vorbehaltlich deines Rechts, andere Gerichte anzurufen."
+        },
+        "contact": {
+          "title": "Kontakt",
+          "body": "Bei Fragen zu einer Zahlung, einer Erstattung oder diesen Bedingungen schreib an privacy@openthrone.dev. Ein Discord-Konto brauchst du dafür nicht. Poste niemals Kartendaten in öffentlichen Kanälen."
+        }
+      }
+    },
+    "refunds": {
+      "title": "Erstattungsrichtlinie",
+      "intro": "So funktionieren Erstattungen für Patron-Mitgliedschaften, Geschenkcodes und Allianz-Sponsorings.",
+      "sections": {
+        "request": {
+          "title": "Erstattung anfragen",
+          "body": "Schreib an privacy@openthrone.dev mit dem Namen deines Königreichs und dem Datum der Zahlung. Wir erstatten bestätigte doppelte Abbuchungen und Käufe, deren versprochene Vorteile nicht geliefert wurden. Für andere Erstattungen melde dich innerhalb von 14 Tagen nach der Zahlung. Diese Frist schränkt deine Rechte nach dem Verbraucherrecht nicht ein."
+        },
+        "how": {
+          "title": "So funktionieren Erstattungen",
+          "body": "Erstattungen gehen über Stripe an die ursprüngliche Zahlungsmethode zurück und kommen meist innerhalb von 5 bis 10 Werktagen an. Eine vollständige Erstattung entfernt den verbleibenden Zugang oder den nicht eingelösten Geschenkcode, der mit dieser Zahlung gekauft wurde; Zugang aus anderen Käufen bleibt unberührt. Eine Teilerstattung ändert deinen Zugang nicht. Eine Erstattung kündigt kein Monatsabo, es sei denn, wir bestätigen das gesondert."
+        },
+        "cancel": {
+          "title": "Kündigen",
+          "body": "Die Kündigung stoppt künftige Verlängerungen, und dein bezahlter Zugang bleibt normalerweise bis zu seinem Ende bestehen. Sie erstattet frühere Zahlungen nicht automatisch. Du kannst trotzdem eine Erstattung verlangen oder deine Rechte nach dem Verbraucherrecht nutzen."
+        },
+        "gifts": {
+          "title": "Geschenkcodes und Sponsorings",
+          "body": "Für einen nicht eingelösten Geschenkcode kannst du innerhalb von 14 Tagen nach dem Kauf eine Erstattung erhalten. Für eingelöste Codes und für Sponsorings, die bereits zu Premium-Zeit geworden sind, bieten wir normalerweise keine Erstattung bei Meinungsänderung an. Diese Grenzen berühren keine gesetzlich vorgeschriebenen Erstattungen."
+        }
+      }
+    }
+  },
+  "consent": {
+    "title": "Bevor du bezahlst",
+    "monthly": "Ich stimme zu, {{price}} jetzt und jeden Monat bis zu meiner Kündigung zu zahlen, zuzüglich der beim Bezahlen angezeigten Steuern. Ich kann jederzeit über Zahlungen verwalten auf meiner Förderseite kündigen. Die Kündigung stoppt die nächste Abbuchung, und meine Vorteile bleiben bis zum Ende des bezahlten Monats.",
+    "pass": "Ich stimme zu, einmalig {{price}} zu zahlen, zuzüglich der beim Bezahlen angezeigten Steuern, für {{days}} Tage Patron-Zugang. Er verlängert sich nicht.",
+    "gift": "Ich stimme zu, einmalig {{price}} zu zahlen, zuzüglich der beim Bezahlen angezeigten Steuern, für einen Geschenkcode über {{days}} Tage Patron-Zugang. Er verlängert sich nicht. Der Code kann einmal eingelöst werden und gilt mindestens 5 Jahre oder läuft nie ab, wo das Recht des Bundesstaats es verlangt.",
+    "sponsorship": "Ich stimme zu, einmalig {{price}} zu zahlen, zuzüglich der beim Bezahlen angezeigten Steuern, an OpenThrone für den Sponsoring-Topf von {{alliance}}. Es verlängert sich nicht. Je 4,99 $ im Topf bringen der Allianz 30 Tage Premium.",
+    "eligibility": "Ich bin mindestens 18 Jahre alt (oder Elternteil bzw. Vormund und kaufe für einen Spieler), wohne in den USA, darf diese Zahlungsmethode nutzen und stimme den Förderbedingungen und der Erstattungsrichtlinie zu.",
+    "agree": "Ich habe das Obige gelesen und stimme zu.",
+    "continue": "Weiter zur Zahlung",
+    "usOnly": "Käufe sind nur für Einwohner der USA möglich."
+  },
+  "signIn": "Anmelden",
+  "records": "Belege",
+  "chooser": {
+    "title": "Wähle deine Förderung",
+    "mode": "Empfänger der Förderung",
+    "self": "Für dich",
+    "gift": "Als Geschenk",
+    "buyGift": "Geschenk kaufen",
+    "giftPlans": {
+      "gift_1m": "1 Monat",
+      "gift_3m": "3 Monate",
+      "gift_12m": "12 Monate"
+    }
+  },
+  "paymentsTab": "Zahlungen",
+  "notPatronHint": "Deine Förderung hält das Reich am Leben. Wähle unten einen Plan oder löse einen Geschenkcode ein, den du erhalten hast."
+}

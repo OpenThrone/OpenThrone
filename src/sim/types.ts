@@ -1,3 +1,5 @@
+import type { BattleUnits, ItemType } from '@/types/typings';
+
 import type { RulesetId } from './scenarioTypes';
 
 /** Describes the unit counts data contract. */
@@ -51,6 +53,13 @@ export interface SimPlayer {
   bonuses: {
     attack: number;
     defense: number;
+  };
+  /** Live rules only: real equipment and structures for the battle user. */
+  live?: {
+    inventory: LiveItem[];
+    structureUpgrades: Array<{ type: string; level: number }>;
+    battleUpgrades: NonNullable<PlayerState['battleUpgrades']>;
+    mercenaries: BattleUnits[];
   };
 }
 
@@ -119,6 +128,15 @@ export interface BattleMetrics {
   defenderXp: number;
   attackerUnitsRemaining: UnitCounts;
   defenderUnitsRemaining: UnitCounts;
+  /** The part of each side's casualties that is wounded, not killed. */
+  attackerWounded?: UnitCounts;
+  defenderWounded?: UnitCounts;
+  /** Mercenary losses (killed and wounded) by contract id; not in the casualties above. */
+  attackerMercenaryLosses?: Record<number, number>;
+  defenderMercenaryLosses?: Record<number, number>;
+  /** The wounded part of the mercenary losses above, by contract id. */
+  attackerMercenaryWounded?: Record<number, number>;
+  defenderMercenaryWounded?: Record<number, number>;
 }
 
 /** Describes the simulation results data contract. */
@@ -154,6 +172,7 @@ export interface PlayerConfig {
   stamina?: number;
   defensePressureToday?: number;
   bonuses?: Partial<SimPlayer['bonuses']>;
+  live?: SimPlayer['live'];
 }
 
 // ============================================================
@@ -197,6 +216,11 @@ export interface BehaviorParams {
   turnStrategy: TurnStrategy;
   playStyle: PlayStyle;
   primaryGoal: StrategicGoal;
+  /**
+   * Live rules only: hold attacks until stamina reaches this, since battle XP
+   * scales with the attacker's stamina (calculateMoraleXpFactor).
+   */
+  staminaFloor?: number;
 }
 
 interface DailyLimits {
@@ -333,7 +357,92 @@ export interface PlayerState {
   >;
   bankDepositHistory: number[];
   status: 'active' | 'inactive' | 'defeated';
+  /** Live rules only: how often the player logs in. */
+  activity?: ActivityType;
+  /** Live rules only: the player's alliance; members share intel and leave each other alone. */
+  allianceId?: string;
+  /** Live rules only: the sim day the player joined, for battle protection. */
+  joinedOnDay?: number;
+  /** Live rules only: ticks of the current day the player is logged in. */
+  sessionTicks?: Set<number>;
+  /** Live rules only: units recovering from battle. */
+  wounded?: Partial<UnitCounts>;
+  /** Live rules only: per-player counters for the run report. */
+  simStats?: {
+    attacks: number;
+    attackWins: number;
+    defenses: number;
+    defenseWins: number;
+    turnsSpent: number;
+    lootGained: number;
+    lootLost: number;
+    sessions: number;
+    startXp: number;
+    startLevel: number;
+    startTurns: number;
+    deserted: number;
+    mercenariesHired: number;
+    captivesTaken: number;
+    turnsGenerated: number;
+  };
+  /** Live rules only: equipment owned, as live UserItem rows. */
+  inventory?: LiveItem[];
+  /** Live rules only: armory structure level (1 = none). */
+  armoryLevel?: number;
+  /** Live rules only: offensive structure level (1 = none). */
+  offenseStructureLevel?: number;
+  /** Live rules only: bonus points spent per category. */
+  bonusPoints?: Record<BonusPointCategory, number>;
+  /** Live rules only: battle upgrades owned (Battle_Upgrades.tsx). */
+  battleUpgrades?: Array<{
+    type: 'OFFENSE' | 'DEFENSE';
+    level: number;
+    quantity: number;
+  }>;
+  /** Live rules only: mercenary contracts (Mercenary.service). */
+  mercenaries?: Array<{
+    id: number;
+    type: 'OFFENSE' | 'DEFENSE';
+    level: number;
+    quantity: number;
+    /** Survivors recovering from battle; they sit out until they heal. */
+    wounded?: number;
+    expiresOnDay: number;
+  }>;
+  /** Live rules only: captives held in this player's dungeon. */
+  captives?: Array<{
+    sourceId: string;
+    key: keyof UnitCounts;
+    quantity: number;
+    capturedDay: number;
+  }>;
+  /** Live rules only: kingdom morale, 0-100. */
+  kingdomMorale?: number;
+  /** Live rules only: army size recorded when morale fell below the desertion threshold. */
+  desertionFloor?: number;
 }
+
+/** Live bonus point categories. */
+export type BonusPointCategory =
+  | 'OFFENSE'
+  | 'DEFENSE'
+  | 'INCOME'
+  | 'INTEL'
+  | 'PRICES';
+
+/** One stack of equipment, as stored in live UserItem rows. */
+export interface LiveItem {
+  usage: 'OFFENSE' | 'DEFENSE' | 'SPY' | 'SENTRY';
+  type: ItemType;
+  level: number;
+  quantity: number;
+}
+
+/** How often a simulated player logs in. */
+export type ActivityType = 'casual' | 'regular' | 'active' | 'grinder';
+
+/** Share of the population per activity type, in percent. */
+export type ActivityMix = Record<ActivityType, number>;
 
 /** Describes the day result data contract. */
 export interface DayResult {
@@ -394,6 +503,26 @@ export interface SimulationConfig {
   balance?: Partial<BalanceParameters>;
   turnIntervalMinutes?: number;
   attackLevelRange?: number;
+  /** Play by the live game's rules (see liveRules.ts) instead of the legacy model. */
+  live?: boolean;
+  /** Live rules only: a game event running for part of the simulation. */
+  event?: SimGameEvent;
+  /** Live rules only: the dungeon is on, so breaches take captives (SHOW_DUNGEON). */
+  dungeon?: boolean;
+}
+
+/** A game event's effects (constants/gameEvents.ts) over a span of sim days. */
+export interface SimGameEvent {
+  /** First sim day (1-based) the event runs. */
+  startDay: number;
+  /** Number of days it runs. */
+  days: number;
+  xpMultiplier: number;
+  goldMultiplier: number;
+  extraTurnsPerTick: number;
+  citizenMultiplier: number;
+  unitCostDiscountPercent: number;
+  armoryCostDiscountPercent: number;
 }
 
 /** Describes the balance iteration report data contract. */
@@ -421,6 +550,7 @@ export interface TopPlayerSnapshot {
   goldInBank: number;
   status: PlayerState['status'];
   power: number;
+  activity?: ActivityType;
 }
 
 /** Describes the top player timeline point data contract. */

@@ -6,14 +6,9 @@ import {
   computeLoanOwed,
   LOAN_INCOME_SHARE_PERCENT,
   LOAN_INTEREST_PCT_DEFAULT,
-  LOAN_INTEREST_PCT_MAX,
   LOAN_INTEREST_PCT_MIN,
   LOAN_TERM_DAYS_DEFAULT,
-  LOAN_TERM_DAYS_MAX,
-  LOAN_TERM_DAYS_MIN,
   MEMBER_DAILY_CAP_DEFAULT,
-  MEMBER_DAILY_CAP_MAX,
-  MEMBER_DAILY_CAP_MIN,
 } from '@/constants/allianceTreasury';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
@@ -28,6 +23,7 @@ import {
   transferInTx,
 } from '@/services/AllianceBank.service';
 import { postToAllianceRoom } from '@/services/AllianceRoom.service';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { logError } from '@/utils/logger';
 
 const OPEN_STATUSES = [AllianceLoanStatus.ACTIVE, AllianceLoanStatus.DEFAULTED];
@@ -63,23 +59,14 @@ const RepaySchema = z.object({
 
 export const TreasurySettingsSchema = z
   .object({
-    loan_term_days: z
-      .number()
-      .int()
-      .min(LOAN_TERM_DAYS_MIN)
-      .max(LOAN_TERM_DAYS_MAX)
-      .optional(),
+    loan_term_days: z.number().int().min(1).max(365).optional(),
     loan_interest_pct: z
       .number()
       .int()
       .min(LOAN_INTEREST_PCT_MIN)
-      .max(LOAN_INTEREST_PCT_MAX)
+      .max(100)
       .optional(),
-    member_daily_cap: z.coerce
-      .bigint()
-      .min(BigInt(MEMBER_DAILY_CAP_MIN))
-      .max(BigInt(MEMBER_DAILY_CAP_MAX))
-      .optional(),
+    member_daily_cap: z.coerce.bigint().min(0n).max(1000000000n).optional(),
   })
   .refine((v) => Object.values(v).some((x) => x !== undefined), {
     message: 'Nothing to update',
@@ -214,7 +201,10 @@ export const divertIncomeToLoans = async (
   source: 'economy' | 'pillage',
 ): Promise<bigint> => {
   if (gross <= 0n || !tx.alliance_loans) return 0n;
-  let budget = (gross * BigInt(LOAN_INCOME_SHARE_PERCENT)) / 100n;
+  const incomeShare =
+    (await getRuntimeConfig(tx)).allianceLoanIncomeSharePercent ??
+    LOAN_INCOME_SHARE_PERCENT;
+  let budget = (gross * BigInt(incomeShare)) / 100n;
   if (budget <= 0n) return 0n;
   const loans = await tx.alliance_loans.findMany({
     where: { borrower_id: userId, status: { in: OPEN_STATUSES } },
@@ -230,7 +220,7 @@ export const divertIncomeToLoans = async (
       loan,
       pay,
       userId,
-      `Loan repayment (${LOAN_INCOME_SHARE_PERCENT}% of ${source} income)`,
+      `Loan repayment (${incomeShare}% of ${source} income)`,
       true,
     );
     budget -= pay;
@@ -416,15 +406,33 @@ export class AllianceLoanService {
     };
   }
 
-  private static terms(alliance: {
-    loan_term_days?: number | null;
-    loan_interest_pct?: number | null;
-    member_daily_cap?: bigint | null;
-  }) {
+  private static async terms(
+    alliance: {
+      loan_term_days?: number | null;
+      loan_interest_pct?: number | null;
+      member_daily_cap?: bigint | null;
+    },
+    tx?: Prisma.TransactionClient,
+  ) {
+    const limits = await getRuntimeConfig(tx);
     return {
-      termDays: alliance.loan_term_days ?? LOAN_TERM_DAYS_DEFAULT,
-      interestPct: alliance.loan_interest_pct ?? LOAN_INTEREST_PCT_DEFAULT,
-      dailyCap: BigInt(alliance.member_daily_cap ?? MEMBER_DAILY_CAP_DEFAULT),
+      termDays: Math.max(
+        limits.allianceLoanTermMinDays ?? 1,
+        Math.min(
+          alliance.loan_term_days ?? LOAN_TERM_DAYS_DEFAULT,
+          limits.allianceLoanTermMaxDays ?? 14,
+        ),
+      ),
+      interestPct: Math.min(
+        alliance.loan_interest_pct ?? LOAN_INTEREST_PCT_DEFAULT,
+        limits.allianceLoanInterestMaxPercent ?? 25,
+      ),
+      dailyCap: BigInt(
+        Math.min(
+          Number(alliance.member_daily_cap ?? MEMBER_DAILY_CAP_DEFAULT),
+          limits.allianceMemberDailyCapMax ?? 50000000,
+        ),
+      ),
     };
   }
 
@@ -435,6 +443,20 @@ export class AllianceLoanService {
     data: z.input<typeof TreasurySettingsSchema>,
   ) {
     const v = TreasurySettingsSchema.parse(data);
+    const limits = await getRuntimeConfig();
+    if (
+      (v.loan_term_days !== undefined &&
+        (v.loan_term_days < (limits.allianceLoanTermMinDays ?? 1) ||
+          v.loan_term_days > (limits.allianceLoanTermMaxDays ?? 14))) ||
+      (v.loan_interest_pct !== undefined &&
+        v.loan_interest_pct > (limits.allianceLoanInterestMaxPercent ?? 25)) ||
+      (v.member_daily_cap !== undefined &&
+        (v.member_daily_cap <
+          BigInt(limits.allianceMemberDailyCapMin ?? 100000) ||
+          v.member_daily_cap >
+            BigInt(limits.allianceMemberDailyCapMax ?? 50000000)))
+    )
+      throw new Error('Treasury settings exceed current limits');
     try {
       const alliance = await prisma.alliances.findFirst({
         where: { id: allianceId, leader_id: actorId },
@@ -478,7 +500,7 @@ export class AllianceLoanService {
         if (!standing.canRequest) {
           throw new Error('You do not have permission to request gold');
         }
-        const terms = this.terms(standing.alliance);
+        const terms = await this.terms(standing.alliance, tx);
         if (v.amount > terms.dailyCap) {
           throw new Error(
             `Loans are limited to ${terms.dailyCap.toString()} gold in this alliance`,
@@ -524,7 +546,7 @@ export class AllianceLoanService {
    */
   static async list(allianceId: number, userId: number) {
     const standing = await this.getStanding(prisma, allianceId, userId);
-    const terms = this.terms(standing.alliance);
+    const terms = await this.terms(standing.alliance);
     const include = {
       borrower: { select: { id: true, display_name: true } },
       decider: { select: { display_name: true } },
@@ -654,7 +676,7 @@ export class AllianceLoanService {
           throw new Error('The borrower already has an active loan');
         }
 
-        const terms = this.terms(standing.alliance);
+        const terms = await this.terms(standing.alliance, tx);
         const flipped = await tx.alliance_loans.updateMany({
           where: { id: loan.id, status: AllianceLoanStatus.REQUESTED },
           data: {
@@ -901,7 +923,7 @@ export const settleLoanCreditsInTx = async (
         amount,
         performed_by_user_id: loan.borrower_id,
         related_user_id: loan.borrower_id,
-        notes: `Loan repayment (${LOAN_INCOME_SHARE_PERCENT}% of income)`,
+        notes: 'Loan repayment from income',
       },
     });
   }

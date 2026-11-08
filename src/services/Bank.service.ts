@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
 import { assertNoDefaultedLoan } from '@/services/AllianceLoan.service';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getMaxDeposit } from '@/utils/bankLimits';
 import { parseBigInt } from '@/utils/jsonHelpers';
@@ -68,6 +69,7 @@ export const withdrawGold = async (
  */
 const deposit = async (userId: number, depositAmount: bigint) => {
   const validatedData = DepositSchema.parse({ userId, depositAmount });
+  const capPercent = (await getRuntimeConfig()).depositCapPercent ?? 80;
 
   return await prisma.$transaction(async (tx: TransactionClient) => {
     await tx.$queryRaw`SELECT id FROM users WHERE id = ${validatedData.userId} FOR UPDATE`;
@@ -95,9 +97,9 @@ const deposit = async (userId: number, depositAmount: bigint) => {
     if (validatedData.depositAmount > BigInt(user.gold ?? 0))
       throw new Error('Not enough gold for deposit');
 
-    if (validatedData.depositAmount > getMaxDeposit(BigInt(user.gold ?? 0)))
+    if (validatedData.depositAmount > getMaxDeposit(BigInt(user.gold ?? 0), capPercent))
       throw new Error(
-        'Deposit amount exceeds the maximum allowed (80% of gold on hand).',
+        `Deposit amount exceeds the maximum allowed (${capPercent}% of gold on hand).`,
       );
 
     const updateResult = await tx.users.updateMany({

@@ -23,11 +23,8 @@ let mockSessionState: RuntimeSessionState = {
   update: jest.fn(),
 };
 
-jest.mock('@mantine/core', () => ({
-  MantineProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
-
 jest.mock('@mantine/hooks', () => ({
+  ...jest.requireActual('@mantine/hooks'),
   useLocalStorage: ({ defaultValue }: { defaultValue: string }) => [
     defaultValue,
     jest.fn(),

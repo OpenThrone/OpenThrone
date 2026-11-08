@@ -54,6 +54,26 @@ export const hasFeature = (
   return true;
 };
 
+/** Whether the next economy upgrade needed for a feature can be built now. */
+export const isFeatureInReach = (
+  levels: FeatureUnlockLevels,
+  key: FeatureKey,
+): boolean => {
+  const req = FEATURE_REQUIREMENTS[key];
+  if (req.race && levels.race?.toUpperCase() !== req.race) return false;
+  if (hasFeature(levels, key)) return true;
+  if (req.economyLevel === undefined) return false;
+  const upgrade = EconomyUpgrades.find(
+    (item) => item.index === req.economyLevel,
+  );
+  return (
+    !!upgrade &&
+    levels.fortLevel >= upgrade.fortLevel &&
+    levels.economyLevel >= upgrade.index - 1 &&
+    (req.fortLevel === undefined || levels.fortLevel >= req.fortLevel)
+  );
+};
+
 /** Name of the economy upgrade a feature requires, for "Requires <upgrade>" copy. */
 export const getRequiredEconomyUpgradeName = (
   key: FeatureKey,

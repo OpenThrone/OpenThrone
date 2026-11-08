@@ -1,12 +1,20 @@
 import { hasFeature } from '@/constants/FeatureUnlocks';
 import {
+  hallowedBlocked,
+  necropolisBonus,
+  necropolisDailyCap,
+} from '@/constants/RacialPerks';
+import {
   deadCombatRows,
   distributeReanimation,
+  enemyReanimationPercent,
   enemyReanimationQuantity,
+  ownReanimationPercent,
   ownReanimationQuantity,
   REANIMATED_UNIT_LEVEL,
   reanimationDailyCap,
   type ReanimationFallenRow,
+  reanimationQuantity,
 } from '@/constants/Reanimation';
 import type { Prisma } from '@/lib/prisma-exports';
 import { getOTDayKey } from '@/utils/timefunctions';
@@ -28,6 +36,9 @@ export interface ReanimationBattleOutcome {
   attacker: ReanimatedUnitGrant[];
   /** Level-1 stacks for the Undead defender; empty when not eligible. */
   defender: ReanimatedUnitGrant[];
+  blocked?: number;
+  attackerBonus?: number;
+  defenderBonus?: number;
 }
 
 /** The upgrade levels of one side, as stored on the users row. */
@@ -36,6 +47,7 @@ export interface ReanimationSideLevels {
   fortLevel: number;
   economyLevel: number;
   race: string | null;
+  racialTier?: number;
 }
 
 /** Total units in a grant list. */
@@ -78,6 +90,16 @@ export class ReanimationService {
       defenderKilledUnits: ReanimationFallenRow[];
       /** Captives the attacker's dungeon took out of the defender's killed. */
       captivesTaken: number;
+      defenderRacialTier?: number;
+      /**
+       * Defender units Elf Sanctuary already recovered from this battle: they
+       * are alive again, so they can't also rise for an Undead attacker.
+       */
+      defenderRecovered?: readonly {
+        type: string;
+        level: number;
+        quantity: number;
+      }[];
       now?: Date;
     },
   ): Promise<ReanimationBattleOutcome> {
@@ -90,13 +112,43 @@ export class ReanimationService {
     const defenderDead = deadCombatRows(
       input.defenderKilledUnits,
       input.captivesTaken,
-    );
+    )
+      .map((row) => {
+        const recovered = (input.defenderRecovered ?? [])
+          .filter((g) => g.type === row.type && g.level === row.level)
+          .reduce((sum, g) => sum + g.quantity, 0);
+        return { ...row, quantity: row.quantity - recovered };
+      })
+      .filter((row) => row.quantity > 0);
 
+    const blocked =
+      input.attacker.race === 'UNDEAD' &&
+      input.defender.race !== 'UNDEAD' &&
+      hasFeature(
+        {
+          economyLevel: input.attacker.economyLevel,
+          fortLevel: input.attacker.fortLevel,
+          race: input.attacker.race,
+        },
+        'REANIMATION',
+      )
+        ? hallowedBlocked(
+            reanimationQuantity(
+              attackerDead.reduce((sum, row) => sum + row.quantity, 0),
+              ownReanimationPercent(input.attacker.fortLevel) +
+                necropolisBonus(input.attacker.racialTier ?? 0),
+            ),
+            input.defenderRacialTier ?? 0,
+          )
+        : 0;
     const attacker = await this.reanimateSide(tx, {
       side: input.attacker,
       ownDead: attackerDead,
       enemyDead: defenderDead,
       now,
+      blocked,
+      blockedTier:
+        input.defender.race === 'UNDEAD' ? 0 : (input.defenderRacialTier ?? 0),
     });
     const defender = await this.reanimateSide(tx, {
       side: input.defender,
@@ -104,7 +156,13 @@ export class ReanimationService {
       enemyDead: attackerDead,
       now,
     });
-    return { attacker, defender };
+    return {
+      attacker: attacker.grants,
+      defender: defender.grants,
+      blocked,
+      attackerBonus: attacker.bonus,
+      defenderBonus: defender.bonus,
+    };
   }
 
   /**
@@ -122,8 +180,10 @@ export class ReanimationService {
       ownDead: ReanimationFallenRow[];
       enemyDead: ReanimationFallenRow[];
       now: Date;
+      blocked?: number;
+      blockedTier?: number;
     },
-  ): Promise<ReanimatedUnitGrant[]> {
+  ): Promise<{ grants: ReanimatedUnitGrant[]; bonus: number }> {
     if (
       !hasFeature(
         {
@@ -134,7 +194,7 @@ export class ReanimationService {
         'REANIMATION',
       )
     ) {
-      return [];
+      return { grants: [], bonus: 0 };
     }
     const fortLevel = input.side.fortLevel ?? 0;
     const ownFallen = input.ownDead.reduce((sum, row) => sum + row.quantity, 0);
@@ -142,8 +202,22 @@ export class ReanimationService {
       (sum, row) => sum + row.quantity,
       0,
     );
-    const ownPool = ownReanimationQuantity(ownFallen, fortLevel);
-    const enemyPool = enemyReanimationQuantity(enemyFallen, fortLevel);
+    const tier = input.side.racialTier ?? 0;
+    const ownPool = Math.max(
+      0,
+      (tier
+        ? reanimationQuantity(
+            ownFallen,
+            ownReanimationPercent(fortLevel) + necropolisBonus(tier),
+          )
+        : ownReanimationQuantity(ownFallen, fortLevel)) - (input.blocked ?? 0),
+    );
+    const enemyPool = tier
+      ? reanimationQuantity(
+          enemyFallen,
+          enemyReanimationPercent(fortLevel) + necropolisBonus(tier),
+        )
+      : enemyReanimationQuantity(enemyFallen, fortLevel);
 
     const todayKey = getOTDayKey(input.now);
     const row = await tx.users.findUnique({
@@ -174,7 +248,9 @@ export class ReanimationService {
           type: { in: [...COMBAT_UNIT_TYPES] },
         },
       });
-      cap = reanimationDailyCap(Number(army._sum.quantity ?? 0));
+      cap = tier
+        ? necropolisDailyCap(Number(army._sum.quantity ?? 0), tier)
+        : reanimationDailyCap(Number(army._sum.quantity ?? 0));
       usedToday = 0;
       newDay = true;
     }
@@ -215,9 +291,21 @@ export class ReanimationService {
       });
     }
 
-    return [...grants.entries()]
-      .map(([unitType, quantity]) => ({ unitType, quantity }))
-      .sort((a, b) => a.unitType.localeCompare(b.unitType));
+    const baselineOwn = ownReanimationQuantity(ownFallen, fortLevel);
+    const baselineBlocked = hallowedBlocked(
+      baselineOwn,
+      input.side.race === 'UNDEAD' ? (input.blockedTier ?? 0) : 0,
+    );
+    const baselinePool =
+      Math.max(0, baselineOwn - baselineBlocked) +
+      enemyReanimationQuantity(enemyFallen, fortLevel);
+    const baseline = tier ? Math.min(baselinePool, remaining) : granted;
+    return {
+      bonus: Math.max(0, granted - baseline),
+      grants: [...grants.entries()]
+        .map(([unitType, quantity]) => ({ unitType, quantity }))
+        .sort((a, b) => a.unitType.localeCompare(b.unitType)),
+    };
   }
 
   /**

@@ -11,6 +11,7 @@ import {
   useState,
 } from 'react';
 
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import useSocket from '@/hooks/useSocket';
 import type { users as PrismaUser } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users'; // Import UserModel
@@ -73,6 +74,11 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState<UnreadMessages[]>([]);
   const signingOut = useRef(false);
+  const { config } = useRuntimeConfig();
+  const staminaRulesKey = config?.stamina
+    ? JSON.stringify(config.stamina)
+    : null;
+  const previousStaminaRules = useRef<string | null>(null);
 
   const clearInvalidSession = useCallback(async () => {
     if (signingOut.current) return;
@@ -190,6 +196,22 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     },
     [clearInvalidSession, processAndSetUserData],
   );
+
+  // Admin rule transitions also settle persisted balances and restart the clock.
+  // Refresh that snapshot rather than applying new rates to an old timestamp.
+  useEffect(() => {
+    if (!staminaRulesKey) return;
+    const previous = previousStaminaRules.current;
+    previousStaminaRules.current = staminaRulesKey;
+    if (
+      previous &&
+      previous !== staminaRulesKey &&
+      userId &&
+      status === 'authenticated'
+    ) {
+      fetchUserData(userId);
+    }
+  }, [staminaRulesKey, userId, status, fetchUserData]);
 
   useEffect(() => {
     const handleNewMessageNotification = (data: UnreadMessages) => {

@@ -1,4 +1,5 @@
 import { levelXPArray } from '../constants/XPLevels';
+import { calculateProgressionXpPerTurn } from '../utils/attackFunctions';
 
 /** Returns xp floor for level for callers that need normalized game data. */
 export function getXpFloorForLevel(level: number): number {
@@ -26,6 +27,30 @@ function getXpRequiredForNextLevel(level: number, xp: number): number {
 export function getXpRemainingToLevel100(xp: number): number {
   const level100Xp = levelXPArray.find((entry) => entry.level === 100)?.xp ?? 0;
   return Math.max(0, level100Xp - xp);
+}
+
+/**
+ * Days to level 100 from `xp` at today's `xpPerDay`, allowing for battle XP
+ * per turn falling at higher levels (calculateProgressionXpPerTurn). Other
+ * factors are assumed to stay as they are today. Null when no XP is gained.
+ */
+export function projectDaysToLevel100(
+  xp: number,
+  xpPerDay: number,
+): number | null {
+  if (!(xpPerDay > 0)) return null;
+  const level = getLevelFromSimXp(xp);
+  const base = calculateProgressionXpPerTurn(level);
+  let days = 0;
+  let current = xp;
+  for (let next = level + 1; next <= 100; next++) {
+    const threshold = getXpFloorForLevel(next);
+    if (current >= threshold) continue;
+    const rate = (xpPerDay * calculateProgressionXpPerTurn(next - 1)) / base;
+    days += (threshold - current) / rate;
+    current = threshold;
+  }
+  return days;
 }
 
 /** Describes the progression pacing input data contract. */
@@ -56,6 +81,8 @@ export interface ProgressionPacingSummary {
 /** Calculates progression pacing used by combat, economy, or presentation logic. */
 export function calculateProgressionPacing(
   playerProgress: ProgressionPacingInput[],
+  /** The player's current XP rate for the projection, when known; else the run average. */
+  currentRate?: (playerId: string) => number | undefined,
 ): ProgressionPacingSummary {
   const bestPace = playerProgress.reduce<{
     player: ProgressionPacingInput;
@@ -78,14 +105,20 @@ export function calculateProgressionPacing(
     };
   }
 
-  const projectedDaysToLevel100 =
-    getXpRemainingToLevel100(bestPace.player.final.xp) / bestPace.xpPerDay;
+  // Null when the player no longer gains XP: it never gets there.
+  const projectedDaysToLevel100 = projectDaysToLevel100(
+    bestPace.player.final.xp,
+    currentRate?.(bestPace.player.id) ?? bestPace.xpPerDay,
+  );
 
   return {
     avgXpPerDay: bestPace.xpPerDay,
     pacingPlayerId: bestPace.player.id,
     pacingPlayerName: bestPace.player.displayName,
     projectedDaysToLevel100,
-    projectedMonthsToLevel100: projectedDaysToLevel100 / 30.4375,
+    projectedMonthsToLevel100:
+      projectedDaysToLevel100 === null
+        ? null
+        : projectedDaysToLevel100 / 30.4375,
   };
 }

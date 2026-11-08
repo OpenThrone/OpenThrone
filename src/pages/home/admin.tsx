@@ -1,15 +1,16 @@
 import { faUserPlus, faUsersCog } from '@fortawesome/free-solid-svg-icons';
-import { Alert, Button, Grid, Group, Modal, Stack, Text } from '@mantine/core';
+import { Alert, Button, Grid, Group, Stack, Text } from '@mantine/core';
 import type { GetServerSideProps } from 'next';
+import { useRouter } from 'next/router';
 import { signIn, useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
+import AdminPlayerModal from '@/components/admin/AdminPlayerModal';
 import { GameCard } from '@/components/game/GameCard';
 import GrantUserForm from '@/components/GrantUserForm';
-import UserAdminEditor from '@/components/UserAdminEditor';
 import UserList from '@/components/UserList';
 import UserSearchFilter from '@/components/UserSearchFilter';
 import { useUser } from '@/context/users';
@@ -32,6 +33,7 @@ const PAGE_SIZE = 10;
 
 const AdminUsersPage = () => {
   const { t } = useTranslation('admin-users');
+  const router = useRouter();
   const { data: session } = useSession();
   const { user, loading: userLoading } = useUser();
   const isAdministrator = useMemo(
@@ -44,6 +46,13 @@ const AdminUsersPage = () => {
   const [isImpersonationLoading, setIsImpersonationLoading] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  useEffect(() => {
+    const id = router.query.userId;
+    if (typeof id === 'string' && /^\d+$/.test(id)) {
+      setSelectedUserId(id);
+      setEditModalOpen(true);
+    }
+  }, [router.query.userId]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [sortBy, setSortBy] = useState('id');
@@ -230,21 +239,13 @@ const AdminUsersPage = () => {
           </GameCard>
         </Grid.Col>
       </Grid>
-      <Modal
+      <AdminPlayerModal
         opened={editModalOpen}
+        userId={selectedUserId}
+        isAdministrator={isAdministrator}
         onClose={handleCloseModal}
-        size="xl"
-        title={t('editor.modalTitle')}
-      >
-        {selectedUserId && (
-          <UserAdminEditor
-            userId={selectedUserId}
-            isAdministrator={isAdministrator}
-            onClose={handleCloseModal}
-            onSaved={() => handleSearch(filters)}
-          />
-        )}
-      </Modal>
+        onSaved={() => handleSearch(filters)}
+      />
     </AdminLayout>
   );
 };
@@ -256,6 +257,9 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
       'home',
       'navigation',
       'admin-users',
+      'admin-forces',
+      'admin-upgrades',
+      'admin-supporters',
       'admin-operations',
     ])),
   },

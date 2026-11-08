@@ -23,6 +23,7 @@
     "revertError": "No se pudo restaurar el valor anterior.",
     "databaseValue": "Valor de base de datos",
     "environmentDefault": "Valor predeterminado del entorno",
+    "builtInDefault": "Valor predeterminado integrado",
     "unknownReadOnly": "Ajuste desconocido · solo lectura",
     "labels": {
       "ENABLE_ATTACKING": "Ataques",
@@ -48,9 +49,79 @@
       "ENABLE_MESSAGING": "Mensajes entre jugadores (si está desactivado, solo los administradores y moderadores pueden enviar mensajes)",
       "recruit.dailyCap": "Límite de enlaces de reclutamiento externos (usos diarios del enlace de este jugador; también afecta el límite de población de protección para nuevos jugadores)",
       "recruit.internalDailyCap": "Límite de reclutamiento interno (reclutas que un jugador puede obtener al día)",
-      "recruit.externalIpDailyCap": "Límite de enlaces externos por IP (usos diarios del enlace del mismo jugador desde una IP)"
+      "recruit.externalIpDailyCap": "Límite de enlaces externos por IP (usos diarios del enlace del mismo jugador desde una IP)",
+      "combat": {
+        "pairDailyLimit": "Límite diario de ataques por pareja"
+      },
+      "era": {
+        "protectionLevelLimit": "Límite de nivel de protección"
+      },
+      "bank": {
+        "depositCapPercent": "Límite de depósito bancario (%)"
+      },
+      "friend": {
+        "dailyReceivedCap": "Límite diario de oro recibido por transferencias de amigos"
+      },
+      "alliance": {
+        "maxPendingGoldRequests": "Máximo de solicitudes de oro pendientes",
+        "loanTermMinDays": "Duración mínima de préstamos de tesorería (días)",
+        "loanTermMaxDays": "Duración máxima de préstamos de tesorería (días)",
+        "loanInterestMaxPercent": "Interés máximo de préstamos de tesorería (%)",
+        "memberDailyCapMin": "Límite diario mínimo por miembro",
+        "memberDailyCapMax": "Límite diario máximo por miembro",
+        "loanIncomeSharePercent": "Porcentaje de ingresos de préstamos de tesorería (%)"
+      },
+      "mercenary": {
+        "hireMultiplier": "Multiplicador de contratación de mercenarios",
+        "dailyPriceRate": "Tarifa diaria del precio de mercenarios"
+      },
+      "force": {
+        "maxQuantity": "Cantidad máxima de tropas",
+        "maxTermDays": "Duración máxima de tropas (días)",
+        "maxPillageBps": "Tasa máxima de saqueo de tropas (pb)"
+      },
+      "stamina.enabled": "Sistema de resistencia activado",
+      "stamina.recoveryEnabled": "Regeneración de resistencia activada",
+      "stamina.recoveryAmount": "Resistencia recuperada por intervalo",
+      "stamina.recoveryIntervalMinutes": "Intervalo de regeneración (minutos)",
+      "stamina.baseCost": "Coste base de resistencia por acción",
+      "stamina.perTurnCost": "Coste adicional de resistencia por turno",
+      "stamina.penaltyThreshold": "Umbral de penalización de resistencia",
+      "stamina.minOffensePercent": "Porcentaje mínimo de ataque",
+      "ENABLE_SUPPORTER": "Venta de mecenazgo",
+      "combat.pairDailyLimit": "Límite diario de ataques al mismo objetivo",
+      "era.protectionLevelLimit": "Límite de nivel de protección",
+      "bank.depositCapPercent": "Límite de depósito bancario (%)",
+      "friend.dailyReceivedCap": "Límite diario recibido en transferencias de amigos",
+      "alliance.maxPendingGoldRequests": "Máximo de solicitudes de oro pendientes",
+      "mercenary.hireMultiplier": "Multiplicador de contratación de mercenarios",
+      "mercenary.dailyPriceRate": "Tarifa diaria de mercenarios",
+      "force.maxQuantity": "Cantidad máxima de tropas",
+      "force.maxTermDays": "Plazo máximo de contrato (días)",
+      "force.maxPillageBps": "Tasa máxima de saqueo (puntos básicos)",
+      "alliance.loanTermMinDays": "Plazo mínimo de préstamos del tesoro (días)",
+      "alliance.loanTermMaxDays": "Plazo máximo de préstamos del tesoro (días)",
+      "alliance.loanInterestMaxPercent": "Interés máximo de préstamos del tesoro (%)",
+      "alliance.memberDailyCapMin": "Límite diario mínimo por miembro",
+      "alliance.memberDailyCapMax": "Límite diario máximo por miembro",
+      "alliance.loanIncomeSharePercent": "Participación de ingresos en préstamos del tesoro (%)"
     },
-    "resetBeforeLogin": "Reiniciar la era actual antes de habilitar los inicios de sesión"
+    "resetBeforeLogin": "Reiniciar la era actual antes de habilitar los inicios de sesión",
+    "groups": {
+      "features": "Funciones",
+      "access": "Acceso y mantenimiento",
+      "combat": "Combate y protección",
+      "stamina": "Resistencia",
+      "recruiting": "Reclutamiento",
+      "economy": "Economía y banco",
+      "mercenaries": "Mercenarios y fuerzas",
+      "alliances": "Alianzas",
+      "accounts": "Cuentas y correo"
+    },
+    "staminaTitle": "Reglas de resistencia",
+    "staminaHelp": "La resistencia determina los costes, la recuperación y la penalización de ataque bajo el umbral. Espiar no cuesta resistencia.",
+    "groupCount_one": "{{count}} ajuste",
+    "groupCount_other": "{{count}} ajustes"
   },
   "maintenance": {
     "title": "Sistema: Modo de mantenimiento",

@@ -1,8 +1,11 @@
 import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
-import { AUTO_RECRUIT_ENABLED } from '@/constants/AutoRecruit';
 import { withAuth } from '@/middleware/auth';
+import {
+  AUTO_RECRUIT_DISABLED,
+  canAutoRecruit,
+} from '@/services/AutoRecruitAccess.service';
 import { validateSession } from '@/services/Sessions.service';
 import type { AuthenticatedRequest } from '@/types/api';
 
@@ -11,11 +14,8 @@ const BodySchema = z.object({
 });
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
-  if (!AUTO_RECRUIT_ENABLED)
-    return res.status(503).json({
-      error: 'Auto-Recruit is currently disabled.',
-      code: 'AUTO_RECRUIT_DISABLED',
-    });
+  if (!(await canAutoRecruit(req.session?.user?.id)))
+    return res.status(503).json(AUTO_RECRUIT_DISABLED);
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

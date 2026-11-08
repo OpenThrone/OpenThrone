@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import QuantityInput from '@/components/battle/QuantityInput';
 import { EmptyState } from '@/components/game/EmptyState';
 import { PageLoading } from '@/components/game/PageLoading';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import type { Locales } from '@/types/typings';
 import { DEPOSIT_CAP_PERCENT, getMaxDeposit } from '@/utils/bankLimits';
@@ -33,7 +34,9 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
   const [pending, setPending] = useState<'deposit' | 'withdraw' | null>(null);
   const { t, i18n } = useTranslation('structures');
   const locale = i18n.language;
-  const maxDeposit = getMaxDeposit(toBigIntSafe(user?.gold));
+  const { config } = useRuntimeConfig();
+  const capPercent = config?.depositCapPercent ?? DEPOSIT_CAP_PERCENT;
+  const maxDeposit = getMaxDeposit(toBigIntSafe(user?.gold), capPercent);
   // UserModel exposes the balance as goldInBank; gold_in_bank is the raw column.
   const bankBalance = toBigIntSafe(user?.goldInBank ?? user?.gold_in_bank);
   useEffect(() => {
@@ -100,7 +103,7 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
           <QuantityInput
             label={t('bank.amount')}
             description={t('bank.depositHint', {
-              percent: DEPOSIT_CAP_PERCENT,
+              percent: capPercent,
             })}
             value={depositAmount}
             onChange={setDepositAmount}
@@ -109,7 +112,7 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
             maxAriaLabel={t('bank.depositMaxAria')}
             error={
               depositAmount > maxDeposit
-                ? t('bank.depositOverCap', { percent: DEPOSIT_CAP_PERCENT })
+                ? t('bank.depositOverCap', { percent: capPercent })
                 : undefined
             }
           />

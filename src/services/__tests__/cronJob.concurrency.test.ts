@@ -208,6 +208,8 @@ beforeEach(() => {
       },
     ),
   };
+  // No hired or borrowed troops in these rows.
+  mockPrisma.forceContract = { findMany: vi.fn(async () => []) };
   mockPrisma.era = {
     findFirst: vi.fn(async () => clone(activeEra)),
   };
@@ -261,7 +263,7 @@ const legacyTurnTick = (rows: Row[]) => {
           user: {
             gold: updatedGold,
             attack_turns: m.attackTurns + 1,
-            stamina: Math.min(m.maxStamina, m.stamina + 1),
+            stamina: m.stamina,
             rank: index + 1,
             offense: m.offense,
             defense: m.defense,
@@ -335,7 +337,7 @@ describe('turn cron', () => {
         ...want.history,
       });
     }
-    // Sanity: the fixture exercises real income, the stamina cap and stats.
+    // Sanity: the fixture exercises real income and stats without cron recovery.
     expect(store.get(3)!.gold).toBeGreaterThan(10_000n);
     expect(store.get(1)!.stamina).toBe(100);
     expect(store.get(3)!.offense).toBeGreaterThan(0);
@@ -384,7 +386,7 @@ describe('turn cron', () => {
     expect(after.gold).toBe(1_000n + income);
     expect(after.gold_in_bank).toBe(9_000n);
     expect(after.attack_turns).toBe(7 - 5 + 1);
-    expect(after.stamina).toBe(40 - 10 + 1);
+    expect(after.stamina).toBe(40 - 10);
     const entry = history.find((h) => h.to_user_id === 3)!;
     expect(entry.stats.currentGold).toBe(1_000n);
     // The pre-change cron would have written the stale 10_000 + income.

@@ -44,7 +44,7 @@
   "loan": {
     "title": "Préstamos del tesoro",
     "terms": "Condiciones: devolver en {{days}} días con un interés fijo del {{interest}} %. Máximo {{cap}} de oro por préstamo y por miembro al día.",
-    "incomeShare": "Mientras haya un préstamo abierto, el 25 % de sus ingresos por turno y del botín de batalla va al tesoro hasta saldarlo. Los prestatarios en mora no pueden usar su banco personal ni pedir nuevos préstamos.",
+    "incomeShare": "Mientras haya un préstamo abierto, el {{percent}} % de sus ingresos por turno y del botín de batalla va al tesoro hasta saldarlo. Los prestatarios en mora no pueden usar su banco personal ni pedir nuevos préstamos.",
     "myLoan": "Su préstamo",
     "progress": "{{percent}} % devuelto",
     "progressText": "Devuelto {{repaid}} de {{owed}} de oro (faltan {{left}})",
@@ -83,7 +83,7 @@
     "title": "Reglas del tesoro",
     "help": "Las condiciones se aplican a los préstamos que se aprueben a partir de ahora. El límite diario fija cuánto puede recibir cada miembro del tesoro al día y el tamaño de un préstamo.",
     "termDays": "Plazo del préstamo (días, 1-14)",
-    "interest": "Interés fijo (0-25 %)",
+    "interest": "Interés fijo (0-{{max}} %)",
     "dailyCap": "Límite diario por miembro",
     "dailyCapHint": "De 100.000 a 50.000.000 de oro",
     "save": "Guardar reglas",

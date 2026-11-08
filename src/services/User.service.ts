@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
+import { recomputeStoredStatsInTx } from '@/utils/adminRecomputeStats';
 import { resolveEraStartSettings } from '@/utils/eraStartSettings';
 import { sanitizeUserForResponse } from '@/utils/sanitizeUser';
 import { idleThresholdDate } from '@/utils/utilities';
@@ -95,12 +96,13 @@ export const updateUserAndBankHistory = async (
   userId: number,
   userGold: bigint,
   updatedData: any[],
-  killingStrength: number,
-  defenseStrength: number,
-  newOffense: number,
-  newDefense: number,
-  newSpying: number,
-  newSentry: number,
+  // Kept for callers; stored strength is recomputed from the saved roster below.
+  _killingStrength: number,
+  _defenseStrength: number,
+  _newOffense: number,
+  _newDefense: number,
+  _newSpying: number,
+  _newSentry: number,
   bankData: any,
   updateType: 'units' | 'items' | 'battle_upgrades',
   newStamina?: number,
@@ -108,10 +110,6 @@ export const updateUserAndBankHistory = async (
 ) => {
   const updateData: any = {
     gold: userGold,
-    offense: newOffense,
-    defense: newDefense,
-    spy: newSpying,
-    sentry: newSentry,
   };
 
   if (newStamina !== undefined) {
@@ -209,6 +207,9 @@ export const updateUserAndBankHistory = async (
       }
     }
   }
+
+  // Same values the turn cron writes, hired and borrowed troops included.
+  await recomputeStoredStatsInTx(prismaInstance, userId);
 
   // We could probably add this to bank.service instead and call it.
   await prismaInstance.bank_history.create({

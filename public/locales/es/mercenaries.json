@@ -2,7 +2,7 @@
   "title": "Mercenarios",
   "hireTitle": "Contrata unidades equipadas para el combate",
   "description": "Compra una ventaja temporal antes de tu próxima campaña. Los mercenarios llegan equipados y nunca consumen ciudadanos ni tu inventario de armada.",
-  "specialization": "Los mercenarios ganan un 25 % de fuerza principal, pierden un 20 % de fuerza fuera de su rol y tienen un 20 % menos de salud que sus contrapartes nativos.",
+  "specialization": "Los mercenarios ganan un 25 % de fuerza principal, pierden un 20 % de fuerza fuera de su rol y tienen un 20 % menos de salud que sus contrapartes nativos. En combate van en primera línea y absorben cerca del doble de bajas que les correspondería dentro de su tipo y nivel de unidad.",
   "unit": "Unidad",
   "choose": "Elige un rol y un nivel",
   "quantity": "Cantidad",

@@ -78,6 +78,10 @@ export const DEFAULT_USER_SCALARS = {
   reanimated_today: 0,
   reanimation_day: null,
   reanimation_cap: 0,
+  racial_perk_tier: 0,
+  sanctuary_recovered_today: 0,
+  sanctuary_day: null,
+  sanctuary_cap: 0,
   wounded_units: [],
   fort_level: 1,
   fort_hitpoints: Fortifications[0].hitpoints,
@@ -88,6 +92,8 @@ export const DEFAULT_USER_SCALARS = {
   defense: 0,
   spy: 0,
   sentry: 0,
+  killing_str: 0,
+  defense_str: 0,
 };
 
 /** Resolve color scheme. */
@@ -111,6 +117,7 @@ export const buildDefaultUserUpdate = (
   // Every era join/reset path builds its update here, so this restarts the
   // new-player protection clock (see utils/battleProtection.ts).
   era_joined_at: new Date(),
+  staminaUpdatedAt: new Date(),
   event_citizens_received: 0,
 });
 

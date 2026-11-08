@@ -45,7 +45,7 @@
     },
     "undead": {
       "name": "Untot",
-      "description": "5% Angriffsbonus. Spionageoperationen verwenden einen um 5% niedrigeren Ausdauerkostenmultiplikator, pro Operation aufgerundet."
+      "description": "+5 % Angriffsbonus."
     },
     "matchups": "Rassenboni prägen Ihre Armee; keine Rasse besiegt automatisch eine andere. Nahkampfangriffe treffen auf Nahkampfverteidigung, Fernkampfangriffe auf Fernkampfverteidigung. Erkunden Sie den Gegner und rüsten Sie Ihre Truppen für den erwarteten Angriff aus."
   },
@@ -103,6 +103,9 @@
     "spy": {
       "title": "Spionageoperationen",
       "text": "Senden Sie Spione, um feindliche Truppenstärken vor einem Angriff auszukundschaften."
+    },
+    "stamina": {
+      "title": "Ausdauer"
     }
   },
   "alliances": {

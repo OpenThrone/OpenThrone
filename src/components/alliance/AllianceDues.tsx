@@ -17,6 +17,7 @@ import { useState } from 'react';
 
 import type { AllianceForcesData } from '@/components/alliance/AllianceForces';
 import { GameCard } from '@/components/game/GameCard';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 
 export interface ForceDueView {
   id: number;
@@ -64,6 +65,7 @@ export function AllianceDues({
   onOrder: (command: Record<string, unknown>) => Promise<void>;
 }) {
   const { t } = useTranslation('allianceForces');
+  const { config } = useRuntimeConfig();
   const [paymentId, setPaymentId] = useState<number | null>(null);
   const [gold, setGold] = useState('0');
   const [quantity, setQuantity] = useState<number | string>(1);
@@ -455,7 +457,7 @@ export function AllianceDues({
                   value={troops}
                   onChange={setTroops}
                   min={1}
-                  max={1000000}
+                  max={config?.forceMaxQuantity ?? 1000000}
                   allowDecimal={false}
                 />
               </SimpleGrid>

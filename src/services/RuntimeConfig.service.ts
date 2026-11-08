@@ -4,8 +4,10 @@ import {
 } from '@/constants/runtimeSettings';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
+import type { StaminaRules } from '@/utils/stamina';
 
 export interface RuntimeConfig {
+  stamina?: StaminaRules;
   inactivityRemindersEnabled?: boolean;
   inactivityAutoAnonymizeEnabled?: boolean;
   emailOutboxEnabled?: boolean;
@@ -19,6 +21,23 @@ export interface RuntimeConfig {
   /** External attempts one IP may make across all link owners per day. */
   /** Days of new-player battle protection after joining an era (1-60). */
   protectionDurationDays: number;
+  mercenaryHireMultiplier?: number;
+  mercenaryDailyPriceRate?: number;
+  pairDailyLimit?: number;
+  protectionLevelLimit?: number;
+  depositCapPercent?: number;
+  friendDailyReceivedCap?: number;
+  maxPendingGoldRequests?: number;
+  forceMaxQuantity?: number;
+  forceMaxTermDays?: number;
+  forceMaxPillageBps?: number;
+  allianceLoanTermMinDays?: number;
+  allianceLoanTermMaxDays?: number;
+  allianceLoanInterestMaxPercent?: number;
+  allianceMemberDailyCapMin?: number;
+  allianceMemberDailyCapMax?: number;
+  allianceLoanIncomeSharePercent?: number;
+  enableSupporter: boolean;
   enableAttacking: boolean;
   attackLevelRange: number;
   enableInfiltrations: boolean;
@@ -114,6 +133,18 @@ export async function getRuntimeConfig(
         resetSchedule.state === 'closing';
       const value: RuntimeConfig = {
         eraResetInProgress,
+        stamina: {
+          penaltyThreshold: values['stamina.penaltyThreshold'] as number,
+          minOffensePercent: values['stamina.minOffensePercent'] as number,
+          enabled: values['stamina.enabled'] as boolean,
+          recoveryEnabled: values['stamina.recoveryEnabled'] as boolean,
+          recoveryAmount: values['stamina.recoveryAmount'] as number,
+          recoveryIntervalMinutes: values[
+            'stamina.recoveryIntervalMinutes'
+          ] as number,
+          baseCost: values['stamina.baseCost'] as number,
+          perTurnCost: values['stamina.perTurnCost'] as number,
+        },
         inactivityRemindersEnabled: values[
           'account.inactivity.remindersEnabled'
         ] as boolean,
@@ -130,6 +161,33 @@ export async function getRuntimeConfig(
           'recruit.externalIpDailyCap'
         ] as number,
         protectionDurationDays: values['era.protectionDurationDays'] as number,
+        mercenaryHireMultiplier: values['mercenary.hireMultiplier'] as number,
+        mercenaryDailyPriceRate: values['mercenary.dailyPriceRate'] as number,
+        pairDailyLimit: values['combat.pairDailyLimit'] as number,
+        protectionLevelLimit: values['era.protectionLevelLimit'] as number,
+        depositCapPercent: values['bank.depositCapPercent'] as number,
+        friendDailyReceivedCap: values['friend.dailyReceivedCap'] as number,
+        maxPendingGoldRequests: values[
+          'alliance.maxPendingGoldRequests'
+        ] as number,
+        forceMaxQuantity: values['force.maxQuantity'] as number,
+        forceMaxTermDays: values['force.maxTermDays'] as number,
+        forceMaxPillageBps: values['force.maxPillageBps'] as number,
+        allianceLoanTermMinDays: values['alliance.loanTermMinDays'] as number,
+        allianceLoanTermMaxDays: values['alliance.loanTermMaxDays'] as number,
+        allianceLoanInterestMaxPercent: values[
+          'alliance.loanInterestMaxPercent'
+        ] as number,
+        allianceMemberDailyCapMin: values[
+          'alliance.memberDailyCapMin'
+        ] as number,
+        allianceMemberDailyCapMax: values[
+          'alliance.memberDailyCapMax'
+        ] as number,
+        allianceLoanIncomeSharePercent: values[
+          'alliance.loanIncomeSharePercent'
+        ] as number,
+        enableSupporter: values.ENABLE_SUPPORTER as boolean,
         enableAttacking: values.ENABLE_ATTACKING as boolean,
         attackLevelRange: values.ATTACK_LEVEL_RANGE as number,
         enableInfiltrations: values.ENABLE_INFILTRATIONS as boolean,

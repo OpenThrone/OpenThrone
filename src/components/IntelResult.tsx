@@ -8,6 +8,7 @@ import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 
 import panelClasses from '@/components/game/Panels.module.css';
+import { UnitTypes } from '@/constants';
 import { useUser } from '@/context/users';
 import type { PlayerItem, PlayerUnit } from '@/types/typings';
 import { toLocale } from '@/utils/numberFormatting';
@@ -26,6 +27,7 @@ const itemColors = {
 
 const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   const { t } = useTranslation('common');
+  const { t: tBattle } = useTranslation('battle');
   const { user } = useUser();
   const locale = user?.locale;
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
@@ -41,7 +43,10 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
     const intel = stats.spyResults.intelligenceGathered;
     return [
       ...(Array.isArray(intel?.units) ? intel.units : []),
-      ...(Array.isArray(intel?.mercenaries) ? intel.mercenaries : []),
+      // Saved reports drop isMercenary, so the list itself marks them.
+      ...(Array.isArray(intel?.mercenaries)
+        ? intel.mercenaries.map((unit) => ({ ...unit, isMercenary: true }))
+        : []),
     ].filter((unit) => unit.quantity > 0);
   }, [stats]);
   const totalPopulation = useMemo(
@@ -61,13 +66,37 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
       SENTRY: 'purple',
     };
 
-    return observedUnits.map((unit) => ({
-      label: `${unit.type}`,
-      quantity: unit.quantity,
-      part: totalPopulation > 0 ? (unit.quantity / totalPopulation) * 100 : 0,
-      color: unitColors[unit.type] || 'black',
-    }));
-  }, [observedUnits, totalPopulation]);
+    // Name each stack and its level so several OFFENSE or DEFENSE rows read apart.
+    const typeOrder = Object.keys(unitColors);
+    return [...observedUnits]
+      .sort(
+        (a, b) =>
+          typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type) ||
+          a.level - b.level,
+      )
+      .map((unit) => {
+        const info = UnitTypes.find(
+          (u) => u.type === unit.type && u.level === unit.level,
+        );
+        const nameKey = info
+          ? info.name
+              .replace(/\s+(\w)/g, (_, c: string) => c.toUpperCase())
+              .replace(/^\w/, (c) => c.toLowerCase())
+          : null;
+        return {
+          label: `${unit.type}`,
+          name: nameKey
+            ? tBattle(`units.${nameKey}`, { defaultValue: info!.name })
+            : null,
+          level: unit.level,
+          mercenary: Boolean(unit.isMercenary),
+          quantity: unit.quantity,
+          part:
+            totalPopulation > 0 ? (unit.quantity / totalPopulation) * 100 : 0,
+          color: unitColors[unit.type] || 'black',
+        };
+      });
+  }, [observedUnits, totalPopulation, tBattle]);
 
   const itemsByCategory = useMemo(() => {
     if (stats.spyResults.intelligenceGathered?.items?.length === 0) {
@@ -163,7 +192,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                   sections={unitSegments.map((s) => ({
                     value: s.part,
                     color: s.color,
-                    tooltip: `${toLocale(s.quantity, locale)} ${t(`intelReport.unitTypes.${s.label}`, { defaultValue: s.label })}`,
+                    tooltip: `${toLocale(s.quantity, locale)} ${s.name ?? t(`intelReport.unitTypes.${s.label}`, { defaultValue: s.label })}`,
                   }))}
                 />
               </Group>
@@ -181,6 +210,16 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                           defaultValue: segment.label,
                         })}
                       </Text>
+                      {segment.name && (
+                        <Text fz="xs" c="var(--ot-body)">
+                          {t('intelReport.unitLevel', {
+                            name: segment.name,
+                            level: segment.level,
+                          })}
+                          {segment.mercenary &&
+                            ` · ${t('intelReport.mercenary')}`}
+                        </Text>
+                      )}
                       <Text fw={700}>{toLocale(segment.quantity, locale)}</Text>
                     </Box>
                   </Grid.Col>

@@ -97,7 +97,8 @@
     "gold": "Gold",
     "power": "Stärke",
     "runFailed": "Die Simulation konnte nicht ausgeführt werden.",
-    "errorTitle": "Simulationsfehler"
+    "errorTitle": "Simulationsfehler",
+    "modelLimits": "Kämpfe und Spionagemissionen nutzen den echten Kampfcode. Spieler melden sich nach dem Aktivitätsmix an und folgen den echten Regeln: Gebäudepreise und -voraussetzungen, Einheitenstufen nach Festung, Gegenstände für jede Einheitenlinie, Kampfverbesserungen, Söldner, Bonuspunkte, Heilung Verwundeter, Königreichsmoral mit Desertion und Kampfschutz. XP-Farmer warten auf Ausdauer, weil Kampf-XP davon abhängt. Optional: ein Spielereignis, der Kerker und Allianzen, deren Mitglieder Spionageberichte teilen und sich nie gegenseitig angreifen. Nicht abgebildet: geliehene Truppen, Kredite und Schatzkammeranfragen von Allianzen. Wer wen angreift, ist eine Heuristik, die nur nutzt, was ein Spieler wissen kann. Die Startspieler erhalten generierte Armeen aus der Mitte der Ära und geben ihr Gold vor Tag 1 aus; später Beitretende starten als neue Konten. Nutze die Ergebnisse, um Einstellungen miteinander zu vergleichen, nicht als Prognose."
   },
   "loadingError": "Diese Daten konnten nicht geladen werden.",
   "statusCode": "Anfrage fehlgeschlagen ({{status}}).",

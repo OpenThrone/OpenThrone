@@ -9,6 +9,7 @@
     "ariaLabel": "Moral del reino {{percent}} de 100: {{state}}"
   },
   "desertions": {
+    "disciplineSaved": "La disciplina evitó {{count}} deserciones en la última actualización diaria de moral.",
     "title": "Registro de deserción",
     "loading": "Leyendo el registro...",
     "error": "No se pudo leer el registro de deserción.",

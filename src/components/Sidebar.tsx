@@ -27,11 +27,14 @@ import { useMediaQuery } from '@mantine/hooks';
 import { useTranslation } from 'next-i18next';
 
 import { ActiveEventsBanner } from '@/components/sidebar/ActiveEventsBanner';
+import { ArmyConditionMeter } from '@/components/sidebar/ArmyConditionMeter';
 import { ProtectionMeter } from '@/components/sidebar/ProtectionMeter';
 import SidebarParchment from '@/components/sidebar/SidebarParchment';
 import { SidebarTimeInfo, StatRow } from '@/components/sidebar/SidebarShared';
 import { useUser } from '@/context/users';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { useSidebarData } from '@/hooks/useSidebarData';
+import { readStaminaBalance } from '@/hooks/useStamina';
 import { getAvatarSrc } from '@/utils/utilities';
 
 import CollapsibleSection from './CollapsibleSection';
@@ -64,6 +67,8 @@ const XpInfoTooltip = ({ label }: { label: string }) => (
 const Sidebar: React.FC = () => {
   const { t } = useTranslation('common');
   const { user, forceUpdate, loading: userLoading } = useUser();
+  const { config } = useRuntimeConfig();
+  const staminaBalance = readStaminaBalance(user);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const {
@@ -252,6 +257,14 @@ const Sidebar: React.FC = () => {
                     value={<span id="turns">{sidebar.turns}</span>}
                     icon={<RpgAwesomeIcon icon="clockwork" fw />}
                   />
+                  {staminaBalance && config?.stamina && (
+                    <ArmyConditionMeter
+                      balance={staminaBalance}
+                      rules={config.stamina}
+                      inkColor="var(--ot-inset)"
+                      variant="stat"
+                    />
+                  )}
                   <ProtectionMeter user={user} />
                   <ActiveEventsBanner />
                   <ActiveEventsBanner />
@@ -458,6 +471,14 @@ const Sidebar: React.FC = () => {
                   value={<span id="turns">{sidebar.turns}</span>}
                   icon={<RpgAwesomeIcon icon="clockwork" fw />}
                 />
+                {staminaBalance && config?.stamina && (
+                  <ArmyConditionMeter
+                    balance={staminaBalance}
+                    rules={config.stamina}
+                    inkColor="var(--ot-inset)"
+                    variant="stat"
+                  />
+                )}
                 <ProtectionMeter user={user} />
                 <ActiveEventsBanner />
                 <Divider my="md" c="gray" variant="dashed" />

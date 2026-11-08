@@ -21,6 +21,10 @@ export const mockPrisma: any = {
 export function installMockPrisma(vi: any) {
   // wire the commonly used methods as vi.fn so tests can set implementations and assertions
   mockPrisma.$transaction = vi.fn();
+  mockPrisma.supporterPlanPrice = {
+    findMany: vi.fn(async () => []),
+    upsert: vi.fn(),
+  };
   mockPrisma.serverSetting = {
     findMany: vi.fn(async () => []),
     findUnique: vi.fn(async () => null),

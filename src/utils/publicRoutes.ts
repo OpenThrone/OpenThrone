@@ -19,6 +19,10 @@ const PUBLIC_PATH_PATTERNS = [
   // The report loader enforces public ACLs for anonymous readers.
   /^\/battle\/results\/\d+$/,
   /^\/about$/,
+  // Plans and pricing; checkout itself requires a session.
+  /^\/supporter$/,
+  /^\/legal\/(terms|refunds)$/,
+  /^\/legal\/privacy$/,
   // Linked from emails; the token on the link is the authorization.
   /^\/email\/unsubscribe$/,
 ] as const;

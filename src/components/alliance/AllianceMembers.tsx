@@ -24,6 +24,7 @@ import {
 import { ConfirmActionModal } from '@/components/alliance/ConfirmActionModal';
 import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
+import { SupporterBadge } from '@/components/player/SupporterBadge';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo, AllianceMember } from '@/services/Alliance.service';
 import type { PlayerRace } from '@/types/typings';
@@ -136,6 +137,14 @@ export const AllianceMembers = ({
             >
               <Text fz="sm" fw={500}>
                 {member.user.display_name}
+                <SupporterBadge
+                  supporter={
+                    member.user as typeof member.user & {
+                      supporterUntil?: string | null;
+                      badgeVisible?: boolean;
+                    }
+                  }
+                />
               </Text>
             </Link>
           </Group>

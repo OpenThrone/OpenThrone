@@ -23,6 +23,7 @@
     "revertError": "Vorheriger Wert konnte nicht wiederhergestellt werden.",
     "databaseValue": "Datenbanküberschreibung",
     "environmentDefault": "Umgebungsstandard",
+    "builtInDefault": "Integrierter Standard",
     "unknownReadOnly": "Unbekannte Einstellung · schreibgeschützt",
     "labels": {
       "ENABLE_ATTACKING": "Angriffe",
@@ -48,9 +49,79 @@
       "ENABLE_MESSAGING": "Spielernachrichten (wenn deaktiviert, können nur Administratoren und Moderatoren Nachrichten senden)",
       "recruit.dailyCap": "Limit für externe Rekrutierungslinks (wie oft der Link dieses Spielers täglich genutzt werden kann; beeinflusst auch die Bevölkerungsschwelle des Neuspielerschutzes)",
       "recruit.internalDailyCap": "Internes Rekrutierungslimit (Rekruten, die ein Spieler täglich erhalten kann)",
-      "recruit.externalIpDailyCap": "Limit externer Links pro IP (wie oft eine IP den Link desselben Spielers täglich nutzen kann)"
+      "recruit.externalIpDailyCap": "Limit externer Links pro IP (wie oft eine IP den Link desselben Spielers täglich nutzen kann)",
+      "combat": {
+        "pairDailyLimit": "Tägliches Angriffslimit pro Gegnerpaar"
+      },
+      "era": {
+        "protectionLevelLimit": "Schutzgrenze nach Stufe"
+      },
+      "bank": {
+        "depositCapPercent": "Einzahlungslimit der Bank (%)"
+      },
+      "friend": {
+        "dailyReceivedCap": "Tägliches Empfangslimit für Freundesüberweisungen"
+      },
+      "alliance": {
+        "maxPendingGoldRequests": "Maximale ausstehende Goldanfragen",
+        "loanTermMinDays": "Mindestlaufzeit für Allianzschatz-Kredite (Tage)",
+        "loanTermMaxDays": "Maximale Laufzeit für Allianzschatz-Kredite (Tage)",
+        "loanInterestMaxPercent": "Maximaler Zinssatz für Allianzschatz-Kredite (%)",
+        "memberDailyCapMin": "Minimales tägliches Mitgliederlimit",
+        "memberDailyCapMax": "Maximales tägliches Mitgliederlimit",
+        "loanIncomeSharePercent": "Einnahmenanteil aus Schatzkammerkrediten (%)"
+      },
+      "mercenary": {
+        "hireMultiplier": "Söldner-Anheuerungsmultiplikator",
+        "dailyPriceRate": "Täglicher Söldner-Preisanteil"
+      },
+      "force": {
+        "maxQuantity": "Maximale Truppenanzahl",
+        "maxTermDays": "Maximale Truppenlaufzeit (Tage)",
+        "maxPillageBps": "Maximale Plünderungsrate der Truppen (Bp)"
+      },
+      "stamina.enabled": "Ausdauersystem aktiviert",
+      "stamina.recoveryEnabled": "Ausdauerregeneration aktiviert",
+      "stamina.recoveryAmount": "Regenerierte Ausdauer pro Intervall",
+      "stamina.recoveryIntervalMinutes": "Regenerationsintervall (Minuten)",
+      "stamina.baseCost": "Grundkosten an Ausdauer pro Aktion",
+      "stamina.perTurnCost": "Zusätzliche Ausdauerkosten pro Runde",
+      "stamina.penaltyThreshold": "Ausdauerschwelle für Strafen",
+      "stamina.minOffensePercent": "Mindestwert der Angriffskraft in Prozent",
+      "ENABLE_SUPPORTER": "Patronatsverkauf",
+      "combat.pairDailyLimit": "Tageslimit für Angriffe auf dasselbe Ziel",
+      "era.protectionLevelLimit": "Stufengrenze des Schutzes",
+      "bank.depositCapPercent": "Einzahlungsgrenze der Bank (%)",
+      "friend.dailyReceivedCap": "Tägliches Empfangslimit für Freundesüberweisungen",
+      "alliance.maxPendingGoldRequests": "Maximal offene Goldanfragen",
+      "mercenary.hireMultiplier": "Anwerbefaktor für Söldner",
+      "mercenary.dailyPriceRate": "Täglicher Preissatz für Söldner",
+      "force.maxQuantity": "Maximale Truppenstärke",
+      "force.maxTermDays": "Maximale Vertragsdauer (Tage)",
+      "force.maxPillageBps": "Maximale Plünderungsrate (Basispunkte)",
+      "alliance.loanTermMinDays": "Mindestlaufzeit von Schatzkammerkrediten (Tage)",
+      "alliance.loanTermMaxDays": "Höchstlaufzeit von Schatzkammerkrediten (Tage)",
+      "alliance.loanInterestMaxPercent": "Höchstzins für Schatzkammerkredite (%)",
+      "alliance.memberDailyCapMin": "Minimales Tageslimit für Mitglieder",
+      "alliance.memberDailyCapMax": "Maximales Tageslimit für Mitglieder",
+      "alliance.loanIncomeSharePercent": "Einkommensanteil für Schatzkammerkredite (%)"
     },
-    "resetBeforeLogin": "Aktuelle Ära vor Freigabe der Anmeldung zurücksetzen"
+    "resetBeforeLogin": "Aktuelle Ära vor Freigabe der Anmeldung zurücksetzen",
+    "groups": {
+      "features": "Funktionsschalter",
+      "access": "Zugang & Wartung",
+      "combat": "Kampf & Schutz",
+      "stamina": "Ausdauer",
+      "recruiting": "Rekrutierung",
+      "economy": "Wirtschaft & Bank",
+      "mercenaries": "Söldner & Streitkräfte",
+      "alliances": "Allianzen",
+      "accounts": "Konten & E-Mail"
+    },
+    "staminaTitle": "Ausdauerregeln",
+    "staminaHelp": "Ausdauer bestimmt Aktionskosten, Erholung und den Angriffsabzug unter dem Schwellenwert. Spionage kostet keine Ausdauer.",
+    "groupCount_one": "{{count}} Einstellung",
+    "groupCount_other": "{{count}} Einstellungen"
   },
   "maintenance": {
     "title": "System: Wartungsmodus",

@@ -328,6 +328,8 @@
 .guideSteps li { padding-left: 12px; margin-top: 24px; }
 .guideSteps li::marker { font-family: MedievalSharp, serif; font-size: 24px; color: var(--ot-accent); }
 .guideDefinitions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 32px; margin-top: 28px; }
+.guideDefinitions > [id] { scroll-margin-top: 24px; }
+.definitionWide { grid-column: 1 / -1; }
 .definitionTitle { font-family: MedievalSharp, serif; font-size: 22px; color: var(--ot-heading); margin-bottom: 8px; }
 .raceEntry { display: flex; gap: 20px; align-items: flex-start; min-width: 0; }
 .raceEntry img { flex-shrink: 0; object-fit: contain; filter: drop-shadow(0 5px 4px rgba(0,0,0,.65)); }

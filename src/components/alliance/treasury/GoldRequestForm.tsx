@@ -8,6 +8,7 @@ import {
   ALLIANCE_NOTE_MAX_LENGTH,
   MAX_PENDING_GOLD_REQUESTS,
 } from '@/constants/allianceTreasury';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
 
@@ -22,6 +23,7 @@ export const GoldRequestForm = ({
   onDone,
 }: GoldRequestFormProps) => {
   const { t } = useTranslation('allianceTreasury');
+  const { config } = useRuntimeConfig();
   const [amount, setAmount] = useState<bigint>(0n);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,7 +52,9 @@ export const GoldRequestForm = ({
     <GameCard title={t('requestTitle')}>
       <NumberInput
         label={t('amount')}
-        description={t('requestLimit', { count: MAX_PENDING_GOLD_REQUESTS })}
+        description={t('requestLimit', {
+          count: config?.maxPendingGoldRequests ?? MAX_PENDING_GOLD_REQUESTS,
+        })}
         min={0}
         value={amount.toString()}
         onChange={(val) => setAmount(toBigIntSafe(val))}

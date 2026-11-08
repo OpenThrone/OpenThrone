@@ -21,6 +21,11 @@ import {
   applyMoraleDelta,
   KINGDOM_MORALE_DEFAULT,
 } from '@/constants/KingdomMorale';
+import {
+  raidersCapacity,
+  raidersCapturePercent,
+  raidersRansomShare,
+} from '@/constants/RacialPerks';
 import prisma from '@/lib/prisma';
 import type { CaptiveEvent, Prisma } from '@/lib/prisma-exports';
 import { logError } from '@/utils/logger';
@@ -185,8 +190,15 @@ export class CaptiveService {
     if (input.captorFortLevel < DUNGEON_FORT_LEVEL) return 0;
     const combatRows = capturableCombatRows(input.killedUnits);
     if (combatRows.length === 0) return 0;
+    const captor = await tx.users.findUniqueOrThrow({
+      where: { id: input.captorId },
+      select: { race: true, racial_perk_tier: true },
+    });
+    const tier = captor.race === 'GOBLIN' ? captor.racial_perk_tier : 0;
     const killedTotal = combatRows.reduce((sum, row) => sum + row.quantity, 0);
-    const wanted = captureQuantity(killedTotal);
+    const wanted = tier
+      ? Math.floor(killedTotal * raidersCapturePercent(tier))
+      : captureQuantity(killedTotal);
     if (wanted <= 0) return 0;
     const held = await tx.captive.aggregate({
       where: { captorId: input.captorId },
@@ -194,7 +206,8 @@ export class CaptiveService {
     });
     const freeSpace = Math.max(
       0,
-      dungeonCapacity(input.captorFortLevel) - Number(held._sum.quantity ?? 0),
+      raidersCapacity(dungeonCapacity(input.captorFortLevel), tier) -
+        Number(held._sum.quantity ?? 0),
     );
     const captured = Math.min(wanted, freeSpace);
     if (captured <= 0) return 0;
@@ -291,7 +304,12 @@ export class CaptiveService {
         }),
         tx.users.findUnique({
           where: { id: row.captorId },
-          select: { currentEraId: true, display_name: true },
+          select: {
+            currentEraId: true,
+            display_name: true,
+            race: true,
+            racial_perk_tier: true,
+          },
         }),
       ]);
       // Cross-era captives are refused: both kingdoms must still play the era
@@ -305,7 +323,10 @@ export class CaptiveService {
 
       const price =
         ransomPricePerUnit(row.unitType, row.unitLevel) * BigInt(row.quantity);
-      const share = captorRansomShare(price);
+      const share =
+        captor?.race === 'GOBLIN'
+          ? raidersRansomShare(price, captor.racial_perk_tier)
+          : captorRansomShare(price);
       const burned = price - share;
       const paid = await tx.users.updateMany({
         where: { id: row.sourceId, gold: { gte: price } },

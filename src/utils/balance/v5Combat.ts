@@ -28,12 +28,24 @@ export const V5_COMBAT_CONSTANTS = {
   ATTACKER_WIN_QUALITY_FLOOR: 0.5,
   /** Assault chip damage is zero at or below this attack/defense ratio (issue #200). */
   CHIP_TAPER_START_RATIO: 0.25,
+  /**
+   * Chip damage on an assault that does not break through scales with the
+   * troops' share of attack, so gear decides breakthroughs without adding
+   * losses to a defense that holds (#202). Ships with the gear-parity stats.
+   */
+  CHIP_FROM_TROOPS_ONLY: true as boolean,
   /** Assault chip damage reaches its full floor at this attack/defense ratio. */
   CHIP_TAPER_FULL_RATIO: 0.75,
   /** No single battle may destroy more than this many days of rebuild throughput. */
   CASUALTY_BUDGET_RECOVERY_DAYS: 5,
   /** All attackers combined may not destroy more than this many days of throughput per day. */
   DAILY_CASUALTY_RECOVERY_DAYS: 7,
+  /**
+   * Within a unit type and level, mercenaries absorb losses at this weight
+   * over their headcount (2 = twice their share), so hired troops take the
+   * front line and a player's own units are spared first.
+   */
+  MERC_LOSS_WEIGHT: 2,
   /** No single unit stack loses more than this share of its size in one battle. */
   PER_STACK_CASUALTY_CAP: 0.4,
   /** Share of battle casualties that are wounded (recoverable) instead of killed. */
@@ -106,7 +118,6 @@ export type RaceIdentityModifiers = {
   citizenRecoveryMultiplier: number;
   fortRepairCostMultiplier: number;
   goldPillageMultiplier: number;
-  moraleLossMultiplier: number;
   breachSpySentryCasualtyMultiplier: number;
   resurrection?: {
     unlockLevel: number;
@@ -127,7 +138,6 @@ const DEFAULT_RACE_IDENTITY: RaceIdentityModifiers = {
   citizenRecoveryMultiplier: 1,
   fortRepairCostMultiplier: 1,
   goldPillageMultiplier: 1,
-  moraleLossMultiplier: 1,
   breachSpySentryCasualtyMultiplier: 1,
 };
 
@@ -156,7 +166,6 @@ const RACE_IDENTITY: Record<PlayerRace, RaceIdentityModifiers> = {
   },
   UNDEAD: {
     ...DEFAULT_RACE_IDENTITY,
-    moraleLossMultiplier: 0.95,
     resurrection: {
       unlockLevel: 5,
       attackRate: 0.1,

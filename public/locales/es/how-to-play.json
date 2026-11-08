@@ -45,7 +45,7 @@
     },
     "undead": {
       "name": "No Muerto",
-      "description": "Bonificación de ataque del 5%. Las operaciones de espionaje usan un multiplicador de coste de resistencia un 5% menor, redondeado hacia arriba por operación."
+      "description": "+5 % de bonificación de ataque."
     },
     "matchups": "Las bonificaciones raciales influyen en tu ejército; ninguna raza vence automáticamente a otra. El ataque cuerpo a cuerpo se enfrenta a la defensa cuerpo a cuerpo y el ataque a distancia a la defensa a distancia. Explora al enemigo y equipa tus tropas para el ataque que esperas."
   },
@@ -103,6 +103,9 @@
     "spy": {
       "title": "Operaciones de Espionaje",
       "text": "Envía espías para explorar las tropas enemigas antes de comprometerte en un ataque."
+    },
+    "stamina": {
+      "title": "Resistencia"
     }
   },
   "alliances": {

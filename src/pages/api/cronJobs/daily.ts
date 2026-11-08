@@ -3,6 +3,7 @@ import type { NextApiResponse } from 'next';
 
 import { withApiGuard } from '@/middleware/apiGuard';
 import { CronJobService } from '@/services';
+import { runSupporterDaily } from '@/services/supporter/SupporterDaily.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
 
@@ -39,12 +40,18 @@ const dailyCron = async (req: AuthenticatedRequest, res: NextApiResponse) => {
 
   try {
     const result = await CronJobService.processDailyUpdates();
+    // Supporter housekeeping is independent of the game's daily pass.
+    const supporter = await runSupporterDaily().catch((error) => {
+      logError('Supporter daily housekeeping failed:', error);
+      return null;
+    });
 
     if (result.success) {
       return res.status(200).json({
         message: result.message,
         processed: result.processed,
         failed: result.failed,
+        supporter,
       });
     }
     return res.status(500).json({ message: 'Daily cron job failed.' });

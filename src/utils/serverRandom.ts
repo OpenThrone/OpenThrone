@@ -10,7 +10,9 @@ import {
 import type { RandomFn } from '@/utils/random';
 
 // v7 (issue #200): assault chip taper and battle-wide casualty win quality.
-const COMBAT_FORMULA_VERSION = 'combat-v7';
+// v8: battle XP per turn tapers less above level 10.
+// v9 (#202): gear parity, troop-only chip, mercenaries take the front line.
+const COMBAT_FORMULA_VERSION = 'combat-v9';
 const SERVER_RANDOM_ALGORITHM = 'hmac-sha256-counter-v1';
 
 type CombatDomain = 'attack' | 'spy';
@@ -90,6 +92,17 @@ export function createCombatRandom(domain: CombatDomain): {
       encryptedSeed,
     },
   };
+}
+
+/**
+ * True for a replay sealed under an earlier combat formula (combat-vN below
+ * the current one). Those battles cannot be replayed exactly, so callers
+ * answer UNAVAILABLE; any other mismatch is still rejected.
+ */
+export function isRetiredCombatReplayVersion(version: unknown): boolean {
+  const current = Number(COMBAT_FORMULA_VERSION.slice('combat-v'.length));
+  const match = typeof version === 'string' && /^combat-v(\d+)$/.exec(version);
+  return Boolean(match) && Number(match && match[1]) < current;
 }
 
 function validateReplayMetadata(replay: CombatRandomReplay): void {

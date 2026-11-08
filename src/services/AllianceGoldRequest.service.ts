@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import {
   ALLIANCE_NOTE_MAX_LENGTH,
-  MAX_PENDING_GOLD_REQUESTS,
 } from '@/constants/allianceTreasury';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
@@ -13,6 +12,7 @@ import {
   lockAllianceThenUsers,
   transferInTx,
 } from '@/services/AllianceBank.service';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { logError } from '@/utils/logger';
 
 const AllianceIdSchema = z.number().int().positive();
@@ -110,6 +110,7 @@ export class AllianceGoldRequestService {
     reason?: string;
   }) {
     const v = CreateSchema.parse(data);
+    const maxPending = (await getRuntimeConfig()).maxPendingGoldRequests ?? 3;
     try {
       return await prisma.$transaction(async (tx) => {
         // Alliance lock serializes the pending-count check for this alliance.
@@ -132,9 +133,9 @@ export class AllianceGoldRequestService {
             status: AllianceGoldRequestStatus.PENDING,
           },
         });
-        if (pending >= MAX_PENDING_GOLD_REQUESTS) {
+        if (pending >= maxPending) {
           throw new Error(
-            `You can have at most ${MAX_PENDING_GOLD_REQUESTS} pending gold requests`,
+            `You can have at most ${maxPending} pending gold requests`,
           );
         }
         return await tx.alliance_gold_requests.create({

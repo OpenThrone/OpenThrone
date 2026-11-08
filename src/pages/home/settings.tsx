@@ -38,6 +38,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
+import { DiscordLinkCard } from '@/components/supporter/DiscordLinkCard';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
@@ -976,6 +977,7 @@ const Settings = () => {
           autosize
         />
       </ConfirmationModal>
+      <DiscordLinkCard />
     </MainArea>
   );
 };

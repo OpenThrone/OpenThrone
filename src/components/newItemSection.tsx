@@ -68,6 +68,7 @@ const NewItemSection = React.memo<NewItemSectionProps>(
       .filter((level) => (unitTiers[level] ?? 0) > 0)
       .sort((a, b) => a - b);
     const { units } = readiness;
+    const role = items[0].usage.toLowerCase();
 
     const readinessAction = (
       <Group gap="sm" wrap="nowrap">
@@ -75,6 +76,8 @@ const NewItemSection = React.memo<NewItemSectionProps>(
           <>
             <Text size="sm">
               {t('armory.slotReadiness', {
+                role: t(`armory.unitRoles.${role}`, { count: units }),
+                count: units,
                 covered: toLocale(readiness.covered, user?.locale),
                 units: toLocale(units, user?.locale),
               })}
@@ -87,6 +90,7 @@ const NewItemSection = React.memo<NewItemSectionProps>(
               {readiness.complete
                 ? t('armory.slotComplete')
                 : t('armory.slotShortBy', {
+                    count: readiness.missing,
                     missing: toLocale(readiness.missing, user?.locale),
                   })}
             </Text>
@@ -211,6 +215,10 @@ const NewItemSection = React.memo<NewItemSectionProps>(
               {unitLevels.map((level) => (
                 <Text key={level} size="sm" c="dimmed">
                   {t('armory.tierCoverage', {
+                    role: t(`armory.unitRoles.${role}`, {
+                      count: unitTiers[level] ?? 0,
+                    }),
+                    count: unitTiers[level] ?? 0,
                     tier: level,
                     covered: toLocale(
                       readiness.coveredByTier[level] ?? 0,

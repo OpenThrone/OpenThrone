@@ -4,6 +4,64 @@ OpenThrone follows [Semantic Versioning](https://semver.org/) on the 0.x line:
 each production release raises the minor version and hotfixes raise the patch
 version. Alpha builds carry the next version with an `-alpha` suffix.
 
+## v0.10.0 (2026-10-29)
+
+### Added
+- **Racial upgrades:** a fourth upgrade track on Structures > Upgrades, named
+  after your race's perk and bought in order from fort level 5. Elves gain
+  Sanctuary, which saves some fallen defenders. Humans gain Discipline, which
+  cuts desertion and raises the morale floor. Goblins gain Raiders, for
+  stronger captures, dungeons and ransoms. Undead gain Necropolis, which
+  raises more of their dead. Everyone else can buy Hallowed Ground, which
+  stops Undead attackers raising their own dead. Battle reports show what
+  each perk did.
+- **Supporter memberships:** monthly and gift plans with patron seals,
+  alliance sponsorship and auto-recruit, paid through Stripe with receipts,
+  refunds and a billing portal.
+- **Discord bot:** link your account to look up profiles, stats,
+  leaderboards, forts and wars from Discord, get a daily digest, and (as a
+  supporter) get instant alerts for attacks, caught spies, wars and full
+  stamina.
+- **Privacy policy:** a published privacy policy, linked from the footer and
+  sign-up. Sign-up asks you to confirm you are 16 or older. Deleting your
+  account removes your avatar and the text of messages you wrote, and the
+  display fonts are now served by OpenThrone itself.
+- **Spy from battle reports:** a Spy button next to Attack Again and Attack
+  Back.
+
+### Changed
+- **Battle XP:** XP per turn drops less at higher levels (360 / 300 / 260 /
+  230 / 200 across the level bands, was 360 / 240 / 150 / 100 / 75), so
+  level 100 is within reach.
+- **Gear parity:** level 1-3 offense armor pieces now give the same split as
+  the matching defense pieces. Set totals and weapons are unchanged.
+- **Failed assaults:** on an attack that does not break through, damage
+  scales with how much of your attack comes from troops rather than gear.
+- **Mercenaries fight on the front line:** among units of the same type and
+  level, mercenaries take twice their share of losses, split fairly between
+  contracts.
+- **Auto-recruit:** moves to a new random kingdom after each recruit and
+  asks for the captcha once per session.
+- **Supporter prices:** administrators can set prices for new purchases;
+  existing monthly subscriptions keep their agreed price. Supporter
+  administration now uses a compact overview ledger and opens player editors
+  in place.
+- **Patronage:** membership status and perks share one panel, with a plan chooser
+  for yourself or a gift and tabbed payment records. Signed-out payment returns
+  preserve confirmation details and offer a sign-in link to resume. While
+  sales are off, the Patronage menu entry only shows to players whose
+  subscription still renews.
+- **Army stamina:** stamina no longer blocks attacks. Below 50 stamina your
+  army fights weaker, down to 80% offense at zero, and the battle report says
+  so. Spying costs no stamina, and offensive upgrades cut the stamina an
+  attack drains by up to half. The sidebar shows your army's stamina and
+  when it recovers.
+- **Stamina explained:** How to Play and the FAQ now say what stamina is for,
+  what spends it, how fast it refills and what low stamina does, using the
+  server's current numbers. The sidebar Stamina row links there, battle
+  reports say "Low stamina", and the Discord full-stamina alert no longer
+  mentions turns.
+
 ## v0.9.0 (2026-10-27)
 
 ### Added

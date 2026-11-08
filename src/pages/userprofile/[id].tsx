@@ -562,6 +562,13 @@ const Index = ({
     >
       <ProfileHero
         name={profile?.displayName}
+        supporterUntil={
+          (users as unknown as { supporterUntil?: string | null })
+            .supporterUntil
+        }
+        badgeVisible={
+          (users as unknown as { badgeVisible?: boolean }).badgeVisible
+        }
         race={profile?.race}
         playerClass={profile?.class}
         avatar={profile?.avatar}
@@ -1032,6 +1039,7 @@ export const getServerSideProps = async ({ query, locale, req, res }) => {
     password_hash: _passwordHash,
     email: _email,
     userEras: _userEras,
+    supporter_until: supporterUntilDate,
     ...userWithoutPassword
   } = user;
 
@@ -1105,6 +1113,8 @@ export const getServerSideProps = async ({ query, locale, req, res }) => {
     created_at: createdAtStr,
     updated_at: updatedAtStr,
     defense_pressure_date: defensePressureDateStr,
+    // Already null when the player hid the badge (Entitlement.service sync).
+    supporterUntil: supporterUntilDate?.toISOString() ?? null,
     status,
     currentEra: serializeDates(user.currentEra),
     latestUserEra: serializeDates(
@@ -1114,6 +1124,7 @@ export const getServerSideProps = async ({ query, locale, req, res }) => {
 
   const translations = await serverSideTranslations(locale ?? 'en', [
     'common',
+    'supporter',
     'navigation',
     'allianceLists',
     'alliances',

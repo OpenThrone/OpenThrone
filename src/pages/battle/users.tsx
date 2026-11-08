@@ -54,6 +54,7 @@ import { GameCard } from '@/components/game/GameCard';
 import panelClasses from '@/components/game/Panels.module.css';
 import { StyledTable } from '@/components/game/StyledTable';
 import MainArea from '@/components/MainArea';
+import { SupporterBadge } from '@/components/player/SupporterBadge';
 import { useUser } from '@/context/users';
 import { usePlayerIdentity } from '@/hooks/usePlayerIdentity';
 import { useRecruitmentStatus } from '@/hooks/useRecruitmentStatus';
@@ -1085,6 +1086,14 @@ const Users = ({
                               {player.displayName}
                             </Link>
                           </Tooltip>
+                          <SupporterBadge
+                            supporter={
+                              nplayer as typeof nplayer & {
+                                supporterUntil?: string | null;
+                                badgeVisible?: boolean;
+                              }
+                            }
+                          />
                           {nplayer.isProtected && (
                             <Tooltip label={t('users.protectedHint')} withArrow>
                               <Badge
@@ -1257,6 +1266,7 @@ export const getServerSideProps = async (_context: any) => {
         created_at: true,
         protection_forfeited_era_id: true,
         event_citizens_received: true,
+        supporter_until: true,
         statusHistories: {
           orderBy: { created_at: 'desc' },
           take: 1, // Take only most recent status
@@ -1303,6 +1313,7 @@ export const getServerSideProps = async (_context: any) => {
           experience: user.experience,
           population,
           isOnline,
+          supporterUntil: user.supporter_until?.toISOString() ?? null,
           isProtected: getProtectionStatus(
             {
               experience: user.experience,

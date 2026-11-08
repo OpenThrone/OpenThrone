@@ -9,6 +9,7 @@ import {
   MEMBER_DAILY_CAP_DEFAULT,
 } from '@/constants/allianceTreasury';
 import { useUser } from '@/context/users';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
@@ -22,6 +23,7 @@ interface TransferFormProps {
 /** Transfer treasury gold to a member (leader or manage_bank). */
 export const TransferForm = ({ alliance, onDone }: TransferFormProps) => {
   const { t } = useTranslation('allianceTreasury');
+  const { config } = useRuntimeConfig();
   const { forceUpdate } = useUser();
   const [targetId, setTargetId] = useState<string | null>(null);
   const [amount, setAmount] = useState<bigint>(0n);
@@ -74,8 +76,13 @@ export const TransferForm = ({ alliance, onDone }: TransferFormProps) => {
         label={t('amount')}
         description={t('transferDailyCap', {
           cap: toLocale(
-            (alliance as unknown as { member_daily_cap?: string })
-              .member_daily_cap ?? MEMBER_DAILY_CAP_DEFAULT,
+            Math.min(
+              Number(
+                (alliance as unknown as { member_daily_cap?: string })
+                  .member_daily_cap ?? MEMBER_DAILY_CAP_DEFAULT,
+              ),
+              config?.allianceMemberDailyCapMax ?? 50000000,
+            ),
           ),
         })}
         min={0}

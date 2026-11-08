@@ -13,6 +13,7 @@
     "levels": "Niveles",
     "profile": "Perfil",
     "settings": "Configuración",
+    "patronage": "Mecenazgo",
     "learn": "Aprender",
     "administration": "Administración",
     "balanceSim": "Simulador de balance",
@@ -38,14 +39,18 @@
     "staffUsers": "Gestión de usuarios",
     "staffInactiveUsers": "Usuarios inactivos",
     "staffAttackLedger": "Registro de ataques",
-    "staffBots": "Gestión de bots"
+    "staffBots": "Gestión de bots",
+    "staffForces": "Mercenarios y tropas",
+    "staffLedgers": "Registros",
+    "staffSupporters": "Supporters"
   },
   "battle": {
     "attack": "Atacar",
     "training": "Entrenamiento",
     "upgrades": "Mejoras",
     "warHistory": "Historial de guerra",
-    "battleSimulator": "Simulador de batalla"
+    "battleSimulator": "Simulador de batalla",
+    "mercenaries": "Mercenarios"
   },
   "social": {
     "friends": "Amigos",
@@ -76,7 +81,8 @@
     "stats": "Clasificaciones",
     "discord": "Discord",
     "github": "GitHub",
-    "faq": "Preguntas"
+    "faq": "Preguntas",
+    "privacy": "Política de privacidad"
   },
   "actions": {
     "signIn": "Iniciar sesión",
@@ -107,6 +113,7 @@
     "moderation": "Moderación",
     "overview": "Resumen",
     "system": "Sistema",
-    "users": "Usuarios"
+    "users": "Usuarios",
+    "revenue": "Revenue"
   }
 }

@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import AssassinateResult from '@/components/AssassinateResult';
 import AttackResults from '@/components/attackResult';
+import { ArmyFatigueNotice } from '@/components/battle/ArmyFatigueNotice';
 import { BattleGameEventContext } from '@/components/battle/BattleGameEventContext';
 import { GarrisonFatigueNotice } from '@/components/battle/GarrisonFatigueNotice';
 import { ReportHeader } from '@/components/battle/ReportHeader';
@@ -180,7 +181,9 @@ const INTEL_REPORT: RedactedAttackLog = {
           { type: 'CITIZEN', level: 1, quantity: 640 },
           { type: 'WORKER', level: 1, quantity: 1850 },
           { type: 'OFFENSE', level: 1, quantity: 1320 },
+          { type: 'OFFENSE', level: 2, quantity: 400 },
           { type: 'DEFENSE', level: 1, quantity: 1480 },
+          { type: 'DEFENSE', level: 3, quantity: 180 },
           { type: 'SPY', level: 1, quantity: 210 },
           { type: 'SENTRY', level: 1, quantity: 260 },
         ],
@@ -468,6 +471,9 @@ export default function BattleReportsSection() {
         </OrnatePanel>
       </Specimen>
 
+      <Specimen name="Army fatigue line" usedOn={[REPORT_PAGE]}>
+        <ArmyFatigueNotice percent={10} />
+      </Specimen>
       <Specimen
         name="Garrison fatigue line"
         usedOn={[REPORT_PAGE]}
@@ -519,6 +525,27 @@ export default function BattleReportsSection() {
       >
         <ReportFrame>
           <AttackResults battle={ATTACK_DEFEAT} viewerID={ATTACKER_ID} />
+        </ReportFrame>
+      </Specimen>
+
+      <Specimen
+        framed={false}
+        name="AttackResults: racial defence"
+        usedOn={[REPORT_PAGE]}
+        wide
+      >
+        <ReportFrame>
+          <AttackResults
+            battle={{
+              ...ATTACK_DEFEAT,
+              stats: {
+                ...ATTACK_DEFEAT.stats,
+                sanctuary_recovered: 12,
+                hallowed_blocked: 8,
+              },
+            }}
+            viewerID={DEFENDER_ID}
+          />
         </ReportFrame>
       </Specimen>
 

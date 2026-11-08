@@ -1,0 +1,111 @@
+{
+  "metaTitle": "Política de privacidad - OpenThrone",
+  "metaDescription": "Qué datos personales recoge OpenThrone, para qué, quién los recibe, cuánto tiempo los conservamos y tus derechos.",
+  "title": "Política de privacidad",
+  "intro": "Esta política explica qué datos personales recoge OpenThrone, para qué los usamos, quién los recibe, cuánto tiempo los conservamos y qué opciones y derechos tienes.",
+  "updated": "Última actualización: {{date}}",
+  "contactLink": "Escribe a privacy@openthrone.dev",
+  "sections": {
+    "who": {
+      "title": "Quiénes somos",
+      "body": [
+        "OpenThrone (openthrone.dev) está gestionado por AIOXperts IT Solutions LLC, una sociedad de responsabilidad limitada de Delaware, en Estados Unidos. Decidimos cómo se usan tus datos (somos el responsable del tratamiento).",
+        "Para cualquier pregunta o solicitud sobre privacidad, escribe a privacy@openthrone.dev."
+      ]
+    },
+    "collect": {
+      "title": "Qué recogemos",
+      "body": [
+        "Datos de la cuenta: tu correo electrónico, tu nombre visible, tu contraseña (guardada solo como hash irreversible) y, si activas el inicio de sesión en dos pasos, tu secreto de autenticación (guardado cifrado).",
+        "Datos del juego y del perfil: tu reino, raza y clase, ajustes, biografía e imagen de avatar opcionales, batallas, historial de banco y reclutamiento, actividad de alianza e informes que envías.",
+        "Mensajes: los mensajes privados y de chat que envías.",
+        "Datos técnicos: tu dirección IP y los datos de tu navegador cuando usas el sitio. Los usamos para la seguridad, para evitar abusos y trampas, y para limitar peticiones. Los registros de inicio de sesión solo guardan huellas irreversibles de tu IP y navegador, no los valores en sí.",
+        "Pagos, si apoyas OpenThrone: Stripe gestiona el pago, y el número completo de tu tarjeta y su código de seguridad nunca nos llegan. Guardamos los identificadores de Stripe, importes, moneda e impuestos, tu país y estado de facturación, el estado y las fechas de los pagos, las condiciones que aceptaste al pagar y para qué reino o alianza era cada pago.",
+        "Discord, si lo vinculas: tu ID y nombre de usuario de Discord, tus ajustes de alertas y los mensajes de alerta que ponemos en cola para ti.",
+        "Correo: qué correos te enviamos y tus preferencias de correo."
+      ]
+    },
+    "use": {
+      "title": "Cómo y por qué los usamos",
+      "body": [
+        "Para gestionar tu cuenta y el juego, incluido mostrar tu reino a otros jugadores y entregar mensajes. Es necesario para prestar el servicio en el que te registraste.",
+        "Para que el juego sea justo y seguro: detectar trampas y cuentas múltiples, evitar abusos, moderar el chat y los informes, y proteger las cuentas. Lo hacemos porque tenemos un interés legítimo en un juego justo y seguro.",
+        "Para enviar correos: correos de cuenta y seguridad (necesarios para el servicio); noticias y anuncios (puedes darte de baja cuando quieras); y alertas de batalla, solo si las activas.",
+        "Para procesar pagos y conservar los registros que exige la ley fiscal y contable.",
+        "No vendemos tus datos personales ni los compartimos para publicidad dirigida basada en tu actividad en otros sitios, y no creamos perfiles publicitarios. No usamos scripts de analítica ni de seguimiento de terceros."
+      ]
+    },
+    "cookies": {
+      "title": "Cookies y almacenamiento local",
+      "body": [
+        "Usamos una cookie esencial para mantener tu sesión iniciada, además de cookies de corta duración que protegen el inicio de sesión. No usamos cookies de analítica ni de publicidad.",
+        "El almacenamiento local de tu navegador guarda preferencias de visualización, como tu esquema de colores y los ajustes del simulador de batalla. Se queda en tu dispositivo.",
+        "La verificación de seguridad de Cloudflare (Turnstile), que aparece en el registro, el inicio de sesión y algunos formularios, puede poner sus propias cookies para distinguir personas de bots. Nuestras fuentes se sirven desde nuestro propio sitio."
+      ]
+    },
+    "share": {
+      "title": "Quién recibe tus datos",
+      "body": [
+        "Otros jugadores ven lo que el juego muestra públicamente: tu nombre visible, perfil, datos del reino, clasificaciones, alianza e informes de batalla que tú u otros compartáis.",
+        "Nuestros moderadores y administradores pueden ver los datos de la cuenta y del juego, y leer mensajes y chat cuando la moderación lo requiere. Su acceso queda registrado.",
+        "Proveedores que tratan datos por encargo nuestro: Cloudflare (protección de red, la verificación Turnstile y almacenamiento de imágenes), Supabase (alojamiento de la base de datos en Estados Unidos), Stripe (pagos, si nos apoyas) y Discord (alertas y respuestas del bot, solo si vinculas tu cuenta). Enviamos el correo desde nuestro propio servidor.",
+        "Podemos revelar datos cuando la ley lo exija o para proteger a los jugadores, el juego o nuestros derechos."
+      ]
+    },
+    "transfers": {
+      "title": "Dónde se guardan tus datos",
+      "body": [
+        "Nosotros y nuestros proveedores estamos en Estados Unidos o guardamos allí los datos. Si juegas desde otro país, tus datos se transfieren a Estados Unidos porque es necesario para prestarte el juego en el que te registraste. Para las transferencias a nuestros proveedores nos basamos, cuando corresponde, en el Marco de Privacidad de Datos UE-EE. UU. (y sus extensiones para el Reino Unido y Suiza) o en cláusulas contractuales tipo."
+      ]
+    },
+    "retention": {
+      "title": "Cuánto tiempo los conservamos",
+      "body": [
+        "Datos de la cuenta y del juego: mientras exista tu cuenta.",
+        "Registros de batallas, banco y reclutamiento: 20 días.",
+        "Huellas de inicio de sesión: 30 días.",
+        "Direcciones IP en nuestro registro de auditoría de administración: 90 días. El registro de la acción en sí se conserva por seguridad.",
+        "Mensajes de alerta de Discord: 14 días después de enviarse.",
+        "Registros de pago: el tiempo que exija la ley fiscal y contable.",
+        "Registros de moderación (informes, notas, sanciones): el tiempo necesario para hacer cumplir las normas y atender apelaciones.",
+        "Huellas antiabuso tras eliminar una cuenta: una huella irreversible del correo durante 30 días (o hasta que termine una expulsión) y del nombre visible de forma permanente, para que no se puedan eludir expulsiones ni reutilizar nombres.",
+        "Nuestros servidores también guardan registros técnicos, que pueden incluir direcciones IP, durante un periodo limitado por seguridad y para resolver problemas.",
+        "Cuentas inactivas: si no inicias sesión en 12 meses, podemos escribirte y eliminar la cuenta 6 meses después salvo que inicies sesión."
+      ]
+    },
+    "delete": {
+      "title": "Eliminar tu cuenta",
+      "body": [
+        "Puedes eliminar tu cuenta desde Ajustes. Entonces borramos tu correo, contraseña, secreto de autenticación, biografía, archivos de avatar y vínculo con Discord, sustituimos tu nombre visible por un nombre aleatorio y borramos el texto de los mensajes privados y de chat que escribiste.",
+        "Conservamos: el historial de juego con el nombre aleatorio, para que los registros de batalla de otros jugadores sigan intactos; los registros de pago que exige la ley; y los registros de moderación.",
+        "Para evitar que se eludan expulsiones o se reutilicen nombres, conservamos una huella irreversible de tu correo durante 30 días (o hasta que termine una expulsión) y de tu nombre visible de forma permanente. Estas huellas no se pueden convertir de nuevo en los valores originales."
+      ]
+    },
+    "rights": {
+      "title": "Tus derechos",
+      "body": [
+        "Puedes pedir acceder, corregir, eliminar o recibir una copia portable de tus datos personales, y oponerte o pedirnos que limitemos su uso. Cuando nos basamos en tu consentimiento, como en los correos de alertas de batalla, puedes retirarlo en cualquier momento; esto no afecta a lo que hicimos antes. En Ajustes hay un botón «Descargar mis datos» para una copia rápida; escribe a privacy@openthrone.dev para una copia completa o cualquier otra solicitud.",
+        "Respondemos en un plazo de 30 días y puede que necesitemos confirmar que la solicitud viene del titular de la cuenta. No te trataremos de forma distinta por ejercer estos derechos. Si rechazamos una solicitud, puedes recurrir respondiendo a nuestra respuesta o escribiendo a privacy@openthrone.dev con «Recurso de privacidad» en el asunto; respondemos a los recursos en un plazo de 45 días.",
+        "Si estás en el EEE, el Reino Unido o Suiza, también puedes reclamar ante tu autoridad de protección de datos. Los residentes de estados de EE. UU. con leyes de privacidad tienen los derechos que esas leyes les dan, como saber, corregir, eliminar y recurrir, y los respetamos mediante el mismo proceso."
+      ]
+    },
+    "children": {
+      "title": "Edad mínima",
+      "body": [
+        "OpenThrone es para personas de 16 años o más. No recogemos a sabiendas datos de nadie más joven. Si crees que alguien menor de 16 años tiene una cuenta, escribe a privacy@openthrone.dev y la eliminaremos."
+      ]
+    },
+    "security": {
+      "title": "Seguridad",
+      "body": [
+        "Protegemos los datos con conexiones cifradas (HTTPS), contraseñas con hash, secretos de autenticación cifrados, controles de acceso para el equipo y registros de auditoría de sus acciones. Ningún sistema es perfectamente seguro; si una brecha afecta a tus datos, te avisaremos como exige la ley."
+      ]
+    },
+    "changes": {
+      "title": "Cambios en esta política",
+      "body": [
+        "Actualizamos esta política cuando cambia lo que hacemos. La fecha de arriba indica la última versión. Anunciaremos los cambios importantes en el juego o por correo antes de que entren en vigor."
+      ]
+    }
+  }
+}

@@ -1,25 +1,26 @@
 import { MantineProvider } from '@mantine/core';
-import { describe, expect, it, mock } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
+import { createInstance } from 'i18next';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { computeFortRepairMax, FortHealthStatSlot } from './FortHealthStatSlot';
 
-mock.module('next-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: any) => {
-      if (typeof options === 'string') return options;
-      if (options?.defaultValue) return options.defaultValue;
-      return key;
-    },
-  }),
-}));
+// A module mock of next-i18next leaks into every later test file; give this
+// render its own empty i18next instance instead (missing keys use defaults).
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { I18nextProvider } = require('react-i18next');
+
+const i18n = createInstance();
+i18n.init({ lng: 'en', initImmediate: false, resources: {} });
 
 const renderSlot = (user: any) => {
   return renderToStaticMarkup(
-    <MantineProvider>
-      <FortHealthStatSlot user={user} />
-    </MantineProvider>,
+    <I18nextProvider i18n={i18n}>
+      <MantineProvider>
+        <FortHealthStatSlot user={user} />
+      </MantineProvider>
+    </I18nextProvider>,
   );
 };
 

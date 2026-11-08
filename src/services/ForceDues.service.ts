@@ -4,6 +4,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import type { ForceObligation, Prisma } from '@/lib/prisma-exports';
 import { lockAllianceThenUsers } from '@/services/AllianceBank.service';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { TemporaryForceLedgerService as Ledger } from '@/services/TemporaryForceLedger.service';
 import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
 import {
@@ -20,7 +21,8 @@ const money = z
 export const duesTermsSchema = z
   .object({
     amountGold: money.default('0'),
-    quantity: z.number().int().min(0).max(1000000).default(0),
+    // Static ceiling only; the runtime force.maxQuantity is enforced per call.
+    quantity: z.number().int().min(0).max(10000000).default(0),
     type: ForceRoleSchema.nullable().default(null),
     level: z.number().int().min(1).max(3).nullable().default(null),
   })
@@ -65,7 +67,7 @@ export const duesPaymentSchema = z
   .object({
     obligationId: positiveId,
     amountGold: money.default('0'),
-    quantity: z.number().int().min(0).max(1000000).default(0),
+    quantity: z.number().int().min(0).max(10000000).default(0),
     unitId: positiveId.optional(),
     equipment: z.unknown().optional(),
     operationId: z.string().uuid(),
@@ -96,6 +98,15 @@ async function leader(
     throw new Error('Alliance leadership is required');
 }
 
+async function assertQuantityWithinLimit(
+  tx: Prisma.TransactionClient,
+  quantity: number,
+) {
+  const limits = await getRuntimeConfig(tx);
+  if (quantity > (limits.forceMaxQuantity ?? 1000000))
+    throw new Error('Quantity exceeds the current force limit');
+}
+
 export async function createForceLevy(
   allianceId: number,
   actorId: number,
@@ -108,6 +119,7 @@ export async function createForceLevy(
     await lockEraLifecycleShared(tx);
     await lockAllianceThenUsers(tx, allianceId, [actorId]);
     await leader(tx, allianceId, actorId);
+    await assertQuantityWithinLimit(tx, command.terms.quantity);
     const prior = await tx.forceEvent.findUnique({
       where: { operationKey: command.operationId },
     });
@@ -168,6 +180,7 @@ export async function saveForceDuesRule(
     await lockEraLifecycleShared(tx);
     await lockAllianceThenUsers(tx, allianceId, [actorId]);
     await leader(tx, allianceId, actorId);
+    await assertQuantityWithinLimit(tx, command.terms.quantity);
     if (
       !(await tx.alliance_roles.findFirst({
         where: { id: command.roleId, alliance_id: allianceId },

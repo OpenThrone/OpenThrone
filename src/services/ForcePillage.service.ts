@@ -1,4 +1,5 @@
 import type { Prisma } from '@/lib/prisma-exports';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { ForcePolicySchema } from '@/utils/temporaryForces';
 
 /** Caller holds the attacker lock. Credits are parked without acquiring alliance locks. */
@@ -63,8 +64,9 @@ export async function divertForcePillageInTx(
   }
   const sum = rates.reduce((sum, entry) => sum + entry.rate, 0);
   if (!sum) return 0n;
-  const denominator = BigInt(Math.max(2500, sum));
-  const ceiling = (gross * BigInt(Math.min(sum, 2500))) / 10000n;
+  const maxRate = (await getRuntimeConfig(tx)).forceMaxPillageBps ?? 2500;
+  const denominator = BigInt(Math.max(maxRate, sum));
+  const ceiling = (gross * BigInt(Math.min(sum, maxRate))) / 10000n;
   const shares = rates.map((entry) => {
     const numerator = ceiling * BigInt(entry.rate);
     return {

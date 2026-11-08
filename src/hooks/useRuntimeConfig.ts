@@ -2,7 +2,7 @@ import useSWR from 'swr';
 
 import type { RuntimeConfig } from '@/services/RuntimeConfig.service';
 
-async function fetchRuntimeConfig(url: string): Promise<RuntimeConfig> {
+export async function fetchRuntimeConfig(url: string): Promise<RuntimeConfig> {
   const response = await fetch(url);
   if (!response.ok) throw new Error('Runtime configuration unavailable');
   return response.json() as Promise<RuntimeConfig>;

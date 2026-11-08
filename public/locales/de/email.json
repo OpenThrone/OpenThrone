@@ -20,5 +20,19 @@
   "battleSubject": "{{attackerName}} hat Ihr OpenThrone-Königreich angegriffen",
   "battleBody": "Kommandant {{display_name}},\n\n{{attackerName}} hat Ihr Königreich angegriffen.\nErgebnis: {{outcome}}.\n\nIhr Kampfbericht: {{reportLink}}",
   "battleVictory": "Sieg",
-  "battleDefeat": "Niederlage"
+  "battleDefeat": "Niederlage",
+  "receiptSubject": "Dein Patron-Kauf bei OpenThrone",
+  "receiptBody": "Kommandant {{display_name}},\n\ndanke, dass du OpenThrone unterstützt. Du hast {{amount}} für {{plan}} bezahlt.\n\n{{renewal}}\n\nDem hast du vor dem Bezahlen zugestimmt:\n{{consent}}\n\nZahlungen verwalten oder kündigen: {{manageLink}}\nFörderbedingungen: {{termsLink}}\nErstattungsrichtlinie: {{refundsLink}}\n\nBewahre diese E-Mail als Beleg auf. Bei Fragen schreib an privacy@openthrone.dev oder frag uns auf Discord.",
+  "renewalMonthly": "Diese Mitgliedschaft verlängert sich jeden Monat für {{amount}} zuzüglich Steuern, bis du kündigst. Kündige jederzeit über Zahlungen verwalten auf deiner Förderseite; die Kündigung stoppt die nächste Abbuchung.",
+  "renewalOnce": "Dies ist eine Einmalzahlung. Sie verlängert sich nicht.",
+  "canceledSubject": "Deine Patron-Mitgliedschaft verlängert sich nicht",
+  "canceledBody": "Kommandant {{display_name}},\n\ndeine monatliche Patron-Mitgliedschaft ist gekündigt und verlängert sich nicht, du wirst also nicht erneut belastet. Deine Vorteile gelten bis {{accessUntil}}.\n\nDu kannst jederzeit erneut abonnieren: {{manageLink}}\nErstattungsrichtlinie: {{refundsLink}}",
+  "supporterPlans": {
+    "supporter_monthly": "Patron (monatlich)",
+    "supporter_era_pass": "Patron-Ära-Pass (100 Tage)",
+    "gift_1m": "Patron-Geschenkcode (30 Tage)",
+    "gift_3m": "Patron-Geschenkcode (90 Tage)",
+    "gift_12m": "Patron-Geschenkcode (360 Tage)",
+    "alliance_sponsorship": "Allianz-Sponsoring"
+  }
 }

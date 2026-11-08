@@ -1,0 +1,281 @@
+{
+  "patron": "Mecenas del reino",
+  "premiumAlliance": "Alianza prémium",
+  "month": "mes",
+  "choose": "Elegir",
+  "plans": {
+    "supporter_monthly": "Mecenazgo mensual",
+    "supporter_era_pass": "Pase de era",
+    "gift_1m": "Regalo: 1 mes",
+    "gift_3m": "Regalo: 3 meses",
+    "gift_12m": "Regalo: 12 meses"
+  },
+  "statusTitle": "Tu mecenazgo",
+  "statuses": {
+    "ACTIVE": "Activo",
+    "PAST_DUE": "Pago atrasado",
+    "CANCELED": "Cancelado",
+    "EXPIRED": "Caducado",
+    "NEVER": "Aún no eres mecenas"
+  },
+  "ends": "Termina el {{date}}",
+  "until": "Activo hasta el {{date}}",
+  "source": "Origen: {{source}}",
+  "payments": "Historial de pagos",
+  "date": "Fecha",
+  "description": "Descripción",
+  "amount": "Importe",
+  "status": "Estado",
+  "noPayments": "Todavía no hay pagos.",
+  "redeemTitle": "Canjear un regalo",
+  "giftCode": "Código de regalo",
+  "redeem": "Canjear",
+  "giftWarning": "Guarda este código ahora. No volverá a mostrarse.",
+  "copy": "Copiar",
+  "copied": "Copiado",
+  "title": "Mecenas del reino",
+  "intro": "Ayuda a mantener OpenThrone y luce el sello de mecenas.",
+  "pledgeTitle": "Un reino justo para todos",
+  "pledge": "Nunca vendemos poder, unidades, oro, turnos ni límites más altos. El mecenazgo no cambia el combate.",
+  "gifts": "Regala mecenazgo a otro reino o patrocina una alianza. Las aportaciones apoyan a OpenThrone, no a la alianza ni a su líder.",
+  "faq": "Preguntas frecuentes",
+  "faqQ": "¿Patrón da bonificaciones de combate?",
+  "faqA": "No. Patrón no aumenta las estadísticas de combate ni los límites diarios. Añade elementos estéticos y comodidades, como el reclutamiento automático dentro del límite diario normal y las alertas de Discord. No puedes comprar unidades, oro ni turnos.",
+  "faqQ2": "¿OpenThrone guarda mi tarjeta?",
+  "faqA2": "No. Stripe recoge los datos de tu tarjeta en su propia página de pago. No guardamos el número completo de tu tarjeta ni el código de seguridad. Guardamos registros de facturación, membresía, regalos, reembolsos y disputas vinculados a tu cuenta.",
+  "faqQ3": "¿Cómo cancelo?",
+  "faqA3": "Abre Gestionar facturación en tu página de Mecenazgo y cancela la suscripción antes de la fecha de renovación. Conservas el acceso que ya pagaste.",
+  "faqQ4": "¿Cómo funcionan las alertas de Discord?",
+  "faqA4": "Vincula Discord en Ajustes y usa /link con tu código en nuestro servidor de Discord. Cualquiera puede activar el resumen diario; los Patrones también pueden activar alertas de eventos. Permite los mensajes directos del bot. Las horas de silencio retrasan las alertas, y la entrega depende de Discord.",
+  "terms": "Términos",
+  "refunds": "Política de reembolsos",
+  "login": "Iniciar sesión",
+  "register": "Registrarse",
+  "loadError": "No se pudo cargar la información de mecenazgo. Inténtalo de nuevo.",
+  "retry": "Reintentar",
+  "billing": "Gestionar facturación",
+  "openAutoRecruit": "Abrir reclutamiento automático",
+  "badge": "Mostrar mi insignia de mecenas",
+  "success": "Pago completado. Tu mecenazgo puede tardar un momento en aparecer.",
+  "pastDue": "Tu pago está atrasado. Actualiza tu método de pago para mantener tu mecenazgo.",
+  "expiring": "Tu mecenazgo caduca dentro de siete días.",
+  "giftsBought": "Regalos comprados",
+  "noGifts": "Todavía no has comprado regalos.",
+  "testPayment": "PAGO DE PRUEBA",
+  "session": "Sesión",
+  "payTest": "Pagar (prueba)",
+  "decline": "Simular rechazo de tarjeta",
+  "done": "Continuar",
+  "error": "La solicitud falló. Inténtalo de nuevo.",
+  "comingSoon": "El mecenazgo estará disponible próximamente.",
+  "loading": "Cargando…",
+  "sponsorship": {
+    "title": "Patrocinio de alianza",
+    "explanation": "Las aportaciones van a OpenThrone, no a la alianza ni a su líder.",
+    "perks": "Las alianzas premium reciben una marca premium y alertas de guerra en Discord para cada miembro que vincule Discord.",
+    "pool": "Fondo de patrocinio: {{amount}}",
+    "activeUntil": "Premium activo hasta el {{date}}",
+    "inactive": "Premium no está activo.",
+    "contributors": "Principales contribuyentes",
+    "amount": "Aportación en dólares (mínimo 5 $)",
+    "contribute": "Aportar"
+  },
+  "updatePayment": "Actualizar método de pago",
+  "discord": {
+    "title": "Cuenta de Discord",
+    "intro": "Vincula tu cuenta para usar las funciones de Discord.",
+    "step1": "Genera un código de vinculación.",
+    "step2": "Únete al servidor de Discord.",
+    "step3": "Ejecuta /link y pega tu código.",
+    "step4": "Permite los mensajes directos de los miembros de nuestro servidor de Discord (clic derecho en el servidor → Ajustes de privacidad) para que el bot pueda enviarte alertas.",
+    "generate": "Generar código de vinculación",
+    "expires": "Caduca en {{seconds}} segundos",
+    "linked": "Vinculada como {{name}} el {{date}}",
+    "unlink": "Desvincular",
+    "confirmUnlink": "¿Quieres desvincular tu cuenta de Discord?",
+    "cancel": "Cancelar",
+    "notifications": "Preferencias de notificaciones",
+    "dailyDigest": "Resumen diario",
+    "attacks": "Ataques",
+    "spyHits": "Ataques de espionaje",
+    "wars": "Guerras",
+    "turnCap": "Resistencia al máximo",
+    "quietHoursStart": "Inicio del horario silencioso (UTC)",
+    "quietHoursEnd": "Fin del horario silencioso (UTC)",
+    "patronLink": "Hazte mecenas para activar estas notificaciones",
+    "commands": "Comandos de Discord",
+    "command": {
+      "profile": "Ver perfiles de jugadores",
+      "stats": "Estadísticas del servidor",
+      "leaderboard": "Clasificaciones de jugadores y alianzas",
+      "fort": "Estado de la fortaleza",
+      "myclan": "Información de la alianza",
+      "war": "Guerras activas",
+      "link": "Vincular tu cuenta"
+    }
+  },
+  "giftRecipient": "Destinatario del regalo (opcional)",
+  "giftRecipientHint": "Elige un reino para avisarle cuando compres un regalo.",
+  "giftRecipientSearch": "Buscar reinos",
+  "recommended": "Recomendado",
+  "patronPlans": "Hazte Patrón",
+  "giftPlans": "Regala una membresía",
+  "loginToSupport": "Inicia sesión para apoyar",
+  "giftSavings": "{{monthly}} al mes · ahorras {{savings}}",
+  "cancels": "Se cancela al final de este período.",
+  "renews": "Se renueva al final de este período.",
+  "testBanner": "MODO DE PRUEBA — sin cargo real",
+  "summaryUnavailable": "Resumen no disponible. Vuelve a los planes para comenzar de nuevo.",
+  "cancel": "Cancelar",
+  "benefits": {
+    "title": "Qué ofrece Patrón",
+    "badge": "Insignia de corona junto a tu nombre",
+    "alerts": "Alertas instantáneas de Discord para ataques, misiones de espionaje, guerras y resistencia al máximo",
+    "autoRecruit": "Reclutamiento automático hasta el límite diario de reclutamiento",
+    "alliance": "Patrocinio de alianza",
+    "gifts": "Membresías de regalo",
+    "pledge": "Los beneficios nunca dan poder de combate: paga para apoyar, no para ganar."
+  },
+  "planDetails": {
+    "supporter_monthly": "Renovación mensual",
+    "supporter_era_pass": "100 días de patrocinio",
+    "gift_1m": "Un mes de mecenazgo como código de regalo",
+    "gift_3m": "Código de regalo para 3 meses",
+    "gift_12m": "Código de regalo para 12 meses"
+  },
+  "sources": {
+    "SUBSCRIPTION": "Suscripción",
+    "ONE_TIME": "Pago único",
+    "GIFT": "Regalo",
+    "COMP": "Cortesía"
+  },
+  "kinds": {
+    "SUBSCRIPTION": "Suscripción",
+    "ONE_TIME": "Pago único",
+    "GIFT": "Regalo",
+    "ALLIANCE_SPONSORSHIP": "Patrocinio de alianza"
+  },
+  "paymentStatuses": {
+    "SUCCEEDED": "Completado",
+    "REFUNDED": "Reembolsado",
+    "PARTIALLY_REFUNDED": "Reembolso parcial",
+    "DISPUTED": "En disputa",
+    "FAILED": "Fallido"
+  },
+  "giftStatuses": {
+    "UNREDEEMED": "Sin canjear",
+    "REDEEMED": "Canjeado",
+    "EXPIRED": "Caducado",
+    "REVOKED": "Revocado"
+  },
+  "currentPlan": "Plan actual",
+  "declined": "El pago fue rechazado. No se te ha cobrado; inténtalo de nuevo o elige otro plan.",
+  "checkoutNotice": {
+    "confirming": "Confirmando tu pago…",
+    "confirmed": "Pago confirmado. ¡Gracias por apoyar OpenThrone!",
+    "canceled": "Pago cancelado. No se te ha cobrado.",
+    "pending": "Tu pago aún se está confirmando y aparecerá pronto.",
+    "subscribed": "Ya tienes una suscripción activa.",
+    "signedOut": "Has cerrado la sesión. Inicia sesión para terminar de confirmar tu pago.",
+    "priceChanged": "El precio cambió mientras esta página estaba abierta. Revisa los precios actualizados y vuelve a confirmar tu compra."
+  },
+  "legal": {
+    "updated": "Última actualización: {{date}}",
+    "back": "Volver a Mecenazgo",
+    "terms": {
+      "title": "Condiciones del mecenazgo",
+      "intro": "Compras las membresías de Patrón, los códigos de regalo y los patrocinios de alianza a AIOXperts IT Solutions LLC, una sociedad de responsabilidad limitada de Delaware que gestiona OpenThrone. Estas condiciones cubren esas compras.",
+      "sections": {
+        "eligibility": {
+          "title": "Quién puede comprar",
+          "body": "Debes tener al menos 18 años y ser mayor de edad donde vives para hacer una compra. Si eres menor, una madre, padre o tutor legal debe hacer la compra y aceptar estas condiciones. Las compras están disponibles para personas que viven en Estados Unidos. Debes tener permiso para usar el método de pago."
+        },
+        "purchase": {
+          "title": "Qué estás pagando",
+          "body": "El mecenazgo apoya a OpenThrone. Da las ventajas indicadas en la página de Mecenazgo: una insignia, alertas de Discord y comodidades como el reclutamiento automático dentro del límite diario normal. Nunca aumenta las estadísticas de combate ni los límites diarios, y no puedes comprar unidades, oro ni turnos. Tu membresía te da acceso a estas funciones durante el tiempo indicado. Las ventajas y los objetos del juego no se pueden cambiar por dinero; esto no afecta a los reembolsos que exige la ley. Podemos actualizar las ventajas para mantener la seguridad del juego, cumplir requisitos legales o mejorarlo. Te avisaremos con antelación de los cambios que reduzcan de forma importante las ventajas pagadas."
+        },
+        "billing": {
+          "title": "Precios, renovación y cancelación",
+          "body": "Los precios están en dólares estadounidenses. Los impuestos aplicables se añaden al pagar y se muestran antes de pagar. Patrón mensual se renueva automáticamente al precio aceptado al comprar hasta que lo canceles. Los precios actuales aparecen en la página de Mecenazgo. Los cambios de precio solo afectan a nuevas compras; los suscriptores actuales mantienen su precio acordado. Para detener la siguiente renovación, abre tu página de Mecenazgo, elige Gestionar facturación y cancela la suscripción antes de la fecha de renovación. Conservas el acceso que ya pagaste. Cancelar no solicita por sí mismo un reembolso. Si falla un pago de renovación, Stripe puede reintentarlo, y conservas el acceso durante 7 días desde el primer intento fallido. El pase de era da 100 días de acceso de Patrón y continúa tras los reinicios de era. Los códigos de regalo añaden 30, 90 o 360 días al canjearse. El tiempo de pases y regalos amplía tu acceso actual pero no pausa los cobros mensuales, y empezar una suscripción te cobra al instante aunque ya tengas acceso. El pase de era, los códigos de regalo y los patrocinios de alianza son compras únicas y no se renuevan."
+        },
+        "gifts": {
+          "title": "Códigos de regalo",
+          "body": "Puedes canjear cada código de regalo una vez. Un código de regalo pagado es válido durante al menos 5 años desde la compra, y no caduca nunca donde la ley estatal lo exige. Cualquiera que tenga el código puede canjearlo, así que compártelo con cuidado. Los códigos de regalo no se pueden cambiar por dinero, salvo donde la ley lo exija."
+        },
+        "sponsorship": {
+          "title": "Patrocinios de alianza",
+          "body": "Un patrocinio es un pago único a OpenThrone, no a la alianza ni a su líder. Cada 4,99 $ abonados al fondo añaden 30 días de premium para la alianza; los restos menores se quedan en el fondo. Tu patrocinio se queda con la alianza si la abandonas."
+        },
+        "accounts": {
+          "title": "Expulsiones, cierres y eliminación",
+          "body": "Si tu cuenta es expulsada o cerrada, detenemos las renovaciones futuras de la suscripción y puedes perder el acceso al juego y a sus ventajas cuando empiece la restricción. Eliminar tu cuenta termina tu acceso y cancela tu suscripción. Estas acciones no generan un reembolso automático; tus derechos de reembolso según la ley siguen vigentes."
+        },
+        "disputes": {
+          "title": "Disputas de pago",
+          "body": "Si disputas un pago con tu banco, podemos suspender el acceso comprado con ese pago mientras se resuelve la disputa. Si el pago se mantiene, restauramos el acceso que quedaba. Si el pago se revierte, ese acceso termina. Esto no limita tu derecho a disputar un pago."
+        },
+        "privacy": {
+          "title": "Datos de pago",
+          "body": "Stripe procesa tu pago. No guardamos el número completo de tu tarjeta ni el código de seguridad. Guardamos identificadores, importes, moneda, estado y fechas de los pagos, y los registros de facturación relacionados: datos de la membresía, compras y canjes de regalos, reembolsos, disputas, tu país y estado de facturación, las condiciones que aceptaste al pagar y las cuentas o alianzas implicadas. Nuestra Política de privacidad explica cómo usamos y conservamos estos registros; Stripe tiene su propia política de privacidad."
+        },
+        "law": {
+          "title": "Ley aplicable",
+          "body": "Estas condiciones se rigen por la ley de Delaware. Esto no elimina las protecciones que te da la ley del lugar donde vives. Las disputas pueden presentarse ante los tribunales de Delaware, sin perjuicio de tu derecho a acudir a otros tribunales."
+        },
+        "contact": {
+          "title": "Contacto",
+          "body": "Para preguntas sobre un pago, un reembolso o estas condiciones, escribe a privacy@openthrone.dev. No necesitas una cuenta de Discord. Nunca publiques datos de tu tarjeta en canales públicos."
+        }
+      }
+    },
+    "refunds": {
+      "title": "Política de reembolsos",
+      "intro": "Cómo funcionan los reembolsos de membresías de Patrón, códigos de regalo y patrocinios de alianza.",
+      "sections": {
+        "request": {
+          "title": "Pedir un reembolso",
+          "body": "Escribe a privacy@openthrone.dev con el nombre de tu reino y la fecha del pago. Reembolsamos los cargos duplicados confirmados y las compras cuyas ventajas prometidas no se entregaron. Para otros reembolsos, contacta con nosotros en un plazo de 14 días desde el pago. Este plazo no limita tus derechos según la ley de consumo."
+        },
+        "how": {
+          "title": "Cómo funcionan los reembolsos",
+          "body": "Los reembolsos vuelven al método de pago original a través de Stripe y suelen llegar en 5 a 10 días hábiles. Un reembolso completo elimina el acceso restante, o el código de regalo sin usar, comprado con ese pago; el acceso de otras compras no se ve afectado. Un reembolso parcial no cambia tu acceso. Un reembolso no cancela una suscripción mensual salvo que lo confirmemos por separado."
+        },
+        "cancel": {
+          "title": "Cancelar",
+          "body": "Cancelar detiene las renovaciones futuras y normalmente mantiene tu acceso pagado hasta que termine. No reembolsa automáticamente un pago anterior. Puedes seguir pidiendo un reembolso o ejercer tus derechos según la ley de consumo."
+        },
+        "gifts": {
+          "title": "Códigos de regalo y patrocinios",
+          "body": "Puedes obtener un reembolso de un código de regalo sin canjear si lo pides en un plazo de 14 días desde la compra. Normalmente no ofrecemos reembolsos por cambio de opinión de códigos canjeados ni de patrocinios ya convertidos en tiempo premium. Estos límites no afectan a los reembolsos que exige la ley."
+        }
+      }
+    }
+  },
+  "consent": {
+    "title": "Antes de pagar",
+    "monthly": "Acepto pagar {{price}} ahora y cada mes hasta que cancele, más los impuestos que se muestren al pagar. Puedo cancelar en cualquier momento desde Gestionar facturación en mi página de Mecenazgo. Cancelar detiene el siguiente cobro y conservo mis ventajas hasta que termine el mes pagado.",
+    "pass": "Acepto pagar {{price}} una sola vez, más los impuestos que se muestren al pagar, por {{days}} días de acceso de Patrón. No se renueva.",
+    "gift": "Acepto pagar {{price}} una sola vez, más los impuestos que se muestren al pagar, por un código de regalo de {{days}} días de acceso de Patrón. No se renueva. El código se puede canjear una vez y es válido durante al menos 5 años, o no caduca nunca donde la ley estatal lo exige.",
+    "sponsorship": "Acepto pagar {{price}} una sola vez, más los impuestos que se muestren al pagar, a OpenThrone para el fondo de patrocinio de {{alliance}}. No se renueva. Cada 4,99 $ del fondo añade 30 días de premium para la alianza.",
+    "eligibility": "Tengo 18 años o más (o soy madre, padre o tutor y compro para un jugador), vivo en Estados Unidos, puedo usar este método de pago y acepto las Condiciones del mecenazgo y la Política de reembolsos.",
+    "agree": "He leído y acepto lo anterior.",
+    "continue": "Continuar al pago",
+    "usOnly": "Las compras solo están disponibles para residentes en Estados Unidos."
+  },
+  "signIn": "Iniciar sesión",
+  "records": "Registros",
+  "chooser": {
+    "title": "Elige tu mecenazgo",
+    "mode": "Destinatario del mecenazgo",
+    "self": "Para ti",
+    "gift": "Como regalo",
+    "buyGift": "Comprar regalo",
+    "giftPlans": {
+      "gift_1m": "1 mes",
+      "gift_3m": "3 meses",
+      "gift_12m": "12 meses"
+    }
+  },
+  "paymentsTab": "Pagos",
+  "notPatronHint": "El mecenazgo mantiene vivo el reino. Elige un plan abajo o canjea un código de regalo que te hayan enviado."
+}

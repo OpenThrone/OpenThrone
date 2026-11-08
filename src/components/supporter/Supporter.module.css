@@ -1,0 +1,57 @@
+.planRow {
+  display: block;
+  width: 100%;
+  padding: var(--mantine-spacing-md);
+  border-bottom: 1px solid var(--ot-border);
+  border-radius: 0;
+  color: var(--mantine-color-text);
+  font-family: var(--mantine-font-family);
+  text-align: start;
+}
+
+.planRow[data-checked] {
+  background: var(--ot-surface-2);
+  box-shadow: inset 0 0 0 1px var(--ot-accent);
+}
+
+.planRow[role="radio"]:not(:disabled):hover {
+  background: var(--ot-surface-2);
+}
+
+.planRow:focus-visible {
+  outline: 2px solid var(--ot-accent);
+  outline-offset: 2px;
+}
+
+.planRow:disabled {
+  cursor: default;
+}
+
+.planContent {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--mantine-spacing-md);
+  align-items: center;
+}
+
+.price {
+  color: var(--ot-heading);
+  font-family: var(--mantine-font-family);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  white-space: nowrap;
+}
+
+@media (max-width: 30em) {
+  .planContent {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--mantine-spacing-xs);
+  }
+
+  .planContent .price {
+    padding-inline-start: calc(
+      var(--mantine-spacing-sm) + var(--mantine-font-size-md)
+    );
+    text-align: start;
+  }
+}

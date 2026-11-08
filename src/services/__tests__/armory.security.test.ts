@@ -339,7 +339,12 @@ describe('atomic multi-slot equipment upgrades', () => {
       quantity: 3,
     });
     expect(calls[0]).toBe('lock');
-    expect(tx.users.update).toHaveBeenCalledTimes(1);
+    // One gold charge; the other update is the stored-strength refresh.
+    expect(
+      tx.users.update.mock.calls.filter(
+        (call: any[]) => call[0]?.data?.gold !== undefined,
+      ),
+    ).toHaveLength(1);
     expect(tx.bank_history.create).toHaveBeenCalledTimes(1);
   });
   it('does not write anything if a later conversion has insufficient inventory', async () => {

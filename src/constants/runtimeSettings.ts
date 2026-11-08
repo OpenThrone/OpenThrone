@@ -6,7 +6,80 @@ export const MaintenanceModeSchema = z.object({
 });
 
 export const RUNTIME_SETTING_REGISTRY = {
+  'stamina.penaltyThreshold': {
+    group: 'stamina',
+    type: 'NUMBER',
+    label: 'Army stamina penalty threshold',
+    isPublic: true,
+    schema: z.number().int().min(0).max(100),
+    env: undefined,
+    fallback: 50,
+  },
+  'stamina.minOffensePercent': {
+    group: 'stamina',
+    type: 'NUMBER',
+    label: 'Minimum army offense percentage',
+    isPublic: true,
+    schema: z.number().int().min(50).max(100),
+    env: undefined,
+    fallback: 80,
+  },
+  'stamina.enabled': {
+    group: 'stamina',
+    type: 'BOOLEAN',
+    label: 'Stamina enabled',
+    isPublic: true,
+    schema: z.boolean(),
+    env: undefined,
+    fallback: true,
+  },
+  'stamina.recoveryEnabled': {
+    group: 'stamina',
+    type: 'BOOLEAN',
+    label: 'Stamina recovery enabled',
+    isPublic: true,
+    schema: z.boolean(),
+    env: undefined,
+    fallback: true,
+  },
+  'stamina.recoveryAmount': {
+    group: 'stamina',
+    type: 'NUMBER',
+    label: 'Stamina recovered per interval',
+    isPublic: true,
+    schema: z.number().int().min(0).max(1000),
+    env: undefined,
+    fallback: 5,
+  },
+  'stamina.recoveryIntervalMinutes': {
+    group: 'stamina',
+    type: 'NUMBER',
+    label: 'Stamina recovery interval (minutes)',
+    isPublic: true,
+    schema: z.number().int().min(1).max(1440),
+    env: undefined,
+    fallback: 10,
+  },
+  'stamina.baseCost': {
+    group: 'stamina',
+    type: 'NUMBER',
+    label: 'Stamina base action cost',
+    isPublic: true,
+    schema: z.number().int().min(0).max(1000),
+    env: undefined,
+    fallback: 2,
+  },
+  'stamina.perTurnCost': {
+    group: 'stamina',
+    type: 'NUMBER',
+    label: 'Stamina cost per committed turn',
+    isPublic: true,
+    schema: z.number().min(0).max(100),
+    env: undefined,
+    fallback: 0.5,
+  },
   'account.inactivity.remindersEnabled': {
+    group: 'accounts',
     type: 'BOOLEAN',
     label: 'Inactivity reminders',
     isPublic: false,
@@ -15,6 +88,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   'account.inactivity.autoAnonymizeEnabled': {
+    group: 'accounts',
     type: 'BOOLEAN',
     label: 'Automatic inactivity anonymization',
     isPublic: false,
@@ -23,6 +97,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   'email.outbox.enabled': {
+    group: 'accounts',
     type: 'BOOLEAN',
     label: 'Email outbox enabled',
     isPublic: false,
@@ -31,6 +106,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   'email.outbox.ratePerMinute': {
+    group: 'accounts',
     type: 'NUMBER',
     label: 'Emails per minute',
     isPublic: false,
@@ -39,6 +115,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: 60,
   },
   'recruit.dailyCap': {
+    group: 'recruiting',
     type: 'NUMBER',
     label: 'External daily recruiting cap',
     isPublic: true,
@@ -48,6 +125,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: 25,
   },
   'recruit.internalDailyCap': {
+    group: 'recruiting',
     type: 'NUMBER',
     label: 'Internal daily recruiting cap',
     isPublic: true,
@@ -56,6 +134,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: 250,
   },
   'recruit.externalIpDailyCap': {
+    group: 'recruiting',
     type: 'NUMBER',
     label: 'External per-IP daily recruiting cap',
     isPublic: true,
@@ -64,6 +143,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: 5,
   },
   'era.protectionDurationDays': {
+    group: 'combat',
     type: 'NUMBER',
     label: 'New-player protection duration (days)',
     isPublic: false,
@@ -71,7 +151,161 @@ export const RUNTIME_SETTING_REGISTRY = {
     env: undefined,
     fallback: 14,
   },
+  'mercenary.hireMultiplier': {
+    group: 'mercenaries',
+    type: 'NUMBER',
+    label: 'Mercenary hire multiplier',
+    isPublic: true,
+    schema: z.number().min(0).max(100),
+    env: undefined,
+    fallback: 1.25,
+  },
+  'mercenary.dailyPriceRate': {
+    group: 'mercenaries',
+    type: 'NUMBER',
+    label: 'Mercenary daily price rate',
+    isPublic: true,
+    schema: z.number().min(0).max(1),
+    env: undefined,
+    fallback: 0.05,
+  },
+  'combat.pairDailyLimit': {
+    group: 'combat',
+    type: 'NUMBER',
+    label: 'Pair attack daily limit',
+    isPublic: true,
+    schema: z.number().int().min(0).max(1000),
+    env: undefined,
+    fallback: 5,
+  },
+  'era.protectionLevelLimit': {
+    group: 'combat',
+    type: 'NUMBER',
+    label: 'Protection level limit',
+    isPublic: true,
+    schema: z.number().int().min(1).max(1000),
+    env: undefined,
+    fallback: 10,
+  },
+  'bank.depositCapPercent': {
+    group: 'economy',
+    type: 'NUMBER',
+    label: 'Bank deposit cap (%)',
+    isPublic: true,
+    schema: z.number().int().min(0).max(100),
+    env: undefined,
+    fallback: 80,
+  },
+  'friend.dailyReceivedCap': {
+    group: 'economy',
+    type: 'NUMBER',
+    label: 'Friend transfer daily received cap',
+    isPublic: true,
+    schema: z.number().int().min(0).max(1000000000),
+    env: undefined,
+    fallback: 3000000,
+  },
+  'alliance.maxPendingGoldRequests': {
+    group: 'alliances',
+    type: 'NUMBER',
+    label: 'Maximum pending gold requests',
+    isPublic: true,
+    schema: z.number().int().min(0).max(1000),
+    env: undefined,
+    fallback: 3,
+  },
+  'force.maxQuantity': {
+    group: 'mercenaries',
+    type: 'NUMBER',
+    label: 'Maximum force quantity',
+    isPublic: true,
+    schema: z.number().int().min(1).max(10000000),
+    env: undefined,
+    fallback: 1000000,
+  },
+  'force.maxTermDays': {
+    group: 'mercenaries',
+    type: 'NUMBER',
+    label: 'Maximum force term (days)',
+    isPublic: true,
+    schema: z.number().int().min(1).max(365),
+    env: undefined,
+    fallback: 30,
+  },
+  'force.maxPillageBps': {
+    group: 'mercenaries',
+    type: 'NUMBER',
+    label: 'Maximum force pillage rate (bps)',
+    isPublic: true,
+    schema: z.number().int().min(0).max(10000),
+    env: undefined,
+    fallback: 2500,
+  },
+  'alliance.loanTermMinDays': {
+    group: 'alliances',
+    type: 'NUMBER',
+    label: 'Minimum treasury loan term (days)',
+    isPublic: true,
+    schema: z.number().int().min(1).max(365),
+    env: undefined,
+    fallback: 1,
+  },
+  'alliance.loanTermMaxDays': {
+    group: 'alliances',
+    type: 'NUMBER',
+    label: 'Maximum treasury loan term (days)',
+    isPublic: true,
+    schema: z.number().int().min(1).max(365),
+    env: undefined,
+    fallback: 14,
+  },
+  'alliance.loanInterestMaxPercent': {
+    group: 'alliances',
+    type: 'NUMBER',
+    label: 'Maximum treasury loan interest (%)',
+    isPublic: true,
+    schema: z.number().int().min(0).max(100),
+    env: undefined,
+    fallback: 25,
+  },
+  'alliance.memberDailyCapMin': {
+    group: 'alliances',
+    type: 'NUMBER',
+    label: 'Minimum member daily cap',
+    isPublic: true,
+    schema: z.number().int().min(0).max(1000000000),
+    env: undefined,
+    fallback: 100000,
+  },
+  'alliance.memberDailyCapMax': {
+    group: 'alliances',
+    type: 'NUMBER',
+    label: 'Maximum member daily cap',
+    isPublic: true,
+    schema: z.number().int().min(0).max(1000000000),
+    env: undefined,
+    fallback: 50000000,
+  },
+  'alliance.loanIncomeSharePercent': {
+    group: 'alliances',
+    type: 'NUMBER',
+    label: 'Treasury loan income share (%)',
+    isPublic: true,
+    schema: z.number().int().min(0).max(100),
+    env: undefined,
+    fallback: 25,
+  },
+  ENABLE_SUPPORTER: {
+    group: 'features',
+    type: 'BOOLEAN',
+    label: 'Supporter memberships',
+    isPublic: true,
+    schema: z.boolean(),
+    env: 'NEXT_PUBLIC_ENABLE_SUPPORTER',
+    fallback: false,
+  },
   ENABLE_ATTACKING: {
+    group: 'features',
     type: 'BOOLEAN',
     label: 'Attacking',
     isPublic: true,
@@ -80,6 +314,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: true,
   },
   ATTACK_LEVEL_RANGE: {
+    group: 'combat',
     type: 'NUMBER',
     label: 'Attack level range',
     isPublic: true,
@@ -88,6 +323,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: 5,
   },
   ENABLE_INFILTRATIONS: {
+    group: 'features',
     type: 'BOOLEAN',
     label: 'Infiltrations',
     isPublic: true,
@@ -96,6 +332,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   ENABLE_ASSASSINATIONS: {
+    group: 'features',
     type: 'BOOLEAN',
     label: 'Assassinations',
     isPublic: true,
@@ -104,6 +341,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   ENABLE_INTEL: {
+    group: 'features',
     type: 'BOOLEAN',
     label: 'Intel',
     isPublic: true,
@@ -112,6 +350,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   ENABLE_SOCIAL: {
+    group: 'features',
     type: 'BOOLEAN',
     label: 'Social',
     isPublic: true,
@@ -120,6 +359,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   ENABLE_MESSAGING: {
+    group: 'features',
     type: 'BOOLEAN',
     label: 'Player messaging',
     isPublic: true,
@@ -129,6 +369,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   ENABLE_ENEMIES: {
+    group: 'features',
     type: 'BOOLEAN',
     label: 'Enemies',
     isPublic: true,
@@ -137,6 +378,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   ENABLE_DESERTION: {
+    group: 'features',
     type: 'BOOLEAN',
     label: 'Desertion',
     isPublic: true,
@@ -147,6 +389,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   ENABLE_REANIMATION: {
+    group: 'features',
     type: 'BOOLEAN',
     label: 'Undead reanimation',
     isPublic: true,
@@ -156,6 +399,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: true,
   },
   ENABLE_GARRISON_FATIGUE: {
+    group: 'features',
     type: 'BOOLEAN',
     label: 'Garrison fatigue',
     isPublic: true,
@@ -166,6 +410,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: true,
   },
   SHOW_KINGDOM_MORALE: {
+    group: 'features',
     type: 'BOOLEAN',
     label: 'Show kingdom morale',
     isPublic: true,
@@ -175,6 +420,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   SHOW_DUNGEON: {
+    group: 'features',
     type: 'BOOLEAN',
     label: 'Show dungeon',
     isPublic: true,
@@ -185,6 +431,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   DISABLE_LOGIN: {
+    group: 'access',
     type: 'BOOLEAN',
     label: 'Disable login',
     isPublic: true,
@@ -193,6 +440,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   DISABLE_REGISTRATION: {
+    group: 'access',
     type: 'BOOLEAN',
     label: 'Disable registration',
     isPublic: true,
@@ -201,6 +449,7 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: false,
   },
   MAINTENANCE_MODE: {
+    group: 'access',
     type: 'JSON',
     label: 'Maintenance mode',
     isPublic: true,
@@ -209,6 +458,18 @@ export const RUNTIME_SETTING_REGISTRY = {
     fallback: { enabled: false, message: '' },
   },
 } as const;
+
+export const RUNTIME_SETTING_GROUPS = [
+  'features',
+  'access',
+  'combat',
+  'stamina',
+  'recruiting',
+  'economy',
+  'mercenaries',
+  'alliances',
+  'accounts',
+] as const;
 
 export type RuntimeSettingKey = keyof typeof RUNTIME_SETTING_REGISTRY;
 export type RuntimeSettingValue =
@@ -221,4 +482,18 @@ export const RUNTIME_SETTING_KEYS = Object.keys(
 
 export function isRuntimeSettingKey(key: string): key is RuntimeSettingKey {
   return Object.prototype.hasOwnProperty.call(RUNTIME_SETTING_REGISTRY, key);
+}
+
+/** Validate related limits together before persisting an administrator change. */
+export function validateRuntimeSettingConsistency(values: {
+  loanTermMin: number;
+  loanTermMax: number;
+  memberCapMin: number;
+  memberCapMax: number;
+}) {
+  if (
+    values.loanTermMin > values.loanTermMax ||
+    values.memberCapMin > values.memberCapMax
+  )
+    throw new Error('Minimum setting cannot exceed maximum setting');
 }

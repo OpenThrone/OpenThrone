@@ -23,6 +23,8 @@ type MyAlliance = {
   bannerimg: string | null;
   motto: string | null;
   gold: string;
+  isPremium?: boolean;
+  premiumUntil?: string | null;
 };
 
 /** Loads the signed-in player's alliances; visitors are sent to Browse. */
@@ -47,6 +49,7 @@ export const getServerSideProps: GetServerSideProps<{
     AllianceService.getUserAlliances(userId),
     serverSideTranslations(context.locale ?? 'en', [
       'common',
+      'supporter',
       'alliances',
       'navigation',
     ]),
@@ -55,6 +58,12 @@ export const getServerSideProps: GetServerSideProps<{
   const myAlliances: MyAlliance[] = memberships.map((m) => ({
     id: m.alliance.id,
     name: m.alliance.name,
+    ...(({ isPremium, premiumUntil }) => ({ isPremium, premiumUntil }))(
+      m.alliance as typeof m.alliance & {
+        isPremium?: boolean;
+        premiumUntil?: string | null;
+      },
+    ),
     roleName: m.role?.name ?? 'Member',
     isLeader: m.alliance.leader_id === userId,
     memberCount: m.alliance._count.members,
@@ -123,6 +132,8 @@ export default function AlliancesIndex({
                 key={alliance.id}
                 id={alliance.id}
                 name={alliance.name}
+                isPremium={alliance.isPremium}
+                premiumUntil={alliance.premiumUntil}
                 description={alliance.motto}
                 imgsrc={alliance.avatar}
                 bannerimgsrc={alliance.bannerimg}

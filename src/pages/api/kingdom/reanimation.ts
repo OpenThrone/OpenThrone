@@ -2,6 +2,7 @@ import type { NextApiResponse } from 'next';
 
 import { FEATURE_REQUIREMENTS, hasFeature } from '@/constants/FeatureUnlocks';
 import { Fortifications } from '@/constants/Fortifications';
+import { necropolisDailyCap } from '@/constants/RacialPerks';
 import {
   REANIMATION_FORT_LEVEL,
   reanimationDailyCap,
@@ -37,6 +38,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     where: { id: userId },
     select: {
       race: true,
+      racial_perk_tier: true,
       fort_level: true,
       economy_level: true,
       reanimated_today: true,
@@ -78,7 +80,10 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         type: { in: [...COMBAT_UNIT_TYPES] },
       },
     });
-    dailyCap = reanimationDailyCap(Number(army._sum.quantity ?? 0));
+    const trained = Number(army._sum.quantity ?? 0);
+    dailyCap = user.racial_perk_tier
+      ? necropolisDailyCap(trained, user.racial_perk_tier)
+      : reanimationDailyCap(trained);
   }
 
   return res.status(200).json({

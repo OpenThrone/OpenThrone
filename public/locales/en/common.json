@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "OpenThrone",
-    "copyright": "\u00a9 Copyright {{year}} {{title}}."
+    "copyright": "© Copyright {{year}} {{title}}."
   },
   "about": {
     "title": "About The Project",
@@ -20,7 +20,7 @@
     "openSource": "Open Source",
     "originStoryTitle": "Origin Story",
     "originStory": "OpenThrone is a persistent strategy game inspired by the spirit of DarkThrone, with kingdom building, army management, and strategic combat.",
-    "modernStack": "OpenThrone began as a fork of Moppler\u2019s Dark Curse project. DasTacoMann has since developed it on a modern Next.js and React stack.",
+    "modernStack": "OpenThrone began as a fork of Moppler’s Dark Curse project. DasTacoMann has since developed it on a modern Next.js and React stack.",
     "notAffiliated": "OpenThrone is not affiliated with nor endorsed by the original DarkThrone project or its creators.",
     "serverStatus": "The game is currently in active development. The server you are playing on is a Live Development Server.",
     "mayReset": "The game may be reset often, sometimes without notice.",
@@ -35,7 +35,7 @@
     "shareIdeasGitHub": "You can submit suggestions through the issue tracker. Suggestions are reviewed alongside development priorities; not every suggestion will be implemented.",
     "joinDiscord": "Join our Discord",
     "viewGitHub": "View on GitHub",
-    "licensed": "OpenThrone is licensed under MIT License. Copyright \u00a9 2023.",
+    "licensed": "OpenThrone is licensed under MIT License. Copyright © 2023.",
     "development": "Development",
     "developmentInfo": "OpenThrone is developed by DasTacoMann and operated by AIOXperts IT Solutions LLC, which funds its development and provides hosting.",
     "beginYourReign": "Begin Your Reign",
@@ -225,6 +225,21 @@
       "recruitDaily": "Recruiting your max amount every day will ensure your kingdom continues to grow.",
       "wellEquipped": "A unit is only as strong as the equipment they wield. Make sure your army is well equipped.",
       "fortDefense": "If your defense is less than 25% of your non-combatant population, you may lose citizens and workers in an attack. Keep your fort repaired."
+    },
+    "armyCondition": {
+      "label": "Army Stamina",
+      "rested": "Rested",
+      "weary": "Weary",
+      "exhausted": "Exhausted",
+      "tooltip": "Low stamina weakens your army's offense.",
+      "offensePenalty": "Offense −{{percent}}%",
+      "off": "Stamina off",
+      "short": "Stamina",
+      "paused": "Recovery paused",
+      "fullIn": "Full in {{time}}",
+      "cost": "Costs {{cost}} stamina → {{state}} ({{offense}}% offense)",
+      "rules": "Attacks spend it; spying is free. Below {{threshold}}, offense drops, to {{floor}}% at zero.",
+      "learnMore": "Open the full guide."
     }
   },
   "footer": {
@@ -347,6 +362,8 @@
     }
   },
   "intelReport": {
+    "unitLevel": "{{name}} · L{{level}}",
+    "mercenary": "Mercenary",
     "observedPopulation": "Observed population",
     "observedTotal": "Observed: {{count}}",
     "unobservedPopulation": "Unobserved population is unknown.",
@@ -413,8 +430,8 @@
   "profileActions": {
     "signIn": "Sign in to interact with this player.",
     "selfTarget": "You cannot target your own kingdom.",
-    "configError": "Mission settings could not load. Retrying\u2026",
-    "loading": "Loading mission settings\u2026",
+    "configError": "Mission settings could not load. Retrying…",
+    "loading": "Loading mission settings…",
     "targetUnavailable": "This player is unavailable for missions or has not returned since this era began.",
     "outOfRange": "This player is outside your mission range (within {{range}} levels of your own).",
     "attackingDisabled": "Attacking is currently disabled by the server.",
@@ -683,7 +700,7 @@
   "eraResetNotice": {
     "scheduled": "Era will reset on {{local}} OT Time ({{utc}})",
     "started": "Era reset in progress",
-    "scope": "Gameplay progress will return to the Era\u2019s starting configuration. Your account will remain.",
+    "scope": "Gameplay progress will return to the Era’s starting configuration. Your account will remain.",
     "closed": "Player logins are temporarily closed until the reset completes."
   },
   "artworkPreview": {
@@ -787,7 +804,7 @@
     "title": "File a Report",
     "formTitle": "Report a player",
     "reportedUser": "Player",
-    "searchUsers": "Type a player name\u2026",
+    "searchUsers": "Type a player name…",
     "category": "Reason",
     "categoryPlaceholder": "Choose a reason",
     "subject": "Subject (optional)",
@@ -831,19 +848,33 @@
     "orderDescription": "Saved automatically for this player on this device.",
     "orderPriority": "Highest priority first",
     "orderNewest": "Newest first",
-  "title": "Announcements",
-  "priority": "Highest priority first",
-  "filter": "Filter announcements by severity",
-  "ALL": "All",
-  "CRITICAL": "Critical",
-  "WARNING": "Warning",
-  "INFO": "Info",
-  "SUCCESS": "Success",
-  "page": "{{current}} of {{total}}",
-  "goToPage": "Go to announcement {{page}}",
-  "next": "Next announcement",
-  "previous": "Previous announcement",
-  "first": "First announcement",
-  "last": "Last announcement"
-}
+    "title": "Announcements",
+    "priority": "Highest priority first",
+    "filter": "Filter announcements by severity",
+    "ALL": "All",
+    "CRITICAL": "Critical",
+    "WARNING": "Warning",
+    "INFO": "Info",
+    "SUCCESS": "Success",
+    "page": "{{current}} of {{total}}",
+    "goToPage": "Go to announcement {{page}}",
+    "next": "Next announcement",
+    "previous": "Previous announcement",
+    "first": "First announcement",
+    "last": "Last announcement"
+  },
+  "stamina": {
+    "disabled": "Stamina is disabled. Actions cost no stamina.",
+    "recoveryPaused": "Stamina recovery is paused.",
+    "full": "Fully recovered",
+    "recoveryRate": "Recovers {{amount}} every {{minutes}} min",
+    "nextIn": "next in {{time}}",
+    "fullIn": "full in {{time}}",
+    "guide": {
+      "intro": "Stamina is how fresh your army is for attacking. Each army holds up to {{max}}.",
+      "spend": "Only attacks spend it: {{base}} per attack plus {{perTurn}} for each turn you commit, so a {{turns}}-turn attack costs {{example}}. Offensive upgrades cut that by up to half. Spying is free.",
+      "recovery": "It refills {{amount}} every {{minutes}} minutes, so an empty army is fully rested in {{fullTime}}.",
+      "penalty": "Attacks always go through, but below {{threshold}} stamina your army fights weaker, down to {{floor}}% offense at zero."
+    }
+  }
 }

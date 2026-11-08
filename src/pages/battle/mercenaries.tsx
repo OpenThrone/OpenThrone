@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   MercenaryArmyShare,
   MercenaryContract,
+  MercenaryLimits,
   MercenaryOffer,
   MercenaryOrder,
 } from '@/components/game/MercenaryBarracks';
@@ -21,6 +22,7 @@ export default function Mercenaries() {
     offers: MercenaryOffer[];
     contracts: MercenaryContract[];
     armyShare?: MercenaryArmyShare;
+    limits?: MercenaryLimits;
   } | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -60,6 +62,7 @@ export default function Mercenaries() {
       if (response.ok || (response.status >= 400 && response.status < 500))
         pendingOperations.current.delete(fingerprint);
       if (!response.ok) {
+        if (response.status === 409) await load();
         setError(result.message ?? t('orderError'));
         return;
       }

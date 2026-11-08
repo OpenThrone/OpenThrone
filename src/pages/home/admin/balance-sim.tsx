@@ -19,6 +19,7 @@ import {
   SimpleGrid,
   Slider,
   Stack,
+  Switch,
   Table,
   Tabs,
   Text,
@@ -53,6 +54,7 @@ import { GameCard } from '@/components/game/GameCard';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { alertService } from '@/services/Alert.service';
+import { getDefaultBattleConstants } from '@/utils/attackFunctions';
 import { isAdmin, isImpersonatedSession } from '@/utils/authorization';
 
 interface SimConfig {
@@ -63,6 +65,10 @@ interface SimConfig {
   newPlayerIntervalDays: number;
   newPlayersPerInterval: number;
   attackLevelRange: number;
+  activityMix: Record<ActivityType, number>;
+  event: SimEventConfig;
+  dungeon: boolean;
+  alliances: { share: number; size: number };
   balance: {
     attackerDamageMultiplier?: number;
     defenderCounterDamageMultiplier?: number;
@@ -71,6 +77,114 @@ interface SimConfig {
     damageVarianceMax?: number;
   };
   seed?: number;
+}
+
+type ActivityType = 'casual' | 'regular' | 'active' | 'grinder';
+
+interface SimEventConfig {
+  enabled: boolean;
+  startDay: number;
+  days: number;
+  xpMultiplier: number;
+  goldMultiplier: number;
+  extraTurnsPerTick: number;
+  citizenMultiplier: number;
+  unitCostDiscountPercent: number;
+  armoryCostDiscountPercent: number;
+}
+
+const EVENT_FIELDS: Array<{
+  key: Exclude<keyof SimEventConfig, 'enabled'>;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+}> = [
+  { key: 'startDay', label: 'Starts on day', min: 1, max: 365, step: 1 },
+  { key: 'days', label: 'Lasts (days)', min: 1, max: 365, step: 1 },
+  { key: 'xpMultiplier', label: 'XP ×', min: 0.1, max: 10, step: 0.1 },
+  {
+    key: 'goldMultiplier',
+    label: 'Gold per turn ×',
+    min: 0.1,
+    max: 10,
+    step: 0.1,
+  },
+  {
+    key: 'extraTurnsPerTick',
+    label: 'Extra turns per tick',
+    min: 0,
+    max: 10,
+    step: 1,
+  },
+  {
+    key: 'citizenMultiplier',
+    label: 'Citizens ×',
+    min: 0.1,
+    max: 10,
+    step: 0.1,
+  },
+  {
+    key: 'unitCostDiscountPercent',
+    label: 'Training discount %',
+    min: 0,
+    max: 25,
+    step: 1,
+  },
+  {
+    key: 'armoryCostDiscountPercent',
+    label: 'Armory discount %',
+    min: 0,
+    max: 25,
+    step: 1,
+  },
+];
+
+const ACTIVITY_OPTIONS: Array<{
+  value: ActivityType;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: 'casual',
+    label: 'Casual',
+    description: '1-2 logins a day, does a third of the recruit clicks',
+  },
+  {
+    value: 'regular',
+    label: 'Regular',
+    description: '3-5 logins a day',
+  },
+  {
+    value: 'active',
+    label: 'Active',
+    description: '8-12 logins a day',
+  },
+  {
+    value: 'grinder',
+    label: 'Grinder',
+    description: 'Online all day, attacks with every turn for XP',
+  },
+];
+
+interface ActivitySummary {
+  activity: ActivityType;
+  players: number;
+  sessionsPerDay: number;
+  attacksPerDay: number;
+  attackWinRate: number;
+  defenseWinRate: number;
+  turnsSpentShare: number;
+  lootGainedPerDay: number;
+  lootLostPerDay: number;
+  medianLevelsGained: number;
+  medianXpPerDay: number;
+  fastestXpPerDay: number;
+  medianDaysToLevel100: number | null;
+  fastestDaysToLevel100: number | null;
+  avgMorale: number;
+  armedShare: number;
+  desertedPerDay: number;
 }
 
 interface UnitCounts {
@@ -165,7 +279,10 @@ interface SimResult {
     pacingPlayerName: string | null;
     projectedDaysToLevel100: number | null;
     projectedMonthsToLevel100: number | null;
+    mercenariesHired: number;
+    captivesTaken: number;
   };
+  byActivity: ActivitySummary[];
   dailyResults: any[];
   charts: {
     winRates: { day: number; attacker: number; defender: number }[];
@@ -197,6 +314,7 @@ interface SimResult {
     gold: number;
     power: number;
     status: string;
+    activity?: ActivityType;
   }[];
   playerProgress: PlayerProgressReport[];
   timing: {
@@ -247,8 +365,22 @@ const defaultConfig: SimConfig = {
   days: 30,
   turnIntervalMinutes: 30,
   newPlayerIntervalDays: 0,
-  newPlayersPerInterval: 0,
+  newPlayersPerInterval: 5,
   attackLevelRange: 5,
+  activityMix: { casual: 40, regular: 35, active: 20, grinder: 5 },
+  event: {
+    enabled: false,
+    startDay: 1,
+    days: 2,
+    xpMultiplier: 2,
+    goldMultiplier: 1,
+    extraTurnsPerTick: 0,
+    citizenMultiplier: 1,
+    unitCostDiscountPercent: 0,
+    armoryCostDiscountPercent: 0,
+  },
+  dungeon: false,
+  alliances: { share: 0, size: 5 },
   balance: {},
   seed: 42,
 };
@@ -291,6 +423,60 @@ function formatDuration(months: number | null): string {
   return `${months.toFixed(1)}mo`;
 }
 
+function formatSeconds(seconds: number): string {
+  if (seconds < 60) return `${Math.max(1, Math.round(seconds))}s`;
+  return `${Math.round(seconds / 60)} min`;
+}
+
+function formatDays(days: number | null): string {
+  return days === null ? 'never' : formatDuration(days / 30.4375);
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(0)}%`;
+}
+
+function BalanceSlider({
+  label,
+  value,
+  min,
+  max,
+  marks,
+  format,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  marks: { value: number; label: string }[];
+  format: (value: number) => string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <Stack gap={4} mb="md">
+      <Group justify="space-between">
+        <Text size="sm" fw={500}>
+          {label}
+        </Text>
+        <Text size="sm" fw={700}>
+          {format(value)}
+        </Text>
+      </Group>
+      <Slider
+        aria-label={label}
+        min={min}
+        max={max}
+        step={0.01}
+        value={value}
+        label={format}
+        onChange={onChange}
+        marks={marks}
+      />
+    </Stack>
+  );
+}
+
 function getOffenseUnits(units: UnitCounts): number {
   return units.soldier + units.knight + units.berserker;
 }
@@ -307,13 +493,21 @@ function getSentryUnits(units: UnitCounts): number {
   return units.sentry + units.sentinel + units.inquisitor;
 }
 
+type LiveBalance = Required<SimConfig['balance']>;
+
 function ConfigPanel({
   config,
+  liveBalance,
+  compare,
+  onCompareChange,
   onChange,
   onRun,
   loading,
 }: {
   config: SimConfig;
+  liveBalance: LiveBalance;
+  compare: boolean;
+  onCompareChange: (compare: boolean) => void;
   onChange: (c: SimConfig) => void;
   onRun: () => void;
   loading: boolean;
@@ -326,6 +520,20 @@ function ConfigPanel({
     const p = BALANCE_PRESETS[name] ?? {};
     onChange({ ...config, balance: { ...p } });
   };
+  const setBalance = (patch: Partial<SimConfig['balance']>) => {
+    setPreset('custom');
+    onChange({ ...config, balance: { ...config.balance, ...patch } });
+  };
+  // About 3ms per player-day at 30-minute ticks, more when grinders are online every tick.
+  const estimatedSeconds =
+    ((config.populationSize * config.days * 0.003 * 30) /
+      Math.max(5, config.turnIntervalMinutes)) *
+    (1 + (config.activityMix.grinder ?? 0) / 50) *
+    (compare ? 2 : 1);
+  const mixTotal = ACTIVITY_OPTIONS.reduce(
+    (sum, option) => sum + (config.activityMix[option.value] ?? 0),
+    0,
+  );
 
   return (
     <Stack gap="md">
@@ -424,85 +632,138 @@ function ConfigPanel({
         />
       )}
 
+      <Divider label="Player Activity" labelPosition="center" />
+      <Text size="xs" c="dimmed">
+        Share of players by how often they log in. Players only attack, spy,
+        recruit and bank while logged in.
+      </Text>
+      <SimpleGrid cols={2}>
+        {ACTIVITY_OPTIONS.map((option) => (
+          <NumberInput
+            key={option.value}
+            label={`${option.label} %`}
+            description={option.description}
+            min={0}
+            max={100}
+            value={config.activityMix[option.value]}
+            onChange={(v) =>
+              onChange({
+                ...config,
+                activityMix: {
+                  ...config.activityMix,
+                  [option.value]: typeof v === 'number' ? v : 0,
+                },
+              })
+            }
+          />
+        ))}
+      </SimpleGrid>
+      {mixTotal !== 100 && (
+        <Text size="xs" c={mixTotal === 0 ? 'red' : 'yellow'}>
+          {mixTotal === 0
+            ? 'Set at least one share; the default mix will be used.'
+            : `Shares add up to ${mixTotal}%; they are scaled to 100%.`}
+        </Text>
+      )}
+
+      <Divider label="Alliances" labelPosition="center" />
+      <Text size="xs" c="dimmed">
+        Alliance members never attack each other and share fresh spy reports.
+        Lent troops, loans and treasury requests are not modelled.
+      </Text>
+      <SimpleGrid cols={2}>
+        <NumberInput
+          label="Players in alliances %"
+          min={0}
+          max={100}
+          value={config.alliances.share}
+          onChange={(v) =>
+            onChange({
+              ...config,
+              alliances: {
+                ...config.alliances,
+                share: typeof v === 'number' ? v : 0,
+              },
+            })
+          }
+        />
+        <NumberInput
+          label="Members per alliance"
+          min={2}
+          max={50}
+          value={config.alliances.size}
+          onChange={(v) =>
+            onChange({
+              ...config,
+              alliances: {
+                ...config.alliances,
+                size: typeof v === 'number' ? v : 5,
+              },
+            })
+          }
+        />
+      </SimpleGrid>
+
       <Divider label="Balance Profile" labelPosition="center" />
       <Select
         label="Profile"
         data={[
-          { value: 'current', label: 'Current Production' },
-          { value: 'equilibrium', label: 'Equilibrium (50/50)' },
+          { value: 'current', label: 'Live Game' },
+          { value: 'equilibrium', label: 'Equilibrium' },
           { value: 'attacker_favored', label: 'Attacker Favored' },
           { value: 'defender_favored', label: 'Defender Favored' },
           { value: 'high_variance', label: 'High Variance' },
+          { value: 'custom', label: 'Custom', disabled: true },
         ]}
         value={preset}
         onChange={(v) => v && applyPreset(v)}
       />
 
-      <Slider
-        label="Attacker DMG Mult"
+      <BalanceSlider
+        label="Attacker damage"
         min={0.8}
         max={1.5}
-        step={0.01}
         value={
           config.balance.attackerDamageMultiplier ??
           balancePreset.attackerDamageMultiplier ??
-          1.238
+          liveBalance.attackerDamageMultiplier
         }
-        onChange={(v) =>
-          onChange({
-            ...config,
-            balance: { ...config.balance, attackerDamageMultiplier: v },
-          })
-        }
+        format={(v) => `×${v.toFixed(2)}`}
+        onChange={(v) => setBalance({ attackerDamageMultiplier: v })}
         marks={[
           { value: 0.8, label: '0.8' },
           { value: 1.0, label: '1.0' },
-          { value: 1.238, label: '1.24' },
           { value: 1.5, label: '1.5' },
         ]}
       />
-      <Slider
-        label="Defender Counter Mult"
+      <BalanceSlider
+        label="Defender counter damage"
         min={0.5}
         max={1.2}
-        step={0.01}
         value={
           config.balance.defenderCounterDamageMultiplier ??
           balancePreset.defenderCounterDamageMultiplier ??
-          0.83
+          liveBalance.defenderCounterDamageMultiplier
         }
-        onChange={(v) =>
-          onChange({
-            ...config,
-            balance: {
-              ...config.balance,
-              defenderCounterDamageMultiplier: v,
-            },
-          })
-        }
+        format={(v) => `×${v.toFixed(2)}`}
+        onChange={(v) => setBalance({ defenderCounterDamageMultiplier: v })}
         marks={[
           { value: 0.5, label: '0.5' },
-          { value: 0.83, label: '0.83' },
           { value: 1.0, label: '1.0' },
           { value: 1.2, label: '1.2' },
         ]}
       />
-      <Slider
-        label="Max Pillage Share"
+      <BalanceSlider
+        label="Max pillage per attack"
         min={0.1}
         max={0.6}
-        step={0.01}
         value={
           config.balance.maxPillageSharePerAttack ??
           balancePreset.maxPillageSharePerAttack ??
-          0.22
+          liveBalance.maxPillageSharePerAttack
         }
-        onChange={(v) =>
-          onChange({
-            ...config,
-            balance: { ...config.balance, maxPillageSharePerAttack: v },
-          })
-        }
+        format={(v) => `${Math.round(v * 100)}%`}
+        onChange={(v) => setBalance({ maxPillageSharePerAttack: v })}
         marks={[
           { value: 0.1, label: '10%' },
           { value: 0.22, label: '22%' },
@@ -510,21 +771,78 @@ function ConfigPanel({
           { value: 0.6, label: '60%' },
         ]}
       />
+      <Divider label="Game Event" labelPosition="center" />
+      <Switch
+        label="Run a game event"
+        description="Applies event effects the way the live events page does"
+        checked={config.event.enabled}
+        onChange={(event) =>
+          onChange({
+            ...config,
+            event: { ...config.event, enabled: event.currentTarget.checked },
+          })
+        }
+      />
+      {config.event.enabled && (
+        <SimpleGrid cols={2}>
+          {EVENT_FIELDS.map((field) => (
+            <NumberInput
+              key={field.key}
+              label={field.label}
+              min={field.min}
+              max={field.max}
+              step={field.step}
+              decimalScale={field.step < 1 ? 1 : 0}
+              value={config.event[field.key]}
+              onChange={(v) =>
+                onChange({
+                  ...config,
+                  event: {
+                    ...config.event,
+                    [field.key]: typeof v === 'number' ? v : field.min,
+                  },
+                })
+              }
+            />
+          ))}
+        </SimpleGrid>
+      )}
+
+      <Switch
+        label="Dungeon on"
+        description="Breaching attackers with a level 13+ fort take captives, as when the dungeon is shown in the live game (off by default there)"
+        checked={config.dungeon}
+        onChange={(event) =>
+          onChange({ ...config, dungeon: event.currentTarget.checked })
+        }
+      />
+
+      <Switch
+        label="Compare with the live game"
+        description="Also runs the same players and seed on the live balance with no event, and shows the difference"
+        checked={compare}
+        onChange={(event) => onCompareChange(event.currentTarget.checked)}
+      />
 
       <Divider label="Reproducibility" labelPosition="center" />
       <NumberInput
         label="Seed"
-        description="Fixed seed for reproducible results"
+        description="Leave blank for a random seed; results show the seed used"
         min={0}
-        value={config.seed ?? 0}
+        value={config.seed ?? ''}
         onChange={(v) =>
           onChange({
             ...config,
-            seed: Number(v) || undefined,
+            seed: typeof v === 'number' ? v : undefined,
           })
         }
       />
 
+      <Text size="xs" c={estimatedSeconds > 60 ? 'yellow' : 'dimmed'}>
+        Estimated run time: about {formatSeconds(estimatedSeconds)}
+        {estimatedSeconds > 60 &&
+          '. Long runs can time out; try fewer players or days.'}
+      </Text>
       <Button
         size="lg"
         leftSection={<FontAwesomeIcon icon={faPlay} />}
@@ -538,7 +856,233 @@ function ConfigPanel({
   );
 }
 
-function ResultsDashboard({ result }: { result: SimResult }) {
+function activityLabel(activity: ActivityType | undefined): string {
+  return (
+    ACTIVITY_OPTIONS.find((option) => option.value === activity)?.label ?? '—'
+  );
+}
+
+interface ActivityColumn {
+  label: string;
+  cell: (row: ActivitySummary) => React.ReactNode;
+}
+
+/** Two groups of columns, so each table fits the results column without scrolling. */
+const ACTIVITY_COLUMN_GROUPS: Array<{
+  title: string;
+  columns: ActivityColumn[];
+}> = [
+  {
+    title: 'Activity',
+    columns: [
+      { label: 'Players', cell: (row) => row.players },
+      { label: 'Logins', cell: (row) => row.sessionsPerDay.toFixed(1) },
+      { label: 'Attacks', cell: (row) => row.attacksPerDay.toFixed(1) },
+      { label: 'Won', cell: (row) => formatPercent(row.attackWinRate) },
+      { label: 'Held', cell: (row) => formatPercent(row.defenseWinRate) },
+      { label: 'Turns', cell: (row) => formatPercent(row.turnsSpentShare) },
+    ],
+  },
+  {
+    title: 'Results',
+    columns: [
+      { label: 'Loot won', cell: (row) => formatCompact(row.lootGainedPerDay) },
+      { label: 'Loot lost', cell: (row) => formatCompact(row.lootLostPerDay) },
+      { label: 'Armed', cell: (row) => formatPercent(row.armedShare) },
+      { label: 'Morale', cell: (row) => row.avgMorale.toFixed(0) },
+      {
+        label: 'XP (median)',
+        cell: (row) => formatCompact(row.medianXpPerDay),
+      },
+      {
+        label: 'L100 median · best',
+        cell: (row) =>
+          `${formatDays(row.medianDaysToLevel100)} · ${formatDays(row.fastestDaysToLevel100)}`,
+      },
+    ],
+  },
+];
+
+function ActivityTable({ rows }: { rows: ActivitySummary[] }) {
+  const present = rows.filter((row) => row.players > 0);
+  return (
+    <Paper withBorder radius="md" p="md">
+      <Text size="sm" fw={700}>
+        By player type
+      </Text>
+      <Text size="xs" c="dimmed" mb="sm">
+        Per player, per day in the run. Won and held are the share of attacks
+        won and defenses held; turns is the share of available turns spent;
+        armed is the share of offense and defense units with a weapon at the
+        end; morale is the average kingdom morale at the end. L100 times project
+        today&apos;s XP rate forward, lowered as XP per turn falls at higher
+        levels.
+      </Text>
+      <Stack gap="md">
+        {ACTIVITY_COLUMN_GROUPS.map((group) => (
+          <AdminDataTable
+            key={group.title}
+            ariaLabel={`Results by player type: ${group.title.toLowerCase()}`}
+            size="compact"
+            fz={13}
+            horizontalSpacing={8}
+            verticalSpacing={6}
+          >
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>{group.title}</Table.Th>
+                {group.columns.map((column) => (
+                  <Table.Th key={column.label}>{column.label}</Table.Th>
+                ))}
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {present.map((row) => (
+                <Table.Tr key={row.activity}>
+                  <Table.Td fw={700}>{activityLabel(row.activity)}</Table.Td>
+                  {group.columns.map((column) => (
+                    <Table.Td key={column.label}>{column.cell(row)}</Table.Td>
+                  ))}
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </AdminDataTable>
+        ))}
+      </Stack>
+    </Paper>
+  );
+}
+
+interface ComparisonRow {
+  label: string;
+  baseline: number | null;
+  variant: number | null;
+  format: (value: number) => string;
+  /** Show the change in percentage points instead of percent. */
+  points?: boolean;
+}
+
+function formatChange(row: ComparisonRow): string {
+  if (row.baseline === null || row.variant === null) return '—';
+  if (row.points) {
+    const delta = (row.variant - row.baseline) * 100;
+    return `${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pts`;
+  }
+  if (row.baseline === 0) return row.variant === 0 ? '0%' : 'new';
+  const change = ((row.variant - row.baseline) / Math.abs(row.baseline)) * 100;
+  return `${change >= 0 ? '+' : ''}${change.toFixed(0)}%`;
+}
+
+function ComparisonTable({
+  baseline,
+  variant,
+}: {
+  baseline: SimResult;
+  variant: SimResult;
+}) {
+  const rows: ComparisonRow[] = [
+    {
+      label: 'Attacker win rate',
+      baseline: baseline.summary.avgAttackerWinRate,
+      variant: variant.summary.avgAttackerWinRate,
+      format: formatPercent,
+      points: true,
+    },
+    {
+      label: 'Attacks per day',
+      baseline: baseline.summary.avgAttacksPerDay,
+      variant: variant.summary.avgAttacksPerDay,
+      format: (v) => v.toFixed(0),
+    },
+    {
+      label: 'Loot per day',
+      baseline: baseline.summary.avgLootPerDay,
+      variant: variant.summary.avgLootPerDay,
+      format: formatCompact,
+    },
+    {
+      label: 'Fort breaches',
+      baseline: baseline.summary.totalFortBreaches,
+      variant: variant.summary.totalFortBreaches,
+      format: (v) => `${v}`,
+    },
+  ];
+  for (const option of ACTIVITY_OPTIONS) {
+    const base = baseline.byActivity.find((r) => r.activity === option.value);
+    const next = variant.byActivity.find((r) => r.activity === option.value);
+    if (!base?.players || !next?.players) continue;
+    rows.push(
+      {
+        label: `${option.label}: attacks won`,
+        baseline: base.attackWinRate,
+        variant: next.attackWinRate,
+        format: formatPercent,
+        points: true,
+      },
+      {
+        label: `${option.label}: XP/day (median)`,
+        baseline: base.medianXpPerDay,
+        variant: next.medianXpPerDay,
+        format: formatCompact,
+      },
+      {
+        label: `${option.label}: L100 (median)`,
+        baseline: base.medianDaysToLevel100,
+        variant: next.medianDaysToLevel100,
+        format: (v) => formatDays(v),
+      },
+    );
+  }
+  return (
+    <Paper withBorder radius="md" p="md">
+      <Text size="sm" fw={700}>
+        Change from the live game
+      </Text>
+      <Text size="xs" c="dimmed" mb="sm">
+        Same players, activity mix and seed ({variant.config.seed}); only the
+        balance and event differ.
+      </Text>
+      <AdminDataTable
+        ariaLabel="Comparison with the live game"
+        size="compact"
+        fz={13}
+        horizontalSpacing={8}
+        verticalSpacing={6}
+      >
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Metric</Table.Th>
+            <Table.Th>Live game</Table.Th>
+            <Table.Th>This run</Table.Th>
+            <Table.Th>Change</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {rows.map((row) => (
+            <Table.Tr key={row.label}>
+              <Table.Td>{row.label}</Table.Td>
+              <Table.Td>
+                {row.baseline === null ? '—' : row.format(row.baseline)}
+              </Table.Td>
+              <Table.Td>
+                {row.variant === null ? '—' : row.format(row.variant)}
+              </Table.Td>
+              <Table.Td fw={700}>{formatChange(row)}</Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </AdminDataTable>
+    </Paper>
+  );
+}
+
+function ResultsDashboard({
+  result,
+  baseline,
+}: {
+  result: SimResult;
+  baseline: SimResult | null;
+}) {
   const { t } = useTranslation('admin-game');
   const { summary, charts, topPlayers, config, timing, playerProgress } =
     result;
@@ -570,7 +1114,7 @@ function ResultsDashboard({ result }: { result: SimResult }) {
           icon={faChartLine}
         />
         <StatCard
-          label="Pace XP/Day"
+          label="Fastest XP/Day"
           value={formatCompact(summary.avgXpPerDay)}
           icon={faChartLine}
           color={
@@ -584,7 +1128,7 @@ function ResultsDashboard({ result }: { result: SimResult }) {
           }
         />
         <StatCard
-          label="L100 Pace"
+          label="Fastest L100 ETA"
           value={formatDuration(summary.projectedMonthsToLevel100)}
           icon={faChartLine}
           color={
@@ -610,7 +1154,7 @@ function ResultsDashboard({ result }: { result: SimResult }) {
           color="blue"
         />
         <StatCard
-          label="Breached Forts"
+          label="Breached at End"
           value={`${summary.finalBreachedPlayers}`}
           icon={faSkullCrossbones}
           color={
@@ -630,13 +1174,22 @@ function ResultsDashboard({ result }: { result: SimResult }) {
           )}{' '}
           Pillage{' '}
           {(config.effectiveBalance.maxPillageSharePerAttack * 100).toFixed(0)}%{' '}
-          | Tick: {config.turnIntervalMinutes}m | Max Level: {summary.maxLevel}{' '}
-          | Avg Held Turns: {summary.avgAttackTurnsHeld.toFixed(1)} | Avg World
-          XP/Turn: {summary.avgXpPerSpentTurn.toFixed(1)} | Pace Player:{' '}
-          {summary.pacingPlayerName ?? 'n/a'} | Avg{' '}
-          {timing.avgMsPerDay.toFixed(0)}ms/day
+          | Tick: {config.turnIntervalMinutes}m | Seed: {config.seed} | Max
+          Level: {summary.maxLevel} | Avg Held Turns:{' '}
+          {summary.avgAttackTurnsHeld.toFixed(1)} | Avg World XP/Turn:{' '}
+          {summary.avgXpPerSpentTurn.toFixed(1)} | Pace Player:{' '}
+          {summary.pacingPlayerName ?? 'n/a'} | Mercenaries Hired:{' '}
+          {summary.mercenariesHired} | Captives Taken: {summary.captivesTaken} |
+          Avg {timing.avgMsPerDay.toFixed(0)}ms/day
+        </Text>
+        <Text size="xs" c="dimmed" ta="center" mt={4}>
+          {t('balanceSim.modelLimits')}
         </Text>
       </Paper>
+
+      {baseline && <ComparisonTable baseline={baseline} variant={result} />}
+
+      <ActivityTable rows={result.byActivity} />
 
       <Tabs defaultValue="winrates">
         <Tabs.List>
@@ -1030,6 +1583,7 @@ function ResultsDashboard({ result }: { result: SimResult }) {
               <Table.Tr>
                 <Table.Th>#</Table.Th>
                 <Table.Th>{t('balanceSim.name')}</Table.Th>
+                <Table.Th>Type</Table.Th>
                 <Table.Th>{t('balanceSim.level')}</Table.Th>
                 <Table.Th>{t('balanceSim.gold')}</Table.Th>
                 <Table.Th>{t('balanceSim.power')}</Table.Th>
@@ -1040,6 +1594,7 @@ function ResultsDashboard({ result }: { result: SimResult }) {
                 <Table.Tr key={p.id}>
                   <Table.Td c="dimmed">{i + 1}</Table.Td>
                   <Table.Td>{p.displayName}</Table.Td>
+                  <Table.Td>{activityLabel(p.activity)}</Table.Td>
                   <Table.Td fw={700} c={ADMIN_CHART_PALETTE.attacker}>
                     {p.level}
                   </Table.Td>
@@ -1061,27 +1616,45 @@ function ResultsDashboard({ result }: { result: SimResult }) {
   );
 }
 
-const BalanceSimPage = () => {
+const BalanceSimPage = ({ liveBalance }: { liveBalance: LiveBalance }) => {
   const { t } = useTranslation('admin-game');
   const [config, setConfig] = useState<SimConfig>(defaultConfig);
   const [result, setResult] = useState<SimResult | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [compare, setCompare] = useState(false);
+  const [baseline, setBaseline] = useState<SimResult | null>(null);
+
   const runSimulation = useCallback(async () => {
-    setLoading(true);
-    setResult(null);
-    try {
+    const post = async (body: SimConfig): Promise<SimResult> => {
       const response = await fetch('/api/admin/simulation/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
+        body: JSON.stringify(body),
       });
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({}));
         throw new Error(error.error || t('balanceSim.runFailed'));
       }
-      const data = await response.json();
-      setResult(data);
+      return response.json();
+    };
+
+    setLoading(true);
+    setResult(null);
+    setBaseline(null);
+    try {
+      const variant = await post(config);
+      // The baseline reuses the variant's seed, so only the balance differs.
+      const base = compare
+        ? await post({
+            ...config,
+            balance: {},
+            event: { ...config.event, enabled: false },
+            seed: variant.config.seed,
+          })
+        : null;
+      setResult(variant);
+      setBaseline(base);
     } catch (error) {
       alertService.notify(
         'error',
@@ -1091,7 +1664,7 @@ const BalanceSimPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [config, t]);
+  }, [compare, config, t]);
 
   return (
     <AdminLayout
@@ -1104,6 +1677,9 @@ const BalanceSimPage = () => {
           <GameCard title={t('balanceSim.configuration')} icon={faBalanceScale}>
             <ConfigPanel
               config={config}
+              liveBalance={liveBalance}
+              compare={compare}
+              onCompareChange={setCompare}
               onChange={setConfig}
               onRun={runSimulation}
               loading={loading}
@@ -1113,7 +1689,7 @@ const BalanceSimPage = () => {
 
         <Grid.Col span={{ base: 12, lg: 8 }}>
           {result ? (
-            <ResultsDashboard result={result} />
+            <ResultsDashboard result={result} baseline={baseline} />
           ) : (
             <Paper p="xl" radius="md" withBorder ta="center">
               <Stack align="center" gap="md">
@@ -1156,7 +1732,15 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (!authorized) {
     return { redirect: { destination: '/account/login', permanent: false } };
   }
-  return { props: translations };
+  const live = getDefaultBattleConstants();
+  const liveBalance: LiveBalance = {
+    attackerDamageMultiplier: live.ATTACKER_DAMAGE_MULTIPLIER,
+    defenderCounterDamageMultiplier: live.DEFENDER_COUNTER_DAMAGE_MULTIPLIER,
+    maxPillageSharePerAttack: live.MAX_PILLAGE_SHARE_PER_ATTACK,
+    damageVarianceMin: live.DAMAGE_VARIANCE_MIN,
+    damageVarianceMax: live.DAMAGE_VARIANCE_MAX,
+  };
+  return { props: { ...translations, liveBalance } };
 };
 
 export default BalanceSimPage;

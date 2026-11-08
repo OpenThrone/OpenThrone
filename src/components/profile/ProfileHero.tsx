@@ -3,6 +3,7 @@ import { useTranslation } from 'next-i18next';
 import Image from '@/components/ArtworkImage';
 import frameClasses from '@/components/game/FantasyFrame.module.css';
 import PlayerIdentityLine from '@/components/player/PlayerIdentityLine';
+import { SupporterBadge } from '@/components/player/SupporterBadge';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 
 import classes from './Profile.module.css';
@@ -33,6 +34,8 @@ type ProfileHeroProps = {
   isOnline: boolean;
   statusLabel: string;
   lastActive: string;
+  supporterUntil?: string | null;
+  badgeVisible?: boolean;
 };
 
 /** Identity banner: framed portrait, name, lineage, rank and presence. */
@@ -46,6 +49,8 @@ export function ProfileHero({
   isOnline,
   statusLabel,
   lastActive,
+  supporterUntil,
+  badgeVisible,
 }: ProfileHeroProps) {
   const { t } = useTranslation('common');
   const raceKey = (race ?? 'ELF').toUpperCase();
@@ -68,7 +73,10 @@ export function ProfileHero({
         <ProfilePortrait race={raceKey} avatar={avatar} />
 
         <div className={classes.identity}>
-          <h2 className={classes.name}>{name}</h2>
+          <h2 className={classes.name}>
+            {name}
+            <SupporterBadge supporter={{ supporterUntil, badgeVisible }} />
+          </h2>
           <div className={classes.lineage}>
             <RpgAwesomeIcon
               aria-hidden

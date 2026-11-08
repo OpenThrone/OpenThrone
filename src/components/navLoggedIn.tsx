@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import Image from '@/components/ArtworkImage';
 import classes from '@/components/navLoggedIn.module.css';
+import { isFeatureInReach } from '@/constants/FeatureUnlocks';
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
 import {
@@ -15,11 +16,13 @@ import {
   useImpersonation,
 } from '@/hooks/useImpersonation';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
+import { useSupporterStatus } from '@/hooks/useSupporterStatus';
 import type { PlayerRace } from '@/types/typings';
 import {
   isBattleUpgradesUnlocked,
   isStructureUpgradesUnlocked,
 } from '@/utils/menuUnlocks';
+import { showPatronageLink } from '@/utils/patronageNav';
 import { getAssetPath } from '@/utils/utilities';
 
 import MobileNavigation from './MobileNavigation';
@@ -51,6 +54,7 @@ const subMenus: Record<string, NavItem[]> = {
     { key: 'levels', href: '/home/levels', labelKey: 'home.levels' },
     { key: 'profile', href: '/home/profile', labelKey: 'home.profile' },
     { key: 'settings', href: '/home/settings', labelKey: 'home.settings' },
+    { key: 'patronage', href: '/home/supporter', labelKey: 'home.patronage' },
     { key: 'learn', href: '/home/learn', labelKey: 'home.learn' },
   ],
   battle: [
@@ -135,6 +139,7 @@ const subMenuIcons: Record<string, string> = {
   'home.levels': 'ascending-block',
   'home.profile': 'player',
   'home.settings': 'gear-hammer',
+  'home.patronage': 'jewel-crown',
   'home.learn': 'book',
   'home.administration': 'rune-stone',
   'battle.attack': 'crossed-swords',
@@ -208,8 +213,19 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
         : null,
     [user],
   );
+  const { config: runtimeConfig } = useRuntimeConfig();
+  // Shared SWR key with the sidebar, so this adds no request.
+  const { data: supporterStatus } = useSupporterStatus();
+  const supporterEnabled = showPatronageLink(
+    runtimeConfig?.enableSupporter === true,
+    supporterStatus,
+  );
   const lockedKeys = useMemo(() => {
     const locked = new Set<string>();
+    if (!supporterEnabled) locked.add('home.patronage');
+    if (!user || !isFeatureInReach(user, 'MERCENARY_HALL')) {
+      locked.add('battle.mercenaries');
+    }
     if (!progress || !isBattleUpgradesUnlocked(progress)) {
       locked.add('battle.upgrades');
     }
@@ -217,7 +233,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
       locked.add('structures.upgrades');
     }
     return locked;
-  }, [progress]);
+  }, [progress, supporterEnabled, user]);
 
   const resolvedSubMenus: Record<string, NavItem[]> = useMemo(() => {
     const unlocked = Object.fromEntries(
@@ -303,7 +319,6 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
 
   const [resetTimer, setResetTimer] = useState<number | null>(null);
 
-  const { config: runtimeConfig } = useRuntimeConfig();
   const socialEnabled = runtimeConfig?.enableSocial === true;
 
   const fetchSocialNotifications = useCallback(async () => {

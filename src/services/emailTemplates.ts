@@ -19,9 +19,18 @@ export interface EmailTemplateVars {
   display_name?: string;
   lastActiveDate?: string | Date;
   deletionDate?: string | Date;
+  /** Supporter receipts and cancellation notices. */
+  planId?: string;
+  amountCents?: number;
+  consentText?: string;
+  accessUntil?: string | Date;
 }
 export interface RenderEmailInput {
-  kind: EmailCampaignKind | 'ATTACK_NOTIFICATION';
+  kind:
+    | EmailCampaignKind
+    | 'ATTACK_NOTIFICATION'
+    | 'SUPPORTER_RECEIPT'
+    | 'SUPPORTER_CANCELED';
   locale: string;
   vars: EmailTemplateVars;
 }
@@ -51,13 +60,15 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
   const absolute = (path: string) => new URL(path, root).href;
   const category =
     vars.category ??
-    (kind === 'ATTACK_NOTIFICATION'
-      ? 'ATTACK_NOTIFICATION'
-      : kind === 'NEWS'
-        ? 'NEWS'
-        : kind === 'BROADCAST'
-          ? 'ANNOUNCEMENT'
-          : 'ACCOUNT_LIFECYCLE');
+    (kind === 'SUPPORTER_RECEIPT' || kind === 'SUPPORTER_CANCELED'
+      ? 'TRANSACTIONAL'
+      : kind === 'ATTACK_NOTIFICATION'
+        ? 'ATTACK_NOTIFICATION'
+        : kind === 'NEWS'
+          ? 'NEWS'
+          : kind === 'BROADCAST'
+            ? 'ANNOUNCEMENT'
+            : 'ACCOUNT_LIFECYCLE');
   const unsubscribe = absolute(
     `/api/email/unsubscribe?token=${encodeURIComponent(createUnsubscribeToken(vars.userId, category))}`,
   );
@@ -81,6 +92,16 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
     ),
     loginLink: absolute('/account/login'),
     deleteLink: absolute('/account/delete-request'),
+    plan:
+      (copy.supporterPlans as Record<string, string>)[vars.planId ?? ''] ??
+      vars.planId ??
+      '',
+    amount: `$${((vars.amountCents ?? 0) / 100).toFixed(2)} USD`,
+    consent: vars.consentText ?? '',
+    accessUntil: formatDate(vars.accessUntil),
+    manageLink: absolute('/home/supporter'),
+    termsLink: absolute('/legal/terms'),
+    refundsLink: absolute('/legal/refunds'),
   };
   let subject: string;
   let body: string;
@@ -113,6 +134,22 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
       subject = copy.reminderSubject;
       body = interpolate(copy.reminder, values);
       break;
+    case 'SUPPORTER_RECEIPT':
+      subject = copy.receiptSubject;
+      body = interpolate(copy.receiptBody, {
+        ...values,
+        renewal: interpolate(
+          vars.planId === 'supporter_monthly'
+            ? copy.renewalMonthly
+            : copy.renewalOnce,
+          values,
+        ),
+      });
+      break;
+    case 'SUPPORTER_CANCELED':
+      subject = copy.canceledSubject;
+      body = interpolate(copy.canceledBody, values);
+      break;
     default:
       throw new Error('Unknown email template');
   }
@@ -123,7 +160,9 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
         ? [absolute(`/community/news/${vars.id ?? ''}`)]
         : kind === 'INACTIVITY_NOTICE' || kind === 'INACTIVITY_REMINDER'
           ? [values.loginLink, values.deleteLink]
-          : [];
+          : kind === 'SUPPORTER_RECEIPT' || kind === 'SUPPORTER_CANCELED'
+            ? [values.manageLink, values.termsLink, values.refundsLink]
+            : [];
   const linkParagraph = (paragraph: string) => {
     let html = escapeEmailHtml(paragraph).replace(/\n/g, '<br>');
     for (const link of bodyLinks) {
@@ -138,7 +177,10 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
     .join('');
   return {
     subject: subject.replace(/[\r\n]/g, ' '),
-    text: `OpenThrone\n\n${body}\n\n${copy.manage}: ${preferences}\n${copy.unsubscribe}: ${unsubscribe}\n${copy.operator}`,
-    html: `<!doctype html><html lang="${language === 'es' || language === 'de' ? language : 'en'}"><body><header><h1>OpenThrone</h1></header><main>${paragraphs}</main><footer><p><a href="${escapeEmailHtml(preferences)}">${copy.manage}</a> · <a href="${escapeEmailHtml(unsubscribe)}">${copy.unsubscribe}</a></p><p>${copy.operator}</p></footer></body></html>`,
+    text:
+      category === 'TRANSACTIONAL'
+        ? `OpenThrone\n\n${body}\n\n${copy.operator}`
+        : `OpenThrone\n\n${body}\n\n${copy.manage}: ${preferences}\n${copy.unsubscribe}: ${unsubscribe}\n${copy.operator}`,
+    html: `<!doctype html><html lang="${language === 'es' || language === 'de' ? language : 'en'}"><body><header><h1>OpenThrone</h1></header><main>${paragraphs}</main><footer>${category === 'TRANSACTIONAL' ? '' : `<p><a href="${escapeEmailHtml(preferences)}">${copy.manage}</a> · <a href="${escapeEmailHtml(unsubscribe)}">${copy.unsubscribe}</a></p>`}<p>${copy.operator}</p></footer></body></html>`,
   };
 }

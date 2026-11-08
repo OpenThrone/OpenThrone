@@ -44,7 +44,7 @@
   "loan": {
     "title": "Treasury Loans",
     "terms": "Terms: repay within {{days}} days with {{interest}}% flat interest. Maximum {{cap}} gold per loan and per member per day.",
-    "incomeShare": "While a loan is open, 25% of your turn income and battle plunder goes to the treasury until it is repaid. Defaulted borrowers cannot use their personal bank or borrow again.",
+    "incomeShare": "While a loan is open, {{percent}}% of your turn income and battle plunder goes to the treasury until it is repaid. Defaulted borrowers cannot use their personal bank or borrow again.",
     "myLoan": "Your loan",
     "progress": "{{percent}}% repaid",
     "progressText": "Repaid {{repaid}} of {{owed}} gold ({{left}} left)",
@@ -83,7 +83,7 @@
     "title": "Treasury Rules",
     "help": "Loan terms apply to loans approved from now on. The daily limit caps what each member can receive from the treasury per day and the size of a single loan.",
     "termDays": "Loan term (days, 1-14)",
-    "interest": "Flat interest (0-25%)",
+    "interest": "Flat interest (0-{{max}}%)",
     "dailyCap": "Daily limit per member",
     "dailyCapHint": "100,000 to 50,000,000 gold",
     "save": "Save Treasury Rules",

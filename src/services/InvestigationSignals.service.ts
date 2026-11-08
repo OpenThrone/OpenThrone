@@ -30,6 +30,7 @@ interface SnapshotRow {
   defender_losses_total: number | null;
   snapshots: unknown;
   turns: unknown;
+  stamina_cost?: unknown;
 }
 const integer = (value: unknown): bigint | null => {
   if (typeof value === 'number' && !Number.isSafeInteger(value)) return null;
@@ -82,7 +83,6 @@ export function inspectCombatAccounting(row: SnapshotRow) {
       integer(b.attackTurns),
       integer(row.turns),
     ],
-    ['stamina', integer(a.stamina), integer(b.stamina), integer(row.turns)],
     [
       'attackerUnits',
       rosterTotal(a),
@@ -96,6 +96,13 @@ export function inspectCombatAccounting(row: SnapshotRow) {
       integer(row.defender_losses_total),
     ],
   ];
+  if (row.stamina_cost != null)
+    checks.push([
+      'stamina',
+      integer(a.stamina),
+      integer(b.stamina),
+      integer(row.stamina_cost),
+    ]);
   const mismatches: Record<string, string> = {};
   let malformed = false;
   let compared = 0;
@@ -208,7 +215,7 @@ export async function getInvestigationSignals(
       FROM bursts GROUP BY "senderId",bucket HAVING COUNT(*)>=50 ORDER BY count DESC,"senderId",bucket LIMIT ${FINDINGS_PER_TYPE + 1}`);
       const snapshots =
         await query<SnapshotRow>(Prisma.sql`WITH ${humans} SELECT a.id,a.attacker_id,a.defender_id,a.timestamp,a.pillaged_gold,
-      a.attacker_losses_total,a.defender_losses_total,a.stats->'adminSnapshots' AS snapshots,a.stats->'turns' AS turns
+      a.attacker_losses_total,a.defender_losses_total,a.stats->'adminSnapshots' AS snapshots,a.stats->'turns' AS turns,a.stats->'stamina_cost' AS stamina_cost
       FROM attack_log a JOIN humans h ON h.id=a.attacker_id JOIN humans d ON d.id=a.defender_id
       WHERE a.type='attack' AND a.timestamp>=${since} AND a.timestamp<=${until} ORDER BY a.id DESC LIMIT ${SNAPSHOT_SCAN_LIMIT + 1}`);
       const limitedTypes: InvestigationType[] = [];

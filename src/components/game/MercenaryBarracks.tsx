@@ -49,6 +49,11 @@ export interface MercenaryArmyShare {
   /** Maximum surviving mercenaries the share cap allows. */
   allowed: number;
 }
+/** Admin force limits the server enforces on every hire. */
+export interface MercenaryLimits {
+  maxQuantity: number;
+  maxTermDays: number;
+}
 export type MercenaryOrder =
   | {
       action: 'hire';
@@ -56,6 +61,7 @@ export type MercenaryOrder =
       level: number;
       quantity: number;
       termDays: number;
+      expectedTotal: string;
     }
   | { action: 'renew'; contractId: number; termDays: number }
   | { action: 'dismiss'; contractId: number };
@@ -67,6 +73,7 @@ export function MercenaryBarracks({
   fortLevel,
   economyLevel,
   armyShare,
+  limits,
   gold,
   busy,
   error,
@@ -77,6 +84,7 @@ export function MercenaryBarracks({
   fortLevel: number;
   economyLevel: number;
   armyShare?: MercenaryArmyShare;
+  limits?: MercenaryLimits;
   gold: string;
   busy?: boolean;
   error?: string;
@@ -89,6 +97,13 @@ export function MercenaryBarracks({
   const [dismissId, setDismissId] = useState<number | null>(null);
   const offer = offers.find((o) => `${o.type}:${o.level}` === selected);
   const count = Number(quantity) || 0;
+  const maxQuantity = Math.min(
+    MERCENARY_ROLE_CAP,
+    limits?.maxQuantity ?? MERCENARY_ROLE_CAP,
+  );
+  const termOptions = [1, 3, 7].filter(
+    (value) => value <= (limits?.maxTermDays ?? 7),
+  );
   const termDays = Number(days) || 1;
   const hallUpgrade = getRequiredEconomyUpgradeName('MERCENARY_HALL') ?? '';
   const hallLocked = !hasFeature(
@@ -113,7 +128,8 @@ export function MercenaryBarracks({
     !tierLocked(offer.level) &&
     Number.isInteger(count) &&
     count > 0 &&
-    count <= MERCENARY_ROLE_CAP &&
+    count <= maxQuantity &&
+    termOptions.includes(termDays) &&
     total <= BigInt(gold) &&
     fortLevel >= offer.fortLevel &&
     withinShareCap;
@@ -157,7 +173,7 @@ export function MercenaryBarracks({
               value={quantity}
               onChange={setQuantity}
               min={1}
-              max={MERCENARY_ROLE_CAP}
+              max={maxQuantity}
               allowDecimal={false}
               disabled={hallLocked}
             />
@@ -165,7 +181,7 @@ export function MercenaryBarracks({
               label={t('term')}
               value={days}
               onChange={setDays}
-              data={[1, 3, 7].map((value) => ({
+              data={termOptions.map((value) => ({
                 value: String(value),
                 label: t('days', { count: value }),
               }))}
@@ -206,6 +222,7 @@ export function MercenaryBarracks({
                   level: offer.level,
                   quantity: count,
                   termDays,
+                  expectedTotal: total.toString(),
                 })
               }
             >

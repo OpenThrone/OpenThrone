@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'bun:test';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'bun:test';
 import {
   installMockPrisma,
   mockPrisma,
@@ -9,6 +9,18 @@ import {
   installSessionSpy,
   sessionRequestFields,
 } from 'test/utils/sessionCookie';
+
+// --isolate resets modules, not process.env: put back what these tests set.
+const savedAuthEnv = {
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+};
+afterAll(() => {
+  for (const [key, value] of Object.entries(savedAuthEnv)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+});
 
 installMockPrisma(vi);
 installSessionSpy(vi);

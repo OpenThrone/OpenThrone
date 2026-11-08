@@ -40,6 +40,9 @@
       "title": "Was prüfe ich vor einem Angriff?",
       "answer": "Prüfen Sie das Ziel, Ihre Angriffsstärke und die geplanten Angriffszüge. Spionageinformationen helfen bei der Einschätzung, doch Kämpfe können Verluste verursachen. Lesen Sie anschließend den Bericht und die Kriegshistorie, bevor Sie weitere Ressourcen einsetzen."
     },
+    "stamina": {
+      "title": "Was ist Ausdauer?"
+    },
     "access": {
       "title": "Warum kann ich mich möglicherweise nicht anmelden?",
       "answer": "Lesen Sie die Meldung auf der Anmeldeseite. Bei deaktivierter Anmeldung kann der Zugang eingeschränkt sein; ein registriertes Konto garantiert nicht, dass Spielen gerade möglich ist. Prüfen Sie öffentliche Neuigkeiten. Wenn die Meldung Ihr Problem nicht erklärt, bitten Sie um Hilfe, ohne Passwort oder Anmeldecodes weiterzugeben."

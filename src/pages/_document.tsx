@@ -25,20 +25,7 @@ export default function Document(props) {
             crossOrigin="anonymous"
           />
         )}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin=""
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap"
-          rel="stylesheet"
-        />
-        <link
-          href="https://fonts.cdnfonts.com/css/chomsky?styles=20850&display=swap"
-          rel="stylesheet"
-        />
+        {/* Display fonts are self-hosted (src/styles/global.css). */}
         <ColorSchemeScript defaultColorScheme="dark" />
         <meta name="google-adsense-account" content="ca-pub-5510515377090188" />
         {/* hreflang tags for SEO */}

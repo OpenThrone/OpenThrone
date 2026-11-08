@@ -2,7 +2,7 @@
   "title": "Mercenaries",
   "hireTitle": "Hire ready-equipped troops",
   "description": "Buy a temporary advantage before your next campaign. Mercenaries arrive equipped and never consume citizens or your armory inventory.",
-  "specialization": "Mercenaries gain 25% primary strength, lose 20% off-role strength and have 20% less health than their native counterparts.",
+  "specialization": "Mercenaries gain 25% primary strength, lose 20% off-role strength and have 20% less health than their native counterparts. In battle they take the front line, absorbing about twice their share of losses within their unit type and level.",
   "unit": "Unit",
   "choose": "Choose a role and tier",
   "quantity": "Quantity",

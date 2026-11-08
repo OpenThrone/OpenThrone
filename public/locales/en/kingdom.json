@@ -9,6 +9,7 @@
     "ariaLabel": "Kingdom morale {{percent}} of 100: {{state}}"
   },
   "desertions": {
+    "disciplineSaved": "Discipline prevented {{count}} desertions in the latest daily morale update.",
     "title": "Desertion log",
     "loading": "Reading the ledger...",
     "error": "The desertion ledger could not be read.",

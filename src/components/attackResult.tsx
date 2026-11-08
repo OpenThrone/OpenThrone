@@ -14,10 +14,12 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
 import classes from '@/components/AttackResults.module.css';
+import { ArmyFatigueNotice } from '@/components/battle/ArmyFatigueNotice';
 import { BattleGameEventContext } from '@/components/battle/BattleGameEventContext';
 import { GarrisonFatigueNotice } from '@/components/battle/GarrisonFatigueNotice';
 import { ReportHeader } from '@/components/battle/ReportHeader';
 import { DefenseAdvisory } from '@/components/DefenseAdvisory';
+import SpyMissionsModal from '@/components/spyMissionsModal';
 import { useUser } from '@/context/users';
 import type { Locales } from '@/types/typings';
 import { formatGold, toLocale } from '@/utils/numberFormatting';
@@ -37,6 +39,7 @@ const AttackResults = ({ battle, viewerID }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
   const isViewerAttacker = viewerID === attackerPlayer.id;
   const isViewerDefender = viewerID === defenderPlayer.id;
+  const opponent = isViewerAttacker ? defenderPlayer : attackerPlayer;
   const isPlayerWinner = winner === viewerID;
   const isAttackerWinner = winner === attackerPlayer.id;
   const allowAttackerProfile = !isViewerAttacker;
@@ -45,6 +48,8 @@ const AttackResults = ({ battle, viewerID }) => {
   const theme = useMantineTheme();
 
   const toggleModal = () => setIsOpen((v) => !v);
+  const [isSpyOpen, setIsSpyOpen] = useState(false);
+  const toggleSpyModal = () => setIsSpyOpen((v) => !v);
 
   const totalLosses = (losses: string | { total?: number }): number => {
     try {
@@ -117,6 +122,11 @@ const AttackResults = ({ battle, viewerID }) => {
   // Undead reanimation (#211): the redaction hands each side only its own
   // risen count, so the line reads the same for attacker and defender.
   const reanimatedUnits = Number(stats?.reanimated_units ?? 0) || 0;
+  const necropolisBonus = Number(stats?.necropolis_bonus ?? 0) || 0;
+  const raidersCapturePercent =
+    Number(stats?.raiders_capture_percent ?? 0) || 0;
+  const sanctuaryRecovered = Number(stats?.sanctuary_recovered ?? 0) || 0;
+  const hallowedBlocked = Number(stats?.hallowed_blocked ?? 0) || 0;
   const xpLine = (isViewer: boolean, playerName: string, xp: number) =>
     isViewer
       ? t('timeline.youEarnedXp', { xp: toLocale(xp, locale) })
@@ -200,6 +210,32 @@ const AttackResults = ({ battle, viewerID }) => {
           }),
         ]
       : []),
+    ...((isViewerAttacker || isViewerDefender) && necropolisBonus > 0
+      ? [
+          t('timeline.necropolisBonus', {
+            bonus: toLocale(necropolisBonus, locale),
+          }),
+        ]
+      : []),
+    ...((isViewerAttacker || isViewerDefender) &&
+    captivesTaken > 0 &&
+    raidersCapturePercent > 0
+      ? [t('timeline.raidersRate', { percent: raidersCapturePercent })]
+      : []),
+    ...(isViewerDefender && sanctuaryRecovered > 0
+      ? [
+          t('timeline.sanctuaryRecovered', {
+            recovered: toLocale(sanctuaryRecovered, locale),
+          }),
+        ]
+      : []),
+    ...(isViewerDefender && hallowedBlocked > 0
+      ? [
+          t('timeline.hallowedBlocked', {
+            blocked: toLocale(hallowedBlocked, locale),
+          }),
+        ]
+      : []),
   ];
 
   const sentence = {
@@ -277,11 +313,25 @@ const AttackResults = ({ battle, viewerID }) => {
             label: t('battleReport.battleId'),
             reportId: battle.id,
             actions: (isViewerAttacker || isViewerDefender) && (
-              <Button onClick={toggleModal} size="md" fullWidth px="xs">
-                {isViewerAttacker
-                  ? t('battleReport.attackAgain')
-                  : t('battleReport.attackBack')}
-              </Button>
+              <Stack gap="xs">
+                <Button onClick={toggleModal} size="md" fullWidth px="xs">
+                  {isViewerAttacker
+                    ? t('battleReport.attackAgain')
+                    : t('battleReport.attackBack')}
+                </Button>
+                <Button
+                  onClick={toggleSpyModal}
+                  size="md"
+                  fullWidth
+                  px="xs"
+                  variant="default"
+                  aria-label={t('actions.spyTarget', {
+                    name: opponent.display_name,
+                  })}
+                >
+                  {t('actions.spy')}
+                </Button>
+              </Stack>
             ),
           }}
         />
@@ -296,6 +346,15 @@ const AttackResults = ({ battle, viewerID }) => {
                 ? defenderPlayer.display_name
                 : attackerPlayer.display_name
             }
+          />
+        )}
+
+        {(isViewerAttacker || isViewerDefender) && isSpyOpen && (
+          <SpyMissionsModal
+            isOpen
+            toggleModal={toggleSpyModal}
+            defenderID={opponent.id}
+            targetName={opponent.display_name}
           />
         )}
 
@@ -327,6 +386,9 @@ const AttackResults = ({ battle, viewerID }) => {
         />
 
         <GarrisonFatigueNotice percent={garrisonFatigue} />
+        <ArmyFatigueNotice
+          percent={Number(stats?.attacker_fatigue_percent ?? 0)}
+        />
 
         {isViewerAttacker && stats.netPillageGold !== undefined && (
           <Text size="sm" ta="center" mt="sm">
@@ -516,6 +578,7 @@ const AttackResults = ({ battle, viewerID }) => {
                         >
                           <LossesList
                             losses={stats.attacker_losses}
+                            wounded={stats.combat_summary?.attackerWounded}
                             align="flex-start"
                           />
                         </Text>
@@ -535,6 +598,7 @@ const AttackResults = ({ battle, viewerID }) => {
                         >
                           <LossesList
                             losses={stats.defender_losses}
+                            wounded={stats.combat_summary?.defenderWounded}
                             align="flex-start"
                           />
                         </Text>

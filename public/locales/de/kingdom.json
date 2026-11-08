@@ -9,6 +9,7 @@
     "ariaLabel": "Königreichsmoral {{percent}} von 100: {{state}}"
   },
   "desertions": {
+    "disciplineSaved": "Disziplin verhinderte {{count}} Desertionen bei der letzten täglichen Moralaktualisierung.",
     "title": "Desertionsprotokoll",
     "loading": "Das Protokoll wird gelesen...",
     "error": "Das Protokoll konnte nicht gelesen werden.",

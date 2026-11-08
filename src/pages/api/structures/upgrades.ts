@@ -15,6 +15,7 @@ const UpgradeTypeEnum = z.enum([
   'offense',
   'armory',
   'spy',
+  'racial',
 ]);
 
 // Zod schema for the request body

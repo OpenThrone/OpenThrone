@@ -16,13 +16,9 @@ export const MAX_FORCE_PILLAGE_BPS = 2_500;
 
 export const ForceRoleSchema = z.enum(['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY']);
 export type ForceRole = z.infer<typeof ForceRoleSchema>;
-export const ForceQuantitySchema = z
-  .number()
-  .int()
-  .positive()
-  .max(MAX_FORCE_QUANTITY);
-export const ForceTermSchema = z.number().int().min(1).max(MAX_FORCE_TERM_DAYS);
-const rateSchema = z.number().int().min(0).max(MAX_FORCE_PILLAGE_BPS);
+export const ForceQuantitySchema = z.number().int().positive().max(10_000_000);
+export const ForceTermSchema = z.number().int().min(1).max(365);
+const rateSchema = z.number().int().min(0).max(10_000);
 
 const equipmentItemSchema = z
   .object({
@@ -111,7 +107,7 @@ export const ForcePolicySchema = z
         z
           .object({
             roleId: z.number().int().positive(),
-            maxBorrowed: z.number().int().min(0).max(MAX_FORCE_QUANTITY),
+            maxBorrowed: z.number().int().min(0).max(10_000_000),
             maxTermDays: ForceTermSchema,
             pillageRateBps: rateSchema,
             loanRateBps: rateSchema,

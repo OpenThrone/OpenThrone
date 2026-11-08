@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import type { AccountStatus } from '@/lib/prisma-exports';
 import { getDepositHistory } from '@/services/Bank.service';
 import { ensureActiveEra } from '@/services/Era.service';
+import { projectUserStamina } from '@/services/Stamina.service';
 import { getUpdatedStatus } from '@/services/User.service';
 import type { Locales, PlayerClass, PlayerRace } from '@/types/typings';
 import { safeToISOString } from '@/utils/dateHelpers';
@@ -37,6 +38,7 @@ export interface FullUserData {
   attack_turns: number;
   stamina: number;
   maxStamina: number;
+  staminaUpdatedAt: string;
   last_active: string;
   bio: string | null;
   colorScheme: string | null;
@@ -257,6 +259,8 @@ export class UserDataService {
 
     const calculatedStats = statsService.updateStats();
 
+    const stamina = await projectUserStamina(user);
+
     // 4. Unified DTO Construction
     const userDto: FullUserData = {
       id: user.id,
@@ -270,7 +274,8 @@ export class UserDataService {
       fort_hitpoints: user.fort_hitpoints,
       house_level: user.house_level,
       attack_turns: user.attack_turns,
-      stamina: user.stamina,
+      stamina: stamina.stamina,
+      staminaUpdatedAt: stamina.staminaUpdatedAt.toISOString(),
       maxStamina: user.maxStamina,
       last_active: safeToISOString(user.last_active),
       bio: user.bio,
@@ -421,7 +426,7 @@ export class UserDataService {
     const validatedUserId = UserIdSchema.parse(userId);
     await prisma.users.update({
       where: { id: validatedUserId },
-      data: { stamina },
+      data: { stamina, staminaUpdatedAt: new Date() },
     });
   }
 

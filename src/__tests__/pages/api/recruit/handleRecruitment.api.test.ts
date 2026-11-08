@@ -38,6 +38,7 @@ const loadRoute = (enabled: boolean) => {
     require.resolve('../../../../pages/api/recruit/handleRecruitment')
   ];
   delete require.cache[require.resolve('@/constants/AutoRecruit')];
+  delete require.cache[require.resolve('@/services/AutoRecruitAccess.service')];
   return require('../../../../pages/api/recruit/handleRecruitment').default;
 };
 let handler: any = loadRoute(false);
@@ -337,6 +338,62 @@ describe('handleRecruitment link-based recruiting', () => {
     );
     expect(tx.users.update).not.toHaveBeenCalled();
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('lets a live auto-recruit session recruit without a per-recruit captcha', async () => {
+    handler = loadRoute(true);
+    const tx = setupUsers(makeTx()) as any;
+    tx.autoRecruitSession = {
+      findUnique: vi.fn(async () => ({
+        id: 5,
+        userId: RECRUITER_ID,
+        lastActivityAt: new Date(),
+      })),
+      update: vi.fn(async () => ({})),
+      deleteMany: vi.fn(async () => ({})),
+    };
+    const res = await run(
+      {
+        recruitedUserId: LINK_OWNER_ID,
+        sessionId: '5',
+        captchaToken: 'invalid',
+      },
+      { session },
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(tx.autoRecruitSession.findUnique).toHaveBeenCalledWith({
+      where: { id: 5, userId: RECRUITER_ID },
+    });
+    expect(tx.users.update).toHaveBeenCalled();
+  });
+
+  it("grants nothing for a session id that is not this recruiter's live session", async () => {
+    handler = loadRoute(true);
+    const tx = setupUsers(makeTx()) as any;
+    tx.autoRecruitSession = {
+      findUnique: vi.fn(async () => null),
+      deleteMany: vi.fn(async () => ({})),
+    };
+    const res = await run(
+      { recruitedUserId: LINK_OWNER_ID, sessionId: '99' },
+      { session },
+    );
+    expect(res.status).not.toHaveBeenCalledWith(200);
+    expect(tx.users.update).not.toHaveBeenCalled();
+    expect(tx.recruit_history.create).not.toHaveBeenCalled();
+  });
+
+  it('still requires a captcha for a recruit link sent with a session id', async () => {
+    handler = loadRoute(true);
+    const tx = setupUsers(makeTx());
+    const res = await run(
+      { recruitedUserId: LINK, sessionId: '5', captchaToken: 'invalid' },
+      { session },
+    );
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'CAPTCHA_FAILED' }),
+    );
+    expect(tx.users.update).not.toHaveBeenCalled();
   });
 
   it('keeps the five-per-day link limit', async () => {

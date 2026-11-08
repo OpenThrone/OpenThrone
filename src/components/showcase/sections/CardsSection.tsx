@@ -34,23 +34,37 @@ import type { ReanimationData } from '@/components/overview/ReanimationLine';
 import { ReanimationLine } from '@/components/overview/ReanimationLine';
 import type { ProfileStat } from '@/components/profile/ProfileStatTiles';
 import { ProfileStatTiles } from '@/components/profile/ProfileStatTiles';
+import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import {
   mockAction,
   ShowcaseSection,
   Specimen,
 } from '@/components/showcase/Showcase';
+import { ArmyConditionMeter } from '@/components/sidebar/ArmyConditionMeter';
 import { ProtectionMeter } from '@/components/sidebar/ProtectionMeter';
+import SidebarParchment from '@/components/sidebar/SidebarParchment';
 import { SidebarTimeInfo, StatRow } from '@/components/sidebar/SidebarShared';
 import StatCard from '@/components/StatCard';
 import UserModel from '@/models/Users';
 import { themes } from '@/styles/themes';
 import type { PlayerRace } from '@/types/typings';
 import type { ProtectionSummary } from '@/utils/battleProtection';
+import type { StaminaRules } from '@/utils/stamina';
 
 type StatGridStats = ComponentProps<typeof StatGrid>['stats'];
 type BattleStats = ComponentProps<typeof BattleStatStrip>['stats'];
 
 const RACES: PlayerRace[] = ['ELF', 'HUMAN', 'GOBLIN', 'UNDEAD'];
+const STAMINA_RULES: StaminaRules = {
+  penaltyThreshold: 50,
+  minOffensePercent: 80,
+  enabled: true,
+  recoveryEnabled: true,
+  recoveryAmount: 5,
+  recoveryIntervalMinutes: 10,
+  baseCost: 2,
+  perTurnCost: 0.5,
+};
 
 const KINGDOM_STATS: StatGridStats = [
   {
@@ -580,6 +594,82 @@ export default function CardsSection() {
         usedOn={['sidebar (all game pages)', 'mobile sidebar']}
       >
         <ProtectionMeter user={healthyUser} />
+      </Specimen>
+
+      <Specimen
+        name="ArmyConditionMeter"
+        usedOn={[
+          'sidebar (desktop and mobile)',
+          '/battle/users',
+          '/userprofile/[id]',
+        ]}
+        note="Recovery and affordability are local estimates from the shared stamina formula; the server decides whether an action can proceed. The desktop sidebar uses variant 'stat' (first panel) so it reads like the stat rows around it, and the row links to /how-to-play#combat-stamina; the attack dialog and mobile card use the detailed default."
+      >
+        <SidebarParchment className="mb-4 w-72 overflow-hidden font-semibold text-black">
+          <Stack gap="sm" className="mt-2 p-4">
+            <StatRow
+              label="Turns"
+              value="683"
+              icon={<RpgAwesomeIcon icon="clockwork" fw />}
+            />
+            <ArmyConditionMeter
+              variant="stat"
+              inkColor="var(--ot-inset)"
+              balance={{ stamina: 100, maxStamina: 100 }}
+              rules={STAMINA_RULES}
+            />
+            <ArmyConditionMeter
+              variant="stat"
+              inkColor="var(--ot-inset)"
+              balance={{
+                stamina: 75,
+                maxStamina: 100,
+                staminaUpdatedAt: new Date(Date.now() - 4 * 60_000),
+              }}
+              rules={STAMINA_RULES}
+            />
+            <ArmyConditionMeter
+              variant="stat"
+              inkColor="var(--ot-inset)"
+              balance={{ stamina: 35, maxStamina: 100 }}
+              rules={STAMINA_RULES}
+            />
+            <ArmyConditionMeter
+              variant="stat"
+              inkColor="var(--ot-inset)"
+              balance={{ stamina: 17, maxStamina: 100 }}
+              rules={{ ...STAMINA_RULES, recoveryEnabled: false }}
+            />
+          </Stack>
+        </SidebarParchment>
+        <Stack gap="md">
+          <ArmyConditionMeter
+            balance={{ stamina: 75, maxStamina: 100 }}
+            rules={STAMINA_RULES}
+          />
+          <ArmyConditionMeter
+            balance={{
+              stamina: 35,
+              maxStamina: 100,
+              staminaUpdatedAt: new Date(Date.now() - 4 * 60_000),
+            }}
+            rules={STAMINA_RULES}
+          />
+          <ArmyConditionMeter
+            balance={{ stamina: 17, maxStamina: 100 }}
+            rules={{ ...STAMINA_RULES, recoveryEnabled: false }}
+          />
+          <ArmyConditionMeter
+            balance={{ stamina: 17, maxStamina: 100 }}
+            rules={{ ...STAMINA_RULES, enabled: false }}
+            turns={5}
+          />
+          <ArmyConditionMeter
+            balance={{ stamina: 2, maxStamina: 100 }}
+            rules={STAMINA_RULES}
+            turns={5}
+          />
+        </Stack>
       </Specimen>
 
       <Specimen

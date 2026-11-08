@@ -351,6 +351,8 @@ export const getServerSideProps: GetServerSideProps<BotsPageProps> = async (
       'navigation',
       'admin-operations',
       'admin-users',
+      'admin-forces',
+      'admin-upgrades',
     ]),
   ]);
   const userId = Number(session?.user?.id);

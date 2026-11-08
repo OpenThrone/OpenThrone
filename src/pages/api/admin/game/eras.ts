@@ -36,7 +36,7 @@ const guardedGet = withApiGuard({
   return res.status(200).json(withPlayers);
 });
 
-// Starting an era resets every account, so it is admin-only (matches start-era.ts).
+// Starting an era resets every account, so it is admin-only.
 const guardedStart = withApiGuard({
   methods: ['POST'],
   authMode: 'admin',

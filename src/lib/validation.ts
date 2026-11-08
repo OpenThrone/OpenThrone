@@ -29,6 +29,10 @@ export const RegisterSchema = z.object({
     .string()
     .min(1, { message: 'Turnstile token required' })
     .optional(),
+  /** Confirms the player is 16 or older and has read the Privacy Policy. */
+  acceptTerms: z.literal(true, {
+    errorMap: () => ({ message: 'Age and privacy confirmation required' }),
+  }),
 });
 
 /** Attack schema. */

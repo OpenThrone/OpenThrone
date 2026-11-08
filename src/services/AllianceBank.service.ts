@@ -9,7 +9,8 @@ import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { AllianceTransactionType } from '@/lib/prisma-exports';
 import { ensureActiveEra } from '@/services/Era.service';
-import { DEPOSIT_CAP_PERCENT, getMaxDeposit } from '@/utils/bankLimits';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
+import { getMaxDeposit } from '@/utils/bankLimits';
 import { logError } from '@/utils/logger';
 import { getOTStartDate } from '@/utils/timefunctions';
 
@@ -132,8 +133,12 @@ export const transferInTx = async (
   }
 
   // The alliance row is locked, so concurrent payouts cannot both pass.
+  const limits = await getRuntimeConfig(tx);
   const dailyCap = BigInt(
-    alliance.member_daily_cap ?? MEMBER_DAILY_CAP_DEFAULT,
+    Math.min(
+      Number(alliance.member_daily_cap ?? MEMBER_DAILY_CAP_DEFAULT),
+      limits.allianceMemberDailyCapMax ?? 50000000,
+    ),
   );
   const receivedToday = await getReceivedToday(tx, allianceId, targetUserId);
   if (receivedToday + amount > dailyCap) {
@@ -186,6 +191,7 @@ export class AllianceBankService {
     amount: bigint;
   }) {
     const validatedData = DepositSchema.parse(data);
+    const capPercent = (await getRuntimeConfig()).depositCapPercent ?? 80;
 
     try {
       await prisma.$transaction(async (tx) => {
@@ -211,9 +217,9 @@ export class AllianceBankService {
         if (!depositor) {
           throw new Error('User not found');
         }
-        if (validatedData.amount > getMaxDeposit(depositor.gold)) {
+        if (validatedData.amount > getMaxDeposit(depositor.gold, capPercent)) {
           throw new Error(
-            `You can deposit at most ${DEPOSIT_CAP_PERCENT}% of the gold you hold at once`,
+            `You can deposit at most ${capPercent}% of the gold you hold at once`,
           );
         }
 

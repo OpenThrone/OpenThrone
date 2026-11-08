@@ -12,15 +12,17 @@ import {
   updateUserUnits,
 } from '@/services/AttackDataService';
 import { getTargetAvailability } from '@/services/AttackValidationService';
+import { enqueueDiscordAlert } from '@/services/discord/DiscordAlerts.service';
+import { siteUrl } from '@/services/discord/DiscordApi';
 import { hasForbiddenForceTarget } from '@/services/ForceLifecycle.service';
 import { getBattleGameEventContext } from '@/services/GameEventRuntime.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import type { UnitType } from '@/types/typings';
+import { recomputeStoredStatsInTx } from '@/utils/adminRecomputeStats';
 import {
   calculateDailyReplacementThroughput,
   calculateDefenderDailyCasualtyRemaining,
   clamp,
-  getRaceIdentity,
   V5_COMBAT_CONSTANTS,
 } from '@/utils/balance/v5Combat';
 import {
@@ -183,22 +185,23 @@ export const SpyService = {
     }
 
     try {
-      const config = await getRuntimeConfig();
-      const enabled =
-        type === 'INTEL'
-          ? config.enableIntel
-          : type === 'ASSASSINATE'
-            ? config.enableAssassinations
-            : config.enableInfiltrations;
-      if (!enabled)
-        return {
-          status: 'failed',
-          message: 'This spy mission is currently disabled.',
-          code: 'MISSION_DISABLED',
-        };
       return await prisma.$transaction(
         async (tx) => {
           await lockEraLifecycleShared(tx);
+          const config = await getRuntimeConfig(tx);
+          const enabled =
+            type === 'INTEL'
+              ? config.enableIntel
+              : type === 'ASSASSINATE'
+                ? config.enableAssassinations
+                : config.enableInfiltrations;
+          if (!enabled)
+            return {
+              status: 'failed',
+              message: 'This spy mission is currently disabled.',
+              code: 'MISSION_DISABLED',
+            };
+
           // Lock both rows in id order; every check below reads the locked state.
           const firstId = Math.min(
             validatedData.attackerId,
@@ -277,14 +280,6 @@ export const SpyService = {
               code: 'INSUFFICIENT_ATTACK_TURNS',
             };
           }
-          if (attacker.stamina < committedTurns) {
-            return {
-              status: 'failed',
-              message: 'Insufficient stamina',
-              code: 'INSUFFICIENT_STAMINA',
-            };
-          }
-
           let spyResults:
             | AssassinationResult
             | InfiltrationResult
@@ -579,6 +574,20 @@ export const SpyService = {
             tx,
           );
           logDebug('Attack log created', { attackLogId: attack_log.id });
+          // Defenders only see the missions they caught (war history shows
+          // spy logs they won), so only those alert; the spy stays unnamed.
+          if (winnerId === validatedData.defenderId)
+            await enqueueDiscordAlert(tx, {
+              userId: validatedData.defenderId,
+              kind: 'spyHits',
+              eventKey: `spy:${attack_log.id}`,
+              text: 'alert.spyHits',
+              vars: {
+                mission: { key: `mission.${validatedData.type}` },
+                kingdom: defenderUser.display_name,
+                url: siteUrl('/battle/history'),
+              },
+            });
 
           await incrementUserStats(
             validatedData.attackerId,
@@ -606,18 +615,10 @@ export const SpyService = {
             subtype: validatedData.defenderId === winnerId ? 'WON' : 'LOST',
           });
 
-          // Turns and stamina are deltas against the locked row. The stamina
-          // cost is capped at what the attacker still has, so it never goes below 0.
-          const raceIdentity = getRaceIdentity(attacker.race);
-          const staminaCost = Math.min(
-            attacker.stamina,
-            Math.ceil(committedTurns * raceIdentity.moraleLossMultiplier),
-          );
           await updateUser(
             validatedData.attackerId,
             {
               attack_turns: { decrement: committedTurns },
-              stamina: { decrement: staminaCost },
               offense: attackerStats.offense,
               defense: attackerStats.defense,
               spy: attackerStats.spy,
@@ -637,6 +638,24 @@ export const SpyService = {
               spy_pressure_date: new Date(),
             } satisfies Prisma.usersUpdateInput,
             tx,
+          );
+
+          // Casualties changed contract survivors; refresh the strength columns too.
+          await recomputeStoredStatsInTx(
+            tx,
+            validatedData.attackerId,
+            new Date(),
+            {
+              strengthOnly: true,
+            },
+          );
+          await recomputeStoredStatsInTx(
+            tx,
+            validatedData.defenderId,
+            new Date(),
+            {
+              strengthOnly: true,
+            },
           );
 
           const attackerView = redactLiveSpyResult(serializedResult);

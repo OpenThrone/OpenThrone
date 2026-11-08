@@ -76,6 +76,7 @@ export function createSimPlayer(config: PlayerConfig): SimPlayer {
     stamina: config.stamina,
     defensePressureToday: config.defensePressureToday,
     bonuses: { ...DEFAULT_BONUSES, ...config.bonuses },
+    live: config.live,
   };
 }
 

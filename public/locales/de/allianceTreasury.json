@@ -44,7 +44,7 @@
   "loan": {
     "title": "Schatzkammer-Darlehen",
     "terms": "Konditionen: Rückzahlung innerhalb von {{days}} Tagen mit {{interest}} % Festzins. Höchstens {{cap}} Gold pro Darlehen und pro Mitglied und Tag.",
-    "incomeShare": "Solange ein Darlehen offen ist, gehen 25 % Ihres Rundeneinkommens und der Kampfbeute an die Schatzkammer, bis es getilgt ist. Zahlungsunfähige Kreditnehmer können ihre persönliche Bank nicht nutzen und keine neuen Darlehen aufnehmen.",
+    "incomeShare": "Solange ein Darlehen offen ist, gehen {{percent}} % Ihres Rundeneinkommens und der Kampfbeute an die Schatzkammer, bis es getilgt ist. Zahlungsunfähige Kreditnehmer können ihre persönliche Bank nicht nutzen und keine neuen Darlehen aufnehmen.",
     "myLoan": "Ihr Darlehen",
     "progress": "{{percent}} % zurückgezahlt",
     "progressText": "{{repaid}} von {{owed}} Gold zurückgezahlt ({{left}} offen)",
@@ -83,7 +83,7 @@
     "title": "Regeln der Schatzkammer",
     "help": "Die Darlehenskonditionen gelten für alle ab jetzt genehmigten Darlehen. Das Tageslimit begrenzt, wie viel jedes Mitglied pro Tag aus der Schatzkammer erhalten kann, sowie die Höhe eines einzelnen Darlehens.",
     "termDays": "Laufzeit (Tage, 1-14)",
-    "interest": "Festzins (0-25 %)",
+    "interest": "Festzins (0-{{max}} %)",
     "dailyCap": "Tageslimit pro Mitglied",
     "dailyCapHint": "100.000 bis 50.000.000 Gold",
     "save": "Regeln speichern",

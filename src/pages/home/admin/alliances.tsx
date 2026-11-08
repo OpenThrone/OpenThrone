@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { AllianceDetailDrawer } from '@/components/admin/AllianceDetailDrawer';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { alertService } from '@/services/Alert.service';
@@ -21,6 +22,7 @@ import { logError } from '@/utils/logger';
 
 const AllianceAdminPage = () => {
   const { t } = useTranslation('admin-game');
+  const { t: tAlliance } = useTranslation('admin-alliances');
   const [alliances, setAlliances] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -29,6 +31,7 @@ const AllianceAdminPage = () => {
   const [dissolvingId, setDissolvingId] = useState<number | null>(null);
   const [dissolveTarget, setDissolveTarget] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [detailId, setDetailId] = useState<number | null>(null);
 
   const limit = 20;
 
@@ -149,14 +152,23 @@ const AllianceAdminPage = () => {
                           : '—'}
                       </Table.Td>
                       <Table.Td>
-                        <Button
-                          size="xs"
-                          color="red"
-                          onClick={() => setDissolveTarget(a.id)}
-                          loading={dissolvingId === a.id}
-                        >
-                          {t('dissolve')}
-                        </Button>
+                        <Group gap="xs" wrap="nowrap">
+                          <Button
+                            size="xs"
+                            variant="default"
+                            onClick={() => setDetailId(a.id)}
+                          >
+                            {tAlliance('details')}
+                          </Button>
+                          <Button
+                            size="xs"
+                            color="red"
+                            onClick={() => setDissolveTarget(a.id)}
+                            loading={dissolvingId === a.id}
+                          >
+                            {t('dissolve')}
+                          </Button>
+                        </Group>
                       </Table.Td>
                     </Table.Tr>
                   ))}
@@ -175,6 +187,11 @@ const AllianceAdminPage = () => {
           )}
         </GameCard>
       </Stack>
+      <AllianceDetailDrawer
+        allianceId={detailId}
+        onClose={() => setDetailId(null)}
+        onChanged={() => fetchAlliances()}
+      />
       <ConfirmationModal
         isOpen={dissolveTarget !== null}
         onClose={() => setDissolveTarget(null)}
@@ -202,6 +219,7 @@ export const getServerSideProps = async (context: any) => {
         'home',
         'navigation',
         'admin-game',
+        'admin-alliances',
       ])),
     },
   };

@@ -153,7 +153,13 @@
     "goldBadge": "Gold: {{gold}}",
     "xpBadge": "EP: {{xp}}",
     "turnsBadge": "Züge: {{turns}}",
-    "unknownPlayer": "Unbekannt"
+    "unknownPlayer": "Unbekannt",
+    "missionType": {
+      "attack": "Angriff",
+      "INTEL": "Aufklärung",
+      "ASSASSINATE": "Attentat",
+      "INFILTRATE": "Infiltration"
+    }
   },
   "battleSimulator": {
     "title": "Kampfsimulator",
@@ -483,9 +489,16 @@
     "garrisonFatigue": "Garnisonsmüdigkeit: -{{percent}}%",
     "garrisonFatigueTooltip": "Die Garnison des Verteidigers hat bereits heute gekämpft. Jeder zurückgeworfene Angriff ermüdet sie ein wenig mehr, und eine müde Garnison verteidigt mit geringerer Kraft.",
     "garrisonFatigueHelp": "Was die Garnisonsmüdigkeit bedeutet",
-    "pillageDeductions": "Allianzbeitrag: {{contribution}} · Goldrückzahlung: {{repayment}} · Gold mitgebracht: {{net}}"
+    "pillageDeductions": "Allianzbeitrag: {{contribution}} · Goldrückzahlung: {{repayment}} · Gold mitgebracht: {{net}}",
+    "armyFatigue": "Niedrige Ausdauer: −{{percent}} % Angriff",
+    "armyFatigueTooltip": "Die angreifende Armee hatte wenig Ausdauer und kämpfte schwächer. Ausdauer füllt sich mit der Zeit wieder auf.",
+    "armyFatigueHelp": "Was niedrige Ausdauer bedeutet"
   },
   "timeline": {
+    "necropolisBonus": "Die Nekropolenrate erweckte {{bonus}} zusätzliche Einheiten (innerhalb des aktuellen Tageslimits).",
+    "raidersRate": "Plünderer-Gefangenenrate: {{percent}} % (durch Kerkerkapazität begrenzt).",
+    "sanctuaryRecovered": "Das Heiligtum stellte {{recovered}} verteidigende Einheiten wieder her.",
+    "hallowedBlocked": "Geweihter Boden verhinderte die Wiederbelebung von {{blocked}} Gefallenen des Angreifers.",
     "battleId": "Kampf-ID: {{id}}",
     "youAttacked": "Sie haben {{defender}} angegriffen.",
     "attackedYou": "{{attacker}} hat Sie angegriffen.",
@@ -515,7 +528,9 @@
   "losses": {
     "units_one": "{{total}} Einheit",
     "units_other": "{{total}} Einheiten",
-    "unitLine": "{{quantity}}× St. {{level}} {{unit}}"
+    "unitLine": "{{quantity}}× St. {{level}} {{unit}}",
+    "unitLineMercenary": "{{quantity}}× St. {{level}} {{unit}} (Söldner)",
+    "wounded": "+ {{count}} verwundet, in Heilung (etwa ein Drittel kehrt täglich zurück)"
   },
   "unitTypes": {
     "CITIZEN": "Bürger",

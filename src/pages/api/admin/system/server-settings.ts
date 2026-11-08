@@ -3,7 +3,9 @@ import { z } from 'zod';
 
 import {
   isRuntimeSettingKey,
+  RUNTIME_SETTING_KEYS,
   RUNTIME_SETTING_REGISTRY,
+  validateRuntimeSettingConsistency,
 } from '@/constants/runtimeSettings';
 import prisma from '@/lib/prisma';
 import { PermissionType } from '@/lib/prisma-exports';
@@ -14,10 +16,15 @@ import {
   type RuntimeConfig,
 } from '@/services/RuntimeConfig.service';
 import { ServerSettingService } from '@/services/ServerSetting.service';
+import { settleStaminaSettings } from '@/services/Stamina.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp, logActionStrict } from '@/utils/auditLogger';
-import { lockEraLifecycle } from '@/utils/eraLifecycleLock';
+import {
+  ERA_TRANSACTION_OPTIONS,
+  lockEraLifecycle,
+} from '@/utils/eraLifecycleLock';
 import { logError } from '@/utils/logger';
+import { DEFAULT_STAMINA_RULES } from '@/utils/stamina';
 
 const Schema = z.object({
   key: z.string().min(1),
@@ -44,6 +51,37 @@ function runtimeValue(config: RuntimeConfig, key: string): unknown {
     'recruit.internalDailyCap': config.recruitDailyCap ?? 250,
     'recruit.externalIpDailyCap': config.externalRecruitIpDailyCap ?? 5,
     'era.protectionDurationDays': config.protectionDurationDays ?? 14,
+    'mercenary.hireMultiplier': config.mercenaryHireMultiplier,
+    'mercenary.dailyPriceRate': config.mercenaryDailyPriceRate,
+    'combat.pairDailyLimit': config.pairDailyLimit,
+    'era.protectionLevelLimit': config.protectionLevelLimit,
+    'bank.depositCapPercent': config.depositCapPercent,
+    'friend.dailyReceivedCap': config.friendDailyReceivedCap,
+    'alliance.maxPendingGoldRequests': config.maxPendingGoldRequests,
+    'force.maxQuantity': config.forceMaxQuantity,
+    'force.maxTermDays': config.forceMaxTermDays,
+    'force.maxPillageBps': config.forceMaxPillageBps,
+    'alliance.loanTermMinDays': config.allianceLoanTermMinDays,
+    'alliance.loanTermMaxDays': config.allianceLoanTermMaxDays,
+    'alliance.loanInterestMaxPercent': config.allianceLoanInterestMaxPercent,
+    'alliance.memberDailyCapMin': config.allianceMemberDailyCapMin,
+    'alliance.memberDailyCapMax': config.allianceMemberDailyCapMax,
+    'alliance.loanIncomeSharePercent': config.allianceLoanIncomeSharePercent,
+    ENABLE_SUPPORTER: config.enableSupporter,
+    'stamina.penaltyThreshold': (config.stamina ?? DEFAULT_STAMINA_RULES)
+      .penaltyThreshold,
+    'stamina.minOffensePercent': (config.stamina ?? DEFAULT_STAMINA_RULES)
+      .minOffensePercent,
+    'stamina.enabled': (config.stamina ?? DEFAULT_STAMINA_RULES).enabled,
+    'stamina.recoveryEnabled': (config.stamina ?? DEFAULT_STAMINA_RULES)
+      .recoveryEnabled,
+    'stamina.recoveryAmount': (config.stamina ?? DEFAULT_STAMINA_RULES)
+      .recoveryAmount,
+    'stamina.recoveryIntervalMinutes': (config.stamina ?? DEFAULT_STAMINA_RULES)
+      .recoveryIntervalMinutes,
+    'stamina.baseCost': (config.stamina ?? DEFAULT_STAMINA_RULES).baseCost,
+    'stamina.perTurnCost': (config.stamina ?? DEFAULT_STAMINA_RULES)
+      .perTurnCost,
     ENABLE_ATTACKING: config.enableAttacking,
     ATTACK_LEVEL_RANGE: config.attackLevelRange,
     ENABLE_INFILTRATIONS: config.enableInfiltrations,
@@ -67,11 +105,39 @@ function runtimeValue(config: RuntimeConfig, key: string): unknown {
     : values[key];
 }
 
+async function validateLimits(
+  tx: Parameters<typeof getRuntimeConfig>[0],
+  key: string,
+  value: unknown,
+) {
+  const config = await getRuntimeConfig(tx);
+  const effective = (setting: string, current: number) =>
+    key === setting ? Number(value) : current;
+  validateRuntimeSettingConsistency({
+    loanTermMin: effective(
+      'alliance.loanTermMinDays',
+      config.allianceLoanTermMinDays ?? 1,
+    ),
+    loanTermMax: effective(
+      'alliance.loanTermMaxDays',
+      config.allianceLoanTermMaxDays ?? 14,
+    ),
+    memberCapMin: effective(
+      'alliance.memberDailyCapMin',
+      config.allianceMemberDailyCapMin ?? 100000,
+    ),
+    memberCapMax: effective(
+      'alliance.memberDailyCapMax',
+      config.allianceMemberDailyCapMax ?? 50000000,
+    ),
+  });
+}
+
 async function handler(
   req: AuthenticatedRequest,
   res: NextApiResponse,
   context: {
-    query: { key?: string; historyKey?: string };
+    query: { key?: string; historyKey?: string; effective?: string };
     body?: z.infer<typeof Schema>;
   },
 ) {
@@ -98,6 +164,18 @@ async function handler(
           createdAt: timestamp,
         })),
       );
+    }
+    // What the server runs with right now, including env defaults, so the
+    // page never shows a fallback for a setting that has no database row.
+    if (context.query.effective) {
+      const config = await getRuntimeConfig();
+      return res
+        .status(200)
+        .json(
+          Object.fromEntries(
+            RUNTIME_SETTING_KEYS.map((key) => [key, runtimeValue(config, key)]),
+          ),
+        );
     }
     return res.status(200).json(await ServerSettingService.list());
   }
@@ -144,49 +222,67 @@ async function handler(
       const parsed = meta.schema.safeParse(nextValue);
       if (!parsed.success)
         return res.status(400).json({ error: 'Invalid value for setting' });
-      const currentConfig = await getRuntimeConfig();
-      const result = await prisma.$transaction(async (tx) => {
-        if (key === 'DISABLE_LOGIN') await lockEraLifecycle(tx);
-        const previous = await tx.serverSetting.findUnique({ where: { key } });
-        const updated = await tx.serverSetting.upsert({
-          where: { key },
-          create: {
-            key,
-            label: meta.label,
-            type: meta.type,
-            value: parsed.data as object,
-            isPublic: meta.isPublic,
-            isRuntimeEditable: true,
-            updatedByUserId: userId,
-          },
-          update: {
-            label: meta.label,
-            type: meta.type,
-            value: parsed.data as object,
-            isPublic: meta.isPublic,
-            isRuntimeEditable: true,
-            updatedByUserId: userId,
-          },
-        });
-        await logActionStrict(
-          {
-            userId,
-            action: 'ADMIN_SERVER_SETTING_UPDATE',
-            ip: getRequestIp(req),
-            entityType: 'ServerSetting',
-            entityId: updated.id,
-            details: {
+      const result = await prisma.$transaction(
+        async (tx) => {
+          if (
+            key.startsWith('alliance.loanTerm') ||
+            key.startsWith('alliance.memberDailyCap')
+          ) {
+            await tx.$executeRaw`SELECT pg_advisory_xact_lock(71942018)`;
+            await validateLimits(tx, key, parsed.data);
+          }
+          if (key === 'DISABLE_LOGIN' || key.startsWith('stamina.'))
+            await lockEraLifecycle(tx);
+          const currentConfig = await getRuntimeConfig(tx);
+          if (
+            key.startsWith('stamina.') &&
+            !Object.is(runtimeValue(currentConfig, key), parsed.data)
+          )
+            await settleStaminaSettings(tx);
+          const previous = await tx.serverSetting.findUnique({
+            where: { key },
+          });
+          const updated = await tx.serverSetting.upsert({
+            where: { key },
+            create: {
               key,
-              previousValue:
-                previous?.value ?? runtimeValue(currentConfig, key),
-              newValue: parsed.data,
-              revertedAuditId: revertAuditId ?? null,
+              label: meta.label,
+              type: meta.type,
+              value: parsed.data as object,
+              isPublic: meta.isPublic,
+              isRuntimeEditable: true,
+              updatedByUserId: userId,
             },
-          },
-          tx,
-        );
-        return updated;
-      });
+            update: {
+              label: meta.label,
+              type: meta.type,
+              value: parsed.data as object,
+              isPublic: meta.isPublic,
+              isRuntimeEditable: true,
+              updatedByUserId: userId,
+            },
+          });
+          await logActionStrict(
+            {
+              userId,
+              action: 'ADMIN_SERVER_SETTING_UPDATE',
+              ip: getRequestIp(req),
+              entityType: 'ServerSetting',
+              entityId: updated.id,
+              details: {
+                key,
+                previousValue:
+                  previous?.value ?? runtimeValue(currentConfig, key),
+                newValue: parsed.data,
+                revertedAuditId: revertAuditId ?? null,
+              },
+            },
+            tx,
+          );
+          return updated;
+        },
+        key.startsWith('stamina.') ? ERA_TRANSACTION_OPTIONS : undefined,
+      );
       invalidateRuntimeConfigCache();
       return res.status(200).json(result);
     }
@@ -195,30 +291,58 @@ async function handler(
       return res.status(400).json({ error: 'Unknown setting key' });
     const prior = await ServerSettingService.get(key);
     if (prior) {
-      const currentConfig = await getRuntimeConfig();
-      await prisma.$transaction(async (tx) => {
-        if (key === 'DISABLE_LOGIN') await lockEraLifecycle(tx);
-        await tx.serverSetting.delete({ where: { key } });
-        await logActionStrict(
-          {
-            userId,
-            action: 'ADMIN_SERVER_SETTING_DELETE',
-            ip: getRequestIp(req),
-            entityType: 'ServerSetting',
-            entityId: prior.id,
-            details: {
+      await prisma.$transaction(
+        async (tx) => {
+          if (
+            key.startsWith('alliance.loanTerm') ||
+            key.startsWith('alliance.memberDailyCap')
+          ) {
+            await tx.$executeRaw`SELECT pg_advisory_xact_lock(71942018)`;
+            await validateLimits(
+              tx,
               key,
-              previousValue: prior.value ?? runtimeValue(currentConfig, key),
-              newValue: null,
+              RUNTIME_SETTING_REGISTRY[key].fallback,
+            );
+          }
+          if (key === 'DISABLE_LOGIN' || key.startsWith('stamina.'))
+            await lockEraLifecycle(tx);
+          const currentConfig = await getRuntimeConfig(tx);
+          if (
+            key.startsWith('stamina.') &&
+            !Object.is(
+              runtimeValue(currentConfig, key),
+              RUNTIME_SETTING_REGISTRY[key].fallback,
+            )
+          )
+            await settleStaminaSettings(tx);
+          await tx.serverSetting.delete({ where: { key } });
+          await logActionStrict(
+            {
+              userId,
+              action: 'ADMIN_SERVER_SETTING_DELETE',
+              ip: getRequestIp(req),
+              entityType: 'ServerSetting',
+              entityId: prior.id,
+              details: {
+                key,
+                previousValue: prior.value ?? runtimeValue(currentConfig, key),
+                newValue: null,
+              },
             },
-          },
-          tx,
-        );
-      });
+            tx,
+          );
+        },
+        key.startsWith('stamina.') ? ERA_TRANSACTION_OPTIONS : undefined,
+      );
       invalidateRuntimeConfigCache();
     }
     return res.status(200).json({ success: true });
   } catch (err) {
+    if (
+      err instanceof Error &&
+      err.message === 'Minimum setting cannot exceed maximum setting'
+    )
+      return res.status(400).json({ error: err.message });
     logError('Failed to update server setting', err);
     return res.status(500).json({ error: 'Setting update failed' });
   }

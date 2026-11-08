@@ -1,6 +1,10 @@
 {
-  "page": { "title": "Gestión de usuarios" },
-  "nav": { "bots": "Operaciones de bots" },
+  "page": {
+    "title": "Gestión de usuarios"
+  },
+  "nav": {
+    "bots": "Operaciones de bots"
+  },
   "sections": {
     "grantPermissions": "Otorgar permisos",
     "userManagement": "Directorio de usuarios",
@@ -14,7 +18,12 @@
     "permissions": "Permisos",
     "addNote": "Añadir nota del personal",
     "notes": "Notas del personal",
-    "export": "Exportar datos del usuario"
+    "export": "Exportar datos del usuario",
+    "record": "Registro de cuenta",
+    "alliances": "Alianzas",
+    "statusHistory": "Historial de estado",
+    "gameplay": "Reino",
+    "derived": "Fuerza calculada"
   },
   "columns": {
     "id": "ID",
@@ -52,7 +61,9 @@
     "staffRoles": "Roles del personal",
     "permissions": "Permisos",
     "notes": "Notas",
-    "operations": "Operaciones"
+    "operations": "Operaciones",
+    "upgrades": "Mejoras",
+    "forces": "Mercenarios y tropas"
   },
   "editor": {
     "title": "{{username}}",
@@ -82,7 +93,31 @@
     "unknownAuthor": "Personal desconocido",
     "pinned": "Fijada",
     "unknown": "Desconocido",
-    "noteHelp": "Solo visible para el personal autorizado."
+    "noteHelp": "Solo visible para el personal autorizado.",
+    "rank": "Rango",
+    "lastActive": "Última actividad",
+    "createdAt": "Se unió",
+    "currentEra": "Era actual",
+    "eraJoinedAt": "Se unió a la era (inicio de protección)",
+    "protectionForfeited": "Protección renunciada en la era",
+    "start": "Inicio",
+    "end": "Fin",
+    "reason": "Motivo",
+    "byAdmin": "Por",
+    "fortLevel": "Nivel de fortaleza",
+    "fortHitpoints": "Puntos de vida de la fortaleza",
+    "max": "Máximo",
+    "stamina": "Resistencia",
+    "maxStamina": "Resistencia máxima",
+    "attackTurns": "Turnos de ataque",
+    "houseLevel": "Nivel de vivienda",
+    "economyLevel": "Nivel de economía",
+    "race": "Raza",
+    "class": "Clase",
+    "locale": "Idioma",
+    "bio": "Biografía",
+    "derivedHelp": "Se recalcula al guardar si cambian unidades, objetos, fortaleza, experiencia, raza o clase.",
+    "mercenaryLocked": "Gestionado por contrato de mercenario"
   },
   "actions": {
     "edit": "Editar",
@@ -97,7 +132,8 @@
     "decreaseQuantity": "Reducir cantidad de {{name}}",
     "sortBy": "Ordenar por {{field}}",
     "endImpersonation": "Finalizar suplantación",
-    "savePermissions": "Guardar permisos"
+    "savePermissions": "Guardar permisos",
+    "reload": "Recargar jugador"
   },
   "grant": {
     "userSearch": "Buscar jugador",
@@ -106,13 +142,16 @@
     "permissionsHelp": "Se muestran los permisos existentes. Al guardar se añaden los permisos seleccionados.",
     "permissionsPlaceholder": "Selecciona permisos"
   },
-  "pagination": { "label": "Páginas de usuarios" },
+  "pagination": {
+    "label": "Páginas de usuarios"
+  },
   "messages": {
     "savedTitle": "Cambios guardados",
     "saved": "Se actualizaron los datos del usuario.",
     "impersonating": "Estás viendo una cuenta suplantada.",
     "moderatorReadOnly": "Los moderadores pueden inspeccionar cuentas y añadir notas del personal. La edición, los permisos y la suplantación son solo para administradores.",
-    "permissionsSaved": "Permisos actualizados para {{username}}."
+    "permissionsSaved": "Permisos actualizados para {{username}}.",
+    "noChanges": "No hay cambios que guardar"
   },
   "states": {
     "loading": "Cargando información del usuario…",
@@ -120,7 +159,9 @@
     "noUsers": "Ningún usuario coincide con estos filtros.",
     "noUnits": "Esta cuenta no tiene unidades.",
     "noItems": "Esta cuenta no tiene objetos.",
-    "noNotes": "No se han añadido notas del personal."
+    "noNotes": "No se han añadido notas del personal.",
+    "noAlliances": "Sin alianza",
+    "noStatusHistory": "Sin cambios de estado"
   },
   "errors": {
     "title": "Error en la solicitud",
@@ -134,6 +175,7 @@
     "grant": "No se pudieron actualizar los permisos.",
     "impersonationTitle": "Error al suplantar",
     "impersonation": "No se pudo iniciar la suplantación.",
-    "stopImpersonation": "No se pudo finalizar la suplantación."
+    "stopImpersonation": "No se pudo finalizar la suplantación.",
+    "stale": "Este jugador cambió desde que abriste el editor. Recarga para ver los valores actuales. Tus cambios no se guardaron."
   }
 }

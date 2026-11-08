@@ -4,6 +4,7 @@ import {
   FEATURE_KEYS,
   getRequiredEconomyUpgradeName,
   hasFeature,
+  isFeatureInReach,
 } from '@/constants/FeatureUnlocks';
 
 const base = { economyLevel: 0, fortLevel: 1, race: 'HUMAN' };
@@ -37,5 +38,32 @@ describe('hasFeature', () => {
     expect(
       hasFeature({ ...base, fortLevel: 4, race: 'UNDEAD' }, 'REANIMATION'),
     ).toBe(false);
+  });
+});
+
+describe('isFeatureInReach', () => {
+  it('shows the Tavern only when built or immediately buildable', () => {
+    expect(isFeatureInReach(base, 'MERCENARY_HALL')).toBe(false);
+    expect(
+      isFeatureInReach(
+        { ...base, economyLevel: 3, fortLevel: 14 },
+        'MERCENARY_HALL',
+      ),
+    ).toBe(false);
+    expect(
+      isFeatureInReach(
+        { ...base, economyLevel: 2, fortLevel: 15 },
+        'MERCENARY_HALL',
+      ),
+    ).toBe(false);
+    expect(
+      isFeatureInReach(
+        { ...base, economyLevel: 3, fortLevel: 15 },
+        'MERCENARY_HALL',
+      ),
+    ).toBe(true);
+    expect(
+      isFeatureInReach({ ...base, economyLevel: 4 }, 'MERCENARY_HALL'),
+    ).toBe(true);
   });
 });

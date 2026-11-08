@@ -289,6 +289,8 @@ class BattleResult {
   /** Garrison fatigue applied to the defender's power (#204), as a 0-100 percent. */
   defenderFatiguePercent: number;
 
+  attackerFatiguePercent: number;
+
   /** Stacks that hit the per-battle casualty cap and were forced to withdraw. */
   routedStacks: Array<{
     side: 'Attacker' | 'Defender';
@@ -351,6 +353,7 @@ class BattleResult {
     };
     this.damageReceived = { attacker: 0, defender: 0 };
     this.defenderFatiguePercent = 0;
+    this.attackerFatiguePercent = 0;
     this.Losses = {
       Attacker: {
         total: 0,

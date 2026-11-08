@@ -280,3 +280,39 @@ describe('shared combat allocation', () => {
     expect(user).toEqual(snapshot);
   });
 });
+
+// Troop-only chip (#202): bonuses stay with the troops, any gear's share goes.
+describe('troop stats without gear', () => {
+  it('keep the attack bonus of an unequipped army', () => {
+    const [bare] = buildCombatFormations(army({ attackBonus: 35 }), 'OFFENSE');
+    expect(bare.troopStats).toEqual(bare.perUnitStats);
+    expect(bare.troopStats.MeleeAtkPower).toBeGreaterThan(
+      soldier.MeleeAtkPower!,
+    );
+  });
+
+  it('drop contract gear as well as owned gear', () => {
+    const [hired] = buildCombatFormations(
+      army({
+        units: [],
+        mercenaries: [
+          {
+            type: 'OFFENSE',
+            level: 1,
+            quantity: 10,
+            isMercenary: true,
+            forceKind: 'MERCENARY',
+            forceContractId: 7,
+            forceEquipment: [{ type: 'WEAPON', level: 1 }],
+          },
+        ],
+      }),
+      'OFFENSE',
+    );
+    const share =
+      soldier.MeleeAtkPower! / (soldier.MeleeAtkPower! + dagger.MeleeAtkPower!);
+    expect(hired.troopStats.MeleeAtkPower).toBeCloseTo(
+      hired.perUnitStats.MeleeAtkPower * share,
+    );
+  });
+});

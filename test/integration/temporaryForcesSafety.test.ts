@@ -6,7 +6,6 @@ import prisma from '@/lib/prisma';
 import { cancelAllianceForceRequest } from '@/services/AllianceForceExtension.service';
 import { BattleService } from '@/services/Battle.service';
 import { divertForcePillageInTx } from '@/services/ForcePillage.service';
-import { MercenaryService } from '@/services/Mercenary.service';
 import { invalidateRuntimeConfigCache } from '@/services/RuntimeConfig.service';
 import { SpyService } from '@/services/SpyService';
 import { TemporaryForceLedgerService as Ledger } from '@/services/TemporaryForceLedger.service';
@@ -15,6 +14,7 @@ import { parseCombatReplay } from '@/utils/combatReplay';
 import { parseForceLoadout } from '@/utils/temporaryForces';
 
 import { resetDatabase } from './db';
+import { hireQuoted } from './hireQuoted';
 
 let borrowerId: number;
 let eraId: number;
@@ -239,7 +239,7 @@ describe('temporary force adversarial boundaries', () => {
       where: { userId: defender.id, type: 'SENTRY' },
       data: { quantity: 100 },
     });
-    const contract = await MercenaryService.hire({
+    const contract = await hireQuoted({
       userId: borrowerId,
       type: 'SPY',
       level: 1,

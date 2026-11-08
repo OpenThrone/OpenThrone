@@ -10,6 +10,7 @@ import {
 } from '@/constants/FriendTransfer';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getActiveAccountStatus } from '@/services/User.service';
 import { createApiError } from '@/utils/api-error';
@@ -442,7 +443,10 @@ const transferGoldWithinTransaction = async (
   const receivedToday = BigInt(received?._sum?.gold_amount ?? 0);
   if (
     receivedToday + validatedParams.amount >
-    FRIEND_TRANSFER_DAILY_RECEIVED_CAP
+    BigInt(
+      (await getRuntimeConfig(tx)).friendDailyReceivedCap ??
+        FRIEND_TRANSFER_DAILY_RECEIVED_CAP,
+    )
   ) {
     throw createApiError(
       'This player has reached the daily limit for receiving gold',

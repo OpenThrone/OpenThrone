@@ -314,7 +314,6 @@ type SpySkipReason =
   | 'INSUFFICIENT_INFILTRATORS'
   | 'INSUFFICIENT_ASSASSINS'
   | 'INSUFFICIENT_ATTACK_TURNS'
-  | 'INSUFFICIENT_STAMINA'
   | 'INSUFFICIENT_SPY_OFFENSE'
   | 'INFILTRATION_LOCKED'
   | 'ASSASSINATION_LOCKED'
@@ -481,14 +480,6 @@ export function checkSpyEligibility(
       eligible: false,
       reason: 'INSUFFICIENT_ATTACK_TURNS',
       message: `Attacker has ${attacker.attackTurns} turns; mission requires ${ctx.turns}.`,
-    };
-  }
-
-  if (ctx.turns > attacker.stamina) {
-    return {
-      eligible: false,
-      reason: 'INSUFFICIENT_STAMINA',
-      message: `Attacker has ${attacker.stamina} stamina; mission requires ${ctx.turns}.`,
     };
   }
 
@@ -888,7 +879,7 @@ function intelResultToOutcome(
     spiesSent: result.spiesSent,
     spiesLost,
     turnsSpent: decision.turns,
-    staminaSpent: decision.turns,
+    staminaSpent: 0,
     intel: result.success ? result.defenderInfo : undefined,
     attackerXpAwarded: 0,
     defenderXpAwarded: 0,
@@ -919,7 +910,7 @@ function spyResultToOutcome(
         ? Math.max(0, Math.floor(result.fortDamage ?? 0))
         : undefined,
     turnsSpent: decision.turns,
-    staminaSpent: decision.turns,
+    staminaSpent: 0,
     intel: result.success ? result.intel : undefined,
     attackerXpAwarded: 0,
     defenderXpAwarded: 0,

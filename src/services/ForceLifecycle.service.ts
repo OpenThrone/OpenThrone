@@ -1,4 +1,5 @@
 import type { ForceContract, Prisma } from '@/lib/prisma-exports';
+import { recomputeStoredStatsInTx } from '@/utils/adminRecomputeStats';
 
 /** Caller holds the borrower lock. Reserve rows are leaf locks, never lock an alliance here. */
 export async function returnForceInTx(
@@ -46,6 +47,8 @@ export async function returnForceInTx(
         ) as Prisma.InputJsonValue,
       },
     });
+  // Returned troops leave the roster, so stored strength must drop with them.
+  await recomputeStoredStatsInTx(tx, contract.userId, now);
 }
 
 /** The caller already owns the alliance lock; borrower locks serialize with combat. */

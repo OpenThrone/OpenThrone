@@ -34,6 +34,7 @@ enum PermissionType {
 
   // User Management
   MANAGE_USERS
+  MANAGE_SUPPORTERS
   MANAGE_ACCOUNT_STATUS
   MANAGE_MODERATOR_NOTES
   MANAGE_BAN_APPEALS
@@ -257,6 +258,16 @@ enum ApiClientStatus {
 }
 
 model users {
+  supporter_until DateTime? @db.Timestamptz(3)
+  supporterMembership SupporterMembership?
+  supporterPayments Payment[]
+  purchasedGifts GiftCode[] @relation("GiftPurchaser")
+  recipientGifts GiftCode[] @relation("GiftRecipient")
+  redeemedGifts GiftCode[] @relation("GiftRedeemer")
+  discordLink DiscordLink?
+  discordLinkCodes DiscordLinkCode[]
+  discordOutbox DiscordOutbox[]
+  purchaseConsents PurchaseConsent[]
   id                                    Int                      @id @default(autoincrement())
   email                                 String                   @unique
   display_name                          String                   @unique
@@ -272,6 +283,7 @@ model users {
   attack_turns                          Int                      @default(50)
   stamina                               Int                      @default(100)
   maxStamina                            Int                      @default(100)
+  staminaUpdatedAt                      DateTime                 @default(now())
   defense_pressure_today                Int                      @default(0)
   defense_pressure_date                 DateTime?                @db.Timestamptz(3)
   spy_pressure_today                    Int                      @default(0)
@@ -284,6 +296,10 @@ model users {
   kingdom_morale_day                    String?
   /// Undead reanimation (#211): units that rose again this OT day, across all battles.
   reanimated_today                      Int                      @default(0)
+  racial_perk_tier                      Int                      @default(0)
+  sanctuary_recovered_today             Int                      @default(0)
+  sanctuary_day                         String?
+  sanctuary_cap                         Int                      @default(0)
   /// OT day key (YYYY-MM-DD) the reanimation ledger was last reset for; guards the daily cap like kingdom_morale_day guards the morale pass.
   reanimation_day                       String?
   /// The day's cap: 2% of the trained combat army measured at the first battle of the OT day.
@@ -633,6 +649,8 @@ model attack_log_acl {
 }
 
 model alliances {
+  sponsorship AllianceSponsorship?
+  supporterPayments Payment[]
   id                Int                    @id @default(autoincrement())
   name              String
   leader_id         Int
@@ -896,6 +914,7 @@ model AuditLog {
   @@index([userId, timestamp])
   @@index([targetUserId, timestamp])
   @@index([action, timestamp])
+  @@index([timestamp])
 }
 
 model ApiClient {
@@ -1036,8 +1055,8 @@ model DesertionEvent {
   quantity        Int
   defectedToUserId Int?
   createdAt       DateTime           @default(now()) @db.Timestamptz(3)
-  user            users              @relation("DesertionEvents", fields: [userId], references: [id], onDelete: Cascade)
-  defectedTo      users?             @relation("DesertionDefections", fields: [defectedToUserId], references: [id], onDelete: SetNull)
+  user            users              @relation("DesertionEvents", fields: [userId], references: [id], onDelete: Cascade, map: "DesertionEvent_user_fkey")
+  defectedTo      users?             @relation("DesertionDefections", fields: [defectedToUserId], references: [id], onDelete: SetNull, map: "DesertionEvent_defectedTo_fkey")
 
   @@index([userId, createdAt])
   @@index([defectedToUserId, createdAt])
@@ -1054,8 +1073,8 @@ model Captive {
   quantity   Int
   capturedAt DateTime @db.Timestamptz(3)
   eraId      Int?
-  captor     users    @relation("CaptivesHeld", fields: [captorId], references: [id], onDelete: Cascade)
-  source     users    @relation("CaptivesLost", fields: [sourceId], references: [id], onDelete: Cascade)
+  captor     users    @relation("CaptivesHeld", fields: [captorId], references: [id], onDelete: Cascade, map: "Captive_captor_fkey")
+  source     users    @relation("CaptivesLost", fields: [sourceId], references: [id], onDelete: Cascade, map: "Captive_source_fkey")
 
   @@index([captorId, eraId])
   @@index([sourceId, eraId])
@@ -1085,8 +1104,8 @@ model CaptiveEvent {
   operationKey String?         @unique
   details      Json?
   createdAt    DateTime        @default(now()) @db.Timestamptz(3)
-  captor       users           @relation("CaptorCaptiveEvents", fields: [captorId], references: [id], onDelete: Cascade)
-  source       users?          @relation("SourceCaptiveEvents", fields: [sourceId], references: [id], onDelete: SetNull)
+  captor       users           @relation("CaptorCaptiveEvents", fields: [captorId], references: [id], onDelete: Cascade, map: "CaptiveEvent_captor_fkey")
+  source       users?          @relation("SourceCaptiveEvents", fields: [sourceId], references: [id], onDelete: SetNull, map: "CaptiveEvent_source_fkey")
 
   @@index([captorId, createdAt])
   @@index([sourceId, createdAt])
@@ -2054,4 +2073,218 @@ model ForceDuesRule {
 
   @@unique([allianceId, roleId, minLevel])
   @@index([nextIssueAt, enabled])
+}
+
+
+enum SupporterTier {
+  SUPPORTER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum MembershipSource {
+  SUBSCRIPTION
+  ONE_TIME
+  GIFT
+  COMP
+}
+
+enum PaymentKind {
+  SUBSCRIPTION
+  ONE_TIME
+  GIFT
+  ALLIANCE_SPONSORSHIP
+}
+
+enum PaymentStatus {
+  SUCCEEDED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  DISPUTED
+  FAILED
+}
+
+enum PaymentEventStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+  IGNORED
+}
+
+model SupporterMembership {
+  id Int @id @default(autoincrement())
+  userId Int @unique
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier SupporterTier @default(SUPPORTER)
+  status MembershipStatus
+  source MembershipSource
+  provider String
+  providerCustomerId String?
+  providerSubscriptionId String?
+  currentPeriodEnd DateTime? @db.Timestamptz(3)
+  subscriptionPeriodEnd DateTime? @db.Timestamptz(3)
+  cancelAtPeriodEnd Boolean @default(false)
+  startedAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  badgeVisible Boolean @default(true)
+}
+
+model Payment {
+  id Int @id @default(autoincrement())
+  userId Int
+  user users @relation(fields: [userId], references: [id])
+  allianceId Int?
+  alliance alliances? @relation(fields: [allianceId], references: [id])
+  kind PaymentKind
+  status PaymentStatus
+  amountCents Int
+  currency String @default("usd")
+  taxCents Int @default(0)
+  refundedCents Int @default(0)
+  provider String
+  providerPaymentId String @unique
+  providerInvoiceId String?
+  description String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  gifts GiftCode[]
+  refunds PaymentRefund[]
+  /// Access window this payment bought (memberships and passes). Refunds
+  /// and lost disputes remove only its unused part.
+  accessFrom DateTime? @db.Timestamptz(3)
+  accessUntil DateTime? @db.Timestamptz(3)
+  /// Access removed while a dispute is open; given back if it is won.
+  disputeRemovedSeconds Int?
+  /// From the provider's billing address (no card data).
+  billingCountry String?
+  billingState String?
+}
+
+/// What a buyer agreed to before checkout: the exact text shown, kept as a
+/// record of consent to price, renewal and terms (at least three years).
+model PurchaseConsent {
+  id Int @id @default(autoincrement())
+  userId Int
+  user users @relation(fields: [userId], references: [id])
+  planId String
+  allianceId Int?
+  amountCents Int
+  currency String @default("usd")
+  locale String
+  version String
+  text String @db.Text
+  checkoutSessionId String? @unique
+  acceptedAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, acceptedAt])
+}
+
+model PaymentRefund {
+  id Int @id @default(autoincrement())
+  paymentId Int
+  payment Payment @relation(fields: [paymentId], references: [id])
+  amountCents Int
+  reason String?
+  providerRefundId String? @unique
+  createdById Int?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([createdAt])
+}
+
+model PaymentEvent {
+  id Int @id @default(autoincrement())
+  provider String
+  providerEventId String @unique
+  type String
+  status PaymentEventStatus @default(RECEIVED)
+  error String?
+  summary Json
+  receivedAt DateTime @default(now()) @db.Timestamptz(3)
+  processedAt DateTime? @db.Timestamptz(3)
+}
+
+model GiftCode {
+  id Int @id @default(autoincrement())
+  codeHash String @unique
+  codePrefix String
+  months Int
+  purchaserUserId Int
+  purchaser users @relation("GiftPurchaser", fields: [purchaserUserId], references: [id])
+  paymentId Int
+  payment Payment @relation(fields: [paymentId], references: [id])
+  recipientUserId Int?
+  recipient users? @relation("GiftRecipient", fields: [recipientUserId], references: [id])
+  redeemedByUserId Int?
+  redeemedBy users? @relation("GiftRedeemer", fields: [redeemedByUserId], references: [id])
+  redeemedAt DateTime? @db.Timestamptz(3)
+  /// Null: never expires (states that ban gift expiry; see Gift.service).
+  expiresAt DateTime? @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model AllianceSponsorship {
+  id Int @id @default(autoincrement())
+  allianceId Int @unique
+  alliance alliances @relation(fields: [allianceId], references: [id], onDelete: Cascade)
+  poolCents Int @default(0)
+  activeUntil DateTime? @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model DiscordLink {
+  id Int @id @default(autoincrement())
+  userId Int @unique
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discordUserId String @unique
+  discordUsername String
+  linkedAt DateTime @default(now()) @db.Timestamptz(3)
+  notifyPrefs Json @default("{}")
+}
+
+/// Discord DMs waiting to send. One row per alert; eventKey makes enqueueing
+/// idempotent. Content is rendered at enqueue time and holds no secrets.
+model DiscordOutbox {
+  id Int @id @default(autoincrement())
+  eventKey String @unique
+  userId Int
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discordUserId String
+  kind String
+  content String @db.Text
+  /// PENDING, SENDING, SENT, SKIPPED or FAILED.
+  status String @default("PENDING")
+  attempts Int @default(0)
+  nextAttemptAt DateTime @default(now()) @db.Timestamptz(3)
+  lockedAt DateTime? @db.Timestamptz(3)
+  sentAt DateTime? @db.Timestamptz(3)
+  lastError String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([status, nextAttemptAt])
+  @@index([userId])
+}
+
+model DiscordLinkCode {
+  id Int @id @default(autoincrement())
+  codeHash String @unique
+  userId Int
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @db.Timestamptz(3)
+  usedAt DateTime? @db.Timestamptz(3)
+}
+
+/// Current catalog prices; absent rows use code defaults. AuditLog keeps history.
+model SupporterPlanPrice {
+  planId String @id
+  priceCents Int
+  currency String @default("usd")
+  providerPriceId String?
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  updatedById Int?
 }

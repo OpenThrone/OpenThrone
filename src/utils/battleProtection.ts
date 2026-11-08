@@ -43,6 +43,7 @@ export interface ProtectionEraInput {
 /** Admin-tunable inputs (see RuntimeConfig). */
 export interface ProtectionSettings {
   durationDays: number;
+  levelLimit?: number;
   /** Combined daily internal and external recruitment allowance. */
   recruitDailyCap: number;
 }
@@ -155,8 +156,9 @@ export function getProtectionStatus(
     if (joined) endsAt = new Date(joined.getTime() + durationDays * DAY_MS);
   }
 
+  const levelLimit = settings.levelLimit ?? PROTECTION_LEVEL_LIMIT;
   let reason: ProtectionReason = 'ACTIVE';
-  if (level >= PROTECTION_LEVEL_LIMIT) reason = 'LEVEL';
+  if (level >= levelLimit) reason = 'LEVEL';
   else if (population >= populationThreshold) reason = 'POPULATION';
   else if (endsAt && now.getTime() >= endsAt.getTime()) reason = 'TIME';
 
@@ -165,7 +167,7 @@ export function getProtectionStatus(
     protected: reason === 'ACTIVE',
     reason,
     endsAt,
-    levelLimit: PROTECTION_LEVEL_LIMIT,
+    levelLimit,
     level,
     population,
     populationThreshold,

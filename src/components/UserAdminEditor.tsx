@@ -9,26 +9,44 @@ import {
   Group,
   NumberInput,
   Paper,
+  Select,
+  SimpleGrid,
   Stack,
+  Table,
   Tabs,
   Text,
   Textarea,
   TextInput,
   Title,
+  Tooltip,
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 
+import PlayerForcesPanel from '@/components/admin/PlayerForcesPanel';
+import PlayerSupporterPanel from '@/components/admin/PlayerSupporterPanel';
+import PlayerUpgradesPanel from '@/components/admin/PlayerUpgradesPanel';
 import UserOperations, {
   AdminUserExport,
 } from '@/components/admin/UserOperations';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
+import { EconomyUpgrades, Fortifications, HouseUpgrades } from '@/constants';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import type { StaffRole } from '@/lib/prisma-exports';
 import { alertService } from '@/services/Alert.service';
+import { AppConfig } from '@/utils/AppConfig';
 import { logError } from '@/utils/logger';
 import { STAFF_ROLE_LABELS } from '@/utils/permissions';
+
+// Matches the server's Postgres INT cap for quantities and counters.
+const INT_MAX = 2147483647;
+const RACES = ['ELF', 'HUMAN', 'GOBLIN', 'UNDEAD'];
+const CLASSES = ['FIGHTER', 'CLERIC', 'ASSASSIN', 'THIEF'];
+const MAX_FORT_LEVEL = Math.max(...Fortifications.map((f) => f.level));
+const MAX_HOUSE_LEVEL = Math.max(...Object.keys(HouseUpgrades).map(Number));
+const MAX_ECONOMY_LEVEL = EconomyUpgrades.length - 1;
+const BIO_MAX_LENGTH = 2000;
 
 const STAFF_ROLES: StaffRole[] = [
   'ADMINISTRATOR',
@@ -69,8 +87,50 @@ interface UserItem {
   level: number;
 }
 
+interface UserGameplay {
+  fortLevel: number;
+  fortHitpoints: number;
+  stamina: number;
+  maxStamina: number;
+  attackTurns: number;
+  houseLevel: number;
+  economyLevel: number;
+  race: string;
+  class: string;
+  locale: string;
+  bio: string;
+}
+
+interface UserDerived {
+  offense: number;
+  defense: number;
+  spy: number;
+  sentry: number;
+}
+
+interface UserRecord {
+  rank: number;
+  lastActive: string | null;
+  createdAt: string | null;
+  currentEraId: number | null;
+  eraJoinedAt: string | null;
+  protectionForfeitedEraId: number | null;
+  alliances: { allianceId: number; name: string; role: string | null }[];
+  statusHistory: {
+    id: number;
+    status: string;
+    startDate: string;
+    endDate: string | null;
+    reason: string | null;
+    adminName: string | null;
+  }[];
+}
+
 interface UserData {
   profile: UserProfile;
+  gameplay: UserGameplay;
+  derived: UserDerived;
+  record: UserRecord;
   stats: UserStats;
   army: { units: UserUnit[] };
   items: { items: UserItem[] };
@@ -93,10 +153,110 @@ interface UserAdminEditorProps {
   isAdministrator: boolean;
 }
 
-const safeInteger = (value: number | string | null, fallback: number) => {
+const safeInteger = (
+  value: number | string | null,
+  fallback: number,
+  max = INT_MAX,
+) => {
   const parsed = typeof value === 'number' ? value : Number(value);
-  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : fallback;
+  return Number.isSafeInteger(parsed) && parsed >= 0
+    ? Math.min(parsed, max)
+    : fallback;
 };
+
+type PatchValue = string | number | null;
+
+/**
+ * Builds the PUT body from what the admin actually changed, plus the loaded
+ * value of each changed field as `expected`, so the server can refuse the
+ * edit if the player changed in the meantime. Returns null when nothing changed.
+ */
+export function buildUserPatch(loaded: UserData, edited: UserData) {
+  const fields: Record<string, PatchValue> = {};
+  const profile: Record<string, string> = {};
+  const stats: Record<string, string | number> = {};
+  const gameplay: Record<string, string | number> = {};
+  const track = <T extends string | number>(
+    target: Record<string, T>,
+    key: string,
+    before: T,
+    after: T,
+  ) => {
+    if (before === after) return;
+    target[key] = after;
+    fields[key] = before;
+  };
+  track(profile, 'username', loaded.profile.username, edited.profile.username);
+  track(profile, 'email', loaded.profile.email, edited.profile.email);
+  track(stats, 'gold', loaded.stats.gold, edited.stats.gold);
+  track(stats, 'goldInBank', loaded.stats.goldInBank, edited.stats.goldInBank);
+  track(stats, 'experience', loaded.stats.experience, edited.stats.experience);
+  for (const key of Object.keys(edited.gameplay) as (keyof UserGameplay)[]) {
+    track(gameplay, key, loaded.gameplay[key], edited.gameplay[key]);
+  }
+  // A fort level change can clamp hitpoints server-side; guard the loaded HP.
+  if ('fortLevel' in gameplay && !('fortHitpoints' in fields))
+    fields.fortHitpoints = loaded.gameplay.fortHitpoints;
+  const changedRows = <R extends { id: string; quantity: number }>(
+    before: R[],
+    after: R[],
+  ) => {
+    const rows = after.filter(
+      (row) => before.find((b) => b.id === row.id)?.quantity !== row.quantity,
+    );
+    const expected = Object.fromEntries(
+      rows.map((row) => [
+        row.id,
+        before.find((b) => b.id === row.id)?.quantity ?? 0,
+      ]),
+    );
+    return { rows, expected };
+  };
+  const units = changedRows(loaded.army.units, edited.army.units);
+  const items = changedRows(loaded.items.items, edited.items.items);
+  const sameSet = (a: string[], b: string[]) =>
+    a.length === b.length && a.every((value) => b.includes(value));
+  const permissionsChanged = !sameSet(
+    loaded.permissions.permissions,
+    edited.permissions.permissions,
+  );
+  const rolesChanged = !sameSet(
+    loaded.staffRoles.roles,
+    edited.staffRoles.roles,
+  );
+
+  if (
+    Object.keys(fields).length === 0 &&
+    units.rows.length === 0 &&
+    items.rows.length === 0 &&
+    !permissionsChanged &&
+    !rolesChanged
+  )
+    return null;
+
+  return {
+    profile,
+    stats,
+    ...(Object.keys(gameplay).length > 0 ? { gameplay } : {}),
+    army: { units: units.rows },
+    items: { items: items.rows },
+    ...(permissionsChanged ? { permissions: edited.permissions } : {}),
+    ...(rolesChanged ? { staffRoles: edited.staffRoles } : {}),
+    expected: {
+      eraId: loaded.record.currentEraId,
+      fields,
+      units: units.expected,
+      items: items.expected,
+      ...(permissionsChanged
+        ? { permissions: loaded.permissions.permissions }
+        : {}),
+      ...(rolesChanged ? { staffRoles: loaded.staffRoles.roles } : {}),
+    },
+  };
+}
+
+const formatDate = (value: string | null) =>
+  value ? new Date(value).toLocaleString() : '—';
 
 const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
   userId,
@@ -108,6 +268,9 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
+  // Snapshot as loaded; saves send only the diff against it.
+  const [loadedData, setLoadedData] = useState<UserData | null>(null);
+  const [staleEdit, setStaleEdit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState<ModeratorNote[]>([]);
   const [notesLoading, setNotesLoading] = useState(false);
@@ -149,6 +312,8 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || t('errors.load'));
       setUserData(payload);
+      setLoadedData(payload);
+      setStaleEdit(false);
     } catch (requestError) {
       logError('Failed to load admin user details', requestError);
       setError(
@@ -165,7 +330,15 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
   }, [loadNotes, loadUser]);
 
   const saveUser = async () => {
-    if (!isAdministrator || !userData || saving) return;
+    if (!isAdministrator || !userData || !loadedData || saving) return;
+    const patch = buildUserPatch(loadedData, userData);
+    if (!patch) {
+      alertService.notify(
+        'info',
+        t('messages.noChanges', { defaultValue: 'No changes to save' }),
+      );
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -174,15 +347,25 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData),
+          body: JSON.stringify(patch),
         },
       );
       const payload = await response.json().catch(() => ({}));
+      if (response.status === 409 && payload.code === 'STALE') {
+        setStaleEdit(true);
+        throw new Error(
+          t('errors.stale', {
+            defaultValue:
+              'This player changed since you opened the editor. Reload to see current values. Your edits were not saved.',
+          }),
+        );
+      }
       if (!response.ok) throw new Error(payload.error || t('errors.save'));
       alertService.notify('success', t('messages.saved'), {
         title: t('messages.savedTitle'),
       });
       onSaved();
+      await loadUser();
     } catch (requestError) {
       logError('Failed to save admin user details', requestError);
       setError(
@@ -247,6 +430,17 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
     setUserData({ ...userData, stats: { ...userData.stats, [field]: value } });
   };
 
+  const updateGameplay = <K extends keyof UserGameplay>(
+    field: K,
+    value: UserGameplay[K],
+  ) => {
+    if (!userData) return;
+    setUserData({
+      ...userData,
+      gameplay: { ...userData.gameplay, [field]: value },
+    });
+  };
+
   const toggleRole = (role: StaffRole) => {
     if (!isAdministrator || !userData) return;
     const roles = userData.staffRoles.roles.includes(role)
@@ -308,11 +502,18 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
   if (!userData) return <Text>{t('states.unavailable')}</Text>;
 
   const isReadOnly = !isAdministrator;
+  const gp = userData.gameplay;
+  const rec = userData.record;
+  const fortMaxHp = (level: number) =>
+    Fortifications.find((f) => f.level === level)?.hitpoints ?? 0;
   const visibleTabs = [
     'profile',
     'stats',
     'army',
     'items',
+    'upgrades',
+    'supporter',
+    'forces',
     'notes',
     'operations',
     ...(isAdministrator ? ['staffRoles', 'permissions'] : []),
@@ -345,13 +546,20 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
       {error && (
         <Alert color="red" role="alert" title={t('errors.title')}>
           {error}
+          {staleEdit && (
+            <Button mt="sm" variant="default" onClick={loadUser}>
+              {t('actions.reload', { defaultValue: 'Reload player' })}
+            </Button>
+          )}
         </Alert>
       )}
       <Tabs value={safeTab} onChange={setActiveTab} keepMounted={false}>
         <Tabs.List aria-label={t('editor.tabs')}>
           {visibleTabs.map((tab) => (
             <Tabs.Tab key={tab} value={tab}>
-              {t(`tabs.${tab}`)}
+              {tab === 'supporter'
+                ? t('admin-supporters:title')
+                : t(`tabs.${tab}`)}
             </Tabs.Tab>
           ))}
         </Tabs.List>
@@ -407,6 +615,112 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
                 <Badge mt="sm">{userData.profile.status}</Badge>
               </GameCard>
             </Grid.Col>
+            <Grid.Col span={12}>
+              <GameCard
+                title={t('sections.record', { defaultValue: 'Account record' })}
+              >
+                <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
+                  {[
+                    [t('fields.rank', { defaultValue: 'Rank' }), rec.rank],
+                    [
+                      t('fields.lastActive', { defaultValue: 'Last active' }),
+                      formatDate(rec.lastActive),
+                    ],
+                    [
+                      t('fields.createdAt', { defaultValue: 'Joined' }),
+                      formatDate(rec.createdAt),
+                    ],
+                    [
+                      t('fields.currentEra', { defaultValue: 'Current era' }),
+                      rec.currentEraId ?? '—',
+                    ],
+                    [
+                      t('fields.eraJoinedAt', {
+                        defaultValue: 'Era joined (protection start)',
+                      }),
+                      formatDate(rec.eraJoinedAt),
+                    ],
+                    [
+                      t('fields.protectionForfeited', {
+                        defaultValue: 'Protection forfeited in era',
+                      }),
+                      rec.protectionForfeitedEraId ?? '—',
+                    ],
+                  ].map(([label, value]) => (
+                    <Text key={String(label)} size="sm">
+                      <Text span c="dimmed">
+                        {label}:
+                      </Text>{' '}
+                      {value}
+                    </Text>
+                  ))}
+                </SimpleGrid>
+                <Title order={5} mt="md">
+                  {t('sections.alliances', { defaultValue: 'Alliances' })}
+                </Title>
+                {rec.alliances.length === 0 ? (
+                  <Text size="sm" c="dimmed">
+                    {t('states.noAlliances', { defaultValue: 'No alliance' })}
+                  </Text>
+                ) : (
+                  <Group gap="xs" mt="xs">
+                    {rec.alliances.map((alliance) => (
+                      <Badge key={alliance.allianceId} variant="light">
+                        {alliance.name}
+                        {alliance.role ? ` · ${alliance.role}` : ''}
+                      </Badge>
+                    ))}
+                  </Group>
+                )}
+                <Title order={5} mt="md">
+                  {t('sections.statusHistory', {
+                    defaultValue: 'Status history',
+                  })}
+                </Title>
+                {rec.statusHistory.length === 0 ? (
+                  <Text size="sm" c="dimmed">
+                    {t('states.noStatusHistory', {
+                      defaultValue: 'No status changes',
+                    })}
+                  </Text>
+                ) : (
+                  <Table.ScrollContainer minWidth={560}>
+                    <Table striped>
+                      <Table.Thead>
+                        <Table.Tr>
+                          <Table.Th>{t('fields.status')}</Table.Th>
+                          <Table.Th>
+                            {t('fields.start', { defaultValue: 'Start' })}
+                          </Table.Th>
+                          <Table.Th>
+                            {t('fields.end', { defaultValue: 'End' })}
+                          </Table.Th>
+                          <Table.Th>
+                            {t('fields.reason', { defaultValue: 'Reason' })}
+                          </Table.Th>
+                          <Table.Th>
+                            {t('fields.byAdmin', { defaultValue: 'By' })}
+                          </Table.Th>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {rec.statusHistory.map((entry) => (
+                          <Table.Tr key={entry.id}>
+                            <Table.Td>{entry.status}</Table.Td>
+                            <Table.Td>{formatDate(entry.startDate)}</Table.Td>
+                            <Table.Td>{formatDate(entry.endDate)}</Table.Td>
+                            <Table.Td style={{ overflowWrap: 'anywhere' }}>
+                              {entry.reason ?? '—'}
+                            </Table.Td>
+                            <Table.Td>{entry.adminName ?? '—'}</Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                  </Table.ScrollContainer>
+                )}
+              </GameCard>
+            </Grid.Col>
           </Grid>
         </Tabs.Panel>
         <Tabs.Panel value="stats" pt="md">
@@ -440,7 +754,7 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
                   label={t('fields.experience')}
                   value={userData.stats.experience}
                   min={0}
-                  max={Number.MAX_SAFE_INTEGER}
+                  max={INT_MAX}
                   allowDecimal={false}
                   readOnly={isReadOnly}
                   onChange={(value) =>
@@ -465,6 +779,219 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
                 />
               </GameCard>
             </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <GameCard
+                title={t('sections.gameplay', { defaultValue: 'Kingdom' })}
+              >
+                <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                  <NumberInput
+                    label={t('fields.fortLevel', {
+                      defaultValue: 'Fort level',
+                    })}
+                    value={gp.fortLevel}
+                    min={1}
+                    max={MAX_FORT_LEVEL}
+                    allowDecimal={false}
+                    readOnly={isReadOnly}
+                    onChange={(value) => {
+                      const level = Math.max(
+                        1,
+                        safeInteger(value, gp.fortLevel, MAX_FORT_LEVEL),
+                      );
+                      setUserData({
+                        ...userData,
+                        gameplay: {
+                          ...gp,
+                          fortLevel: level,
+                          fortHitpoints: Math.min(
+                            gp.fortHitpoints,
+                            fortMaxHp(level),
+                          ),
+                        },
+                      });
+                    }}
+                  />
+                  <NumberInput
+                    label={t('fields.fortHitpoints', {
+                      defaultValue: 'Fort hitpoints',
+                    })}
+                    description={`${t('fields.max', { defaultValue: 'Max' })} ${fortMaxHp(gp.fortLevel)}`}
+                    value={gp.fortHitpoints}
+                    min={0}
+                    max={fortMaxHp(gp.fortLevel)}
+                    allowDecimal={false}
+                    readOnly={isReadOnly}
+                    onChange={(value) =>
+                      updateGameplay(
+                        'fortHitpoints',
+                        safeInteger(
+                          value,
+                          gp.fortHitpoints,
+                          fortMaxHp(gp.fortLevel),
+                        ),
+                      )
+                    }
+                  />
+                  <NumberInput
+                    label={t('fields.stamina', { defaultValue: 'Stamina' })}
+                    value={gp.stamina}
+                    min={0}
+                    max={gp.maxStamina}
+                    allowDecimal={false}
+                    readOnly={isReadOnly}
+                    onChange={(value) =>
+                      updateGameplay(
+                        'stamina',
+                        safeInteger(value, gp.stamina, gp.maxStamina),
+                      )
+                    }
+                  />
+                  <NumberInput
+                    label={t('fields.maxStamina', {
+                      defaultValue: 'Max stamina',
+                    })}
+                    value={gp.maxStamina}
+                    min={1}
+                    max={INT_MAX}
+                    allowDecimal={false}
+                    readOnly={isReadOnly}
+                    onChange={(value) => {
+                      const max = Math.max(
+                        1,
+                        safeInteger(value, gp.maxStamina),
+                      );
+                      setUserData({
+                        ...userData,
+                        gameplay: {
+                          ...gp,
+                          maxStamina: max,
+                          stamina: Math.min(gp.stamina, max),
+                        },
+                      });
+                    }}
+                  />
+                  <NumberInput
+                    label={t('fields.attackTurns', {
+                      defaultValue: 'Attack turns',
+                    })}
+                    value={gp.attackTurns}
+                    min={0}
+                    max={INT_MAX}
+                    allowDecimal={false}
+                    readOnly={isReadOnly}
+                    onChange={(value) =>
+                      updateGameplay(
+                        'attackTurns',
+                        safeInteger(value, gp.attackTurns),
+                      )
+                    }
+                  />
+                  <NumberInput
+                    label={t('fields.houseLevel', {
+                      defaultValue: 'House level',
+                    })}
+                    value={gp.houseLevel}
+                    min={0}
+                    max={MAX_HOUSE_LEVEL}
+                    allowDecimal={false}
+                    readOnly={isReadOnly}
+                    onChange={(value) =>
+                      updateGameplay(
+                        'houseLevel',
+                        safeInteger(value, gp.houseLevel, MAX_HOUSE_LEVEL),
+                      )
+                    }
+                  />
+                  <NumberInput
+                    label={t('fields.economyLevel', {
+                      defaultValue: 'Economy level',
+                    })}
+                    value={gp.economyLevel}
+                    min={0}
+                    max={MAX_ECONOMY_LEVEL}
+                    allowDecimal={false}
+                    readOnly={isReadOnly}
+                    onChange={(value) =>
+                      updateGameplay(
+                        'economyLevel',
+                        safeInteger(value, gp.economyLevel, MAX_ECONOMY_LEVEL),
+                      )
+                    }
+                  />
+                  <Select
+                    label={t('fields.race', { defaultValue: 'Race' })}
+                    data={RACES}
+                    value={gp.race}
+                    allowDeselect={false}
+                    readOnly={isReadOnly}
+                    onChange={(value) => value && updateGameplay('race', value)}
+                  />
+                  <Select
+                    label={t('fields.class', { defaultValue: 'Class' })}
+                    data={CLASSES}
+                    value={gp.class}
+                    allowDeselect={false}
+                    readOnly={isReadOnly}
+                    onChange={(value) =>
+                      value && updateGameplay('class', value)
+                    }
+                  />
+                  <Select
+                    label={t('fields.locale', { defaultValue: 'Locale' })}
+                    data={[...AppConfig.locales]}
+                    value={gp.locale}
+                    allowDeselect={false}
+                    readOnly={isReadOnly}
+                    onChange={(value) =>
+                      value && updateGameplay('locale', value)
+                    }
+                  />
+                </SimpleGrid>
+                <Textarea
+                  label={t('fields.bio', { defaultValue: 'Bio' })}
+                  value={gp.bio}
+                  maxLength={BIO_MAX_LENGTH}
+                  minRows={3}
+                  autosize
+                  readOnly={isReadOnly}
+                  onChange={(event) =>
+                    updateGameplay('bio', event.currentTarget.value)
+                  }
+                  mt="sm"
+                />
+              </GameCard>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <GameCard
+                title={t('sections.derived', {
+                  defaultValue: 'Derived strength',
+                })}
+              >
+                <SimpleGrid cols={2}>
+                  {(['offense', 'defense', 'spy', 'sentry'] as const).map(
+                    (stat) => (
+                      <NumberInput
+                        key={stat}
+                        label={t(`fields.${stat}`, {
+                          defaultValue:
+                            stat.charAt(0).toUpperCase() + stat.slice(1),
+                        })}
+                        value={userData.derived[stat]}
+                        readOnly
+                        hideControls
+                        thousandSeparator=","
+                      />
+                    ),
+                  )}
+                </SimpleGrid>
+                <Text size="xs" c="dimmed" mt="xs">
+                  {t('fields.derivedHelp', {
+                    defaultValue:
+                      'Recalculated on save when units, items, fort, experience, race or class change.',
+                  })}
+                </Text>
+              </GameCard>
+            </Grid.Col>
           </Grid>
         </Tabs.Panel>
         <Tabs.Panel value="army" pt="md">
@@ -473,55 +1000,78 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
               <Text c="dimmed">{t('states.noUnits')}</Text>
             ) : (
               <Stack gap="xs">
-                {userData.army.units.map((unit) => (
-                  <Group key={unit.id} justify="space-between" wrap="nowrap">
-                    <Text style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-                      {unit.name} · {t('fields.level')} {unit.level}
-                      {unit.isMercenary ? ` · ${t('fields.mercenary')}` : ''}
-                    </Text>
-                    <Group gap="xs" wrap="nowrap">
-                      <ActionIcon
-                        aria-label={t('actions.decreaseQuantity', {
-                          name: unit.name,
-                        })}
-                        disabled={isReadOnly || unit.quantity <= 0}
-                        onClick={() =>
-                          updateQuantity('units', unit.id, unit.quantity - 1)
-                        }
+                {userData.army.units.map((unit) => {
+                  // Mercenary rows are owned by their contract (server enforces).
+                  const locked = isReadOnly || unit.isMercenary;
+                  const lockLabel = t('fields.mercenaryLocked', {
+                    defaultValue: 'Managed by mercenary contract',
+                  });
+                  return (
+                    <Group key={unit.id} justify="space-between" wrap="nowrap">
+                      <Text style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+                        {unit.name} · {t('fields.level')} {unit.level}
+                        {unit.isMercenary ? ` · ${t('fields.mercenary')}` : ''}
+                      </Text>
+                      <Tooltip
+                        label={lockLabel}
+                        disabled={!unit.isMercenary}
+                        withinPortal
                       >
-                        <FontAwesomeIcon icon={faMinus} />
-                      </ActionIcon>
-                      <NumberInput
-                        aria-label={t('fields.quantityFor', {
-                          name: unit.name,
-                        })}
-                        value={unit.quantity}
-                        min={0}
-                        max={Number.MAX_SAFE_INTEGER}
-                        allowDecimal={false}
-                        hideControls
-                        w={96}
-                        readOnly={isReadOnly}
-                        onChange={(value) =>
-                          updateQuantity('units', unit.id, value)
-                        }
-                      />
-                      <ActionIcon
-                        aria-label={t('actions.increaseQuantity', {
-                          name: unit.name,
-                        })}
-                        disabled={
-                          isReadOnly || unit.quantity >= Number.MAX_SAFE_INTEGER
-                        }
-                        onClick={() =>
-                          updateQuantity('units', unit.id, unit.quantity + 1)
-                        }
-                      >
-                        <FontAwesomeIcon icon={faPlus} />
-                      </ActionIcon>
+                        <Group gap="xs" wrap="nowrap">
+                          <ActionIcon
+                            aria-label={t('actions.decreaseQuantity', {
+                              name: unit.name,
+                            })}
+                            disabled={locked || unit.quantity <= 0}
+                            onClick={() =>
+                              updateQuantity(
+                                'units',
+                                unit.id,
+                                unit.quantity - 1,
+                              )
+                            }
+                          >
+                            <FontAwesomeIcon icon={faMinus} />
+                          </ActionIcon>
+                          <NumberInput
+                            aria-label={t('fields.quantityFor', {
+                              name: unit.name,
+                            })}
+                            description={
+                              unit.isMercenary ? lockLabel : undefined
+                            }
+                            value={unit.quantity}
+                            min={0}
+                            max={INT_MAX}
+                            allowDecimal={false}
+                            hideControls
+                            w={96}
+                            readOnly={locked}
+                            disabled={unit.isMercenary}
+                            onChange={(value) =>
+                              updateQuantity('units', unit.id, value)
+                            }
+                          />
+                          <ActionIcon
+                            aria-label={t('actions.increaseQuantity', {
+                              name: unit.name,
+                            })}
+                            disabled={locked || unit.quantity >= INT_MAX}
+                            onClick={() =>
+                              updateQuantity(
+                                'units',
+                                unit.id,
+                                unit.quantity + 1,
+                              )
+                            }
+                          >
+                            <FontAwesomeIcon icon={faPlus} />
+                          </ActionIcon>
+                        </Group>
+                      </Tooltip>
                     </Group>
-                  </Group>
-                ))}
+                  );
+                })}
               </Stack>
             )}
           </GameCard>
@@ -556,7 +1106,7 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
                         })}
                         value={item.quantity}
                         min={0}
-                        max={Number.MAX_SAFE_INTEGER}
+                        max={INT_MAX}
                         allowDecimal={false}
                         hideControls
                         w={96}
@@ -569,9 +1119,7 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
                         aria-label={t('actions.increaseQuantity', {
                           name: item.name,
                         })}
-                        disabled={
-                          isReadOnly || item.quantity >= Number.MAX_SAFE_INTEGER
-                        }
+                        disabled={isReadOnly || item.quantity >= INT_MAX}
                         onClick={() =>
                           updateQuantity('items', item.id, item.quantity + 1)
                         }
@@ -631,6 +1179,18 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
             </GameCard>
           </Tabs.Panel>
         )}
+        <Tabs.Panel value="upgrades" pt="md">
+          <PlayerUpgradesPanel
+            userId={Number(userId)}
+            readOnly={!isAdministrator}
+          />
+        </Tabs.Panel>
+        <Tabs.Panel value="supporter" pt="md">
+          <PlayerSupporterPanel userId={Number(userId)} />
+        </Tabs.Panel>
+        <Tabs.Panel value="forces" pt="md">
+          <PlayerForcesPanel userId={Number(userId)} />
+        </Tabs.Panel>
         <Tabs.Panel value="notes" pt="md">
           <GameCard title={t('sections.addNote')}>
             <Stack gap="sm">

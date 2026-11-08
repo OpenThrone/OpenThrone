@@ -9,9 +9,14 @@ import {
   MORALE_DEFENSE_WON,
   repelledPressureRecovery,
 } from '@/constants/KingdomMorale';
+import {
+  disciplineMoraleFloor,
+  raidersCapturePercent,
+} from '@/constants/RacialPerks';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { BattleUser } from '@/models/BattleUser';
+import UserModel from '@/models/Users';
 import {
   divertIncomeToLoans,
   settleLoanTreasuryCredits,
@@ -30,6 +35,8 @@ import {
   loadProtectionContext,
 } from '@/services/BattleProtection.service';
 import { CaptiveService } from '@/services/Captives.service';
+import { enqueueDiscordAlert } from '@/services/discord/DiscordAlerts.service';
+import { siteUrl } from '@/services/discord/DiscordApi';
 import { hasForbiddenForceTarget } from '@/services/ForceLifecycle.service';
 import { divertForcePillageInTx } from '@/services/ForcePillage.service';
 import { getBattleGameEventContext } from '@/services/GameEventRuntime.service';
@@ -39,8 +46,10 @@ import {
   ReanimationService,
 } from '@/services/Reanimation.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
+import { SanctuaryService } from '@/services/Sanctuary.service';
 import { getActiveAccountStatus } from '@/services/User.service';
 import { combatSnapshot } from '@/utils/adminCombat';
+import { recomputeStoredStatsInTx } from '@/utils/adminRecomputeStats';
 import {
   calculateBattleExperience,
   calculateFortDamage,
@@ -69,10 +78,14 @@ import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
 import { logDebug, logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { createCombatRandom } from '@/utils/serverRandom';
+import {
+  DEFAULT_STAMINA_RULES,
+  projectStamina,
+  staminaCost,
+} from '@/utils/stamina';
 import { getOTDayKey, getOTStartDate } from '@/utils/timefunctions';
 
 /** Same per-pair cap as AttackValidationService.canAttack (5 per 24 hours). */
-const MAX_PAIR_ATTACKS_PER_DAY = 5;
 /** Interactive transaction budget; attacks queue on the row locks inside it. */
 const ATTACK_TX_TIMEOUT_MS = 20_000;
 
@@ -167,21 +180,22 @@ export const AttackService = {
         };
       }
 
-      const runtimeConfig = await getRuntimeConfig();
       const { modifiers: eventModifiers, snapshot: gameEvents } =
         await getBattleGameEventContext();
-      if (!runtimeConfig.enableAttacking) {
-        return {
-          status: 'failed',
-          message: 'Attacking is currently disabled.',
-          code: 'ATTACKING_DISABLED',
-        };
-      }
 
       try {
         const outcome = await prisma.$transaction(
           async (tx) => {
             await lockEraLifecycleShared(tx);
+            const runtimeConfig = await getRuntimeConfig(tx);
+            if (!runtimeConfig.enableAttacking) {
+              return {
+                status: 'failed',
+                message: 'Attacking is currently disabled.',
+                code: 'ATTACKING_DISABLED',
+              };
+            }
+
             // Lock both rows in id order so opposing missions cannot deadlock.
             const firstId = Math.min(attackerId, defenderId);
             const secondId = Math.max(attackerId, defenderId);
@@ -229,13 +243,17 @@ export const AttackService = {
               };
             }
 
-            if (attacker.stamina < committedTurns) {
-              return {
-                status: 'failed',
-                message: 'Insufficient stamina',
-                code: 'INSUFFICIENT_STAMINA',
-              };
-            }
+            const rules = runtimeConfig.stamina ?? DEFAULT_STAMINA_RULES;
+            const projected = projectStamina(attackerUser, rules);
+            attacker.stamina = rules.enabled ? projected.stamina : 100;
+            const cost = Math.min(
+              projected.stamina,
+              staminaCost(
+                committedTurns,
+                rules,
+                new UserModel(attackerUser).offensiveLevel,
+              ),
+            );
 
             const AttackPlayer = attacker;
             const DefensePlayer = defender;
@@ -296,7 +314,7 @@ export const AttackService = {
                 },
               },
             });
-            if (pairAttacks >= MAX_PAIR_ATTACKS_PER_DAY) {
+            if (pairAttacks >= (runtimeConfig.pairDailyLimit ?? 5)) {
               return {
                 status: 'failed',
                 message:
@@ -431,6 +449,8 @@ export const AttackService = {
               defenderProtected,
               defenderDailyCasualtyRemaining: defenderDailyAllowanceRemaining,
               defenderDailyGoldRemaining: defenderDailyGoldRemaining.toString(),
+              staminaPenaltyThreshold: rules.penaltyThreshold,
+              staminaMinMultiplier: rules.minOffensePercent / 100,
             };
             const sealedReplay = sealCombatReplay(replay);
 
@@ -444,6 +464,8 @@ export const AttackService = {
                 random: combatRandom.random,
                 defenderDailyCasualtyRemaining: defenderDailyAllowanceRemaining,
                 defenderDailyGoldRemaining,
+                staminaPenaltyThreshold: rules.penaltyThreshold,
+                staminaMinMultiplier: rules.minOffensePercent / 100,
               },
             );
 
@@ -474,10 +496,7 @@ export const AttackService = {
 
             // Commitment is the cost; no obsolete max-turn morale surcharge.
             // The row lock makes the checks above authoritative, so this is a delta.
-            AttackPlayer.stamina = Math.max(
-              0,
-              AttackPlayer.stamina - committedTurns,
-            );
+            AttackPlayer.stamina = Math.max(0, AttackPlayer.stamina - cost);
             AttackPlayer.attackTurns -= committedTurns;
 
             const fortHpAtStart =
@@ -542,6 +561,23 @@ export const AttackService = {
             // non-ACTIVE defenders. The grants themselves are applied to the
             // rosters AFTER updateUserUnits below, which rewrites every stack
             // from the battle's survivors.
+            // Elf Sanctuary (#231) runs first: recovered defenders are alive
+            // again and must not also rise for an Undead attacker.
+            const sanctuary =
+              !defenderExemptFromMorale && defenderUser.race === 'ELF'
+                ? await SanctuaryService.recover(
+                    tx,
+                    defenderId,
+                    defenderUser.racial_perk_tier,
+                    resolvedBattle.Losses.Defender.units,
+                    captivesTaken,
+                  )
+                : [];
+            const sanctuaryRecovered = sanctuary.reduce(
+              (sum, grant) => sum + grant.quantity,
+              0,
+            );
+
             let reanimation: ReanimationBattleOutcome = {
               attacker: [],
               defender: [],
@@ -553,16 +589,20 @@ export const AttackService = {
                   fortLevel: attackerUser.fort_level ?? 0,
                   economyLevel: attackerUser.economy_level ?? 0,
                   race: attackerUser.race,
+                  racialTier: attackerUser.racial_perk_tier,
                 },
                 defender: {
                   userId: defenderId,
                   fortLevel: defenderUser.fort_level ?? 0,
                   economyLevel: defenderUser.economy_level ?? 0,
                   race: defenderUser.race,
+                  racialTier: defenderUser.racial_perk_tier,
                 },
                 attackerKilledUnits: resolvedBattle.Losses.Attacker.units,
                 defenderKilledUnits: resolvedBattle.Losses.Defender.units,
                 captivesTaken,
+                defenderRacialTier: defenderUser.racial_perk_tier,
+                defenderRecovered: sanctuary,
               });
             }
 
@@ -756,9 +796,28 @@ export const AttackService = {
                   // as a whole percent, for "Garrison fatigue: -X%" display.
                   defender_fatigue_percent:
                     resolvedBattle.defenderFatiguePercent,
+                  attacker_fatigue_percent:
+                    resolvedBattle.attackerFatiguePercent,
+                  stamina_cost: cost,
                   // Dungeon captives taken by the attacker (#210), for the
                   // "Captives taken: N" report line on both sides.
                   captives_taken: captivesTaken,
+                  raiders_capture_percent:
+                    attackerUser.race === 'GOBLIN' &&
+                    attackerUser.racial_perk_tier > 0
+                      ? Math.round(
+                          100 *
+                            raidersCapturePercent(
+                              attackerUser.racial_perk_tier,
+                            ),
+                        )
+                      : 0,
+                  necropolis_bonus: {
+                    attacker: reanimation.attackerBonus ?? 0,
+                    defender: reanimation.defenderBonus ?? 0,
+                  },
+                  sanctuary_recovered: sanctuaryRecovered,
+                  hallowed_blocked: reanimation.blocked ?? 0,
                   // Undead reanimation (#211): how many fallen rose for each
                   // side. The report redaction shows each side only its own
                   // count, so the opponent never learns it.
@@ -885,6 +944,7 @@ export const AttackService = {
               defenderId,
               reanimation.defender,
             );
+            await SanctuaryService.apply(tx, defenderId, sanctuary);
 
             // Undead reanimation (#211): the cached army stats below must
             // reflect the persisted roster, but the in-memory survivors do
@@ -910,7 +970,13 @@ export const AttackService = {
             );
             const defenderStatSource = await statSourceAfterGrants(
               defenderId,
-              reanimation.defender,
+              [
+                ...reanimation.defender,
+                ...sanctuary.map((grant) => ({
+                  unitType: grant.type,
+                  quantity: grant.quantity,
+                })),
+              ],
               DefensePlayer,
             );
 
@@ -961,7 +1027,8 @@ export const AttackService = {
                   increment: pillage - forceContribution - loanRepayment,
                 },
                 attack_turns: { decrement: committedTurns },
-                stamina: { decrement: committedTurns },
+                stamina: projected.stamina - cost,
+                staminaUpdatedAt: projected.staminaUpdatedAt,
                 experience: Math.ceil(AttackPlayer.experience),
                 offense: newAttOffense.totalStats.MeleeAtkPower,
                 defense: newAttDefense.totalStats.MeleeDefPower,
@@ -978,9 +1045,16 @@ export const AttackService = {
             // defender row is locked above, so this write is authoritative
             // inside the same battle transaction. (defenderExemptFromMorale
             // was computed before the attack log was written, above.)
-            const defenderMoraleAfter = applyMoraleDelta(
-              Number(defenderUser.kingdom_morale ?? KINGDOM_MORALE_DEFAULT),
-              isAttackerWinner ? MORALE_DEFENSE_LOST : MORALE_DEFENSE_WON,
+            const defenderMoraleAfter = Math.max(
+              disciplineMoraleFloor(
+                defenderUser.race === 'HUMAN'
+                  ? defenderUser.racial_perk_tier
+                  : 0,
+              ),
+              applyMoraleDelta(
+                Number(defenderUser.kingdom_morale ?? KINGDOM_MORALE_DEFAULT),
+                isAttackerWinner ? MORALE_DEFENSE_LOST : MORALE_DEFENSE_WON,
+              ),
             );
 
             await updateUser(
@@ -1013,12 +1087,36 @@ export const AttackService = {
               tx,
             );
 
+            // Casualties changed contract survivors; refresh the strength columns too.
+            await recomputeStoredStatsInTx(tx, attackerId, new Date(), {
+              strengthOnly: true,
+            });
+            await recomputeStoredStatsInTx(tx, defenderId, new Date(), {
+              strengthOnly: true,
+            });
+
             // The outbox insert commits with combat; SMTP runs later in the worker.
             await enqueueBattleAlert(tx, {
               defenderId,
               attackerName: AttackPlayer.displayName,
               attackLogId: attack_log.id,
               defenderWon: !isAttackerWinner,
+            });
+            await enqueueDiscordAlert(tx, {
+              userId: defenderId,
+              kind: 'attacks',
+              eventKey: `attack:${attack_log.id}`,
+              text: 'alert.attacks',
+              vars: {
+                attacker: AttackPlayer.displayName,
+                kingdom: DefensePlayer.displayName,
+                outcome: {
+                  key: isAttackerWinner
+                    ? 'alert.attackLost'
+                    : 'alert.attackWon',
+                },
+                url: siteUrl(`/battle/results/${attack_log.id}`),
+              },
             });
 
             return {

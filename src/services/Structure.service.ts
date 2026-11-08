@@ -8,6 +8,10 @@ import {
   OffensiveUpgrades,
   SpyUpgrades,
 } from '@/constants';
+import {
+  RACIAL_PERK_TIERS,
+  racialFortRequirement,
+} from '@/constants/RacialPerks';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services/AttackDataService';
@@ -22,7 +26,8 @@ export interface StructureUpgradeData {
     | 'economy'
     | 'offense'
     | 'armory'
-    | 'spy';
+    | 'spy'
+    | 'racial';
   index: number;
 }
 
@@ -45,6 +50,7 @@ const StructureUpgradeSchema = z.object({
     'offense',
     'armory',
     'spy',
+    'racial',
   ]),
   index: z
     .number()
@@ -111,6 +117,33 @@ export class StructureService {
 
         // Determine upgrade details based on type
         switch (upgradeType) {
+          case 'racial': {
+            const racial = await tx.users.findUniqueOrThrow({
+              where: { id: userId },
+              select: { racial_perk_tier: true, race: true },
+            });
+            if (
+              !['ELF', 'HUMAN', 'GOBLIN', 'UNDEAD'].includes(racial.race ?? '')
+            ) {
+              throw new Error(
+                'Cannot purchase level: racial upgrade unavailable for this race.',
+              );
+            }
+            if (requestedIndex >= RACIAL_PERK_TIERS.length)
+              throw new Error('Upgrade index out of bounds.');
+            currentLevel = racial.racial_perk_tier;
+            if (requestedIndex !== currentLevel)
+              throw new Error(
+                `Cannot purchase level ${requestedIndex + 1}. Current level is ${currentLevel}.`,
+              );
+            upgradeData = RACIAL_PERK_TIERS[requestedIndex];
+            assertFortLevel(
+              racialFortRequirement(racial.race ?? '', requestedIndex + 1),
+            );
+            upgradeCost = BigInt(upgradeData.cost);
+            newLevel = requestedIndex + 1;
+            break;
+          }
           case 'fortifications':
             currentLevel =
               (user as any).fortLevel ?? (user as any).fort_level ?? 0;
@@ -235,6 +268,7 @@ export class StructureService {
             }),
             ...(upgradeType === 'houses' && { house_level: newLevel }),
             ...(upgradeType === 'economy' && { economy_level: newLevel }),
+            ...(upgradeType === 'racial' && { racial_perk_tier: newLevel }),
           },
           select: { gold: true },
         });

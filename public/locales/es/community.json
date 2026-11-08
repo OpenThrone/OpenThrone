@@ -116,10 +116,14 @@
     "sessionControls": "Controles de sesión",
     "clickStart": "Haz clic en Iniciar para comenzar la sesión de Auto-Reclutamiento.",
     "startSession": "Comenzar reclutamiento",
+    "verifyToStart": "Confirma que no eres un bot para iniciar la sesión.",
+    "verificationFailed": "La verificación falló. Inténtalo de nuevo.",
     "manageSessions": "Administrar sesiones",
     "sessionStatus": "Estado de la sesión",
     "loadingNextUser": "Cargando siguiente usuario...",
     "loadingNextUserCountdown": "Cargando siguiente usuario en {{count}}s...",
+    "sessionRecruitCount": "Has reclutado {{count}} reinos en esta sesión.",
+    "tooManySkips": "Demasiados reinos ya no están disponibles. Inicia una nueva sesión.",
     "sessionComplete": "Sesión completada",
     "sessionEnded": "Sesión finalizada",
     "startNewSession": "Iniciar nueva sesión",
@@ -140,6 +144,10 @@
     "errorVerifyingSession": "Error al verificar la sesión.",
     "errorStartingSession": "Error al iniciar la sesión de reclutamiento.",
     "sessionInvalid": "Sesión inválida. Por favor inicia una nueva sesión.",
-    "disabled": "El reclutamiento automático está desactivado."
+    "disabled": "El reclutamiento automático está desactivado.",
+    "supporterOnly": "El reclutamiento automático es una ventaja para Patrones. Recluta hasta el mismo límite diario que el reclutamiento manual.",
+    "becomeSupporter": "Hazte Patrón",
+    "doneForToday": "Has reclutado todos los reinos posibles hoy. Los reclutamientos se reinician al comenzar el siguiente día de juego.",
+    "dailyCapReached": "Has alcanzado tu límite diario de reclutamiento. Se reinicia al comenzar el siguiente día de juego."
   }
 }

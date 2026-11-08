@@ -5,6 +5,7 @@ import { useState } from 'react';
 import QuantityInput from '@/components/battle/QuantityInput';
 import { GameCard } from '@/components/game/GameCard';
 import { useUser } from '@/context/users';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import { DEPOSIT_CAP_PERCENT, getMaxDeposit } from '@/utils/bankLimits';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
@@ -21,7 +22,9 @@ export const DepositForm = ({ allianceId, onDone }: DepositFormProps) => {
   const { user, forceUpdate } = useUser();
   const [amount, setAmount] = useState<bigint>(0n);
   const [loading, setLoading] = useState(false);
-  const maxDeposit = getMaxDeposit(toBigIntSafe(user?.gold));
+  const { config } = useRuntimeConfig();
+  const capPercent = config?.depositCapPercent ?? DEPOSIT_CAP_PERCENT;
+  const maxDeposit = getMaxDeposit(toBigIntSafe(user?.gold), capPercent);
   const overCap = amount > maxDeposit;
 
   const submit = async () => {
@@ -54,7 +57,7 @@ export const DepositForm = ({ allianceId, onDone }: DepositFormProps) => {
       <QuantityInput
         label={t('amount')}
         description={t('depositHint', {
-          percent: DEPOSIT_CAP_PERCENT,
+          percent: capPercent,
           max: toLocale(maxDeposit, user?.locale),
         })}
         value={amount}
@@ -63,9 +66,7 @@ export const DepositForm = ({ allianceId, onDone }: DepositFormProps) => {
         onMax={() => setAmount(maxDeposit)}
         maxAriaLabel={t('depositMaxAria')}
         error={
-          overCap
-            ? t('depositOverCap', { percent: DEPOSIT_CAP_PERCENT })
-            : undefined
+          overCap ? t('depositOverCap', { percent: capPercent }) : undefined
         }
       />
       <Button

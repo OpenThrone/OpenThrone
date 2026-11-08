@@ -203,5 +203,246 @@ describe('damage audit', () => {
  * (the rest follows from its larger surviving army). Everything else matches
  * the pre-audit code (c5905844).
  */
+// Recorded with the seeded stream reaching combat (test/utils/mockMtRand.ts).
 const GOLDEN =
-  '{"result":"WIN","canonical":{"winner":"ATTACKER","reason":"ASSAULT_SUCCEEDED","attackerValueLost":46500,"defenderValueLost":67500,"fortValueDamage":300,"pillagedGoldValue":58,"netGainValue":-46442,"defenseUnitsBroken":45,"assaultSucceeded":true},"losses":{"Attacker":{"total":22,"units":[{"id":0,"userId":0,"type":"OFFENSE","level":1,"isMercenary":false,"quantity":22}]},"Defender":{"total":32,"units":[{"id":0,"userId":0,"type":"DEFENSE","level":1,"isMercenary":false,"quantity":32}]}},"wounded":{"attacker":[{"type":"OFFENSE","level":1,"quantity":9,"isMercenary":false}],"defender":[{"type":"DEFENSE","level":1,"quantity":13,"isMercenary":false}]},"routed":[],"pillagedGold":"58","xp":{"attacker":2285,"defender":571},"finalFortHP":440,"turns":10}';
+  '{"result":"WIN","canonical":{"winner":"ATTACKER","reason":"ASSAULT_SUCCEEDED","attackerValueLost":61500,"defenderValueLost":69000,"fortValueDamage":330,"pillagedGoldValue":6469,"netGainValue":-55031,"defenseUnitsBroken":46,"assaultSucceeded":true},"losses":{"Attacker":{"total":29,"units":[{"id":0,"userId":0,"type":"OFFENSE","level":1,"isMercenary":false,"quantity":29}]},"Defender":{"total":33,"units":[{"id":0,"userId":0,"type":"DEFENSE","level":1,"isMercenary":false,"quantity":33}]}},"wounded":{"attacker":[{"type":"OFFENSE","level":1,"quantity":12,"isMercenary":false}],"defender":[{"type":"DEFENSE","level":1,"quantity":13,"isMercenary":false}]},"routed":[],"pillagedGold":"6469","xp":{"attacker":2285,"defender":571},"finalFortHP":434,"turns":10}';
+
+describe('mercenaries take the front line', () => {
+  const lose = async (mercQty: number, damage: number) => {
+    const attacker = makeUser([{ type: 'OFFENSE', quantity: 10, level: 1 }]);
+    const defender = makeUser([
+      { type: 'DEFENSE', quantity: 1000, level: 1 },
+      { type: 'CITIZEN', quantity: 100000, level: 1 },
+    ]);
+    defender.mercenaries = mercQty
+      ? [
+          {
+            type: 'DEFENSE',
+            level: 1,
+            quantity: mercQty,
+            isMercenary: true,
+            forceKind: 'MERCENARY',
+          },
+        ]
+      : [];
+    const result = new BattleResult(attacker, defender);
+    await distributeCasualties({
+      result,
+      attacker,
+      defender,
+      attackerDamageDealt: damage,
+      defenderDamageDealt: 0,
+      fortHP: 0,
+      initialFortHP: 100,
+      turn: 10,
+    });
+    const { units } = result.Losses.Defender;
+    const sum = (merc: boolean) =>
+      units
+        .filter((u: any) => !!u.isMercenary === merc)
+        .reduce((n: number, u: any) => n + u.quantity, 0);
+    return { merc: sum(true), own: sum(false) };
+  };
+
+  it('puts the heavier share of a line’s losses on mercenaries', async () => {
+    const { merc, own } = await lose(1000, 1000);
+    expect(merc).toBeGreaterThan(own);
+    expect(own).toBeGreaterThan(0);
+  });
+
+  const run = async (defender: any, damage: number) => {
+    const attacker = makeUser([{ type: 'OFFENSE', quantity: 10, level: 1 }]);
+    const result = new BattleResult(attacker, defender);
+    await distributeCasualties({
+      result,
+      attacker,
+      defender,
+      attackerDamageDealt: damage,
+      defenderDamageDealt: 0,
+      fortHP: 0,
+      initialFortHP: 100,
+      turn: 10,
+    });
+    return result.Losses.Defender.units as any[];
+  };
+
+  it('spills a capped line onto its own mercenaries before the next level', async () => {
+    const attacker = makeUser([{ type: 'OFFENSE', quantity: 10, level: 1 }]);
+    const defender = makeUser([
+      { type: 'DEFENSE', quantity: 61, level: 1 },
+      { type: 'DEFENSE', quantity: 1000, level: 2 },
+      { type: 'CITIZEN', quantity: 100000, level: 1 },
+    ]);
+    defender.mercenaries = [
+      { type: 'DEFENSE', level: 1, quantity: 100, isMercenary: true },
+    ];
+    const result = new BattleResult(attacker, defender);
+    // Earlier turns left the 100 level-1 regulars one short of their 40 cap.
+    result.Losses.Defender.units.push({
+      type: 'DEFENSE',
+      level: 1,
+      quantity: 39,
+      isMercenary: false,
+    });
+    result.Losses.Defender.total = 39;
+    await distributeCasualties({
+      result,
+      attacker,
+      defender,
+      attackerDamageDealt: 400,
+      defenderDamageDealt: 0,
+      fortHP: 0,
+      initialFortHP: 100,
+      turn: 10,
+    });
+    const units = result.Losses.Defender.units as any[];
+    const lost = (level: number, merc: boolean) =>
+      units
+        .filter((u) => u.level === level && !!u.isMercenary === merc)
+        .reduce((n, u) => n + u.quantity, 0);
+    expect(lost(1, true)).toBeGreaterThan(0);
+    expect(lost(2, false)).toBe(0);
+  });
+
+  it('splits a line’s mercenary share fairly across contracts', async () => {
+    const defender = makeUser([
+      { type: 'DEFENSE', quantity: 1000, level: 1 },
+      { type: 'CITIZEN', quantity: 100000, level: 1 },
+    ]);
+    defender.mercenaries = [1, 2].map((id) => ({
+      type: 'DEFENSE',
+      level: 1,
+      quantity: 500,
+      isMercenary: true,
+      forceKind: 'MERCENARY',
+      forceContractId: id,
+    }));
+    const units = await run(defender, 1500);
+    const contract = (id: number) =>
+      units.find((u) => u.isMercenary && u.forceContractId === id)?.quantity ??
+      0;
+    expect(Math.abs(contract(1) - contract(2))).toBeLessThanOrEqual(1);
+  });
+
+  it('leaves armies without mercenaries unchanged', async () => {
+    const { merc, own } = await lose(0, 1000);
+    expect(merc).toBe(0);
+    expect(own).toBeGreaterThan(0);
+  });
+});
+
+describe('mercenary front line keeps the won-assault hit', () => {
+  it('still kills one defender on a mixed line from a single blow', async () => {
+    const attacker = makeUser([{ type: 'OFFENSE', quantity: 10, level: 1 }]);
+    const defender = makeUser([{ type: 'DEFENSE', quantity: 10, level: 1 }]);
+    defender.mercenaries = [
+      {
+        type: 'DEFENSE',
+        level: 1,
+        quantity: 10,
+        isMercenary: true,
+        forceKind: 'MERCENARY',
+        forceContractId: 7,
+      },
+    ];
+    const result = new BattleResult(attacker, defender);
+    await distributeCasualties({
+      result,
+      attacker,
+      defender,
+      attackerDamageDealt: 10,
+      defenderDamageDealt: 0,
+      fortHP: 100,
+      initialFortHP: 100,
+      turn: 1,
+      assaultSucceeded: true,
+    });
+    expect(result.Losses.Defender.total).toBe(1);
+  });
+});
+
+describe('troop-only chip spares assaults that break through', () => {
+  const { V5_COMBAT_CONSTANTS } = require('./balance/v5Combat');
+  const SLOTS = ['WEAPON', 'HELM', 'ARMOR', 'BOOTS', 'BRACERS', 'SHIELD'];
+  const kit = (usage: string, quantity: number) =>
+    SLOTS.map((type) => ({ usage, type, level: 1, quantity }));
+  const firstAssault = async (pressure: number, troopChip: boolean) => {
+    const original = V5_COMBAT_CONSTANTS.CHIP_FROM_TROOPS_ONLY;
+    V5_COMBAT_CONSTANTS.CHIP_FROM_TROOPS_ONLY = troopChip;
+    try {
+      const attacker = makeUser(
+        [{ type: 'OFFENSE', quantity: 100, level: 1 }],
+        {
+          items: kit('OFFENSE', 100),
+        },
+      );
+      const defender = makeUser(
+        [
+          { type: 'DEFENSE', quantity: 110, level: 1 },
+          { type: 'CITIZEN', quantity: 400, level: 1 },
+        ],
+        { items: kit('DEFENSE', 110), defensePressureToday: pressure },
+      );
+      const r = await simulateBattle(attacker, defender, 500, 1, false, false, {
+        random: seeded(7),
+      });
+      const hit = r.mitigationLog.find((m: any) => m.source === 'ATTACKER');
+      return { result: r.result, damage: hit.mitigatedDamage };
+    } finally {
+      V5_COMBAT_CONSTANTS.CHIP_FROM_TROOPS_ONLY = original;
+    }
+  };
+
+  it('keeps full damage on a breach only a tired garrison allows', async () => {
+    const off = await firstAssault(60, false);
+    const on = await firstAssault(60, true);
+    expect(on.result).toBe('WIN');
+    expect(on.damage).toBe(off.damage);
+  });
+
+  it('still shrinks chip on a defense that holds', async () => {
+    const off = await firstAssault(0, false);
+    const on = await firstAssault(0, true);
+    expect(on.result).toBe('LOSS');
+    expect(on.damage).toBeLessThan(off.damage);
+  });
+});
+
+describe('mercenary front line with a tiny contract', () => {
+  const lossesWith = async (contracts: number[]) => {
+    const attacker = makeUser([{ type: 'OFFENSE', quantity: 10, level: 1 }]);
+    const defender = makeUser([{ type: 'DEFENSE', quantity: 1000, level: 1 }]);
+    defender.mercenaries = contracts.map((quantity, i) => ({
+      type: 'DEFENSE',
+      level: 1,
+      quantity,
+      isMercenary: true,
+      forceKind: 'MERCENARY',
+      forceContractId: i + 1,
+    }));
+    const result = new BattleResult(attacker, defender);
+    await distributeCasualties({
+      result,
+      attacker,
+      defender,
+      attackerDamageDealt: 150,
+      defenderDamageDealt: 0,
+      fortHP: 0,
+      initialFortHP: 100,
+      turn: 10,
+    });
+    const sum = (merc: boolean) =>
+      (result.Losses.Defender.units as any[])
+        .filter((u) => !!u.isMercenary === merc)
+        .reduce((n, u) => n + u.quantity, 0);
+    return { merc: sum(true), own: sum(false) };
+  };
+
+  it('splits a line the same way whether its mercenaries hold one contract or two', async () => {
+    const one = await lossesWith([100]);
+    const two = await lossesWith([99, 1]);
+    expect(one.own).toBeGreaterThan(0);
+    expect(Math.abs(two.merc - one.merc)).toBeLessThanOrEqual(1);
+    expect(Math.abs(two.own - one.own)).toBeLessThanOrEqual(1);
+  });
+});

@@ -23,6 +23,7 @@ import {
 import { useTranslation } from 'next-i18next';
 import React from 'react';
 
+import { SupporterBadge } from '@/components/player/SupporterBadge';
 import type { ChatMessage } from '@/types/typings';
 
 import styles from './ChatThemed.module.css';
@@ -109,6 +110,7 @@ const ChatMessageGroupThemedComponent: React.FC<
         {!isCurrentUser && (
           <Text size="sm" mb={4} className={styles.messageSender}>
             {group[0]?.sender?.display_name || t('message.unknownUser')}
+            <SupporterBadge supporter={group[0].sender} />
           </Text>
         )}
         <Stack gap={6}>

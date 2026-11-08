@@ -357,6 +357,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     config,
     intelSpies,
     missionTurns,
+    user,
     assassinateUnit,
     defenderID,
     toggleModal,

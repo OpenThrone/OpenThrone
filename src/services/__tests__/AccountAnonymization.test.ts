@@ -96,6 +96,11 @@ const buildTx = (overrides: Record<string, Record<string, any>> = {}) => {
     apiToken: { updateMany: vi.fn(async () => ({ count: 1 })) },
     apiClient: { updateMany: vi.fn(async () => ({ count: 1 })) },
     emailPreference: { deleteMany: vi.fn(async () => ({ count: 1 })) },
+    discordOutbox: { deleteMany: vi.fn(async () => ({ count: 0 })) },
+    discordLinkCode: { deleteMany: vi.fn(async () => ({ count: 0 })) },
+    discordLink: { deleteMany: vi.fn(async () => ({ count: 1 })) },
+    messages: { updateMany: vi.fn(async () => ({ count: 0 })) },
+    chatMessage: { updateMany: vi.fn(async () => ({ count: 0 })) },
     emailOutbox: { updateMany: vi.fn(async () => ({ count: 1 })) },
     accountInactivityNotice: {
       updateMany: vi.fn(async () => ({ count: 0 })),
@@ -171,6 +176,23 @@ describe('AccountAnonymizationService.anonymizeAccount', () => {
         where: { client: { ownerUserId: USER_ID }, revokedAt: null },
       }),
     );
+    for (const model of ['discordOutbox', 'discordLinkCode', 'discordLink'])
+      expect(tx[model].deleteMany).toHaveBeenCalledWith({
+        where: { userId: USER_ID },
+      });
+    // Words the player wrote to others are erased; the rows keep their place.
+    expect(tx.messages.updateMany).toHaveBeenCalledWith({
+      where: { from_user_id: USER_ID },
+      data: { subject: '', body: '' },
+    });
+    expect(tx.chatMessage.updateMany).toHaveBeenCalledWith({
+      where: { senderId: USER_ID },
+      data: expect.objectContaining({
+        content: '',
+        originalContent: null,
+        deletedAt: expect.any(Date),
+      }),
+    });
     expect(tx.emailPreference.deleteMany).toHaveBeenCalledWith({
       where: { userId: USER_ID },
     });
@@ -593,6 +615,12 @@ describe('AccountService.forgetAccount (delegation)', () => {
     mockPrisma.users.findFirst.mockResolvedValue(null);
     mockPrisma.users.update.mockResolvedValue({});
     mockPrisma.emailOutbox.updateMany = vi.fn(async () => ({ count: 1 }));
+    for (const model of ['discordOutbox', 'discordLinkCode', 'discordLink'])
+      mockPrisma[model] = { deleteMany: vi.fn(async () => ({ count: 0 })) };
+    // No membership, so the post-commit billing stop has nothing to cancel.
+    mockPrisma.supporterMembership = { findUnique: vi.fn(async () => null) };
+    mockPrisma.messages = { updateMany: vi.fn(async () => ({ count: 0 })) };
+    mockPrisma.chatMessage = { updateMany: vi.fn(async () => ({ count: 0 })) };
     mockPrisma.staffRoleAssignment.findFirst.mockResolvedValue(null);
     mockPrisma.accountStatusHistory.findFirst.mockResolvedValue(null);
     mockPrisma.identityBlock.findUnique.mockResolvedValue(null);
@@ -651,6 +679,7 @@ describe('AuthService.registerUser identity blocks', () => {
     display_name: 'Newbie',
     race: 'ELF',
     class: 'FIGHTER',
+    acceptTerms: true,
   };
 
   it('fails registration closed when identity secret configuration is missing', async () => {

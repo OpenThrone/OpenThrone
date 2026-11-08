@@ -1,13 +1,17 @@
 import type { NextApiResponse } from 'next';
 import { ZodError } from 'zod';
 
-import { AUTO_RECRUIT_ENABLED } from '@/constants/AutoRecruit';
 import prisma from '@/lib/prisma';
 import { RecruitSchema } from '@/lib/validation';
 import { withAuth } from '@/middleware/auth';
 import {
+  AUTO_RECRUIT_DISABLED,
+  canAutoRecruit,
+} from '@/services/AutoRecruitAccess.service';
+import {
   getRecruitTargetById,
   getUserByRecruitLink,
+  getValidUsersForRecruitment,
   performRecruitmentWithSessionValidation,
   recruitmentBlockCodeForError,
   resolveRecruitmentContext,
@@ -50,11 +54,8 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       });
     }
     const sessionIdNum = parseRecruitmentSessionId(data.sessionId);
-    if (sessionIdNum !== null && !AUTO_RECRUIT_ENABLED)
-      return res.status(503).json({
-        error: 'Auto-Recruit is currently disabled.',
-        code: 'AUTO_RECRUIT_DISABLED',
-      });
+    if (sessionIdNum !== null && !(await canAutoRecruit(recruiterUserId)))
+      return res.status(503).json(AUTO_RECRUIT_DISABLED);
 
     let targetUserId: number;
     if (isNumericTarget(recruitedUserId)) {
@@ -90,7 +91,15 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     }
 
     const ipAddress = getIpAddress(req);
-    if (!(await verifyRecruitmentCaptcha(data.captchaToken, ipAddress))) {
+    // Auto-recruit targets (numeric, inside a session) passed Turnstile in
+    // startSession; the session is re-validated against this recruiter inside
+    // the reward transaction. Recruit links always need their own token.
+    const sessionRecruit =
+      sessionIdNum !== null && isNumericTarget(recruitedUserId);
+    if (
+      !sessionRecruit &&
+      !(await verifyRecruitmentCaptcha(data.captchaToken, ipAddress))
+    ) {
       return res.status(400).json({
         error: 'Captcha verification failed.',
         code: 'CAPTCHA_FAILED',
@@ -127,6 +136,21 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       selfRecruit,
     });
 
+    // The write has already committed; an ancillary count failure must not turn a
+    // successful recruitment into an apparent failure and invite a retry.
+    if (sessionIdNum !== null) {
+      try {
+        const { usersLeft, recruiterRemaining } =
+          await getValidUsersForRecruitment(recruiterUserId);
+        const recruitsLeft = Math.min(
+          recruiterRemaining,
+          usersLeft.reduce((sum, entry) => sum + entry.remainingRecruits, 0),
+        );
+        return res.status(200).json({ ...result, recruitsLeft });
+      } catch (error) {
+        logError('Error counting remaining recruits:', error);
+      }
+    }
     return res.status(200).json(result);
   } catch (error) {
     if (error instanceof ZodError) {

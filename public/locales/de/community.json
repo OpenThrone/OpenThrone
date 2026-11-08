@@ -116,10 +116,14 @@
     "sessionControls": "Sitzungskontrollen",
     "clickStart": "Klicken Sie auf Start, um die Auto-Rekrut-Sitzung zu beginnen.",
     "startSession": "Rekrutierung starten",
+    "verifyToStart": "Bestätige, dass du kein Bot bist, um die Sitzung zu starten.",
+    "verificationFailed": "Überprüfung fehlgeschlagen. Bitte versuche es erneut.",
     "manageSessions": "Sitzungen verwalten",
     "sessionStatus": "Sitzungsstatus",
     "loadingNextUser": "Nächsten Benutzer laden...",
     "loadingNextUserCountdown": "Nächsten Benutzer in {{count}}s laden...",
+    "sessionRecruitCount": "In dieser Sitzung wurden {{count}} Königreiche rekrutiert.",
+    "tooManySkips": "Zu viele Königreiche sind nicht mehr verfügbar. Bitte starte eine neue Sitzung.",
     "sessionComplete": "Sitzung abgeschlossen",
     "sessionEnded": "Sitzung beendet",
     "startNewSession": "Neue Sitzung starten",
@@ -140,6 +144,10 @@
     "errorVerifyingSession": "Fehler beim Überprüfen der Sitzung.",
     "errorStartingSession": "Fehler beim Starten der Rekrutierungssitzung.",
     "sessionInvalid": "Ungültige Sitzung. Bitte starten Sie eine neue Sitzung.",
-    "disabled": "Automatische Rekrutierung ist derzeit deaktiviert."
+    "disabled": "Automatische Rekrutierung ist derzeit deaktiviert.",
+    "supporterOnly": "Automatische Rekrutierung ist ein Patron-Vorteil. Sie rekrutiert bis zum selben Tageslimit wie die Rekrutierung von Hand.",
+    "becomeSupporter": "Patron werden",
+    "doneForToday": "Du hast heute jedes Königreich rekrutiert, das möglich ist. Rekrutierungen werden zu Beginn des nächsten Spieltags zurückgesetzt.",
+    "dailyCapReached": "Du hast dein tägliches Rekrutierungslimit erreicht. Es wird zu Beginn des nächsten Spieltags zurückgesetzt."
   }
 }

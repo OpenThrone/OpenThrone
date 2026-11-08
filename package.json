@@ -1,6 +1,6 @@
 {
   "name": "openthrone",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "scripts": {
     "dev": "bun run src/server/index.ts",
     "era-reset-worker": "bun scripts/run-era-reset-worker.ts",
@@ -20,7 +20,7 @@
     "format": "eslint . --fix && prettier '**/*.{json,yaml}' --write --ignore-path .gitignore",
     "check-types": "tsc --noEmit --pretty && tsc --project cypress --noEmit --pretty",
     "test": "bun run test:bun",
-    "test:bun": "bun test --path-ignore-patterns='**/{socket,SidebarShared,app-shell}.test.*' --path-ignore-patterns='test/integration/**'",
+    "test:bun": "bun test --isolate --randomize --path-ignore-patterns='**/{socket,SidebarShared,app-shell}.test.*' --path-ignore-patterns='test/integration/**'",
     "test:integration": "bash scripts/test-integration.sh",
     "test:jest": "jest",
     "commit": "cz",
@@ -116,6 +116,7 @@
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "speakeasy": "^2.0.0",
+    "stripe": "^23.0.1",
     "swr": "^2.4.0",
     "tailwindcss": "^3.4.19",
     "tiptap-markdown": "^0.9.0",

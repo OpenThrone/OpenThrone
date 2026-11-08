@@ -33,6 +33,7 @@ import { UpgradeLedger } from '@/components/game/UpgradeLedger';
 import LossesList from '@/components/LossesList';
 import PlayerOutcome from '@/components/PlayerOutcome';
 import profileActionClasses from '@/components/ProfileActions.module.css';
+import { RacialUpgrades } from '@/components/racial-upgrades';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import StatsList from '@/components/StatsList';
 import StatsTable from '@/components/statsTable';
@@ -402,6 +403,19 @@ const HEAVY_LOSSES: Loss = {
   ],
 };
 
+/** A raid fought partly with hired troops: mercenaries take the front line. */
+const MERC_LOSSES: Loss = {
+  total: 6,
+  units: [
+    { ...unit('OFFENSE', 1, 5), isMercenary: true },
+    unit('OFFENSE', 1, 1),
+  ],
+};
+const MERC_WOUNDED: Loss = {
+  total: 2,
+  units: [{ ...unit('OFFENSE', 1, 2), isMercenary: true }],
+};
+
 const LIGHT_LOSSES: Loss = {
   total: 58,
   units: [unit('DEFENSE', 1, 40), unit('DEFENSE', 3, 18)],
@@ -512,6 +526,20 @@ const DEFENSE_LOGS: Log[] = [
         civilianLosses: 64,
         offensiveLosses: 12,
       },
+    },
+  },
+  {
+    id: 9005,
+    winner: PLAYERS.you.id,
+    attacker_id: PLAYERS.aldric.id,
+    defender_id: PLAYERS.you.id,
+    attackerPlayer: PLAYERS.aldric,
+    defenderPlayer: PLAYERS.you,
+    timestamp: '2026-10-15T21:40:00.000Z',
+    type: 'INTEL',
+    stats: {
+      attacker_losses: { total: 0, units: [] },
+      defender_losses: { total: 0, units: [] },
     },
   },
 ];
@@ -751,6 +779,9 @@ function UpgradeLedgerDemo() {
 /* ------------------------------------------------------------------ */
 
 export default function TablesSection() {
+  const { t: tCommon } = useTranslation('common');
+  // The ledger's buy button reaches the API; the guide turns it into a mock.
+  const buyLabels = [tCommon('labels.buy')];
   return (
     <ShowcaseSection
       id="tables"
@@ -809,6 +840,12 @@ export default function TablesSection() {
           </Stack>
           <Stack gap={4} align="center">
             <Text size="xs" c="dimmed" tt="uppercase">
+              Mercenaries and wounded
+            </Text>
+            <LossesList losses={MERC_LOSSES} wounded={MERC_WOUNDED} />
+          </Stack>
+          <Stack gap={4} align="center">
+            <Text size="xs" c="dimmed" tt="uppercase">
               Legacy JSON string
             </Text>
             <LossesList losses={JSON.stringify(LIGHT_LOSSES)} />
@@ -864,6 +901,39 @@ export default function TablesSection() {
       </Specimen>
 
       <Specimen
+        name="Racial upgrades: Elf"
+        usedOn={['/structures/upgrades/racial']}
+        wide
+      >
+        <MockClicks labels={buyLabels}>
+          <RacialUpgrades
+            tier={1}
+            fortLevel={9}
+            race="ELF"
+            forceUpdate={mockAction('Refresh racial upgrades')}
+          />
+        </MockClicks>
+      </Specimen>
+
+      {['HUMAN', 'GOBLIN', 'UNDEAD'].map((race) => (
+        <Specimen
+          key={race}
+          name={`Racial upgrades: ${race}`}
+          usedOn={['/structures/upgrades/racial']}
+          wide
+        >
+          <MockClicks labels={buyLabels}>
+            <RacialUpgrades
+              tier={1}
+              fortLevel={13}
+              race={race}
+              forceUpdate={mockAction('Refresh racial upgrades')}
+            />
+          </MockClicks>
+        </Specimen>
+      ))}
+
+      <Specimen
         name="BankHistoryTable"
         usedOn={['/structures/bank/history']}
         note="Twelve mock rows paged five at a time locally."
@@ -890,7 +960,7 @@ export default function TablesSection() {
         framed={false}
         name="AttackLogTable (defender view)"
         usedOn={['/battle/history']}
-        note="One held defense, one breach. Expand the breach to see the DefenseAdvisory row."
+        note="One held defense, one breach and one caught Intel mission; each row carries its mission badge. Expand the breach to see the DefenseAdvisory row."
         wide
       >
         <GameCard title="Defense log">

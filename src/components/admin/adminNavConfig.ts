@@ -17,6 +17,7 @@ import {
   faFlask,
   faGaugeHigh,
   faGear,
+  faHandHoldingDollar,
   faHandshake,
   faHourglassHalf,
   faKey,
@@ -166,6 +167,29 @@ export const adminNavCategories: AdminNavCategory[] = [
         permissions: [PermissionType.MANAGE_ALLIANCES],
       },
       {
+        key: 'forces',
+        icon: faHandHoldingDollar,
+        labelKey: 'navigation.home.staffForces',
+        href: '/home/admin/forces',
+        permissions: [
+          PermissionType.MANAGE_USERS,
+          PermissionType.MANAGE_ALLIANCES,
+        ],
+      },
+      {
+        key: 'ledgers',
+        icon: faFileLines,
+        labelKey: 'navigation.home.staffLedgers',
+        href: '/home/admin/ledgers',
+        permissions: [
+          PermissionType.VIEW_ECONOMY,
+          PermissionType.VIEW_ANALYTICS,
+          PermissionType.VIEW_MULTI_ACCOUNTS,
+          PermissionType.SEND_MASS_MESSAGES,
+          PermissionType.MANAGE_ACCOUNT_STATUS,
+        ],
+      },
+      {
         key: 'balance-sim',
         icon: faFlask,
         labelKey: 'navigation.home.balanceSim',
@@ -245,6 +269,20 @@ export const adminNavCategories: AdminNavCategory[] = [
         labelKey: 'navigation.home.staffAnalytics',
         href: '/home/admin/analytics',
         permissions: [PermissionType.VIEW_ANALYTICS],
+      },
+    ],
+  },
+  {
+    key: 'revenue',
+    icon: faCoins,
+    labelKey: 'navigation.adminCategories.revenue',
+    items: [
+      {
+        key: 'supporters',
+        icon: faHandHoldingDollar,
+        labelKey: 'navigation.home.staffSupporters',
+        href: '/home/admin/supporters',
+        permissions: [PermissionType.MANAGE_SUPPORTERS],
       },
     ],
   },

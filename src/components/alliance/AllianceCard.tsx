@@ -14,6 +14,7 @@ import { useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
 import panelClasses from '@/components/game/Panels.module.css';
+import { PremiumAllianceMark } from '@/components/player/SupporterBadge';
 import { useUser } from '@/context/users';
 import { avatarFramingStyle, splitAvatarFraming } from '@/utils/avatarFraming';
 import { toLocale } from '@/utils/numberFormatting';
@@ -32,6 +33,8 @@ type AllianceCardProps = {
   userMembership?: unknown;
   isLeader?: boolean;
   roleName?: string;
+  isPremium?: boolean;
+  premiumUntil?: string | null;
 };
 
 /** Shared alliance identity, membership and actions for both directories. */
@@ -49,6 +52,8 @@ export const AllianceCard = ({
   userMembership, // Permissions or role if member
   isLeader,
   roleName = undefined,
+  isPremium,
+  premiumUntil,
 }: AllianceCardProps) => {
   const { t } = useTranslation('alliances');
   const { user } = useUser();
@@ -70,7 +75,15 @@ export const AllianceCard = ({
 
   const isInviteOnly = joinMode === 'INVITE_ONLY';
   return (
-    <GameCard title={name}>
+    <GameCard
+      title={name}
+      action={
+        isPremium ||
+        (premiumUntil && new Date(premiumUntil).getTime() > Date.now()) ? (
+          <PremiumAllianceMark />
+        ) : undefined
+      }
+    >
       <Stack gap="md">
         <Box
           style={{

@@ -475,6 +475,51 @@ describe('Casualties', () => {
 });
 
 describe('Integration Tests with Updated Mock', () => {
+  it('scales attacker power at zero stamina without increasing casualties', async () => {
+    const makeBattle = async (stamina: number) => {
+      const attacker = new MockUserGenerator();
+      attacker.setBasicInfo({
+        email: 'attacker@test.com',
+        display_name: 'Attacker',
+        race: 'HUMAN',
+        class: 'FIGHTER',
+      });
+      attacker.setStamina(stamina);
+      attacker.addUnits(
+        normUnits([{ type: 'OFFENSE', level: 1, quantity: 1000 }]),
+      );
+      const defender = new MockUserGenerator();
+      defender.setBasicInfo({
+        email: 'defender@test.com',
+        display_name: 'Defender',
+        race: 'HUMAN',
+        class: 'FIGHTER',
+      });
+      defender.addUnits(
+        normUnits([{ type: 'DEFENSE', level: 1, quantity: 1000 }]),
+      );
+      return simulateBattle(
+        new UserModel(attacker.getUser()),
+        new UserModel(defender.getUser()),
+        500,
+        1,
+        false,
+        false,
+        { random: () => 0.5 },
+      );
+    };
+    const rested = await makeBattle(100);
+    const exhausted = await makeBattle(0);
+    expect(exhausted.attackerStats.meleeAtkPower).toBeCloseTo(
+      rested.attackerStats.meleeAtkPower * 0.8,
+    );
+    expect(exhausted.attackerFatiguePercent).toBe(20);
+    expect(exhausted.Losses.Defender.total).toBeLessThanOrEqual(
+      rested.Losses.Defender.total,
+    );
+    expect(exhausted.Losses.Attacker.total).toBe(rested.Losses.Attacker.total);
+  });
+
   it('should simulate battle with stamina checks', async () => {
     const attacker = new MockUserGenerator();
     attacker.setBasicInfo({

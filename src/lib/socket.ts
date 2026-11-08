@@ -172,7 +172,13 @@ const hasTokenUserId = (token: unknown): token is SocketAuthToken => {
 type MessageWithRelationsPayload = Prisma.ChatMessageGetPayload<{
   include: {
     sender: {
-      select: { id: true; display_name: true; avatar: true; last_active: true };
+      select: {
+        id: true;
+        display_name: true;
+        avatar: true;
+        last_active: true;
+        supporter_until: true;
+      };
     };
     replyToMessage: {
       select: {

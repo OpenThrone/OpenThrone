@@ -54,6 +54,7 @@ describe('UserDataService', () => {
       house_level: 0,
       attack_turns: 0,
       stamina: 100,
+      staminaUpdatedAt: new Date(),
       maxStamina: 100,
       last_active: new Date(),
       bio: null,

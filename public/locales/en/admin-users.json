@@ -1,6 +1,10 @@
 {
-  "page": { "title": "User management" },
-  "nav": { "bots": "Bot operations" },
+  "page": {
+    "title": "User management"
+  },
+  "nav": {
+    "bots": "Bot operations"
+  },
   "sections": {
     "grantPermissions": "Grant permissions",
     "userManagement": "User directory",
@@ -14,7 +18,12 @@
     "permissions": "Permissions",
     "addNote": "Add staff note",
     "notes": "Staff notes",
-    "export": "Export user data"
+    "export": "Export user data",
+    "record": "Account record",
+    "alliances": "Alliances",
+    "statusHistory": "Status history",
+    "gameplay": "Kingdom",
+    "derived": "Derived strength"
   },
   "columns": {
     "id": "ID",
@@ -52,7 +61,9 @@
     "staffRoles": "Staff roles",
     "permissions": "Permissions",
     "notes": "Notes",
-    "operations": "Operations"
+    "operations": "Operations",
+    "upgrades": "Upgrades",
+    "forces": "Mercenaries and forces"
   },
   "editor": {
     "title": "{{username}}",
@@ -82,7 +93,31 @@
     "unknownAuthor": "Unknown staff member",
     "pinned": "Pinned",
     "unknown": "Unknown",
-    "noteHelp": "Visible to authorized staff only."
+    "noteHelp": "Visible to authorized staff only.",
+    "rank": "Rank",
+    "lastActive": "Last active",
+    "createdAt": "Joined",
+    "currentEra": "Current era",
+    "eraJoinedAt": "Era joined (protection start)",
+    "protectionForfeited": "Protection forfeited in era",
+    "start": "Start",
+    "end": "End",
+    "reason": "Reason",
+    "byAdmin": "By",
+    "fortLevel": "Fort level",
+    "fortHitpoints": "Fort hitpoints",
+    "max": "Max",
+    "stamina": "Stamina",
+    "maxStamina": "Max stamina",
+    "attackTurns": "Attack turns",
+    "houseLevel": "House level",
+    "economyLevel": "Economy level",
+    "race": "Race",
+    "class": "Class",
+    "locale": "Locale",
+    "bio": "Bio",
+    "derivedHelp": "Recalculated on save when units, items, fort, experience, race or class change.",
+    "mercenaryLocked": "Managed by mercenary contract"
   },
   "actions": {
     "edit": "Edit",
@@ -97,7 +132,8 @@
     "decreaseQuantity": "Decrease {{name}} quantity",
     "sortBy": "Sort by {{field}}",
     "endImpersonation": "End impersonation",
-    "savePermissions": "Save permissions"
+    "savePermissions": "Save permissions",
+    "reload": "Reload player"
   },
   "grant": {
     "userSearch": "Find a player",
@@ -106,13 +142,16 @@
     "permissionsHelp": "Existing grants are shown. Saving adds selected permissions.",
     "permissionsPlaceholder": "Choose permissions"
   },
-  "pagination": { "label": "User pages" },
+  "pagination": {
+    "label": "User pages"
+  },
   "messages": {
     "savedTitle": "Changes saved",
     "saved": "User details were updated.",
     "impersonating": "You are viewing an impersonated account.",
     "moderatorReadOnly": "Moderators can inspect user accounts and add staff notes. Editing, permission grants, and impersonation are administrator-only.",
-    "permissionsSaved": "Permissions updated for {{username}}."
+    "permissionsSaved": "Permissions updated for {{username}}.",
+    "noChanges": "No changes to save"
   },
   "states": {
     "loading": "Loading user information…",
@@ -120,7 +159,9 @@
     "noUsers": "No users match these filters.",
     "noUnits": "This account has no units.",
     "noItems": "This account has no items.",
-    "noNotes": "No staff notes have been added."
+    "noNotes": "No staff notes have been added.",
+    "noAlliances": "No alliance",
+    "noStatusHistory": "No status changes"
   },
   "errors": {
     "title": "Request failed",
@@ -134,6 +175,7 @@
     "grant": "Could not update permissions.",
     "impersonationTitle": "Impersonation failed",
     "impersonation": "Could not start impersonation.",
-    "stopImpersonation": "Could not end impersonation."
+    "stopImpersonation": "Could not end impersonation.",
+    "stale": "This player changed since you opened the editor. Reload to see current values. Your edits were not saved."
   }
 }

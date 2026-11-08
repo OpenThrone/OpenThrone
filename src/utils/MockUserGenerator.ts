@@ -46,6 +46,7 @@ export default class MockUserGenerator {
 
   private createDefaultPrismaUser(): PrismaUser {
     return {
+      supporter_until: null,
       id: 1,
       email: 'test@example.com',
       display_name: 'TestUser',
@@ -61,6 +62,7 @@ export default class MockUserGenerator {
       attack_turns: 50,
       stamina: 100,
       maxStamina: 100,
+      staminaUpdatedAt: new Date(),
       defense_pressure_today: 0,
       defense_pressure_date: null,
       spy_pressure_today: 0,
@@ -69,6 +71,10 @@ export default class MockUserGenerator {
       desertion_floor: null,
       kingdom_morale_day: null,
       reanimated_today: 0,
+      racial_perk_tier: 0,
+      sanctuary_recovered_today: 0,
+      sanctuary_day: null,
+      sanctuary_cap: 0,
       reanimation_day: null,
       reanimation_cap: 0,
       wounded_units: [],

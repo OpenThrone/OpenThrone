@@ -260,7 +260,9 @@
       "WITHDRAWN": "Retirada"
     },
     "errorDisplayNameTaken": "Ese nombre no está disponible.",
-    "displayNameMax": "El nombre visible puede tener como máximo 50 caracteres."
+    "displayNameMax": "El nombre visible puede tener como máximo 50 caracteres.",
+    "acceptTerms": "Tengo 16 años o más y he leído la <privacy>Política de privacidad</privacy>.",
+    "acceptTermsRequired": "Debes tener 16 años o más y confirmar que has leído la Política de privacidad."
   },
   "deleteRequest": {
     "title": "Elimina tu cuenta",

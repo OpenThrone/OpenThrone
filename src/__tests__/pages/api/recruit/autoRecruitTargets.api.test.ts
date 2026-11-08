@@ -23,6 +23,7 @@ const loadRoute = () => {
     require.resolve('../../../../pages/api/recruit/auto-recruit')
   ];
   delete require.cache[require.resolve('@/constants/AutoRecruit')];
+  delete require.cache[require.resolve('@/services/AutoRecruitAccess.service')];
   return require('../../../../pages/api/recruit/auto-recruit').default;
 };
 

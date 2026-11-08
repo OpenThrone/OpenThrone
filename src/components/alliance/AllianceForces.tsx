@@ -15,6 +15,7 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import type { ForcePolicySchema } from '@/utils/temporaryForces';
 
 export interface AllianceForcesData {
@@ -67,6 +68,10 @@ export function AllianceForces({
   onOrder: (command: Record<string, unknown>) => Promise<void>;
 }) {
   const { t } = useTranslation('allianceForces');
+  const { config } = useRuntimeConfig();
+  const maxQuantity = config?.forceMaxQuantity ?? 1000000;
+  const maxTerm = config?.forceMaxTermDays ?? 30;
+  const maxPillage = config?.forceMaxPillageBps ?? 2500;
   const [unitId, setUnitId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number | string>(1);
   const [days, setDays] = useState<number | string>(3);
@@ -97,8 +102,9 @@ export function AllianceForces({
             item.quantity >= count,
         ),
     );
-  const validCount = Number.isInteger(count) && count > 0 && count <= 1000000;
-  const validTerm = Number.isInteger(term) && term >= 1 && term <= 30;
+  const validCount =
+    Number.isInteger(count) && count > 0 && count <= maxQuantity;
+  const validTerm = Number.isInteger(term) && term >= 1 && term <= maxTerm;
   const updateRole = (id: number, field: string, value: number | string) =>
     setPolicy((previous) => {
       const allowance = previous.roleAllowances.find(
@@ -133,7 +139,7 @@ export function AllianceForces({
             value={quantity}
             onChange={setQuantity}
             min={1}
-            max={1000000}
+            max={maxQuantity}
             allowDecimal={false}
           />
           <NumberInput
@@ -141,7 +147,7 @@ export function AllianceForces({
             value={days}
             onChange={setDays}
             min={1}
-            max={30}
+            max={maxTerm}
             allowDecimal={false}
           />
         </Group>
@@ -454,7 +460,7 @@ export function AllianceForces({
               ]}
               allowDeselect={false}
             />
-            <Text size="sm">{t('taxRule')}</Text>
+            <Text size="sm">{t('taxRule', { percent: maxPillage / 100 })}</Text>
             <Table.ScrollContainer minWidth={700}>
               <Table>
                 <Table.Thead>
@@ -492,10 +498,10 @@ export function AllianceForces({
                               min={field === 'maxTermDays' ? 1 : 0}
                               max={
                                 field.endsWith('Bps')
-                                  ? 2500
+                                  ? maxPillage
                                   : field === 'maxTermDays'
-                                    ? 30
-                                    : 1000000
+                                    ? maxTerm
+                                    : maxQuantity
                               }
                               allowDecimal={false}
                               onChange={(value) =>

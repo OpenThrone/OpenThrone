@@ -153,7 +153,13 @@
     "goldBadge": "Oro: {{gold}}",
     "xpBadge": "EXP: {{xp}}",
     "turnsBadge": "Turnos: {{turns}}",
-    "unknownPlayer": "Desconocido"
+    "unknownPlayer": "Desconocido",
+    "missionType": {
+      "attack": "Ataque",
+      "INTEL": "Inteligencia",
+      "ASSASSINATE": "Asesinato",
+      "INFILTRATE": "Infiltración"
+    }
   },
   "battleSimulator": {
     "title": "Simulador de Batalla",
@@ -483,9 +489,16 @@
     "garrisonFatigue": "Fatiga de la guarnición: -{{percent}}%",
     "garrisonFatigueTooltip": "La guarnición del defensor ya ha luchado hoy. Cada defensa que rechaza la cansará un poco más, y una guarnición cansada defiende con menos poder.",
     "garrisonFatigueHelp": "Qué es la fatiga de la guarnición",
-    "pillageDeductions": "Aportación de la alianza: {{contribution}} · Repago del préstamo de oro: {{repayment}} · Oro recuperado: {{net}}"
+    "pillageDeductions": "Aportación de la alianza: {{contribution}} · Repago del préstamo de oro: {{repayment}} · Oro recuperado: {{net}}",
+    "armyFatigue": "Resistencia baja: −{{percent}} % de ataque",
+    "armyFatigueTooltip": "El ejército atacante tenía poca resistencia y luchó peor. La resistencia se recupera con el tiempo.",
+    "armyFatigueHelp": "Qué significa la resistencia baja"
   },
   "timeline": {
+    "necropolisBonus": "La tasa de necrópolis levantó {{bonus}} unidades adicionales (dentro del límite diario actual).",
+    "raidersRate": "Tasa de captura de saqueadores: {{percent}} % (limitada por la capacidad de la mazmorra).",
+    "sanctuaryRecovered": "El santuario recuperó {{recovered}} unidades defensoras.",
+    "hallowedBlocked": "La tierra sagrada impidió que {{blocked}} bajas del atacante se alzaran.",
     "battleId": "ID de batalla: {{id}}",
     "youAttacked": "Atacaste a {{defender}}.",
     "attackedYou": "{{attacker}} te atacó.",
@@ -515,7 +528,9 @@
   "losses": {
     "units_one": "{{total}} unidad",
     "units_other": "{{total}} unidades",
-    "unitLine": "{{quantity}}× Nv. {{level}} {{unit}}"
+    "unitLine": "{{quantity}}× Nv. {{level}} {{unit}}",
+    "unitLineMercenary": "{{quantity}}× Nv. {{level}} {{unit}} (mercenario)",
+    "wounded": "+ {{count}} heridos, curándose (cerca de un tercio vuelve cada día)"
   },
   "unitTypes": {
     "CITIZEN": "Ciudadano",

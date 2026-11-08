@@ -3,10 +3,15 @@ import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 
 installMockPrisma(vi);
 let session: { user: { id: number } } | null = null;
-mock.module('next-auth', () => ({ getServerSession: async () => session }));
-mock.module('@/pages/api/auth/[...nextauth]', () => ({ authOptions: {} }));
+// The suite runs with --isolate, so this stub cannot reach other files.
+const realNextAuth = await import('next-auth');
+mock.module('next-auth', () => ({
+  ...realNextAuth,
+  default: realNextAuth.default,
+  getServerSession: async () => session,
+}));
 const { getServerSideProps } = await import('@/pages/battle/results/[id]');
-const context = (id = '90') => ({
+const context = async (id = '90') => ({
   params: { id },
   req: {},
   res: { setHeader: vi.fn() },
@@ -46,12 +51,12 @@ beforeEach(() => {
 });
 describe('public report server loader', () => {
   it('does not return a private report to an anonymous visitor', async () => {
-    const result = await getServerSideProps(context());
+    const result = await getServerSideProps(await context());
     expect(result.props.battle).toBeNull();
   });
   it('returns a public report anonymously using shared redaction and no cache', async () => {
     acl = [{ is_public: true }];
-    const request = context();
+    const request = await context();
     const result = await getServerSideProps(request);
     expect(result.props.viewerID).toBe(0);
     expect(result.props.battle?.stats.spyResults).toMatchObject({
@@ -73,7 +78,7 @@ describe('public report server loader', () => {
   it('keeps the attacker’s personal report even when it is public', async () => {
     acl = [{ is_public: true }];
     session = { user: { id: 11 } };
-    const result = await getServerSideProps(context());
+    const result = await getServerSideProps(await context());
     expect(result.props.battle?.stats.spyResults).toHaveProperty(
       'successProbability',
       0.75,
@@ -81,13 +86,13 @@ describe('public report server loader', () => {
   });
   it('rejects invalid IDs before querying and hides old-era public reports', async () => {
     expect(
-      (await getServerSideProps(context('not-an-id'))).props.battle,
+      (await getServerSideProps(await context('not-an-id'))).props.battle,
     ).toBeNull();
     expect(mockPrisma.attack_log.findUnique).not.toHaveBeenCalled();
     acl = [{ is_public: true }];
     mockPrisma.era.findFirst.mockResolvedValue({
       startDate: new Date('2026-10-20'),
     });
-    expect((await getServerSideProps(context())).props.battle).toBeNull();
+    expect((await getServerSideProps(await context())).props.battle).toBeNull();
   });
 });

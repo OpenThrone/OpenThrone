@@ -24,7 +24,11 @@ import {
 import { hasParticipatedInEra } from '@/utils/eraParticipation';
 import { logDebug, logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
-import { createCombatRandom, replayCombatRandom } from '@/utils/serverRandom';
+import {
+  createCombatRandom,
+  isRetiredCombatReplayVersion,
+  replayCombatRandom,
+} from '@/utils/serverRandom';
 import {
   simulateAssassination,
   simulateInfiltration,
@@ -724,6 +728,17 @@ export class BattleService {
           originalGold: attack.pillaged_gold.toString(),
         };
       }
+      const { formulaVersion } = replayData as { formulaVersion?: unknown };
+      if (isRetiredCombatReplayVersion(formulaVersion)) {
+        return {
+          replayMode: 'UNAVAILABLE',
+          exactReplay: false,
+          formulaVersion,
+          message:
+            'Battle was fought under an earlier combat formula. Any new simulation would be counterfactual, not an exact replay.',
+          originalGold: attack.pillaged_gold.toString(),
+        };
+      }
       const replay = parseCombatReplay(replayData);
 
       // Version/algorithm validation and seed authentication happen before execution.
@@ -773,6 +788,8 @@ export class BattleService {
           random,
           defenderDailyCasualtyRemaining: replay.defenderDailyCasualtyRemaining,
           defenderDailyGoldRemaining: BigInt(replay.defenderDailyGoldRemaining),
+          staminaPenaltyThreshold: replay.staminaPenaltyThreshold ?? 0,
+          staminaMinMultiplier: replay.staminaMinMultiplier,
         },
       );
       const attackerRoster = [

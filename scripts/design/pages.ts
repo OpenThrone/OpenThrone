@@ -8,12 +8,16 @@ export const VIEWPORT = { width: 1440, height: 900 };
 export const PUBLIC_PAGES: DesignPage[] = [
   { name: 'home', url: '/' },
   { name: 'about', url: '/about' },
+  { name: 'legal-privacy', url: '/legal/privacy' },
   { name: 'how-to-play', url: '/how-to-play' },
   { name: 'faq', url: '/faq' },
   { name: 'news', url: '/community/news' },
   { name: 'stats', url: '/community/stats' },
   { name: 'login', url: '/account/login' },
   { name: 'register', url: '/account/register' },
+  { name: 'supporter', url: '/supporter' },
+  { name: 'legal-terms', url: '/legal/terms' },
+  { name: 'legal-refunds', url: '/legal/refunds' },
 ];
 
 export const GAME_PAGES: DesignPage[] = [
@@ -35,6 +39,7 @@ export const GAME_PAGES: DesignPage[] = [
   { name: 'messaging', url: '/messaging' },
   { name: 'friends', url: '/social/friends' },
   { name: 'auto-recruit', url: '/auto-recruit' },
+  { name: 'patronage', url: '/home/supporter' },
 ];
 
 // FigCraft pages, in order. `cols` is how many screens sit in each row.

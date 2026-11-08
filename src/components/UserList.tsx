@@ -10,6 +10,8 @@ import {
 import { useTranslation } from 'next-i18next';
 import React from 'react';
 
+import { SupporterBadge } from '@/components/player/SupporterBadge';
+
 import { StyledTable } from './game/StyledTable';
 
 interface UserSummary {
@@ -20,6 +22,8 @@ interface UserSummary {
   lastActive?: Date | string;
   permissions?: string[];
   staffRoles?: string[];
+  supporterUntil?: string | null;
+  badgeVisible?: boolean;
 }
 
 interface UserListProps {
@@ -93,7 +97,10 @@ const UserList: React.FC<UserListProps> = ({
   const rows = users.map((user) => (
     <Table.Tr key={user.id}>
       <Table.Td>{user.id}</Table.Td>
-      <Table.Td style={{ overflowWrap: 'anywhere' }}>{user.username}</Table.Td>
+      <Table.Td style={{ overflowWrap: 'anywhere' }}>
+        {user.username}
+        <SupporterBadge supporter={user} />
+      </Table.Td>
       <Table.Td style={{ overflowWrap: 'anywhere' }}>
         {user.email || t('fields.unknown')}
       </Table.Td>

@@ -116,6 +116,7 @@ const CHAT_MESSAGE_RELATIONS = {
       display_name: true,
       avatar: true,
       last_active: true,
+      supporter_until: true,
     },
   },
   replyToMessage: {
@@ -171,6 +172,7 @@ export function serializeChatMessage(message: StoredChatMessage): ChatMessage {
       id: message.sender.id,
       display_name: message.sender.display_name,
       avatar: message.sender.avatar,
+      supporterUntil: message.sender.supporter_until?.toISOString() ?? null,
       is_online:
         !!message.sender.last_active &&
         Date.now() - message.sender.last_active.getTime() < 5 * 60 * 1000,
@@ -948,7 +950,12 @@ export class MessagingService {
           },
           include: {
             sender: {
-              select: { id: true, display_name: true, avatar: true },
+              select: {
+                id: true,
+                display_name: true,
+                avatar: true,
+                supporter_until: true,
+              },
             },
           },
         });
@@ -981,6 +988,8 @@ export class MessagingService {
             id: message.sender.id,
             display_name: message.sender.display_name,
             avatar: message.sender.avatar,
+            supporterUntil:
+              message.sender.supporter_until?.toISOString() ?? null,
           },
         };
       });
@@ -1191,7 +1200,12 @@ export class MessagingService {
           skip: validatedQuery.offset,
           include: {
             sender: {
-              select: { id: true, display_name: true, avatar: true },
+              select: {
+                id: true,
+                display_name: true,
+                avatar: true,
+                supporter_until: true,
+              },
             },
             replyToMessage: {
               select: {
@@ -1216,6 +1230,8 @@ export class MessagingService {
             id: message.sender.id,
             display_name: message.sender.display_name,
             avatar: message.sender.avatar,
+            supporterUntil:
+              message.sender.supporter_until?.toISOString() ?? null,
           },
           replyToMessage: message.replyToMessage
             ? {

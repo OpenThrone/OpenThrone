@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'bun:test';
 import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 import { silenceLogger } from 'test/utils/silenceLogger';
 
@@ -8,6 +8,10 @@ silenceLogger();
 // Dynamic import so the Prisma mock is installed before the services load.
 const { AllianceService } = await import('../Alliance.service');
 const { AllianceWarService } = await import('../AllianceWar.service');
+const recompute = await import('@/utils/adminRecomputeStats');
+let recomputeSpy: ReturnType<typeof vi.spyOn>;
+
+afterEach(() => recomputeSpy.mockRestore());
 
 // Synthetic alliance (#66): leader 5; officer 6 (rank 0); sergeant 7
 // (rank 1); members 8 and 9 hold the default Member rank (rank 2).
@@ -67,6 +71,16 @@ const membershipFor = (userId: number) => {
 };
 
 beforeEach(() => {
+  recomputeSpy = vi
+    .spyOn(recompute, 'recomputeStoredStatsInTx')
+    .mockResolvedValue({
+      offense: 0,
+      defense: 0,
+      spy: 0,
+      sentry: 0,
+      killingStrength: 0,
+      defenseStrength: 0,
+    });
   alliance = {
     id: ALLIANCE_ID,
     name: 'Synthetic Pact',
@@ -154,6 +168,10 @@ describe('leaving an alliance', () => {
       ),
     ).toBeNull();
     expect(mockPrisma.alliance_memberships.delete).toHaveBeenCalledTimes(1);
+    expect(recomputeSpy).toHaveBeenCalledWith(mockPrisma, MEMBER);
+    expect(
+      mockPrisma.forceContract.updateMany.mock.invocationCallOrder[0],
+    ).toBeLessThan(recomputeSpy.mock.invocationCallOrder[0]);
   });
 });
 
@@ -188,6 +206,10 @@ describe('kicking members', () => {
 
   it('lets the leader kick anyone else', async () => {
     expect(await kick(LEADER, OFFICER)).toBeNull();
+    expect(recomputeSpy).toHaveBeenCalledWith(mockPrisma, OFFICER);
+    expect(
+      mockPrisma.forceContract.updateMany.mock.invocationCallOrder[0],
+    ).toBeLessThan(recomputeSpy.mock.invocationCallOrder[0]);
   });
 });
 
@@ -289,6 +311,44 @@ describe('disbanding', () => {
       ),
     ).toBe('Alliance not found or you are not the leader');
   });
+
+  it.each(['disband', 'admin dissolve'])(
+    'recomputes each borrower once on %s',
+    async (action) => {
+      mockPrisma.forceContract.findMany = vi.fn(async ({ where }: any) =>
+        where.status
+          ? []
+          : [
+              { id: 1, userId: MEMBER },
+              { id: 2, userId: MEMBER },
+              { id: 3, userId: MEMBER_2 },
+            ],
+      );
+      mockPrisma.forceLedgerArchive = { create: vi.fn(async () => ({})) };
+      for (const model of [
+        'forceEvent',
+        'forceObligation',
+        'forceDuesRule',
+        'forceReserve',
+        'allianceForcePolicy',
+      ])
+        mockPrisma[model].deleteMany = vi.fn(async () => ({ count: 0 }));
+      if (action === 'disband')
+        await AllianceService.deleteAlliance(
+          ALLIANCE_ID,
+          LEADER,
+          'Synthetic Pact',
+        );
+      else
+        await AllianceService.adminDissolveAlliance(
+          ALLIANCE_ID,
+          async () => {},
+        );
+      expect(recomputeSpy).toHaveBeenCalledTimes(2);
+      expect(recomputeSpy).toHaveBeenNthCalledWith(1, mockPrisma, MEMBER);
+      expect(recomputeSpy).toHaveBeenNthCalledWith(2, mockPrisma, MEMBER_2);
+    },
+  );
 
   it('removes dependent rows before the alliance', async () => {
     expect(

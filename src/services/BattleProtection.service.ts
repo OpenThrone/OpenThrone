@@ -25,7 +25,7 @@ export async function loadProtectionContext(
       orderBy: { startDate: 'desc' },
       select: { id: true, startDate: true, startSettings: true },
     }),
-    getRuntimeConfig(),
+    getRuntimeConfig(db === prisma ? undefined : db),
   ]);
   return {
     era,
@@ -33,6 +33,7 @@ export async function loadProtectionContext(
       durationDays: normalizeProtectionDurationDays(
         config.protectionDurationDays,
       ),
+      levelLimit: config.protectionLevelLimit ?? 10,
       recruitDailyCap:
         Math.max(0, Math.floor(Number(config.recruitDailyCap ?? 250))) +
         Math.max(0, Math.floor(Number(config.externalRecruitDailyCap ?? 25))),

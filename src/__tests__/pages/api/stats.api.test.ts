@@ -104,6 +104,9 @@ describe('API stats', () => {
     };
 
     mockPrisma.users.count = vi.fn().mockRejectedValue(new Error('DB Error'));
+    // Stub the other counts so only the intended failure fires, in any order.
+    mockPrisma.attack_log = { count: vi.fn().mockResolvedValue(0) };
+    mockPrisma.alliances = { count: vi.fn().mockResolvedValue(0) };
     mockPrisma.era = {
       findFirst: vi.fn().mockResolvedValue({
         id: 1,

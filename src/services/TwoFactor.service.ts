@@ -6,6 +6,7 @@ import prisma from '@/lib/prisma';
 import { isAdmin, isModerator } from '@/utils/authorization';
 import { verifyStoredPassword, verifyTotpOnce } from '@/utils/credentialGuards';
 import { isPrivileged2FAEnforced } from '@/utils/securityPolicies';
+import { encryptTwoFactorSecret } from '@/utils/twoFactorSecret';
 
 const SETUP_LIFETIME_SECONDS = 600;
 
@@ -87,7 +88,7 @@ export async function completeTwoFactorSetup(
 
   const updated = await prisma.users.updateMany({
     where: { id: userId, twoFactorSecret: null },
-    data: { twoFactorSecret: pending.secret },
+    data: { twoFactorSecret: encryptTwoFactorSecret(pending.secret) },
   });
   if (updated.count !== 1)
     throw new TwoFactorSetupError(

@@ -359,6 +359,7 @@ export interface ShareableArmyData {
 // DTO for /api/general/getUser response
 // Matches Prisma select + calculated fields
 export interface UserApiResponse {
+  supporterUntil?: string | null;
   id: number;
   twoFactorEnabled?: boolean;
   staffRoles?: StaffRole[];
@@ -369,9 +370,13 @@ export interface UserApiResponse {
   gold: string; // Serialized BigInt
   gold_in_bank: string; // Serialized BigInt
   fort_level: number;
+  racial_perk_tier?: number;
   fort_hitpoints: number;
   house_level: number;
   attack_turns: number;
+  stamina?: number;
+  maxStamina?: number;
+  staminaUpdatedAt?: string;
   UserUnit: any[]; // Temporarily any to allow UserUnit[]
   UserItem: any[]; // Temporarily any to allow UserItem[]
   last_active: string; // Serialized Date
@@ -433,8 +438,11 @@ export interface ChatMessage {
   sender: {
     id: number;
     display_name: string;
+    supporterUntil?: string | null;
+    badgeVisible?: boolean;
     avatar: string | null;
     is_online: boolean;
+    supporterUntil?: string | null;
   };
   reactions: {
     userId: number;

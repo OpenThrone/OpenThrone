@@ -260,7 +260,9 @@
       "WITHDRAWN": "Zurückgezogen"
     },
     "errorDisplayNameTaken": "Dieser Anzeigename ist nicht verfügbar.",
-    "displayNameMax": "Der Anzeigename darf höchstens 50 Zeichen lang sein."
+    "displayNameMax": "Der Anzeigename darf höchstens 50 Zeichen lang sein.",
+    "acceptTerms": "Ich bin mindestens 16 Jahre alt und habe die <privacy>Datenschutzerklärung</privacy> gelesen.",
+    "acceptTermsRequired": "Du musst mindestens 16 Jahre alt sein und bestätigen, dass du die Datenschutzerklärung gelesen hast."
   },
   "deleteRequest": {
     "title": "Konto löschen",

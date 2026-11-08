@@ -5,6 +5,10 @@ import {
   UnitTypes,
 } from '@/constants';
 import {
+  attackerStaminaMultiplier,
+  attackerStaminaPercent,
+} from '@/constants/ArmyStamina';
+import {
   defenderFatigueMultiplier,
   defenderFatiguePercent,
 } from '@/constants/KingdomMorale';
@@ -233,11 +237,14 @@ interface BattleState {
   defenderDailyCasualtyRemaining?: number;
   /** Garrison fatigue multiplier from defense pressure today (#204); scales the defender's power, never casualties. */
   defenderFatigueMultiplier: number;
+  attackerStaminaMultiplier: number;
 }
 
 /** Defines the simulation options shape used by related workflows. */
 export type SimulationOptions = {
   random: RandomFn;
+  staminaPenaltyThreshold?: number;
+  staminaMinMultiplier?: number;
   /** Remaining daily casualty allowance for the defender across all attackers. */
   defenderDailyCasualtyRemaining?: number;
   /** Remaining daily gold all attackers may take from this defender. */
@@ -262,6 +269,11 @@ export type BattleConstants = Omit<
 > & {
   MAX_TURNS: number;
 };
+
+/** Returns the live game's battle constants, ignoring any active override. */
+export function getDefaultBattleConstants(): BattleConstants {
+  return { ...DEFAULT_BATTLE_CONSTANTS };
+}
 
 /** Returns battle constants for callers that need normalized game data. */
 export function getBattleConstants(): BattleConstants {
@@ -312,6 +324,8 @@ export async function simulateBattle(
     initialFortHP,
     isDefenderProtected,
     random,
+    options?.staminaPenaltyThreshold,
+    options?.staminaMinMultiplier,
   );
   state.defenderDailyCasualtyRemaining =
     options?.defenderDailyCasualtyRemaining;
@@ -347,6 +361,8 @@ function initializeBattleState(
   initialFortHP: number,
   isDefenderProtected: boolean,
   random: RandomFn,
+  staminaThreshold?: number,
+  staminaMinimum?: number,
 ) {
   const battleResult = new BattleResult(attacker, defender);
   const attackerStrength = calculateStrength(attacker, 'OFFENSE');
@@ -359,6 +375,16 @@ function initializeBattleState(
   );
   battleResult.defenderFatiguePercent = defenderFatiguePercent(
     Number(defender.defensePressureToday ?? 0),
+  );
+  const armyMultiplier = attackerStaminaMultiplier(
+    attacker.stamina ?? 100,
+    staminaThreshold,
+    staminaMinimum,
+  );
+  battleResult.attackerFatiguePercent = attackerStaminaPercent(
+    attacker.stamina ?? 100,
+    staminaThreshold,
+    staminaMinimum,
   );
   const fortification = getFortificationByLevel(defender.fortLevel ?? 0);
   const resolvedStartFortHP = Number.isFinite(initialFortHP)
@@ -447,6 +473,7 @@ function initializeBattleState(
       defenderStrength.totalStats.MeleeDefPower +
       defenderStrength.totalStats.RangedDefPower,
     defenderFatigueMultiplier: fatigueMultiplier,
+    attackerStaminaMultiplier: armyMultiplier,
   };
 
   return state;
@@ -481,9 +508,20 @@ async function executeBattleTurn(state: BattleState, turn: number) {
   state.defender.dailyCasualtyAllowanceRemaining =
     state.defenderDailyCasualtyRemaining;
   const fatigue = calculateCombatFatigue(turn);
-  const attackerStrength = calculateArmyStrengthFromFormations(
-    buildBattleArmyState(state.attacker, 'OFFENSE'),
-  );
+  const attackerArmy = buildBattleArmyState(state.attacker, 'OFFENSE');
+  const attackerStrength = calculateArmyStrengthFromFormations(attackerArmy);
+  // Gear decides breakthroughs; chip on a defense that holds comes from the
+  // troops alone (#202, behind CHIP_FROM_TROOPS_ONLY).
+  let troopChipScale = 1;
+  if (V5_COMBAT_CONSTANTS.CHIP_FROM_TROOPS_ONLY) {
+    let troops = 0;
+    for (const f of attackerArmy.formations)
+      troops +=
+        (f.troopStats.MeleeAtkPower + f.troopStats.RangedAtkPower) * f.quantity;
+    const total =
+      attackerStrength.meleeAtkPower + attackerStrength.rangedAtkPower;
+    troopChipScale = total > 0 ? troops / total : 1;
+  }
   const includeCitz = state.defenderDefenseRemaining === 0 || state.fortHP <= 0;
   const includeOffense =
     state.fortHP <= 0 && state.defenderDefenseRemaining === 0;
@@ -493,9 +531,11 @@ async function executeBattleTurn(state: BattleState, turn: number) {
     includeCitz,
     includeOffense,
   ).totalStats;
-  state.attackerMeleeAtkPower = attackerStrength.meleeAtkPower * fatigue;
+  state.attackerMeleeAtkPower =
+    attackerStrength.meleeAtkPower * fatigue * state.attackerStaminaMultiplier;
   state.attackerMeleeDefPower = attackerStrength.meleeDefPower * fatigue;
-  state.attackerRangedAtkPower = attackerStrength.rangedAtkPower * fatigue;
+  state.attackerRangedAtkPower =
+    attackerStrength.rangedAtkPower * fatigue * state.attackerStaminaMultiplier;
   state.attackerRangedDefPower = attackerStrength.rangedDefPower * fatigue;
   state.defenderMeleeAtkPower = defenderStrength.MeleeAtkPower;
   state.defenderMeleeDefPower = defenderStrength.MeleeDefPower;
@@ -521,13 +561,13 @@ async function executeBattleTurn(state: BattleState, turn: number) {
   );
   const meleeAttack =
     (attackerPhase
-      ? state.attackerMeleeAtkPower
+      ? attackerStrength.meleeAtkPower * fatigue
       : state.defenderMeleeAtkPower) *
     multiplier *
     meleeVariance;
   const rangedAttack =
     (attackerPhase
-      ? state.attackerRangedAtkPower
+      ? attackerStrength.rangedAtkPower * fatigue
       : state.defenderRangedAtkPower) *
     multiplier *
     rangedVariance;
@@ -557,7 +597,7 @@ async function executeBattleTurn(state: BattleState, turn: number) {
     : defensePressure;
   const assaultSucceeded =
     attackerPhase &&
-    attackPressure > contestDefensePressure &&
+    attackPressure * state.attackerStaminaMultiplier > contestDefensePressure &&
     state.attackerOffenseRemaining > 0;
   state.assaultSucceeded ||= assaultSucceeded;
   if (attackerPhase && state.attackerOffenseRemaining > 0) {
@@ -631,6 +671,8 @@ async function executeBattleTurn(state: BattleState, turn: number) {
       attackerPhase
         ? {
             taperChipDamage: true,
+            // Only an assault that fails keeps its chip to the troops' share.
+            chipScale: assaultSucceeded ? 1 : troopChipScale,
             defenderFortLevel: state.defender.fortLevel,
             defenderCasualtyBonusPct: getUserCasualtyBonusPercent(
               state.defender,
@@ -749,10 +791,7 @@ async function executeBattleTurn(state: BattleState, turn: number) {
       state.random,
       {
         assaultSucceeded,
-        attackPressure,
-        // The loot check rides the SAME fatigued contest value that decided
-        // the assault: a breach that happened only because the garrison was
-        // tired still yields loot instead of an empty "success".
+        attackPressure: attackPressure * state.attackerStaminaMultiplier,
         // The loot check rides the SAME fatigued contest value that decided
         // the assault: a breach that happened only because the garrison was
         // tired still yields loot instead of an empty "success".
@@ -893,12 +932,19 @@ export function calculateBattleExperience(
   };
 }
 
-function calculateProgressionXpPerTurn(level: number): number {
+/**
+ * Battle XP per committed turn at an attacker level, before other factors.
+ * It tapers gently: 73% of the XP to level 100 lies above level 50, and turns
+ * (48 a day) cap how fast anyone can earn it, so a steep taper put level 100
+ * out of reach. Admin balance-sim runs put the fastest players at about
+ * 30-34 months and full-time players at about 4 years.
+ */
+export function calculateProgressionXpPerTurn(level: number): number {
   if (level <= 10) return 360;
-  if (level <= 25) return 240;
-  if (level <= 50) return 150;
-  if (level <= 75) return 100;
-  return 75;
+  if (level <= 25) return 300;
+  if (level <= 50) return 260;
+  if (level <= 75) return 230;
+  return 200;
 }
 
 function calculateTurnCommitmentXpEfficiency(turns: number): number {
@@ -1147,6 +1193,7 @@ function computeMitigatedDamage(
   defensePower: number,
   minimumDamageRatio = 0.05,
   taperChip = false,
+  chipScale = 1,
 ): number {
   const safeAttackPower = Math.max(0, Number(attackPower) || 0);
   const safeDefensePower = Math.max(0, Number(defensePower) || 0);
@@ -1164,7 +1211,8 @@ function computeMitigatedDamage(
         1,
       )
     : 1;
-  const chipDamage = safeAttackPower * minimumDamageRatio * chipShare;
+  const chipDamage =
+    safeAttackPower * minimumDamageRatio * chipShare * clamp(chipScale, 0, 1);
 
   return Math.max(subtractiveDamage, chipDamage);
 }
@@ -1187,6 +1235,8 @@ export function newComputeCasualties(
     defenderStructureUpgrades?: CombatStrengthUser['structure_upgrades'];
     /** Attacker assault: taper chip damage against much stronger defenses. */
     taperChipDamage?: boolean;
+    /** Share of the attack that comes from troops, not gear (chip only). */
+    chipScale?: number;
   },
 ): {
   damageDealt: number;
@@ -1215,6 +1265,7 @@ export function newComputeCasualties(
     effectiveDefenderDef,
     0.05,
     options?.taperChipDamage === true,
+    options?.chipScale ?? 1,
   );
 
   // Apply piercing ratio to increase damage in overwhelming scenarios.
@@ -1521,29 +1572,36 @@ export async function distributeCasualties(params: {
 
     // Lowest levels absorb casualties first, but no single stack may lose more
     // than PER_STACK_CASUALTY_CAP of its starting size in one battle — excess
-    // damage spills to the next stack instead of erasing a unit line.
+    // damage spills to the next stack instead of erasing a unit line. Within a
+    // type and level, hired mercenaries take the front line: they absorb a
+    // share of the damage weighted by MERC_LOSS_WEIGHT over their headcount,
+    // so a player's own troops are spared first.
     const sortedUnits = [...unitPool]
       .filter((u) => (u.quantity || 0) > 0)
       .sort(
         (a, b) =>
           a.level - b.level ||
           a.type.localeCompare(b.type) ||
-          Number(a.isMercenary) - Number(b.isMercenary) ||
+          Number(!!b.isMercenary) - Number(!!a.isMercenary) ||
           (a.currentHP ?? 0) - (b.currentHP ?? 0),
       );
 
-    for (const unit of sortedUnits) {
-      if (remainingDamage <= 0) break;
+    const drainStack = (
+      unit: BattleUnits,
+      budget: number,
+      reportRout: boolean,
+    ) => {
+      if (remainingDamage <= 0) return;
       if (maxCasualties !== undefined && casualtiesCount >= maxCasualties) {
-        break;
+        return;
       }
+      // A weighted mercenary share may cap the damage this stack can absorb.
+      let stackDamage = Math.min(remainingDamage, budget);
 
       const unitInfo = UnitTypes.find(
         (u) => u.type === unit.type && u.level === unit.level,
       );
-      if (!unitInfo) {
-        continue;
-      }
+      if (!unitInfo) return;
 
       let lossEntry = result.Losses[side].units.find(
         (u) =>
@@ -1581,11 +1639,12 @@ export async function distributeCasualties(params: {
 
       while (
         unitsRemaining > 0 &&
-        remainingDamage > 0 &&
+        stackDamage > 0 &&
         killedFromStack < stackAllowed &&
         (maxCasualties === undefined || casualtiesCount < maxCasualties)
       ) {
-        if (unitHP <= remainingDamage) {
+        if (unitHP <= stackDamage) {
+          stackDamage -= unitHP;
           remainingDamage -= unitHP;
           unitsRemaining--;
           casualtiesCount++;
@@ -1607,8 +1666,9 @@ export async function distributeCasualties(params: {
           unitHP =
             unit.forceKind === 'MERCENARY' ? unitInfo.hp * 0.8 : unitInfo.hp; // Reset HP for the next unit of the same type
         } else {
-          unitHP -= remainingDamage;
-          remainingDamage = 0;
+          unitHP -= stackDamage;
+          remainingDamage -= stackDamage;
+          stackDamage = 0;
         }
       }
 
@@ -1616,6 +1676,7 @@ export async function distributeCasualties(params: {
       unit.currentHP = unitsRemaining > 0 ? unitHP : (unitInfo.hp ?? 1);
 
       if (
+        reportRout &&
         killedFromStack >= stackAllowed &&
         unitsRemaining > 0 &&
         remainingDamage > 0
@@ -1629,7 +1690,73 @@ export async function distributeCasualties(params: {
           initialQuantity,
         });
       }
+    };
+
+    // Walk one type/level line at a time, lowest level first. Within a line
+    // the mercenary share and headcounts are fixed when the line is reached,
+    // and any damage left after the regulars hit their stack cap spills to the
+    // line's held-back mercenaries before the next line is touched.
+    const lineKey = (u: BattleUnits) => `${u.level}:${u.type}`;
+    const lines: BattleUnits[][] = [];
+    for (const unit of sortedUnits) {
+      const last = lines[lines.length - 1];
+      if (last && lineKey(last[0]!) === lineKey(unit)) last.push(unit);
+      else lines.push([unit]);
     }
+    for (const line of lines) {
+      if (remainingDamage <= 0) break;
+      if (maxCasualties !== undefined && casualtiesCount >= maxCasualties)
+        break;
+      const mercStacks = line.filter((u) => u.isMercenary);
+      const mercs = mercStacks.reduce((n, u) => n + u.quantity, 0);
+      const regulars = line
+        .filter((u) => !u.isMercenary)
+        .reduce((n, u) => n + u.quantity, 0);
+      if (!mercs || !regulars) {
+        for (const unit of line) drainStack(unit, Infinity, true);
+        continue;
+      }
+      const weight = V5_COMBAT_CONSTANTS.MERC_LOSS_WEIGHT;
+      const lineBudget =
+        (remainingDamage * weight * mercs) / (weight * mercs + regulars);
+      const shares = new Map(
+        mercStacks.map((u) => [u, (lineBudget * u.quantity) / mercs]),
+      );
+      // Contracts whose share cannot fell one of their troops pool those
+      // shares, so a tiny contract does not cancel the split for the line.
+      const hpOf = (u: BattleUnits) =>
+        u.currentHP ??
+        UnitTypes.find((t) => t.type === u.type && t.level === u.level)?.hp ??
+        1;
+      const small = new Set(
+        mercStacks.filter((u) => (shares.get(u) ?? 0) < hpOf(u)),
+      );
+      let pool = [...small].reduce((n, u) => n + (shares.get(u) ?? 0), 0);
+      const firstRegular = line.find((u) => !u.isMercenary);
+      const killsSomeone =
+        mercStacks.some((u) => !small.has(u)) ||
+        [...small].some((u) => pool >= hpOf(u)) ||
+        (firstRegular !== undefined &&
+          remainingDamage - lineBudget >= hpOf(firstRegular));
+      // A split that would leave only wounds lands on the front line whole,
+      // so a won assault still fells one unit.
+      if (!killsSomeone) {
+        for (const unit of line) drainStack(unit, Infinity, true);
+        continue;
+      }
+      for (const unit of line) {
+        if (small.has(unit)) {
+          const before = remainingDamage;
+          drainStack(unit, pool, false);
+          pool -= before - remainingDamage;
+        } else {
+          drainStack(unit, shares.get(unit) ?? Infinity, !unit.isMercenary);
+        }
+      }
+      for (const unit of mercStacks)
+        if (unit.quantity > 0) drainStack(unit, Infinity, true);
+    }
+
     return {
       casualties: casualtiesCount,
       remainingDamage,

@@ -1,0 +1,38 @@
+{
+  "alert": {
+    "attacks": "⚔️ {{attacker}} atacó {{kingdom}}. {{outcome}} Informe: {{url}}",
+    "attackWon": "Tus defensas resistieron.",
+    "attackLost": "Tus defensas cayeron.",
+    "spyHits": "🕵️ Una misión de espionaje enemiga ({{mission}}) apuntó a {{kingdom}}. Revisa tus informes: {{url}}",
+    "warDeclared": "🚩 {{attacker}} declaró la guerra a {{defender}}. Los combates empiezan {{start}}. {{url}}",
+    "turnCap": "💪 {{kingdom}} tiene la resistencia al máximo. Ataca ahora para no desperdiciar la recuperación: {{url}}",
+    "digest": "📜 Informe diario de {{kingdom}}: rango {{rank}}, {{attacks}} ataques y {{spies}} misiones de espionaje contra ti en las últimas 24 horas, {{wars}} guerras activas. {{url}}"
+  },
+  "mission": {
+    "INTEL": "inteligencia",
+    "ASSASSINATE": "asesinato",
+    "INFILTRATE": "infiltración"
+  },
+  "reply": {
+    "unknownCommand": "Comando desconocido.",
+    "notLinked": "Primero vincula tu cuenta de OpenThrone: genera un código en {{url}} y usa /link.",
+    "linkInvalid": "Ese código no es válido o ha caducado. Genera uno nuevo en {{url}}.",
+    "linkTaken": "Esta cuenta de Discord ya está vinculada a otro reino. Desvincúlala allí primero.",
+    "linked": "Vinculado a {{kingdom}}. Gestiona las alertas en {{url}}.",
+    "playerNotFound": "No existe ningún reino llamado {{name}}.",
+    "profile": "**{{name}}**{{badge}}: {{race}} {{class}}, rango {{rank}}{{alliance}}. {{url}}",
+    "inAlliance": ", alianza {{alliance}}",
+    "supporterBadge": " 👑",
+    "stats": "{{era}}: {{players}} reinos, {{alliances}} alianzas, {{battles}} batallas hasta ahora.",
+    "leaderboardPlayers": "**Mejores reinos**",
+    "leaderboardAlliances": "**Alianzas más grandes**",
+    "leaderboardAllianceRow": "{{name}}: {{members}} miembros",
+    "fort": "{{kingdom}}: {{fort}} (nivel {{level}}), {{hp}} / {{maxHp}} PV.",
+    "noAlliance": "No estás en una alianza.",
+    "myclan": "**{{name}}**{{premium}}: {{members}} miembros, liderada por {{leader}}. {{url}}",
+    "premium": " (premium)",
+    "noWars": "{{alliance}} no está en guerra.",
+    "warRow": "{{attacker}} contra {{defender}}: {{status}} desde {{start}}",
+    "error": "Algo salió mal. Inténtalo más tarde."
+  }
+}

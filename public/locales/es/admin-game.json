@@ -97,7 +97,8 @@
     "gold": "Oro",
     "power": "Poder",
     "runFailed": "No se pudo ejecutar la simulación.",
-    "errorTitle": "Error de simulación"
+    "errorTitle": "Error de simulación",
+    "modelLimits": "Las batallas y las misiones de espionaje usan el código de combate real. Los jugadores se conectan según la mezcla de actividad y siguen las reglas reales: precios y requisitos de las estructuras, niveles de unidad según el fuerte, objetos para cada línea de unidades, mejoras de batalla, mercenarios, puntos de bonificación, curación de heridos, moral del reino con deserción y protección de batalla. Quienes farmean XP esperan a tener aguante, porque la XP de batalla depende de él. Opcional: un evento, la mazmorra y alianzas, cuyos miembros comparten informes de espionaje y nunca se atacan entre sí. No se modelan: tropas prestadas, préstamos ni solicitudes al tesoro de la alianza. Quién ataca a quién es una heurística que solo usa lo que un jugador podría saber. Los jugadores iniciales reciben ejércitos generados de mitad de era y gastan su oro antes del día 1; quienes se unen tarde empiezan como cuentas nuevas. Usa los resultados para comparar ajustes entre sí, no como predicciones."
   },
   "loadingError": "No se pudieron cargar estos datos.",
   "statusCode": "La solicitud falló ({{status}}).",

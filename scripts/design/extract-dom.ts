@@ -23,6 +23,7 @@ import {
 import { homedir } from 'os';
 import path from 'path';
 
+import { cssUrls, isLoadedStatus } from './capture-utils';
 import { snapshotPage } from './page-snapshot';
 import { type DesignPage, GAME_PAGES, PUBLIC_PAGES, VIEWPORT } from './pages';
 
@@ -78,8 +79,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const urlsIn = (node: any, acc: Set<string>): Set<string> => {
   if (!node || node.t === 'text') return acc;
   if (node.src) acc.add(node.src);
-  for (const m of (node.bgImage || '').matchAll(/url\("?([^")]+)"?\)/g))
-    acc.add(m[1]);
+  for (const u of cssUrls(node.bgImage || '')) acc.add(u);
   for (const k of node.kids || []) urlsIn(k, acc);
   return acc;
 };
@@ -97,8 +97,7 @@ const EXT: [string, string][] = [
 // Download every image the tree references; SVG and AVIF become PNG (FigCraft can't place them).
 const fetchAssets = async (tree: any): Promise<Record<string, string>> => {
   const urls = urlsIn(tree.root, new Set());
-  for (const m of (tree.htmlBgImage || '').matchAll(/url\("?([^")]+)"?\)/g))
-    urls.add(m[1]);
+  for (const u of cssUrls(tree.htmlBgImage || '')) urls.add(u);
   const map: Record<string, string> = {};
   for (const u of urls) {
     if (u.startsWith('data:') && !u.startsWith('data:image/')) continue;
@@ -221,7 +220,7 @@ const capture = async (browser: any, page: any, key: string, p: DesignPage) => {
     const response = await page.goto(expected.href, { waitUntil: 'load' });
     const checkRoute = () => {
       const actual = new URL(page.url());
-      if (!response?.ok())
+      if (!response || !isLoadedStatus(response.status()))
         throw new Error('Page returned an unsuccessful HTTP response');
       if (
         actual.origin !== expected.origin ||

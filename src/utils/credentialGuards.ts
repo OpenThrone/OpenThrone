@@ -9,6 +9,7 @@ import {
 } from '@/lib/postgres-rate-limiter';
 import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
+import { decryptTwoFactorSecret } from '@/utils/twoFactorSecret';
 
 const argon2 = require('argon2');
 
@@ -198,9 +199,11 @@ export async function verifyTotpOnce(
   secret: string,
   token: string,
 ): Promise<boolean> {
+  const base32 = decryptTwoFactorSecret(secret);
+  if (!base32) return false;
   const nowSeconds = Math.floor(Date.now() / 1000);
   const result = speakeasy.totp.verifyDelta({
-    secret,
+    secret: base32,
     encoding: 'base32',
     token,
     window: 1,

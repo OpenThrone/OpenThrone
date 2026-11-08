@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
-import { mercenaryOffer, MercenaryService } from '@/services/Mercenary.service';
+import {
+  mercenaryOffer,
+  MercenaryPriceChangedError,
+  MercenaryService,
+} from '@/services/Mercenary.service';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { logError } from '@/utils/logger';
 import { publicErrorMessage } from '@/utils/publicError';
 import { MERCENARY_ROLE_CAP } from '@/utils/temporaryForces';
@@ -15,6 +20,7 @@ const actionSchema = z.discriminatedUnion('action', [
       quantity: z.number().int().min(1).max(MERCENARY_ROLE_CAP),
       termDays: z.union([z.literal(1), z.literal(3), z.literal(7)]),
       operationId: z.string().uuid(),
+      expectedTotal: z.string().regex(/^\d{1,30}$/),
     })
     .strict(),
   z
@@ -38,22 +44,34 @@ const handler = async (req, res) => {
   if (!req.session) return res.status(401).json({ message: 'Unauthorized' });
   const userId = req.session.user.id;
   if (req.method === 'GET') {
-    const [contracts, armyShare] = await Promise.all([
+    const [contracts, armyShare, runtime] = await Promise.all([
       MercenaryService.list(userId),
       MercenaryService.armyShare(userId),
+      getRuntimeConfig(),
     ]);
+    const rates = {
+      hireMultiplier: runtime.mercenaryHireMultiplier ?? 1.25,
+      dailyPriceRate: runtime.mercenaryDailyPriceRate ?? 0.05,
+    };
     const offers = (['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'] as const).flatMap(
-      (role) => [1, 2, 3].map((level) => mercenaryOffer(role, level)),
+      (role) => [1, 2, 3].map((level) => mercenaryOffer(role, level, rates)),
     );
-    return res
-      .status(200)
-      .json(
-        JSON.parse(
-          JSON.stringify({ contracts, offers, armyShare }, (_, value) =>
-            typeof value === 'bigint' ? value.toString() : value,
-          ),
+    return res.status(200).json(
+      JSON.parse(
+        JSON.stringify(
+          {
+            contracts,
+            offers,
+            armyShare,
+            limits: {
+              maxQuantity: runtime.forceMaxQuantity ?? 1000000,
+              maxTermDays: runtime.forceMaxTermDays ?? 30,
+            },
+          },
+          (_, value) => (typeof value === 'bigint' ? value.toString() : value),
         ),
-      );
+      ),
+    );
   }
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'GET, POST');
@@ -71,6 +89,8 @@ const handler = async (req, res) => {
           >[0]);
     return res.status(200).json({ contractId: contract.id });
   } catch (error) {
+    if (error instanceof MercenaryPriceChangedError)
+      return res.status(409).json({ message: error.message });
     if (error instanceof z.ZodError)
       return res.status(400).json({ message: 'Invalid mercenary order' });
     const message = publicErrorMessage(error, 'Unable to process this order');

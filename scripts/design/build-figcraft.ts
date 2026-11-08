@@ -21,6 +21,7 @@ import { homedir, tmpdir } from 'os';
 import path from 'path';
 
 import { loadCaptures } from './capture-manifest';
+import { cssUrls } from './capture-utils';
 import { DESIGN_PAGES, REFERENCE_PAGE_TITLE } from './pages';
 
 const arg = (name: string) => {
@@ -437,9 +438,11 @@ const boxVisuals = (b: any): [Record<string, any> | null, Layer[]] => {
       const rect = layerRect(b, size, poss[i % poss.length]);
       const rep = reps[i % reps.length];
       if (imgs[i].startsWith('url(')) {
+        const [src] = cssUrls(imgs[i]);
+        if (!src) continue;
         layers.push({
           kind: 'image',
-          val: imgs[i].match(/url\("?([^")]+)"?\)/)![1],
+          val: src,
           rect,
           size,
           rep,

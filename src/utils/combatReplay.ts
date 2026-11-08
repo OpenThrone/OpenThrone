@@ -147,6 +147,8 @@ export type AttackReplay = CombatRandomReplay & {
   defenderProtected: boolean;
   defenderDailyCasualtyRemaining: number;
   defenderDailyGoldRemaining: string;
+  staminaPenaltyThreshold?: number;
+  staminaMinMultiplier?: number;
 };
 
 export type SpyReplay = CombatRandomReplay & {
@@ -298,6 +300,8 @@ const combatReplaySchema = z.discriminatedUnion('domain', [
     defenderProtected: z.boolean(),
     defenderDailyCasualtyRemaining: quantity,
     defenderDailyGoldRemaining: decimalGold,
+    staminaPenaltyThreshold: z.number().min(0).max(100).optional(),
+    staminaMinMultiplier: z.number().min(0.5).max(1).optional(),
   }),
   z.object({
     ...replayBase,

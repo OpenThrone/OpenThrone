@@ -16,10 +16,22 @@ import ModalsSection from '@/components/showcase/sections/ModalsSection';
 import NewsSection from '@/components/showcase/sections/NewsSection';
 import ProfileMediaSection from '@/components/showcase/sections/ProfileMediaSection';
 import RecruitmentSection from '@/components/showcase/sections/RecruitmentSection';
+import SupporterAdminSection from '@/components/showcase/sections/SupporterAdminSection';
+import SupporterSection from '@/components/showcase/sections/SupporterSection';
 import TablesSection from '@/components/showcase/sections/TablesSection';
 import ShowcaseControls from '@/components/showcase/ShowcaseControls';
 
 const SECTIONS = [
+  {
+    id: 'supporter',
+    title: 'Patrons of the Realm',
+    Component: SupporterSection,
+  },
+  {
+    id: 'supporter-admin',
+    title: 'Supporter administration',
+    Component: SupporterAdminSection,
+  },
   { id: 'mercenaries', title: 'Mercenaries', Component: MercenariesSection },
   { id: 'foundations', title: 'Foundations', Component: FoundationsSection },
   { id: 'cards', title: 'Cards & stats', Component: CardsSection },
@@ -72,6 +84,8 @@ export const getServerSideProps = async (context: { locale?: string }) =>
     : {
         props: {
           ...(await serverSideTranslations(context.locale ?? 'en', [
+            'supporter',
+            'admin-supporters',
             'mercenaries',
             'allianceForces',
             'common',

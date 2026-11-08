@@ -13,11 +13,13 @@ import {
 } from '@/services/AllianceLoan.service';
 import { loadProtectionContext } from '@/services/BattleProtection.service';
 import { CaptiveService } from '@/services/Captives.service';
+import { enqueueStaminaFullAlerts } from '@/services/discord/DiscordAlerts.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
 import { KingdomMoraleService } from '@/services/KingdomMorale.service';
 import { pruneLoginTelemetry } from '@/services/LoginTelemetry.service';
-import { MercenaryService } from '@/services/Mercenary.service';
+import { contractRoster, MercenaryService } from '@/services/Mercenary.service';
+import { pruneAuditLogIps } from '@/services/PrivacyRetention.service';
 import { getUpdatedStatus } from '@/services/User.service';
 import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { logError } from '@/utils/logger';
@@ -359,6 +361,11 @@ export class CronJobService {
       // Move loan repayments diverted from this turn's income into treasuries
       // under the alliance lock (best effort; daily cleanup sweeps leftovers).
       await settleLoanTreasuryCredits();
+      // Stamina refills on a wall clock, not per turn: queue each linked
+      // player's "stamina full" DM for when it will be full (best effort).
+      await enqueueStaminaFullAlerts().catch(() =>
+        logError('Stamina alerts not queued'),
+      );
 
       return {
         success: true,
@@ -661,6 +668,19 @@ export class CronJobService {
         if (!row || !this.isEraParticipant(row, eraToken)) return 'stale';
 
         const currentUser = new UserModel(row);
+        // Hired and borrowed troops count toward army stats, not income.
+        const contracts = await tx.forceContract.findMany({
+          where: { userId, eraId: row.currentEraId, status: 'ACTIVE' },
+        });
+        const statUser = contracts.length
+          ? new UserModel({
+              ...row,
+              UserUnit: [
+                ...row.UserUnit,
+                ...contractRoster(contracts, row.wounded_units),
+              ],
+            })
+          : currentUser;
         const eventIncome =
           (BigInt(currentUser.goldPerTurn.toString()) *
             BigInt(Math.round(goldMultiplier * 10000))) /
@@ -703,12 +723,11 @@ export class CronJobService {
           data: {
             gold: { increment: goldPerTurn },
             attack_turns: { increment: 1 + extraTurnsPerTick },
-            stamina: Math.min(currentUser.maxStamina, currentUser.stamina + 1),
             rank,
-            offense: currentUser.offense,
-            defense: currentUser.defense,
-            spy: currentUser.spy,
-            sentry: currentUser.sentry,
+            offense: statUser.offense,
+            defense: statUser.defense,
+            spy: statUser.spy,
+            sentry: statUser.sentry,
           },
         });
         return 'success';
@@ -741,6 +760,7 @@ export class CronJobService {
    */
   private static async doDailyCleanup(): Promise<void> {
     await pruneLoginTelemetry();
+    await pruneAuditLogIps();
     const twentyDaysAgo = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
 
     // Clean up ACL entries referencing old attack logs first to avoid foreign key violations

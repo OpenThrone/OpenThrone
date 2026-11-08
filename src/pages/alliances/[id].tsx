@@ -34,6 +34,8 @@ import { getAllianceStanding } from '@/components/alliance/allianceStanding';
 import { AllianceWar } from '@/components/alliance/AllianceWar';
 import { PageLoading } from '@/components/game/PageLoading';
 import MainArea from '@/components/MainArea';
+import { PremiumAllianceMark } from '@/components/player/SupporterBadge';
+import { AllianceSponsorshipPanel } from '@/components/supporter/AllianceSponsorshipPanel';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { AllianceService } from '@/services';
 import type { AllianceInfo } from '@/services/Alliance.service';
@@ -80,6 +82,10 @@ const AlliancePage = ({
   const alliance = (allianceData ||
     (initialAlliance ? JSON.parse(initialAlliance) : null)) as AllianceInfo;
 
+  const premium = alliance as AllianceInfo & {
+    isPremium?: boolean;
+    premiumUntil?: string | null;
+  };
   // Leadership can change while the page is open (transfer-leadership).
   const isLeader = alliance
     ? viewerId !== null && alliance.leader_id === viewerId
@@ -151,7 +157,13 @@ const AlliancePage = ({
                 style={{ border: `4px solid ${theme.colors.dark[7]}` }}
               />
               <Box mb="sm">
-                <Title order={2}>{alliance.name}</Title>
+                <Title order={2}>
+                  {alliance.name}
+                  {(premium.isPremium ||
+                    (premium.premiumUntil &&
+                      new Date(premium.premiumUntil).getTime() >
+                        Date.now())) && <PremiumAllianceMark />}
+                </Title>
                 <Text c="dimmed">{alliance.motto}</Text>
               </Box>
             </Group>
@@ -215,6 +227,12 @@ const AlliancePage = ({
                 isMember={isMember}
                 onViewAnnouncements={() => setActiveTab('announcements')}
               />
+              <Box mt="md">
+                <AllianceSponsorshipPanel
+                  allianceId={alliance.id}
+                  allianceName={alliance.name}
+                />
+              </Box>
             </Tabs.Panel>
 
             {isMember && (
@@ -299,6 +317,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       getServerSession(context.req, context.res, authOptions),
       serverSideTranslations(context.locale ?? 'en', [
         'common',
+        'supporter',
         'alliances',
         'allianceLists',
         'allianceTreasury',

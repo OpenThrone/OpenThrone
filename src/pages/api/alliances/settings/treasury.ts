@@ -1,13 +1,6 @@
 import { z } from 'zod';
 
-import {
-  LOAN_INTEREST_PCT_MAX,
-  LOAN_INTEREST_PCT_MIN,
-  LOAN_TERM_DAYS_MAX,
-  LOAN_TERM_DAYS_MIN,
-  MEMBER_DAILY_CAP_MAX,
-  MEMBER_DAILY_CAP_MIN,
-} from '@/constants/allianceTreasury';
+import { LOAN_INTEREST_PCT_MIN } from '@/constants/allianceTreasury';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { withAuth } from '@/middleware/auth';
 import { AllianceLoanService } from '@/services';
@@ -17,23 +10,14 @@ import { publicErrorMessage } from '@/utils/publicError';
 
 const BodySchema = z.object({
   allianceId: z.number().int().positive(),
-  loan_term_days: z
-    .number()
-    .int()
-    .min(LOAN_TERM_DAYS_MIN)
-    .max(LOAN_TERM_DAYS_MAX)
-    .optional(),
+  loan_term_days: z.number().int().min(1).max(365).optional(),
   loan_interest_pct: z
     .number()
     .int()
     .min(LOAN_INTEREST_PCT_MIN)
-    .max(LOAN_INTEREST_PCT_MAX)
+    .max(100)
     .optional(),
-  member_daily_cap: z.coerce
-    .bigint()
-    .min(BigInt(MEMBER_DAILY_CAP_MIN))
-    .max(BigInt(MEMBER_DAILY_CAP_MAX))
-    .optional(),
+  member_daily_cap: z.coerce.bigint().min(0n).max(1000000000n).optional(),
 });
 
 const guardedHandler = withApiGuard({

@@ -18,6 +18,7 @@ import {
   showcaseBackdropSource,
 } from '@/components/showcase/backdrops';
 import Sidebar from '@/components/Sidebar';
+import { SupporterNotice } from '@/components/supporter/SupporterNotice';
 import { useLayout } from '@/context/LayoutContext';
 import { AppConfig } from '@/utils/AppConfig';
 import { APP_VERSION_LABEL } from '@/utils/appVersion';
@@ -202,6 +203,7 @@ const Layout = (props: IMainProps) => {
                   >
                     <ConnectionStatusBanner />
                     <EraResetNotice />
+                    {authorized && !isShowcase && <SupporterNotice />}
                     {layoutLoading ? <MainAreaSkeleton /> : props.children}
                   </div>
                 </>
@@ -254,7 +256,13 @@ const Layout = (props: IMainProps) => {
           {t('footer.operator', {
             defaultValue:
               'OpenThrone.dev is operated by AIOXperts IT Solutions LLC.',
-          })}
+          })}{' '}
+          <Link
+            href="/legal/privacy"
+            className="underline opacity-80 hover:opacity-100"
+          >
+            {tNav('loggedOut.privacy')}
+          </Link>
         </p>
         {t('app.copyright', {
           year: new Date().getFullYear(),

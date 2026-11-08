@@ -322,6 +322,8 @@ interface UnitStack {
   type: string;
   level: number;
   quantity: number;
+  /** Set only for hired mercenaries, so reports can label their losses. */
+  isMercenary?: true;
 }
 
 const pickUnits = (value: unknown): UnitStack[] => {
@@ -335,6 +337,7 @@ const pickUnits = (value: unknown): UnitStack[] => {
     type: String(unit.type ?? ''),
     level: toNumber(unit.level),
     quantity: toNumber(unit.quantity),
+    ...(unit.isMercenary === true ? { isMercenary: true as const } : {}),
   }));
 };
 
@@ -517,6 +520,9 @@ export function redactBattleStatsForViewer(
     fortDamage: Math.max(0, fortStart - fortEnd),
     // Garrison fatigue (#204) is shown to both sides; legacy rows have none.
     defender_fatigue_percent: toNumber(stats.defender_fatigue_percent),
+    // Army fatigue from low attacker stamina; shown to both sides, legacy rows have none.
+    attacker_fatigue_percent: toNumber(stats.attacker_fatigue_percent),
+    stamina_cost: toNumber(stats.stamina_cost),
     // Dungeon captives taken by the attacker (#210); legacy rows have none.
     captives_taken: toNumber(stats.captives_taken),
     attacker_losses: pickLosses(stats.attacker_losses, role === 'attacker'),
@@ -567,6 +573,8 @@ export function redactBattleStatsForViewer(
     // Undead reanimation (#211): only the Undead player's own risen count;
     // the opponent and shared viewers never learn how many rose.
     out.reanimated_units = toNumber(asRecord(stats.reanimated_units).attacker);
+    out.necropolis_bonus = toNumber(asRecord(stats.necropolis_bonus).attacker);
+    out.raiders_capture_percent = toNumber(stats.raiders_capture_percent);
     if (stats.netPillageGold !== undefined) {
       out.netPillageGold = toAmount(stats.netPillageGold);
       out.forcePillageContribution = toAmount(stats.forcePillageContribution);
@@ -574,6 +582,10 @@ export function redactBattleStatsForViewer(
     }
   }
   if (role === 'defender') {
+    out.raiders_capture_percent = toNumber(stats.raiders_capture_percent);
+    out.sanctuary_recovered = toNumber(stats.sanctuary_recovered);
+    out.necropolis_bonus = toNumber(asRecord(stats.necropolis_bonus).defender);
+    out.hallowed_blocked = toNumber(stats.hallowed_blocked);
     out.defense_advisory = projectDefenseAdvisoryFacts(stats);
     out.forthpAtStart = fortStart;
     out.forthpAtEnd = fortEnd;
