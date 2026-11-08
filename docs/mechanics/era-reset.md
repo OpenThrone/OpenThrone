@@ -1,6 +1,6 @@
 # Eras and era resets
 
-Last verified against code: 2026-11-06 (alpha a365a67d)
+Last verified against code: 2026-11-08 (alpha 6c3554e6)
 
 An era is one season of the game world. Exactly one era is open at a time (its `endDate` is empty). This page covers how eras start and end, the two ways to wipe gameplay state (the **era rollover** and the **current-era reset**), the timed reset, per-era stats, and veteran claims.
 
@@ -117,6 +117,15 @@ A veteran claim lets a returning player of a finished era get a title and their 
 - **Redeem** (10 attempts per hour). In one transaction the account receives the title and original join date. If the supplied display name matches the erased account's reserved name and is free, the account is renamed and the reservation released. A used, expired or unknown link, a changed email, a name mismatch or a taken name is refused.
 - Staff with user-management permission can list records. Hashes are never returned and each read is audit-logged.
 
+### Relaunch notice
+
+The era-relaunch email tells players who have not played since the open era started that development has restarted, when the purge is, and how a veteran claim works ([AccountInactivity.service.ts](../../src/services/AccountInactivity.service.ts), copy in `public/locales/*/email.json` under `relaunchNotice`).
+
+- **Send.** Administration → Inactive users, template *Era relaunch*. Choosing it fills *Inactive since* with the open era's start; a news post ID is required for the news link. The admin picks a **purge date** 14–365 days ahead; it is stored on each notice as midnight UTC of that day and printed in the email. *Preview* renders the email in English, German or Spanish, and *Send test to me* mails it to the admin's own address; neither creates a notice.
+- **Delete now.** The email's delete link needs no sign-in: it opens `/account/confirm-erasure?notice=…`, where pressing Confirm deactivates the account and erases it after the usual 14-day grace (see [privacy-self-service.md](../privacy-self-service.md)). That path keeps no veteran record.
+- **Last email.** The email says it is the last one. A relaunch notice never gets a reminder, even with reminders enabled, and while it is open the player is left out of news, announcement and battle-alert email. Security and account-lifecycle mail still go out. Logging in cancels the notice and lifts both.
+- **Purge.** On the purge date the daily sweep anonymizes the account (when auto-anonymize is on): the name becomes a pseudonym, the email is scrubbed, the account is closed, and a veteran record is kept as above.
+
 ## Why it works this way
 
 - The 35-second wait exists because other processes may serve a last-good runtime configuration for up to 30 seconds ([EraResetSchedule.service.ts](../../src/services/EraResetSchedule.service.ts)).
@@ -144,6 +153,7 @@ A veteran claim lets a returning player of a finished era get a title and their 
 - [UserEraStats.service.ts](../../src/services/UserEraStats.service.ts): ended-era stats.
 - [EraActivity.service.ts](../../src/services/EraActivity.service.ts): folds expiring logs into era totals.
 - [VeteranClaim.service.ts](../../src/services/VeteranClaim.service.ts), [AccountAnonymization.service.ts](../../src/services/AccountAnonymization.service.ts): veteran records and claims.
+- [AccountInactivity.service.ts](../../src/services/AccountInactivity.service.ts), [inactive-notices.ts](../../src/pages/api/admin/users/inactive-notices.ts), [inactive-users.tsx](../../src/pages/home/admin/inactive-users.tsx): relaunch notices and the purge.
 - API: [eras.ts](../../src/pages/api/admin/game/eras.ts), [reset-current-era.ts](../../src/pages/api/admin/game/reset-current-era.ts), [factory-restore.ts](../../src/pages/api/admin/game/factory-restore.ts), [era-reset-schedule.ts](../../src/pages/api/admin/game/era-reset-schedule.ts), [public schedule](../../src/pages/api/era-reset-schedule.ts), [veteran-claim.ts](../../src/pages/api/account/veteran-claim.ts).
 
 ## Tests
@@ -160,6 +170,7 @@ A veteran claim lets a returning player of a finished era get a title and their 
 - [currentEraParticipants.test.ts](../../src/services/__tests__/currentEraParticipants.test.ts): participation filters during disabled login.
 - [cronJob.concurrency.test.ts](../../src/services/__tests__/cronJob.concurrency.test.ts): jobs skip work queued before a new era.
 - [VeteranClaim.test.ts](../../src/services/__tests__/VeteranClaim.test.ts): sign-up link, redeem, name restore, address change, rollback.
+- [AccountInactivityRelaunch.test.ts](../../src/services/__tests__/AccountInactivityRelaunch.test.ts), [emailTemplates.test.ts](../../src/services/__tests__/emailTemplates.test.ts), [Email.service.test.ts](../../src/services/__tests__/Email.service.test.ts) and [inactive-notices.test.ts](../../src/__tests__/pages/api/admin/users/inactive-notices.test.ts): relaunch cutoff, purge date, no reminder, copy in every locale, other mail held back, preview and test input.
 
 ## Known gaps
 

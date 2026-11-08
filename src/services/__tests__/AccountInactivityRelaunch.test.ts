@@ -235,6 +235,28 @@ describe('relaunch notices and the sweep', () => {
     );
   });
 
+  it('gives each recipient a one-click erasure link bound to their notice', async () => {
+    const {
+      verifyInactivityErasureToken,
+    } = require('@/utils/inactivityErasureToken');
+    await lifecycle.sendInactivityNotices({
+      userIds: [7],
+      actorId: 3,
+      ip: 'test',
+      inactiveSince: RELAUNCH,
+      template: 'ERA_RELAUNCH',
+      newsPostId: 7,
+    });
+    const notice = tx.accountInactivityNotice.upsert.mock.calls[0][0].create;
+    const call = templates.renderEmail.mock.calls.find(
+      (c: any[]) => c[0].kind === 'INACTIVITY_NOTICE',
+    );
+    expect(verifyInactivityErasureToken(call[0].vars.erasureToken)).toEqual({
+      userId: 7,
+      warnedAt: notice.warnedAt.getTime(),
+    });
+  });
+
   it('keeps the standard defaults when no relaunch options are given', async () => {
     await lifecycle.sendInactivityNotices({
       userIds: [7],
@@ -292,23 +314,65 @@ describe('relaunch notices and the sweep', () => {
     });
   });
 
-  it('sends the reminder with the notice template and news post', async () => {
-    rows.push(
-      makeNotice({
-        inactiveSince: RELAUNCH,
-        template: 'ERA_RELAUNCH',
-        newsPostId: 7,
-      }),
+  it('never reminds a relaunch notice: it erases on the purge date', async () => {
+    // The relaunch email promises to be the last one, even with reminders on.
+    const relaunch = makeNotice({
+      inactiveSince: RELAUNCH,
+      template: 'ERA_RELAUNCH',
+      newsPostId: 7,
+      warnedAt: new Date(now.getTime() - 40 * lifecycle.DAY_MS),
+      scheduledDeletionAt: new Date(now.getTime() + 5 * lifecycle.DAY_MS),
+    });
+    expect(lifecycle.inactivityDecision(relaunch, null, now, true)).toBe(
+      'skip',
     );
+    const due = { ...relaunch, scheduledDeletionAt: new Date(0) };
+    expect(lifecycle.inactivityDecision(due, null, now, true)).toBe(
+      'anonymize',
+    );
+    rows.push(due);
     tx.accountInactivityNotice.findUnique.mockResolvedValue(rows[0]);
     expect(await lifecycle.runInactivitySweep({ dryRun: false })).toMatchObject(
-      { reminders: 1 },
+      { reminders: 0, anonymized: 1 },
     );
+    expect(templates.renderEmail).not.toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'INACTIVITY_REMINDER' }),
+    );
+  });
+
+  it('uses an explicit purge date instead of the notice period', async () => {
+    const purge = new Date(now.getTime() + 53 * lifecycle.DAY_MS);
+    await lifecycle.sendInactivityNotices({
+      userIds: [7],
+      actorId: 3,
+      ip: 'test',
+      inactiveSince: RELAUNCH,
+      noticeDays: 180,
+      deletionDate: purge,
+      template: 'ERA_RELAUNCH',
+      newsPostId: 7,
+    });
+    const data = tx.accountInactivityNotice.upsert.mock.calls[0][0];
+    expect(data.create.scheduledDeletionAt).toBe(purge);
     expect(templates.renderEmail).toHaveBeenCalledWith(
       expect.objectContaining({
-        kind: 'INACTIVITY_REMINDER',
-        vars: expect.objectContaining({ relaunch: true, newsId: 7 }),
+        vars: expect.objectContaining({ deletionDate: purge }),
       }),
     );
+  });
+});
+
+describe('parsePurgeDate', () => {
+  const today = new Date('2026-11-08T12:00:00.000Z');
+  it('reads a calendar day as midnight UTC within 14–365 days', () => {
+    expect(lifecycle.parsePurgeDate('2026-12-31', today)?.toISOString()).toBe(
+      '2026-12-31T00:00:00.000Z',
+    );
+  });
+  it('refuses dates too soon, too late or not real', () => {
+    expect(lifecycle.parsePurgeDate('2026-11-15', today)).toBeNull();
+    expect(lifecycle.parsePurgeDate('2027-12-31', today)).toBeNull();
+    expect(lifecycle.parsePurgeDate('2026-02-30', today)).toBeNull();
+    expect(lifecycle.parsePurgeDate('31/12/2026', today)).toBeNull();
   });
 });

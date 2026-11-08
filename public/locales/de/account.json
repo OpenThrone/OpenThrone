@@ -308,7 +308,10 @@
     "invalidTitle": "Dieser Link hat nicht funktioniert",
     "invalid": "Der Link ist ungültig, abgelaufen oder wurde schon verwendet. Beginne in den Einstellungen von vorn.",
     "missing": "Diese Seite braucht den Link aus der Bestätigungs-E-Mail.",
-    "openSettings": "Einstellungen öffnen"
+    "openSettings": "Einstellungen öffnen",
+    "introNotice": "Lösche dein OpenThrone-Konto und deine persönlichen Daten jetzt. Eine Anmeldung ist nicht nötig. Mit der Bestätigung wird das Konto sofort deaktiviert und nach 14 Tagen gelöscht.",
+    "invalidNotice": "Dieser Link funktioniert nicht mehr. Er verfällt, sobald du dich wieder anmeldest, sobald er benutzt wurde oder sobald das Konto gelöscht ist. Du kannst dein Konto weiterhin in deinen Einstellungen löschen.",
+    "descriptionNotice": "Lösche dein Konto direkt aus der E-Mail heraus."
   },
   "veteranClaim": {
     "title": "Ihr Erbe aus Ära 1 einfordern",

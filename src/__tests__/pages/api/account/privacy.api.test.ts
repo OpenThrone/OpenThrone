@@ -336,6 +336,33 @@ describe('erasure request routes', () => {
     expect(bad.status).toHaveBeenCalledWith(400);
     expect(bad.json).toHaveBeenCalledWith({ error: 'invalid_token' });
   });
+
+  it('confirms an inactivity email link without sign-in, and refuses mixed bodies', async () => {
+    const confirmNotice = vi
+      .spyOn(erasure, 'confirmInactivityErasure')
+      .mockResolvedValue({ scheduledFor: new Date('2099-01-15T00:00:00Z') });
+    const noticeToken = 'eyJ1Ijo3LCJ3IjoxfQ.c2lnbmF0dXJl';
+    const ok = response();
+    await confirmRoute.default(request('POST', { noticeToken }), ok);
+    expect(confirmNotice).toHaveBeenCalledWith(noticeToken, '203.0.113.9');
+    expect(confirmErasure).not.toHaveBeenCalled();
+    expect(ok.json).toHaveBeenCalledWith({
+      scheduledFor: '2099-01-15T00:00:00.000Z',
+    });
+    const mixed = response();
+    await confirmRoute.default(
+      request('POST', { noticeToken, token: 'a'.repeat(64) }),
+      mixed,
+    );
+    expect(mixed.status).toHaveBeenCalledWith(422);
+    const junk = response();
+    await confirmRoute.default(
+      request('POST', { noticeToken: 'not a token' }),
+      junk,
+    );
+    expect(junk.status).toHaveBeenCalledWith(422);
+    confirmNotice.mockRestore();
+  });
 });
 
 describe('admin privacy routes', () => {

@@ -308,7 +308,10 @@
     "invalidTitle": "This link did not work",
     "invalid": "The link is invalid, has expired or was already used. Start again from your settings.",
     "missing": "This page needs the link from the confirmation email.",
-    "openSettings": "Open settings"
+    "openSettings": "Open settings",
+    "introNotice": "Delete your OpenThrone account and personal data now. No sign-in is needed. Confirming deactivates the account now and erases it after 14 days.",
+    "invalidNotice": "This link no longer works. It stops working once you sign in again, once it has been used, or once the account is erased. You can still delete your account from your settings.",
+    "descriptionNotice": "Delete your account straight from the email."
   },
   "veteranClaim": {
     "title": "Claim Your Era 1 Legacy",

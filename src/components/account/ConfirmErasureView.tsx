@@ -13,10 +13,13 @@ export type ConfirmErasureStatus =
 export function ConfirmErasureView({
   status,
   scheduledFor,
+  fromNotice = false,
   onConfirm,
 }: {
   status: ConfirmErasureStatus;
   scheduledFor?: string | null;
+  /** Reached from an inactivity email's one-click link, not a request. */
+  fromNotice?: boolean;
   onConfirm: () => void;
 }) {
   const { t, i18n } = useTranslation('account');
@@ -54,7 +57,9 @@ export function ConfirmErasureView({
           {t(
             status === 'missing'
               ? 'confirmErasure.missing'
-              : 'confirmErasure.invalid',
+              : fromNotice
+                ? 'confirmErasure.invalidNotice'
+                : 'confirmErasure.invalid',
           )}
         </Alert>
         <Group>
@@ -71,7 +76,9 @@ export function ConfirmErasureView({
   }
   return (
     <Stack>
-      <Text>{t('confirmErasure.intro')}</Text>
+      <Text>
+        {t(fromNotice ? 'confirmErasure.introNotice' : 'confirmErasure.intro')}
+      </Text>
       <Text size="sm" c="dimmed">
         {t('confirmErasure.consequences')}
       </Text>

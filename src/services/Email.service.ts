@@ -110,6 +110,9 @@ export async function forEachEligibleRecipientBatch(
         locale: true,
         display_name: true,
         emailPreference: true,
+        accountInactivityNotice: {
+          select: { template: true, cancelledAt: true, completedAt: true },
+        },
       },
     });
     if (!users.length) break;
@@ -132,6 +135,17 @@ export async function forEachEligibleRecipientBatch(
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email) ||
         user.email.toLowerCase().endsWith('@deleted.local') ||
         suppressed.has(hashIdentity('EMAIL', user.email))
+      )
+        continue;
+      // The era-relaunch notice promises to be the last email until the
+      // player logs back in (which cancels the notice).
+      const notice = user.accountInactivityNotice;
+      if (
+        filter.category !== 'TRANSACTIONAL' &&
+        filter.category !== 'ACCOUNT_LIFECYCLE' &&
+        notice?.template === 'ERA_RELAUNCH' &&
+        !notice.cancelledAt &&
+        !notice.completedAt
       )
         continue;
       if (

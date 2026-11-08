@@ -11,6 +11,7 @@ import { resolveEligibleRecipients } from '@/services/Email.service';
 import { deleteUserAvatarFiles } from '@/services/PrivacyRetention.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { logActionStrict } from '@/utils/auditLogger';
+import { createInactivityErasureToken } from '@/utils/inactivityErasureToken';
 import { logError } from '@/utils/logger';
 
 export const DAY_MS = 86_400_000;
@@ -101,10 +102,14 @@ export function inactivityDecision(
 ) {
   if (notice.cancelledAt || notice.completedAt) return 'skip';
   if (lastActive && lastActive > notice.warnedAt) return 'cancel';
+  // The relaunch email promises to be the last one, so it never gets a
+  // reminder: the account is erased on its stated purge date.
+  const relaunch = notice.template === 'ERA_RELAUNCH';
+  const reminders = remindersEnabled && !relaunch;
   if (notice.scheduledDeletionAt <= now) {
-    if (remindersEnabled && !notice.reminderSentAt) return 'remind';
+    if (reminders && !notice.reminderSentAt) return 'remind';
     if (
-      remindersEnabled &&
+      reminders &&
       notice.reminderSentAt &&
       now.getTime() - notice.reminderSentAt.getTime() < 7 * DAY_MS
     )
@@ -112,12 +117,13 @@ export function inactivityDecision(
     return 'anonymize';
   }
   // Remind once the remaining time halves the notice period, capped at 30
-  // days, so a short relaunch deadline still gets a fair final warning.
+  // days, so a short notice period still gets a fair final warning.
   const remaining = notice.scheduledDeletionAt.getTime() - now.getTime();
   const noticeSpan =
     notice.scheduledDeletionAt.getTime() - notice.warnedAt.getTime();
   const reminderWindow = Math.min(30 * DAY_MS, noticeSpan / 2);
-  if (!notice.reminderSentAt && remaining <= reminderWindow) return 'remind';
+  if (!relaunch && !notice.reminderSentAt && remaining <= reminderWindow)
+    return 'remind';
   return 'skip';
 }
 export async function cancelInactivityOnLogin(userId: number) {
@@ -140,6 +146,19 @@ const noticeDaysInRange = (days: number | undefined) =>
     Math.max(MIN_NOTICE_DAYS, days ?? DEFAULT_NOTICE_DAYS),
   );
 
+/**
+ * Parses an admin-chosen purge date (YYYY-MM-DD, midnight UTC, the day the
+ * emails print). Returns null unless it is a real date 14–365 days ahead.
+ */
+export function parsePurgeDate(value: string, now = new Date()): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value)
+    return null;
+  const days = (date.getTime() - now.getTime()) / DAY_MS;
+  return days >= MIN_NOTICE_DAYS && days <= MAX_NOTICE_DAYS ? date : null;
+}
+
 export async function sendInactivityNotices(input: {
   userIds?: number[];
   actorId: number;
@@ -148,14 +167,20 @@ export async function sendInactivityNotices(input: {
   inactiveSince?: Date;
   /** Grace period before scheduled deletion; clamped to 14–365 days. */
   noticeDays?: number;
+  /** Explicit purge date (see parsePurgeDate); overrides noticeDays. */
+  deletionDate?: Date;
   /** Copy variant stored on the notice and rendered in the emails. */
   template?: InactivityNoticeTemplateValue;
   /** News post the ERA_RELAUNCH template links to. */
   newsPostId?: number | null;
 }) {
   const now = new Date();
-  const noticeDays = noticeDaysInRange(input.noticeDays);
-  const scheduledDeletionAt = new Date(now.getTime() + noticeDays * DAY_MS);
+  const scheduledDeletionAt =
+    input.deletionDate ??
+    new Date(now.getTime() + noticeDaysInRange(input.noticeDays) * DAY_MS);
+  const noticeDays = Math.round(
+    (scheduledDeletionAt.getTime() - now.getTime()) / DAY_MS,
+  );
   const template = input.template ?? 'STANDARD';
   const relaunch = template === 'ERA_RELAUNCH';
   let afterId = 0;
@@ -261,6 +286,8 @@ export async function sendInactivityNotices(input: {
           },
           recipientVars: (recipient: { userId: number }) => ({
             lastActiveDate: lastActiveDates.get(recipient.userId) ?? undefined,
+            // Bound to this notice (warnedAt = now): logging in retires it.
+            erasureToken: createInactivityErasureToken(recipient.userId, now),
           }),
         };
         const campaignId =
@@ -287,6 +314,7 @@ export async function sendInactivityNotices(input: {
               ...result,
               inactiveSince: input.inactiveSince?.toISOString() ?? null,
               noticeDays,
+              deletionDate: scheduledDeletionAt.toISOString(),
               template,
               newsPostId: input.newsPostId ?? null,
             },
@@ -421,6 +449,10 @@ export async function runInactivitySweep({
               recipients,
               vars: {
                 deletionDate: current.scheduledDeletionAt,
+                erasureToken: createInactivityErasureToken(
+                  current.userId,
+                  current.warnedAt,
+                ),
                 ...(relaunch
                   ? { relaunch: true, newsId: current.newsPostId ?? undefined }
                   : {}),

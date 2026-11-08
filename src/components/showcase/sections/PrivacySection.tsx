@@ -219,6 +219,20 @@ export default function PrivacySection() {
           />
         </Specimen>
       ))}
+      {(['ready', 'invalid'] as const).map((status) => (
+        <Specimen
+          key={`notice-${status}`}
+          name={`Deletion from an inactivity email: ${status}`}
+          usedOn={['/account/confirm-erasure?notice=…']}
+        >
+          <ConfirmErasureView
+            status={status}
+            scheduledFor={SOON}
+            fromNotice
+            onConfirm={mockAction('confirm deletion')}
+          />
+        </Specimen>
+      ))}
       {(
         [
           ['ready', null],

@@ -35,4 +35,35 @@ describe('inactive-notices body', () => {
       InactiveNoticeBody.safeParse({ all: true, noticeDays: 7 }).success,
     ).toBe(false);
   });
+
+  it('lets preview and test renders skip the audience but not a send', () => {
+    for (const action of ['preview', 'test'])
+      expect(
+        InactiveNoticeBody.safeParse({
+          action,
+          template: 'ERA_RELAUNCH',
+          newsPostId: 7,
+          deletionDate: '2026-12-31',
+        }).success,
+      ).toBe(true);
+    expect(InactiveNoticeBody.safeParse({ action: 'send' }).success).toBe(
+      false,
+    );
+    expect(
+      InactiveNoticeBody.safeParse({ action: 'preview', locale: 'fr' }).success,
+    ).toBe(false);
+  });
+
+  it('accepts only a plain YYYY-MM-DD purge date', () => {
+    expect(
+      InactiveNoticeBody.safeParse({ all: true, deletionDate: '2026-12-31' })
+        .success,
+    ).toBe(true);
+    expect(
+      InactiveNoticeBody.safeParse({
+        all: true,
+        deletionDate: '2026-12-31T00:00:00Z',
+      }).success,
+    ).toBe(false);
+  });
 });

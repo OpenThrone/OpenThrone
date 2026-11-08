@@ -30,6 +30,8 @@ export interface EmailTemplateVars {
   newsId?: number;
   /** Single-use veteran claim link token. */
   claimToken?: string;
+  /** Inactivity emails: signed one-click erasure link (no sign-in needed). */
+  erasureToken?: string;
 }
 export interface RenderEmailInput {
   kind:
@@ -100,7 +102,11 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
       vars.deletionDate ?? new Date(Date.now() + 180 * 86_400_000),
     ),
     loginLink: absolute('/account/login'),
-    deleteLink: absolute('/account/delete-request'),
+    deleteLink: vars.erasureToken
+      ? absolute(
+          `/account/confirm-erasure?notice=${encodeURIComponent(vars.erasureToken)}`,
+        )
+      : absolute('/account/delete-request'),
     plan:
       (copy.supporterPlans as Record<string, string>)[vars.planId ?? ''] ??
       vars.planId ??
@@ -147,13 +153,9 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
     case 'INACTIVITY_REMINDER':
       if (!vars.deletionDate)
         throw new Error('Reminder requires the scheduled deletion date');
-      subject = vars.relaunch
-        ? copy.relaunchReminderSubject
-        : copy.reminderSubject;
-      body = interpolate(
-        vars.relaunch ? copy.relaunchReminder : copy.reminder,
-        values,
-      );
+      // Relaunch notices never get a reminder (their email is the last one).
+      subject = copy.reminderSubject;
+      body = interpolate(copy.reminder, values);
       break;
     case 'SUPPORTER_RECEIPT':
       subject = copy.receiptSubject;
@@ -185,7 +187,7 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
       : kind === 'NEWS'
         ? [absolute(`/community/news/${vars.id ?? ''}`)]
         : kind === 'INACTIVITY_NOTICE' || kind === 'INACTIVITY_REMINDER'
-          ? vars.relaunch
+          ? kind === 'INACTIVITY_NOTICE' && vars.relaunch
             ? [values.loginLink, values.deleteLink, values.newsLink]
             : [values.loginLink, values.deleteLink]
           : kind === 'SUPPORTER_RECEIPT' || kind === 'SUPPORTER_CANCELED'

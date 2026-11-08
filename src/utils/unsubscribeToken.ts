@@ -17,7 +17,8 @@ const CATEGORIES: readonly string[] = [
   'ALL',
 ];
 
-function getSecret(): string {
+/** Signing secret shared by emailed one-click links (each signs with its own prefix). */
+export function getEmailLinkSecret(): string {
   const secret = process.env.EMAIL_UNSUBSCRIBE_SECRET;
   if (secret) return secret;
   if (
@@ -57,7 +58,7 @@ export function createUnsubscribeToken(
   const payload = Buffer.from(JSON.stringify({ userId, category })).toString(
     'base64url',
   );
-  return `${payload}.${sign(payload, getSecret()).toString('base64url')}`;
+  return `${payload}.${sign(payload, getEmailLinkSecret()).toString('base64url')}`;
 }
 
 /** Validates the signature and payload; malformed tokens return null. */
@@ -65,7 +66,7 @@ export function verifyUnsubscribeToken(
   token: string,
 ): UnsubscribePayload | null {
   // Resolve configuration outside the parse catch so production fails closed.
-  const secret = getSecret();
+  const secret = getEmailLinkSecret();
   if (typeof token !== 'string' || token.length > 1024) return null;
   const parts = token.split('.');
   if (parts.length !== 2) return null;

@@ -156,7 +156,7 @@
     "loadError": "Could not load data. Refresh to retry.",
     "empty": "No matching records.",
     "inactiveUsers": "Inactive users",
-    "inactiveIntro": "Accounts inactive for over 365 days, or since the cutoff date below, excluding staff, anonymized and sanctioned accounts. Notices give the notice period set below (180 days by default); logging in cancels deletion.",
+    "inactiveIntro": "Accounts inactive for over 365 days, or since the cutoff date below, excluding staff, anonymized and sanctioned accounts. Each notice carries the purge date set below (180 days ahead by default); logging in before it cancels deletion. The era-relaunch email is final: it gets no reminder.",
     "dryRun": "Next sweep: dry run",
     "dryCounts": "{{reminders}} accounts due for a reminder; {{anonymized}} due for anonymization; {{cancelled}} returned. These counts show eligibility before settings gates.",
     "gates": "Reminders: {{reminders}}. Automatic anonymization: {{anonymize}}.",
@@ -212,9 +212,7 @@
     "confirmNewsEmail": "Publish this news post and queue email for {{count}} eligible recipients?",
     "cancel": "Cancel",
     "inactiveSince": "Inactive since (cutoff date)",
-    "inactiveSinceHelp": "Empty = the standard 365-day rule. A date selects players whose last gameplay, login or creation is before it.",
-    "noticeDays": "Notice period (days)",
-    "noticeDaysHelp": "Days before the account is erased (14–365).",
+    "inactiveSinceHelp": "Empty = the standard 365-day rule. A date selects players whose last gameplay, login or creation is before it. Choosing the era-relaunch template fills in the current era start.",
     "template": "Template",
     "templates": {
       "STANDARD": "Standard",
@@ -235,6 +233,14 @@
     "veteranUnclaimed": "Unclaimed",
     "veteranTitles": {
       "ERA1_TESTER": "Era 1 Tester"
+    },
+    "purgeDate": "Purge date",
+    "purgeDateHelp": "Accounts not logged in by this date are anonymized. Shown in the email (14–365 days ahead).",
+    "previewLocale": "Preview language",
+    "locales": {
+      "en": "English",
+      "de": "German",
+      "es": "Spanish"
     }
   },
   "announcements": {

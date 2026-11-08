@@ -3,6 +3,7 @@ import {
   Button,
   Checkbox,
   Group,
+  Modal,
   NumberInput,
   Pagination,
   Select,
@@ -11,6 +12,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
 import type { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -20,6 +22,8 @@ import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
+import prisma from '@/lib/prisma';
+import { alertService } from '@/services/Alert.service';
 import { getAdminRequestError } from '@/utils/adminRequests';
 
 type Notice = {
@@ -55,14 +59,28 @@ type VeteranRecord = {
   claimedAt: string | null;
 };
 const TEMPLATES = ['STANDARD', 'ERA_RELAUNCH'] as const;
-const InactiveUsersPage = () => {
+const LOCALES = ['en', 'de', 'es'] as const;
+const DAY_MS = 86_400_000;
+const daysAhead = (days: number) => {
+  const date = new Date(Date.now() + days * DAY_MS);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+/** The picked calendar day; the server reads it as that day, midnight UTC. */
+const isoDay = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+type Rendered = { subject: string; text: string; html: string };
+const InactiveUsersPage = ({ eraStart }: { eraStart: string | null }) => {
   const { t, i18n } = useTranslation('admin-content');
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<string | null>(null);
   const [inactiveSince, setInactiveSince] = useState('');
-  const [noticeDays, setNoticeDays] = useState<number | ''>(180);
+  const [purgeDate, setPurgeDate] = useState<Date | null>(() => daysAhead(180));
+  const [previewLocale, setPreviewLocale] =
+    useState<(typeof LOCALES)[number]>('en');
+  const [preview, setPreview] = useState<Rendered | null>(null);
   const [template, setTemplate] =
     useState<(typeof TEMPLATES)[number]>('STANDARD');
   const [newsPostId, setNewsPostId] = useState<number | ''>('');
@@ -136,6 +154,43 @@ const InactiveUsersPage = () => {
   useEffect(() => {
     loadVeterans();
   }, [loadVeterans]);
+  const noticeOptions = () => ({
+    ...(inactiveSince
+      ? { inactiveSince: new Date(inactiveSince).toISOString() }
+      : {}),
+    ...(purgeDate ? { deletionDate: isoDay(purgeDate) } : {}),
+    template,
+    ...(newsPostId === '' ? {} : { newsPostId }),
+  });
+  const previewEmail = async (action: 'preview' | 'test') => {
+    setBusy(true);
+    setError('');
+    try {
+      const data = await read('/api/admin/users/inactive-notices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          ...noticeOptions(),
+          ...(action === 'preview' ? { locale: previewLocale } : {}),
+        }),
+      });
+      if (action === 'preview') setPreview(data);
+      else alertService.notify('info', t('emailAdmin.testSent'));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('emailAdmin.error'));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const chooseTemplate = (value: (typeof TEMPLATES)[number]) => {
+    setTemplate(value);
+    // A relaunch wave targets everyone who has not played this era.
+    if (value === 'ERA_RELAUNCH' && !inactiveSince && eraStart) {
+      setInactiveSince(eraStart);
+      setPage(1);
+    }
+  };
   const act = async () => {
     setBusy(true);
     setError('');
@@ -151,12 +206,7 @@ const InactiveUsersPage = () => {
               : {
                   all: confirm === 'all',
                   userIds: confirm === 'selected' ? selected : undefined,
-                  ...(inactiveSince
-                    ? { inactiveSince: new Date(inactiveSince).toISOString() }
-                    : {}),
-                  noticeDays: noticeDays === '' ? 180 : noticeDays,
-                  template,
-                  ...(newsPostId === '' ? {} : { newsPostId }),
+                  ...noticeOptions(),
                 },
           ),
         },
@@ -193,12 +243,9 @@ const InactiveUsersPage = () => {
               deletion: date(n.scheduledDeletionAt),
             });
   // The deadline the next notice batch will write, shown before sending.
-  const deadlineDate =
-    noticeDays === ''
-      ? '—'
-      : new Date(
-          Date.now() + (noticeDays as number) * 86_400_000,
-        ).toLocaleDateString(i18n.language);
+  const deadlineDate = purgeDate
+    ? purgeDate.toLocaleDateString(i18n.language)
+    : '—';
   const templateLabel = t(`emailAdmin.templates.${template}`);
   return (
     <AdminLayout
@@ -278,23 +325,21 @@ const InactiveUsersPage = () => {
                   setPage(1);
                 }}
               />
-              <NumberInput
-                label={t('emailAdmin.noticeDays')}
-                description={t('emailAdmin.noticeDaysHelp')}
-                value={noticeDays}
-                min={14}
-                max={365}
-                step={1}
-                allowDecimal={false}
-                onChange={(value) =>
-                  setNoticeDays(value === '' ? '' : Number(value))
-                }
+              <DatePickerInput
+                label={t('emailAdmin.purgeDate')}
+                description={t('emailAdmin.purgeDateHelp')}
+                value={purgeDate}
+                onChange={setPurgeDate}
+                minDate={daysAhead(14)}
+                maxDate={daysAhead(365)}
+                valueFormat="YYYY-MM-DD"
+                popoverProps={{ withinPortal: true }}
               />
               <Select
                 label={t('emailAdmin.template')}
                 value={template}
                 onChange={(v) =>
-                  setTemplate((v ?? 'STANDARD') as typeof template)
+                  chooseTemplate((v ?? 'STANDARD') as typeof template)
                 }
                 allowDeselect={false}
                 data={TEMPLATES.map((value) => ({
@@ -321,16 +366,45 @@ const InactiveUsersPage = () => {
                 template: templateLabel,
               })}
             </Text>
+            <Group align="flex-end">
+              <Select
+                label={t('emailAdmin.previewLocale')}
+                value={previewLocale}
+                onChange={(v) =>
+                  setPreviewLocale((v ?? 'en') as typeof previewLocale)
+                }
+                allowDeselect={false}
+                data={LOCALES.map((value) => ({
+                  value,
+                  label: t(`emailAdmin.locales.${value}`),
+                }))}
+                w={160}
+              />
+              <Button
+                variant="default"
+                disabled={busy}
+                onClick={() => previewEmail('preview')}
+              >
+                {t('emailAdmin.preview')}
+              </Button>
+              <Button
+                variant="default"
+                disabled={busy}
+                onClick={() => previewEmail('test')}
+              >
+                {t('emailAdmin.test')}
+              </Button>
+            </Group>
             <Group>
               <Button
-                disabled={busy || loading || !selected.length}
+                disabled={busy || loading || !selected.length || !purgeDate}
                 onClick={() => setConfirm('selected')}
               >
                 {t('emailAdmin.sendSelected', { count: selected.length })}
               </Button>
               <Button
                 variant="default"
-                disabled={busy || loading}
+                disabled={busy || loading || !purgeDate}
                 onClick={() => setConfirm('all')}
               >
                 {t('emailAdmin.sendAllUnnoticed')}
@@ -503,18 +577,43 @@ const InactiveUsersPage = () => {
             </Alert>
           )}
         </ConfirmationModal>
+        <Modal
+          opened={!!preview}
+          onClose={() => setPreview(null)}
+          title={t('emailAdmin.preview')}
+          size="xl"
+        >
+          <Stack>
+            <Text fw={700}>{preview?.subject}</Text>
+            <Text style={{ whiteSpace: 'pre-wrap' }}>{preview?.text}</Text>
+          </Stack>
+        </Modal>
       </Stack>
     </AdminLayout>
   );
 };
-export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
-  props: {
-    ...(await serverSideTranslations(locale ?? 'en', [
-      'common',
-      'home',
-      'navigation',
-      'admin-content',
-    ])),
-  },
-});
+export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
+  let eraStart: string | null = null;
+  try {
+    const era = await prisma.era.findFirst({
+      where: { endDate: null },
+      orderBy: { startDate: 'desc' },
+      select: { startDate: true },
+    });
+    eraStart = era?.startDate.toISOString() ?? null;
+  } catch {
+    eraStart = null;
+  }
+  return {
+    props: {
+      eraStart,
+      ...(await serverSideTranslations(locale ?? 'en', [
+        'common',
+        'home',
+        'navigation',
+        'admin-content',
+      ])),
+    },
+  };
+};
 export default InactiveUsersPage;

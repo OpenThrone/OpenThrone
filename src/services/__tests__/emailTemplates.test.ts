@@ -91,6 +91,16 @@ describe('localized email templates', () => {
       de: 'zwei Jahren',
       es: 'dos años',
     };
+    const purgeDate: Record<string, string> = {
+      en: 'January 31, 2027',
+      de: '31. Januar 2027',
+      es: '31 de enero de 2027',
+    };
+    const lastEmail: Record<string, string> = {
+      en: 'this is the last email',
+      de: 'ist dies die letzte E-Mail',
+      es: 'este es el último correo',
+    };
     for (const locale of ['en', 'de-DE', 'es-ES']) {
       const rendered = renderEmail({
         kind: 'INACTIVITY_NOTICE',
@@ -113,7 +123,40 @@ describe('localized email templates', () => {
       );
       // The promise that makes the fingerprint worth keeping.
       expect(rendered.text).toContain(twoYearPhrase[locale.split('-')[0]]);
+      // The purge date the admin picked, and the "last email" promise.
+      expect(rendered.text).toContain(purgeDate[locale.split('-')[0]]);
+      expect(rendered.text).toContain(lastEmail[locale.split('-')[0]]);
+      expect(rendered.text).toContain('2026');
     }
+  });
+  it('links the inactivity delete step to the one-click page when a token is given', () => {
+    const erasureToken = 'eyJ1Ijo3fQ.c2ln';
+    const link = `https://example.test/account/confirm-erasure?notice=${erasureToken}`;
+    for (const relaunch of [true, false]) {
+      const rendered = renderEmail({
+        kind: 'INACTIVITY_NOTICE',
+        locale: 'en',
+        vars: {
+          userId: 1,
+          display_name: 'Player',
+          relaunch,
+          newsId: 7,
+          deletionDate: '2027-01-31',
+          erasureToken,
+        },
+      });
+      expect(rendered.text).toContain(link);
+      expect(rendered.html).toContain(`href="${link}"`);
+      expect(rendered.text).not.toContain('/account/delete-request');
+    }
+    // Without a token (old queued mail) the public explainer page remains.
+    expect(
+      renderEmail({
+        kind: 'INACTIVITY_NOTICE',
+        locale: 'en',
+        vars: { userId: 1, deletionDate: '2027-01-31' },
+      }).text,
+    ).toContain('https://example.test/account/delete-request');
   });
   it('renders the veteran claim link as a transactional email in every locale', () => {
     const token = 'b'.repeat(64);
@@ -133,37 +176,21 @@ describe('localized email templates', () => {
       renderEmail({ kind: 'VETERAN_CLAIM', locale: 'en', vars: { userId: 1 } }),
     ).toThrow('token');
   });
-  it('renders the relaunch reminder with the news link in every locale', () => {
-    for (const locale of ['en', 'de-DE', 'es-ES']) {
-      const rendered = renderEmail({
-        kind: 'INACTIVITY_REMINDER',
-        locale,
-        vars: {
-          userId: 1,
-          display_name: 'Player',
-          relaunch: true,
-          newsId: 7,
-          deletionDate: '2027-01-31',
-        },
-      });
-      expect(rendered.text).toContain('https://example.test/community/news/7');
-      expect(rendered.html).toContain(
-        'href="https://example.test/community/news/7"',
-      );
-    }
-    // The deadline date is localized per recipient.
-    expect(
-      renderEmail({
-        kind: 'INACTIVITY_REMINDER',
-        locale: 'en',
-        vars: {
-          userId: 1,
-          relaunch: true,
-          newsId: 7,
-          deletionDate: '2027-01-31',
-        },
-      }).text,
-    ).toContain('January 31, 2027');
+  it('renders a relaunch-flagged reminder with the standard copy', () => {
+    // Relaunch notices never get a reminder; the old relaunch reminder copy
+    // is gone, so a stray flag must not produce a dead news link.
+    const rendered = renderEmail({
+      kind: 'INACTIVITY_REMINDER',
+      locale: 'en',
+      vars: {
+        userId: 1,
+        relaunch: true,
+        newsId: 7,
+        deletionDate: '2027-01-31',
+      },
+    });
+    expect(rendered.text).toContain('30 days left');
+    expect(rendered.text).not.toContain('/community/news');
   });
   it('keeps the standard notice and reminder unchanged without the relaunch flag', () => {
     const notice = renderEmail({

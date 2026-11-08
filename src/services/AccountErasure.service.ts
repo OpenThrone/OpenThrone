@@ -23,6 +23,7 @@ import {
 } from '@/services/supporter/AccountBilling.service';
 import { logActionStrict } from '@/utils/auditLogger';
 import { consumeRateLimit } from '@/utils/credentialGuards';
+import { verifyInactivityErasureToken } from '@/utils/inactivityErasureToken';
 import { logError } from '@/utils/logger';
 import { requireReauth } from '@/utils/reauth';
 
@@ -237,6 +238,69 @@ export async function requestErasure(
 }
 
 /**
+ * Deactivates the account and schedules its erasure: a CLOSED status row (so
+ * sessions stop and login offers the cancel path), API access revoked, the
+ * request set PENDING and the confirmation audited. Runs inside the caller's
+ * transaction with the user row locked.
+ */
+async function startGracePeriod(
+  tx: Prisma.TransactionClient,
+  input: {
+    requestId: number;
+    userId: number;
+    now: Date;
+    scheduledFor: Date;
+    ip: string;
+    via?: 'INACTIVITY_NOTICE';
+  },
+) {
+  const { requestId, userId, now, scheduledFor, ip } = input;
+  const closed = await tx.accountStatusHistory.create({
+    data: {
+      user_id: userId,
+      status: 'CLOSED',
+      start_date: now,
+      reason: CLOSED_REASON,
+    },
+  });
+  // API clients stop working with the account; they are not restored on cancel.
+  await tx.apiToken.updateMany({
+    where: { client: { ownerUserId: userId }, revokedAt: null },
+    data: { revokedAt: now },
+  });
+  await tx.apiClient.updateMany({
+    where: { ownerUserId: userId, status: 'ACTIVE' },
+    data: { status: 'DISABLED' },
+  });
+  await tx.accountErasureRequest.update({
+    where: { id: requestId },
+    data: {
+      status: 'PENDING',
+      confirmedAt: now,
+      scheduledFor,
+      closedStatusId: closed.id,
+      billingStopped: await subscriptionIsRenewing(tx, userId),
+      tokenHash: null,
+      tokenExpiresAt: null,
+    },
+  });
+  await logActionStrict(
+    {
+      userId,
+      action: 'ACCOUNT_ERASURE_CONFIRMED',
+      ip,
+      entityType: 'AccountErasureRequest',
+      entityId: requestId,
+      details: {
+        scheduledFor: scheduledFor.toISOString(),
+        ...(input.via ? { via: input.via } : {}),
+      },
+    },
+    tx,
+  );
+}
+
+/**
  * Step 2: the player presses Confirm on the page the emailed link opens. The
  * account is deactivated at once (a
  * CLOSED status row, so existing sessions stop working and login offers the
@@ -286,46 +350,13 @@ export async function confirmErasure(
     });
     if (!user || isErased(user)) throw new ErasureError('already_erased');
 
-    const closed = await tx.accountStatusHistory.create({
-      data: {
-        user_id: request.userId,
-        status: 'CLOSED',
-        start_date: now,
-        reason: CLOSED_REASON,
-      },
+    await startGracePeriod(tx, {
+      requestId: request.id,
+      userId: request.userId,
+      now,
+      scheduledFor,
+      ip,
     });
-    // API clients stop working with the account; they are not restored on cancel.
-    await tx.apiToken.updateMany({
-      where: { client: { ownerUserId: request.userId }, revokedAt: null },
-      data: { revokedAt: now },
-    });
-    await tx.apiClient.updateMany({
-      where: { ownerUserId: request.userId, status: 'ACTIVE' },
-      data: { status: 'DISABLED' },
-    });
-    await tx.accountErasureRequest.update({
-      where: { id: request.id },
-      data: {
-        status: 'PENDING',
-        confirmedAt: now,
-        scheduledFor,
-        closedStatusId: closed.id,
-        billingStopped: await subscriptionIsRenewing(tx, request.userId),
-        tokenHash: null,
-        tokenExpiresAt: null,
-      },
-    });
-    await logActionStrict(
-      {
-        userId: request.userId,
-        action: 'ACCOUNT_ERASURE_CONFIRMED',
-        ip,
-        entityType: 'AccountErasureRequest',
-        entityId: request.id,
-        details: { scheduledFor: scheduledFor.toISOString() },
-      },
-      tx,
-    );
     return {
       expired: false as const,
       requestId: request.id,
@@ -337,6 +368,14 @@ export async function confirmErasure(
 
   if (result.expired) throw new ErasureError('invalid_token');
 
+  await afterGracePeriodStarted(result, scheduledFor);
+  return { scheduledFor };
+}
+
+async function afterGracePeriodStarted(
+  result: { userId: number; email: string; locale: string },
+  scheduledFor: Date,
+) {
   await endSupporterBillingSoon(result.userId, 'period_end');
   try {
     await sendImmediate({
@@ -350,6 +389,80 @@ export async function confirmErasure(
       'Erasure scheduled email failed',
     );
   }
+}
+
+/**
+ * The one-click link in an inactivity email: the same deletion as a confirmed
+ * request (deactivated now, erased after the grace period), without signing
+ * in. The signed link names the player and their notice; it only works while
+ * that notice is open, so logging in (which cancels the notice) retires it.
+ * Control of the address on file is the proof, as for the confirmation link.
+ */
+export async function confirmInactivityErasure(
+  token: string,
+  ip: string,
+): Promise<{ scheduledFor: Date }> {
+  const payload = verifyInactivityErasureToken(token);
+  if (!payload) throw new ErasureError('invalid_token');
+  const now = new Date();
+  const scheduledFor = new Date(now.getTime() + ERASURE_GRACE_DAYS * DAY_MS);
+
+  const result = await prisma.$transaction(async (tx) => {
+    await lockUser(tx, payload.userId);
+    const notice = await tx.accountInactivityNotice.findUnique({
+      where: { userId: payload.userId },
+    });
+    if (
+      !notice ||
+      notice.cancelledAt ||
+      notice.completedAt ||
+      notice.warnedAt.getTime() !== payload.warnedAt
+    )
+      throw new ErasureError('invalid_token');
+    const user = await tx.users.findUnique({
+      where: { id: payload.userId },
+      select: { email: true, anonymizedAt: true, locale: true },
+    });
+    if (!user || isErased(user)) throw new ErasureError('already_erased');
+    const staff = await tx.staffRoleAssignment.findFirst({
+      where: { userId: payload.userId, revokedAt: null },
+      select: { id: true },
+    });
+    if (staff) throw new ErasureError('staff_account');
+
+    const existing = await getOpenErasureRequest(payload.userId, tx);
+    if (existing?.status === 'PENDING')
+      throw new ErasureError('already_scheduled');
+    if (existing)
+      await tx.accountErasureRequest.update({
+        where: { id: existing.id },
+        data: {
+          status: 'EXPIRED',
+          tokenHash: null,
+          tokenExpiresAt: null,
+          userReason: null,
+        },
+      });
+    const request = await tx.accountErasureRequest.create({
+      data: { userId: payload.userId, requestedAt: now },
+    });
+    await startGracePeriod(tx, {
+      requestId: request.id,
+      userId: payload.userId,
+      now,
+      scheduledFor,
+      ip,
+      via: 'INACTIVITY_NOTICE',
+    });
+    // The erasure now owns the account's fate; the inactivity sweep stands down.
+    await tx.accountInactivityNotice.update({
+      where: { id: notice.id },
+      data: { cancelledAt: now },
+    });
+    return { userId: payload.userId, email: user.email, locale: user.locale };
+  });
+
+  await afterGracePeriodStarted(result, scheduledFor);
   return { scheduledFor };
 }
 

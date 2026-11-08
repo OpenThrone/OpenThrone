@@ -308,7 +308,10 @@
     "invalidTitle": "Este enlace no funcionó",
     "invalid": "El enlace no es válido, caducó o ya se usó. Empieza de nuevo desde tus ajustes.",
     "missing": "Esta página necesita el enlace del correo de confirmación.",
-    "openSettings": "Abrir ajustes"
+    "openSettings": "Abrir ajustes",
+    "introNotice": "Elimina ahora tu cuenta de OpenThrone y tus datos personales. No hace falta iniciar sesión. Al confirmar, la cuenta se desactiva de inmediato y se borra a los 14 días.",
+    "invalidNotice": "Este enlace ya no funciona. Deja de funcionar en cuanto vuelves a iniciar sesión, cuando ya se ha usado o cuando la cuenta se ha borrado. Aún puedes eliminar tu cuenta desde tus ajustes.",
+    "descriptionNotice": "Elimina tu cuenta directamente desde el correo."
   },
   "veteranClaim": {
     "title": "Reclama tu legado de la Era 1",

@@ -4,6 +4,20 @@ OpenThrone follows [Semantic Versioning](https://semver.org/) on the 0.x line:
 each production release raises the minor version and hotfixes raise the patch
 version. Alpha builds carry the next version with an `-alpha` suffix.
 
+## v0.12.1 (2026-11-08)
+
+### Changed
+- **Era 2 relaunch email:** the email to players who have not played this era
+  now says development has restarted, that Era 2 runs for the rest of 2026,
+  the purge date, and how to reclaim your old status later. It is the last
+  email such a player gets: no reminder follows, and news and announcement
+  email pause until they log back in. Staff pick the purge date in
+  Administration → Inactive users and can preview or send themselves a test.
+- **Delete without signing in:** the delete link in inactivity and relaunch
+  emails now opens a confirmation page directly. Press Confirm and the account
+  is deactivated at once and erased after 14 days, with no password needed.
+  The link stops working once you sign in again.
+
 ## v0.12.0 (2026-11-08)
 
 ### Added

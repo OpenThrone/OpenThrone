@@ -20,7 +20,11 @@ const ConfirmErasurePage = () => {
   const { t } = useTranslation('account');
   const router = useRouter();
   const queryToken = router.query.token;
-  const token = typeof queryToken === 'string' ? queryToken : '';
+  const queryNotice = router.query.notice;
+  // `notice`: the one-click link in an inactivity email (no sign-in needed).
+  const noticeToken = typeof queryNotice === 'string' ? queryNotice : '';
+  const token =
+    noticeToken || (typeof queryToken === 'string' ? queryToken : '');
   const [state, setState] = useState<{
     status: ConfirmErasureStatus;
     scheduledFor: string | null;
@@ -35,7 +39,7 @@ const ConfirmErasurePage = () => {
       const response = await fetch('/api/account/erasure/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify(noticeToken ? { noticeToken } : { token }),
       });
       if (!response.ok) {
         setState({ status: 'invalid', scheduledFor: null });
@@ -60,12 +64,17 @@ const ConfirmErasurePage = () => {
       <MainArea title={t('confirmErasure.title')}>
         <PublicAuthLayout
           title={t('confirmErasure.title')}
-          description={t('confirmErasure.description')}
+          description={t(
+            noticeToken
+              ? 'confirmErasure.descriptionNotice'
+              : 'confirmErasure.description',
+          )}
           formTitle={t('confirmErasure.formTitle')}
         >
           <ConfirmErasureView
             status={status}
             scheduledFor={state.scheduledFor}
+            fromNotice={!!noticeToken}
             onConfirm={confirm}
           />
         </PublicAuthLayout>

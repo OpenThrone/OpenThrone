@@ -19,6 +19,7 @@ import {
   adminOpenErasure,
   cancelErasure,
   confirmErasure,
+  confirmInactivityErasure,
   ERASURE_GRACE_DAYS,
   ErasureError,
   executeErasure,
@@ -27,6 +28,7 @@ import {
   pruneErasureRecords,
   requestErasure,
 } from '@/services/AccountErasure.service';
+import { cancelInactivityOnLogin } from '@/services/AccountInactivity.service';
 import { AllianceService } from '@/services/Alliance.service';
 import { enqueueBattleAlert } from '@/services/BattleNotification.service';
 import {
@@ -39,6 +41,7 @@ import { purgeErasedModerationRecords } from '@/services/PrivacyRetention.servic
 import * as billing from '@/services/supporter/AccountBilling.service';
 import { TemporaryForceLedgerService as Ledger } from '@/services/TemporaryForceLedger.service';
 import { createUser, getLoginBlockingStatus } from '@/services/User.service';
+import { createInactivityErasureToken } from '@/utils/inactivityErasureToken';
 import { ReauthError } from '@/utils/reauth';
 
 import { resetDatabase } from './db';
@@ -2260,5 +2263,128 @@ describe('export pages every growing history', () => {
     expect(data.recruitHistory.some((r: any) => r.fromUserName === 'Bob')).toBe(
       true,
     );
+  });
+});
+
+describe('one-click erasure link in an inactivity email', () => {
+  const warnedAt = new Date('2026-11-08T12:00:00.000Z');
+  const notify = (userId: number) =>
+    prisma.accountInactivityNotice.create({
+      data: {
+        userId,
+        warnedAt,
+        scheduledDeletionAt: new Date(Date.now() + 40 * DAY_MS),
+        template: 'ERA_RELAUNCH',
+      },
+    });
+
+  test('starts the same grace period without signing in, and retires the notice', async () => {
+    await notify(alice);
+    const before = Date.now();
+    const { scheduledFor } = await confirmInactivityErasure(
+      createInactivityErasureToken(alice, warnedAt),
+      ip,
+    );
+    expect(Math.round((scheduledFor.getTime() - before) / DAY_MS)).toBe(
+      ERASURE_GRACE_DAYS,
+    );
+    const request = await openRequest(alice);
+    expect(request.status).toBe('PENDING');
+    expect(request.closedStatusId).not.toBeNull();
+    expect(await getLoginBlockingStatus(alice)).toBe('CLOSED');
+    const notice = await prisma.accountInactivityNotice.findUniqueOrThrow({
+      where: { userId: alice },
+    });
+    expect(notice.cancelledAt).not.toBeNull();
+    // The scheduled-deletion email still goes out: the player asked for it.
+    expect(sent.at(-1)?.to).toBe('alice@example.test');
+    const audit = await prisma.auditLog.findFirstOrThrow({
+      where: { action: 'ACCOUNT_ERASURE_CONFIRMED', userId: alice },
+    });
+    expect(audit.details).toMatchObject({ via: 'INACTIVITY_NOTICE' });
+
+    // When the grace period ends the ordinary erasure runs.
+    await makeDue(request.id);
+    await processDueErasures();
+    const erased = await prisma.users.findUniqueOrThrow({
+      where: { id: alice },
+    });
+    expect(erased.email).not.toBe('alice@example.test');
+    expect(erased.anonymizedAt).not.toBeNull();
+  });
+
+  test('works once: a second click, a forged or another notice’s link all fail', async () => {
+    await notify(alice);
+    await notify(bob);
+    const link = createInactivityErasureToken(alice, warnedAt);
+    // Signed for another notice date (an older or newer email).
+    await expect(
+      confirmInactivityErasure(
+        createInactivityErasureToken(alice, new Date(warnedAt.getTime() + 1)),
+        ip,
+      ),
+    ).rejects.toMatchObject({ code: 'invalid_token' });
+    // Tampered: Bob's payload with Alice's signature.
+    const [, signature] = link.split('.');
+    const [bobPayload] = createInactivityErasureToken(bob, warnedAt).split('.');
+    await expect(
+      confirmInactivityErasure(`${bobPayload}.${signature}`, ip),
+    ).rejects.toMatchObject({ code: 'invalid_token' });
+    expect(await getLoginBlockingStatus(bob)).toBeNull();
+
+    await confirmInactivityErasure(link, ip);
+    await expect(confirmInactivityErasure(link, ip)).rejects.toMatchObject({
+      code: 'invalid_token',
+    });
+    expect(
+      await prisma.accountErasureRequest.count({ where: { userId: alice } }),
+    ).toBe(1);
+  });
+
+  test('logging back in retires the link', async () => {
+    await notify(alice);
+    await prisma.users.update({
+      where: { id: alice },
+      data: { last_active: new Date() },
+    });
+    await cancelInactivityOnLogin(alice);
+    await expect(
+      confirmInactivityErasure(
+        createInactivityErasureToken(alice, warnedAt),
+        ip,
+      ),
+    ).rejects.toMatchObject({ code: 'invalid_token' });
+    expect(await getLoginBlockingStatus(alice)).toBeNull();
+  });
+
+  test('replaces a request still awaiting its emailed confirmation', async () => {
+    await notify(alice);
+    await requestErasure(alice, { password: PASSWORD, ip });
+    const requestToken = lastToken();
+    await confirmInactivityErasure(
+      createInactivityErasureToken(alice, warnedAt),
+      ip,
+    );
+    const rows = await prisma.accountErasureRequest.findMany({
+      where: { userId: alice },
+      orderBy: { id: 'asc' },
+    });
+    expect(rows.map((r) => r.status)).toEqual(['EXPIRED', 'PENDING']);
+    await expect(confirmErasure(requestToken, ip)).rejects.toMatchObject({
+      code: 'invalid_token',
+    });
+  });
+
+  test('refuses staff accounts and users without a notice', async () => {
+    await notify(admin);
+    await expect(
+      confirmInactivityErasure(
+        createInactivityErasureToken(admin, warnedAt),
+        ip,
+      ),
+    ).rejects.toMatchObject({ code: 'staff_account' });
+    await expect(
+      confirmInactivityErasure(createInactivityErasureToken(bob, warnedAt), ip),
+    ).rejects.toMatchObject({ code: 'invalid_token' });
   });
 });

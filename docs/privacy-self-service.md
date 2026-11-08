@@ -45,6 +45,21 @@ cannot sign in, cancel, or erase early; each needs a written reason and is
 audited. Finished request rows keep no free text (reasons live in the audit log) and are pruned after 365 days, export-log rows after
 90 (constants in `PrivacyRetention.service.ts`).
 
+### From an inactivity email (no sign-in)
+
+Inactivity and relaunch emails link to `/account/confirm-erasure?notice=<token>`
+instead of the sign-in page. The token is an HMAC (same secret as unsubscribe
+links, its own prefix) over the user id and the notice's `warnedAt`
+(`src/utils/inactivityErasureToken.ts`). Opening the page changes nothing;
+pressing Confirm runs `confirmInactivityErasure`, which starts the same grace
+period as above (audit `ACCOUNT_ERASURE_CONFIRMED` with `via:
+INACTIVITY_NOTICE`), replaces a request still awaiting its emailed
+confirmation, and cancels the notice. The link works only while that exact
+notice is open, so it dies once used, once the player signs in (which cancels
+the notice), or once the sweep erases the account. Staff accounts are refused.
+Self-service erasure keeps no veteran record, so a player who uses it gets no
+Era 1 Tester claim later.
+
 ## Table-by-table inventory
 
 | Data | Result |

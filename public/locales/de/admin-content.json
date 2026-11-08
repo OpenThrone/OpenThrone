@@ -156,7 +156,7 @@
     "loadError": "Daten konnten nicht geladen werden. Bitte aktualisieren Sie die Seite.",
     "empty": "Keine passenden Einträge.",
     "inactiveUsers": "Inaktive Benutzer",
-    "inactiveIntro": "Konten, die seit über 365 Tagen oder seit dem unten gesetzten Stichtag inaktiv sind, außer Mitarbeitern, anonymisierten und gesperrten Konten. Hinweise geben die unten eingestellte Frist (standardmäßig 180 Tage); eine Anmeldung hebt die Löschung auf.",
+    "inactiveIntro": "Konten, die seit über 365 Tagen oder seit dem unten gesetzten Stichtag inaktiv sind, außer Mitarbeitern, anonymisierten und gesperrten Konten. Jeder Hinweis trägt das unten gesetzte Bereinigungsdatum (standardmäßig in 180 Tagen); eine Anmeldung davor hebt die Löschung auf. Die Ära-Relaunch-E-Mail ist endgültig: Es folgt keine Erinnerung.",
     "dryRun": "Nächster Durchlauf: Vorschau",
     "dryCounts": "{{reminders}} Konten für Erinnerungen fällig; {{anonymized}} für Anonymisierung fällig; {{cancelled}} zurückgekehrt. Zahlen vor Anwendung der Einstellungen.",
     "gates": "Erinnerungen: {{reminders}}. Automatische Anonymisierung: {{anonymize}}.",
@@ -212,9 +212,7 @@
     "confirmNewsEmail": "Diese Nachricht veröffentlichen und E-Mails für {{count}} berechtigte Empfänger einreihen?",
     "cancel": "Abbrechen",
     "inactiveSince": "Inaktiv seit (Stichtag)",
-    "inactiveSinceHelp": "Leer = die übliche 365-Tage-Regel. Ein Datum wählt Spieler, deren letztes Spiel, letzte Anmeldung oder Erstellung davor liegt.",
-    "noticeDays": "Frist (Tage)",
-    "noticeDaysHelp": "Tage bis zur Löschung des Kontos (14–365).",
+    "inactiveSinceHelp": "Leer = die übliche 365-Tage-Regel. Ein Datum wählt Spieler, deren letztes Spiel, letzte Anmeldung oder Erstellung davor liegt. Die Ära-Relaunch-Vorlage setzt den Start der aktuellen Ära ein.",
     "template": "Vorlage",
     "templates": {
       "STANDARD": "Standard",
@@ -235,6 +233,14 @@
     "veteranUnclaimed": "Nicht beansprucht",
     "veteranTitles": {
       "ERA1_TESTER": "Ära-1-Tester"
+    },
+    "purgeDate": "Bereinigungsdatum",
+    "purgeDateHelp": "Konten ohne Anmeldung bis zu diesem Datum werden anonymisiert. Steht in der E-Mail (14–365 Tage voraus).",
+    "previewLocale": "Vorschausprache",
+    "locales": {
+      "en": "Englisch",
+      "de": "Deutsch",
+      "es": "Spanisch"
     }
   },
   "announcements": {

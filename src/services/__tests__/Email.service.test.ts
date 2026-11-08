@@ -97,6 +97,42 @@ describe('email recipient policy', () => {
       expect.objectContaining({ orderBy: { id: 'asc' }, take: 250 }),
     );
   });
+  it('keeps players with an open relaunch notice out of every mail but lifecycle and security', async () => {
+    const relaunchNotice = (extra = {}) => ({
+      accountInactivityNotice: {
+        template: 'ERA_RELAUNCH',
+        cancelledAt: null,
+        completedAt: null,
+        ...extra,
+      },
+    });
+    const audience = () => [
+      user(1),
+      user(2, relaunchNotice()),
+      user(3, relaunchNotice({ cancelledAt: new Date() })),
+      user(4, {
+        accountInactivityNotice: {
+          template: 'STANDARD',
+          cancelledAt: null,
+          completedAt: null,
+        },
+      }),
+    ];
+    const ids = async (category: string) => {
+      mockPrisma.users.findMany
+        .mockReset()
+        .mockResolvedValueOnce(audience())
+        .mockResolvedValue([]);
+      return (
+        await service.resolveEligibleRecipients({ category, includeAll: true })
+      ).map((r: { userId: number }) => r.userId);
+    };
+    // The relaunch email promises to be the last one until they log back in.
+    expect(await ids('NEWS')).toEqual([1, 3, 4]);
+    expect(await ids('ANNOUNCEMENT')).toEqual([1, 3, 4]);
+    expect(await ids('ACCOUNT_LIFECYCLE')).toEqual([1, 2, 3, 4]);
+    expect(await ids('TRANSACTIONAL')).toEqual([1, 2, 3, 4]);
+  });
   it('excludes anonymized, suppressed, opted-out and currently sanctioned marketing recipients', async () => {
     const { hashIdentity } = require('@/utils/identityHash');
     mockPrisma.users.findMany

@@ -1,16 +1,28 @@
 import { z } from 'zod';
 
 import { withApiGuard } from '@/middleware/apiGuard';
-import { confirmErasure } from '@/services/AccountErasure.service';
+import {
+  confirmErasure,
+  confirmInactivityErasure,
+} from '@/services/AccountErasure.service';
 import { getRequestIp } from '@/utils/auditLogger';
 import { respondPrivacyError } from '@/utils/privacyApi';
 
-const ConfirmSchema = z
-  .object({ token: z.string().regex(/^[0-9a-f]{64}$/) })
-  .strict();
+/** `token`: a requested erasure's link; `noticeToken`: an inactivity email's link. */
+export const ConfirmSchema = z.union([
+  z.object({ token: z.string().regex(/^[0-9a-f]{64}$/) }).strict(),
+  z
+    .object({
+      noticeToken: z
+        .string()
+        .max(512)
+        .regex(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/),
+    })
+    .strict(),
+]);
 
 /**
- * Opens the emailed link's token. Public on purpose: the token, which only the
+ * Opens the emailed link's token (a confirmation or an inactivity-email link). Public on purpose: the token, which only the
  * address on file received, is the proof. Wrong or used tokens all answer the
  * same way.
  */
@@ -24,10 +36,11 @@ export default withApiGuard({
 })(async (req, res, context) => {
   res.setHeader('Cache-Control', 'no-store');
   try {
-    const { scheduledFor } = await confirmErasure(
-      context.body.token,
-      getRequestIp(req),
-    );
+    const body = context.body as { token?: string; noticeToken?: string };
+    const ip = getRequestIp(req);
+    const { scheduledFor } = body.noticeToken
+      ? await confirmInactivityErasure(body.noticeToken, ip)
+      : await confirmErasure(body.token ?? '', ip);
     return res.status(200).json({ scheduledFor: scheduledFor.toISOString() });
   } catch (error) {
     if (respondPrivacyError(res, error)) return;
