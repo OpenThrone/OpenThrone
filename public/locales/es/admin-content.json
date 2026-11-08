@@ -156,7 +156,7 @@
     "loadError": "No se pudieron cargar los datos. Actualiza para reintentar.",
     "empty": "No hay registros coincidentes.",
     "inactiveUsers": "Usuarios inactivos",
-    "inactiveIntro": "Cuentas inactivas durante más de 365 días, excepto personal, anonimizadas y sancionadas. Los avisos dan 180 días de gracia; iniciar sesión cancela la eliminación.",
+    "inactiveIntro": "Cuentas inactivas durante más de 365 días, o desde la fecha de corte indicada abajo, excepto personal, anonimizadas y sancionadas. Los avisos dan el plazo fijado abajo (180 días por defecto); iniciar sesión cancela la eliminación.",
     "dryRun": "Próximo barrido: simulación",
     "dryCounts": "{{reminders}} cuentas requieren recordatorio; {{anonymized}} requieren anonimización; {{cancelled}} regresaron. Recuentos antes de aplicar la configuración.",
     "gates": "Recordatorios: {{reminders}}. Anonimización automática: {{anonymize}}.",
@@ -185,8 +185,8 @@
     "noticeResult": "{{noticed}} avisos registrados; {{queued}} correos en cola; {{undeliverable}} sin correo entregable (el período de gracia sigue vigente).",
     "sweepResult": "{{cancelled}} cancelados; {{reminders}} recordatorios en cola; {{anonymized}} anonimizados; {{failed}} fallidos.",
     "confirmSweep": "¿Ejecutar el barrido con la configuración actual de recordatorios y anonimización?",
-    "confirmAllNotices": "¿Avisar a todas las cuentas elegibles sin aviso previo? Todas tendrán 180 días para regresar, incluso sin correo entregable.",
-    "confirmNotices": "¿Avisar a {{count}} cuentas seleccionadas? Se omiten avisos abiertos; los cancelados reinician los 180 días de gracia.",
+    "confirmAllNotices": "¿Enviar el aviso {{template}} a todas las cuentas coincidentes sin aviso ({{count}})? Fecha límite {{deadline}}: las cuentas se borran si el jugador no ha iniciado sesión para entonces.",
+    "confirmNotices": "¿Enviar el aviso {{template}} a las {{count}} cuentas seleccionadas? Fecha límite {{deadline}}: las cuentas se borran si el jugador no ha iniciado sesión para entonces.",
     "loading": "Cargando…",
     "alsoEmail": "Enviar también por correo (suscriptores de noticias)",
     "alreadySent": "Esta noticia ya tiene una campaña de correo. No se añadió otro envío.",
@@ -210,7 +210,32 @@
     },
     "noDeliverableEmail": "Sin correo entregable — no se ha fijado una fecha límite",
     "confirmNewsEmail": "¿Publicar esta noticia y poner en cola el correo para {{count}} destinatarios elegibles?",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "inactiveSince": "Inactivo desde (fecha de corte)",
+    "inactiveSinceHelp": "Vacío = la regla estándar de 365 días. Una fecha selecciona a los jugadores cuya última partida, inicio de sesión o creación sea anterior.",
+    "noticeDays": "Plazo del aviso (días)",
+    "noticeDaysHelp": "Días antes de borrar la cuenta (14–365).",
+    "template": "Plantilla",
+    "templates": {
+      "STANDARD": "Estándar",
+      "ERA_RELAUNCH": "Relanzamiento de era"
+    },
+    "newsPostId": "ID de la noticia",
+    "newsPostIdHelp": "La enlaza la plantilla de relanzamiento de era.",
+    "audienceCount": "{{count}} cuentas coincidentes. Los próximos avisos usarán la plantilla {{template}} con fecha límite {{deadline}}.",
+    "veteranRecords": "Registros de veteranos",
+    "veteranIntro": "Huellas de cuentas borradas tras el relanzamiento de la era. Un registro sin reclamar y no caducado concede el título Probador de la Era 1 y la fecha original de registro cuando el mismo correo se registra de nuevo.",
+    "veteranId": "ID",
+    "veteranTitle": "Título",
+    "veteranJoined": "Registro original",
+    "veteranRecorded": "Registrado",
+    "veteranExpires": "Caduca",
+    "veteranClaimed": "Reclamación",
+    "veteranClaimedBy": "Reclamado por #{{id}} el {{date}}",
+    "veteranUnclaimed": "Sin reclamar",
+    "veteranTitles": {
+      "ERA1_TESTER": "Probador de la Era 1"
+    }
   },
   "announcements": {
     "pageTitle": "Contenido: Anuncios",

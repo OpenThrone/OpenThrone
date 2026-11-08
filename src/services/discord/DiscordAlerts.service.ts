@@ -9,6 +9,7 @@ import {
 } from '@/services/discord/DiscordApi';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { isSupporter } from '@/services/supporter/Entitlement.service';
+import { getActiveAccountStatus } from '@/services/User.service';
 import type { DiscordNotifyPrefs } from '@/types/supporter';
 import { DEFAULT_STAMINA_RULES, projectStamina } from '@/utils/stamina';
 
@@ -38,12 +39,24 @@ export async function allowedInstantAlerts(
   const premium = await db.alliance_memberships.findFirst({
     where: {
       user_id: userId,
-      alliance: { sponsorship: { activeUntil: { gt: new Date() } } },
+      // Premium war alerts are an alliance perk: not while RESERVED (#13).
+      alliance: {
+        status: 'ACTIVE',
+        sponsorship: { activeUntil: { gt: new Date() } },
+      },
     },
     select: { id: true },
   });
   return premium ? ['wars'] : [];
 }
+
+/**
+ * A closed account, which includes the grace period of an erasure request,
+ * gets no alerts. The link and the player's preferences stay, so cancelling
+ * the closure brings the alerts back.
+ */
+const accountClosed = async (userId: number, db: Db = prisma) =>
+  (await getActiveAccountStatus(userId, db))?.status === 'CLOSED';
 
 const inQuietHours = (prefs: Partial<DiscordNotifyPrefs>, hour: number) => {
   const { quietHoursStart: start, quietHoursEnd: end } = prefs;
@@ -93,6 +106,7 @@ export async function enqueueDiscordAlert(
   });
   const prefs = (link?.notifyPrefs ?? {}) as Partial<DiscordNotifyPrefs>;
   if (!link || prefs[alert.kind] !== true) return false;
+  if (await accountClosed(alert.userId, db)) return false;
   if (
     alert.kind !== 'dailyDigest' &&
     !(await allowedInstantAlerts(alert.userId, db)).includes(alert.kind)
@@ -186,6 +200,11 @@ export async function processDiscordOutboxOne(
     await finish(row.id, 'SKIPPED', { lastError: 'unlinked or turned off' });
     return 'SKIPPED';
   }
+  // Queued before the account was closed (for example an erasure request).
+  if (await accountClosed(row.userId)) {
+    await finish(row.id, 'SKIPPED', { lastError: 'account closed' });
+    return 'SKIPPED';
+  }
   // A stamina alert queued ahead of time is stale if the player has spent
   // stamina since; it is re-queued for the new refill time.
   if (row.kind === 'turnCap' && !(await staminaIsFull(row.userId))) {
@@ -263,6 +282,7 @@ export async function enqueueDailyDigests(now = new Date()) {
         where: {
           defender_id: userId,
           type: 'attack',
+          voidedAt: null,
           timestamp: { gte: since },
         },
       }),
@@ -276,7 +296,7 @@ export async function enqueueDailyDigests(now = new Date()) {
         },
       }),
       prisma.alliance_memberships.findFirst({
-        where: { user_id: userId },
+        where: { user_id: userId, alliance: { status: 'ACTIVE' } },
         select: { alliance_id: true },
       }),
     ]);

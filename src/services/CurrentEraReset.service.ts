@@ -1,5 +1,8 @@
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
+import { evictUserFromChatRoom } from '@/lib/socket';
+import { AllianceService } from '@/services/Alliance.service';
+import { reserveAlliancesForEraBoundary } from '@/services/allianceStatus';
 import { CaptiveService } from '@/services/Captives.service';
 import { invalidateRuntimeConfigCache } from '@/services/RuntimeConfig.service';
 import {
@@ -12,6 +15,7 @@ import {
   ERA_TRANSACTION_OPTIONS,
   lockEraLifecycle,
 } from '@/utils/eraLifecycleLock';
+import { eraResetPhrase } from '@/utils/eraResetPhrase';
 import {
   type EraStartSettings,
   resolveEraStartSettings,
@@ -69,10 +73,17 @@ export type CurrentEraResetInput = {
   startSettings?: EraStartSettings;
   adminUserId: number;
   ip: string;
+  /**
+   * Complete factory restore (#13): additionally dissolves every alliance.
+   * Needs its own confirmation phrase; the ordinary reset keeps alliances.
+   */
+  factoryRestore?: boolean;
 };
 
 export async function resetCurrentEra(input: CurrentEraResetInput) {
-  if (input.confirmation !== `RESET ERA ${input.eraId}`) {
+  if (
+    input.confirmation !== eraResetPhrase(input.eraId, input.factoryRestore)
+  ) {
     throw new Error('Explicit confirmation is required');
   }
   const result = await prisma.$transaction(async (tx) => {
@@ -80,6 +91,10 @@ export async function resetCurrentEra(input: CurrentEraResetInput) {
     return resetCurrentEraInTransaction(tx, input);
   }, ERA_TRANSACTION_OPTIONS);
   invalidateRuntimeConfigCache();
+  // Chat evictions are socket pushes: only after the dissolution committed.
+  result.chatEvictions.forEach(({ userId, roomId }) =>
+    evictUserFromChatRoom(userId, roomId),
+  );
   return result;
 }
 
@@ -88,7 +103,9 @@ export async function resetCurrentEraInTransaction(
   tx: Tx,
   input: CurrentEraResetInput,
 ) {
-  if (input.confirmation !== `RESET ERA ${input.eraId}`) {
+  if (
+    input.confirmation !== eraResetPhrase(input.eraId, input.factoryRestore)
+  ) {
     throw new Error('Explicit confirmation is required');
   }
 
@@ -108,6 +125,18 @@ export async function resetCurrentEraInTransaction(
     throw new CurrentEraResetError('Logins must be disabled', 'LOGINS_ENABLED');
   }
 
+  // Lock order everywhere else is alliance -> users: take the alliance rows
+  // first so a bank/loan transaction cannot deadlock with this reset.
+  let dissolved: {
+    dissolved: number;
+    evictions: { userId: number; roomId: number }[];
+    alliances: { id: number; name: string }[];
+  } = { dissolved: 0, evictions: [], alliances: [] };
+  if (input.factoryRestore) {
+    dissolved = await AllianceService.dissolveAllAlliancesForFactoryRestore(tx);
+  } else {
+    await tx.$queryRaw`SELECT id FROM alliances ORDER BY id FOR UPDATE`;
+  }
   await tx.$queryRaw`SELECT id FROM users WHERE id > 0 ORDER BY id FOR UPDATE`;
   const resetAt = new Date(
     Math.max(Date.now(), currentEra.startDate.getTime() + 1),
@@ -212,9 +241,12 @@ export async function resetCurrentEraInTransaction(
     where: { action: 'PILLAGE_PENDING' },
     data: { action: 'PILLAGE_CANCELLED' },
   });
-  await tx.alliances.updateMany({ data: { gold_in_bank: 0n } });
-  await tx.alliance_xp.deleteMany();
-  await tx.alliance_upgrades.deleteMany();
+  // Alliances survive an ordinary reset as RESERVED (treasury zeroed, loans
+  // and wars closed, XP/upgrades cleared); a factory restore deleted them above.
+  const allianceBoundary = await reserveAlliancesForEraBoundary(
+    tx,
+    currentEra.id,
+  );
   await tx.era.update({
     where: { id: currentEra.id },
     data: {
@@ -224,6 +256,24 @@ export async function resetCurrentEraInTransaction(
   });
 
   if (input.enableLogins) await enableLogins(tx, input.adminUserId);
+  if (input.factoryRestore) {
+    await logActionStrict(
+      {
+        userId: input.adminUserId,
+        action: 'ADMIN_FACTORY_RESTORE',
+        ip: input.ip,
+        entityType: 'Era',
+        entityId: currentEra.id,
+        details: {
+          eraId: currentEra.id,
+          alliancesDissolved: dissolved.dissolved,
+          alliances: dissolved.alliances,
+          usersReset: users.length,
+        },
+      },
+      tx,
+    );
+  }
   await logActionStrict(
     {
       userId: input.adminUserId,
@@ -238,6 +288,9 @@ export async function resetCurrentEraInTransaction(
         startSettings,
         usersReset: users.length,
         loginsEnabled: !!input.enableLogins,
+        factoryRestore: !!input.factoryRestore,
+        alliancesReserved: allianceBoundary.reserved,
+        alliancesDissolved: dissolved.dissolved,
       },
     },
     tx,
@@ -247,5 +300,8 @@ export async function resetCurrentEraInTransaction(
     startDate: resetAt,
     resetUserCount: users.length,
     loginEnabled: !!input.enableLogins,
+    alliancesReserved: allianceBoundary.reserved,
+    alliancesDissolved: dissolved.dissolved,
+    chatEvictions: dissolved.evictions,
   };
 }

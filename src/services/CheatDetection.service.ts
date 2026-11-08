@@ -4,9 +4,15 @@ import {
   defectorFarmingSeverity,
 } from '@/constants/KingdomMorale';
 import prisma from '@/lib/prisma';
-import { InvestigationStatus, SignalSeverity } from '@/lib/prisma-exports';
+import type {
+  CheatSignalType,
+  InvestigationStatus,
+  Prisma,
+  SignalSeverity,
+} from '@/lib/prisma-exports';
 import { proxyLoginIpHashes } from '@/services/LoginTelemetry.service';
 import { logActionStrict } from '@/utils/auditLogger';
+import { cheatSignalIdentityLockKey } from '@/utils/cheatSignalLock';
 import { getOTDayKey } from '@/utils/timefunctions';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -15,41 +21,34 @@ const PAIR_LOGIN_WINDOW_DAYS = 30;
 /** Bounded per-user login lookup, mirroring LoginTelemetry's own limit. */
 const PAIR_LOGIN_EVENT_LIMIT = 1000;
 
-/**
- * Deterministic advisory-lock key for one (receiver, loser, type)
- * cheat-signal pair: FNV-1a 64-bit over the triple, rendered as a signed
- * bigint string for pg_advisory_xact_lock. A hash collision only
- * over-serializes two unrelated pairs for a moment; it never
- * under-serializes a pair, which is all the dedupe needs.
- */
+/** Lock key for one (receiver, loser, type) cheat-signal pair. */
 const cheatSignalLockKey = (
   receiverId: number,
   loserId: number,
   type: string,
-): string => {
-  const identity = `${receiverId}:${loserId}:${type}`;
-  let hash = 0xcbf29ce484222325n; // FNV-1a offset basis
-  for (let index = 0; index < identity.length; index += 1) {
-    // eslint-disable-next-line no-bitwise -- FNV-1a XOR step over the byte
-    hash ^= BigInt(identity.charCodeAt(index));
-    hash = BigInt.asUintN(64, hash * 0x100000001b3n); // FNV-1a prime
-  }
-  return BigInt.asIntN(64, hash).toString();
-};
+): string => cheatSignalIdentityLockKey(`${receiverId}:${loserId}:${type}`);
 
 /** Encapsulates cheat detection data access and domain operations. */
 export class CheatDetectionService {
   static async listSignals(filters?: {
     status?: InvestigationStatus;
     severity?: SignalSeverity;
+    type?: CheatSignalType;
+    /** Signals that involve this player: filed on, related to or linked. */
     userId?: number;
     limit?: number;
     offset?: number;
   }) {
-    const where: Record<string, unknown> = {};
+    const where: Prisma.CheatSignalWhereInput = {};
     if (filters?.status) where.status = filters.status;
     if (filters?.severity) where.severity = filters.severity;
-    if (filters?.userId) where.userId = filters.userId;
+    if (filters?.type) where.type = filters.type;
+    if (filters?.userId)
+      where.OR = [
+        { userId: filters.userId },
+        { relatedUserId: filters.userId },
+        { linkedUserIds: { has: filters.userId } },
+      ];
 
     const [signals, total] = await Promise.all([
       prisma.cheatSignal.findMany({
@@ -58,22 +57,66 @@ export class CheatDetectionService {
           user: { select: { id: true, display_name: true } },
           relatedUser: { select: { id: true, display_name: true } },
           assignedTo: { select: { id: true, display_name: true } },
+          resolvedBy: { select: { id: true, display_name: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         take: filters?.limit ?? 25,
         skip: filters?.offset ?? 0,
       }),
       prisma.cheatSignal.count({ where }),
     ]);
 
-    return { signals, total };
+    // Linked accounts and evidence sources are stored as ids; resolve their
+    // display names in one lookup so staff see who is involved.
+    const involved = new Set<number>();
+    for (const signal of signals) {
+      for (const id of signal.linkedUserIds ?? []) involved.add(id);
+      const evidence = signal.evidence as {
+        forward?: { fromUserId?: number; toUserId?: number };
+        backward?: { fromUserId?: number; toUserId?: number };
+        sources?: Array<{ userId?: number }>;
+      };
+      for (const source of evidence?.sources ?? [])
+        if (typeof source?.userId === 'number') involved.add(source.userId);
+      for (const side of [evidence?.forward, evidence?.backward])
+        for (const id of [side?.fromUserId, side?.toUserId])
+          if (typeof id === 'number') involved.add(id);
+    }
+    const nameRows = involved.size
+      ? await prisma.users.findMany({
+          where: { id: { in: [...involved] } },
+          select: { id: true, display_name: true },
+        })
+      : [];
+    const names = Object.fromEntries(
+      nameRows.map((row) => [row.id, row.display_name]),
+    );
+
+    return {
+      signals: signals.map((signal) => ({
+        ...signal,
+        linkedUsers: (signal.linkedUserIds ?? []).map((id) => ({
+          id,
+          display_name: names[id] ?? null,
+        })),
+      })),
+      names,
+      total,
+    };
   }
 
+  /**
+   * Staff review of a signal: mark reviewed, dismiss or mark action taken,
+   * with an optional (dismiss: required, enforced by the API) note. Only open
+   * or reviewed signals can change, so two staff acting at once cannot
+   * overwrite each other's closure. Audited in the same transaction.
+   */
   static async applyAction(
     staffUserId: number,
     signalId: number,
     action: 'acknowledge' | 'dismiss' | 'takeAction',
     ip: string,
+    note?: string | null,
   ) {
     return prisma.$transaction(async (tx) => {
       const signal = await tx.cheatSignal.findUnique({
@@ -82,9 +125,14 @@ export class CheatDetectionService {
       });
       if (!signal) throw new Error('Signal not found');
 
+      const trimmedNote = note?.trim() || null;
       const data =
         action === 'acknowledge'
-          ? { status: 'ACKNOWLEDGED' as const, assignedToUserId: staffUserId }
+          ? {
+              status: 'ACKNOWLEDGED' as const,
+              assignedToUserId: staffUserId,
+              ...(trimmedNote ? { reviewNote: trimmedNote } : {}),
+            }
           : {
               status:
                 action === 'dismiss'
@@ -92,10 +140,21 @@ export class CheatDetectionService {
                   : ('ACTION_TAKEN' as const),
               resolvedByUserId: staffUserId,
               resolvedAt: new Date(),
+              ...(trimmedNote ? { reviewNote: trimmedNote } : {}),
             };
-      const updated = await tx.cheatSignal.update({
-        where: { id: signalId },
+      const changed = await tx.cheatSignal.updateMany({
+        where: {
+          id: signalId,
+          status:
+            action === 'acknowledge'
+              ? 'OPEN'
+              : { in: ['OPEN', 'ACKNOWLEDGED'] },
+        },
         data,
+      });
+      if (changed.count === 0) throw new Error('Signal state changed');
+      const updated = await tx.cheatSignal.findUniqueOrThrow({
+        where: { id: signalId },
       });
       await logActionStrict(
         {
@@ -105,7 +164,7 @@ export class CheatDetectionService {
           ip,
           entityType: 'CheatSignal',
           entityId: signalId,
-          details: { signalId, action },
+          details: { signalId, action, note: trimmedNote },
         },
         tx,
       );
@@ -375,21 +434,22 @@ export class CheatDetectionService {
    * logs in through it, so it is not a shared network). Targeted pair lookup
    * over the same LoginEvent data getMultiAccountClusters clusters.
    */
-  private static async pairSharesLoginPattern(
+  static async pairSharesLoginPattern(
     userA: number,
     userB: number,
     now: Date,
+    db: Pick<Prisma.TransactionClient, 'loginEvent'> = prisma,
   ): Promise<boolean> {
     const since = new Date(now.getTime() - PAIR_LOGIN_WINDOW_DAYS * DAY_MS);
     const [eventsA, eventsB] = await Promise.all([
-      prisma.loginEvent.findMany({
+      db.loginEvent.findMany({
         where: { userId: userA, occurredAt: { gte: since } },
         select: { ipHash: true, deviceHash: true },
         distinct: ['ipHash', 'deviceHash'],
         orderBy: { occurredAt: 'desc' },
         take: PAIR_LOGIN_EVENT_LIMIT,
       }),
-      prisma.loginEvent.findMany({
+      db.loginEvent.findMany({
         where: { userId: userB, occurredAt: { gte: since } },
         select: { ipHash: true, deviceHash: true },
         distinct: ['ipHash', 'deviceHash'],

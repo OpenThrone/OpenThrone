@@ -31,7 +31,6 @@ function setRuntimeSettings(
     { key: 'ENABLE_SOCIAL', value: social },
     { key: 'ENABLE_ENEMIES', value: enemies },
   ]);
-  mockPrisma.featureFlag.findMany = vi.fn().mockResolvedValue([]);
   invalidateRuntimeConfigCache();
 }
 

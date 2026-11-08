@@ -1,0 +1,28 @@
+{
+  "title": "Cron-Protokoll",
+  "intro": "Jeder Lauf einer geplanten Aufgabe wird hier aufgezeichnet: Startzeitpunkt, Dauer und eine bereinigte Zusammenfassung des Ergebnisses. Fehlgeschlagene Läufe sind hervorgehoben. Läufe, die älter als 90 Tage sind, werden von der täglichen Aufgabe gelöscht. Abgewiesene (unautorisierte) und deaktivierte Aufrufe werden nicht aufgezeichnet. Ein Lauf, der nach 2 Stunden noch als „Läuft“ markiert ist, wird als „Veraltet / unbekannt“ angezeigt: Sein Prozess ist abgestürzt oder sein Start wurde zu spät erfasst, um abgeschlossen zu werden.",
+  "jobFilter": "Aufgabe",
+  "statusFilter": "Status",
+  "allJobs": "Alle Aufgaben",
+  "allStatuses": "Alle Status",
+  "lastSuccess": "Letzter erfolgreicher Lauf pro Aufgabe",
+  "loading": "Wird geladen…",
+  "error": "Die Anfrage ist fehlgeschlagen. Prüfe die Filter oder versuche es erneut.",
+  "count": "{{count}} Läufe",
+  "status": {
+    "RUNNING": "Läuft",
+    "SUCCESS": "Erfolgreich",
+    "FAILED": "Fehlgeschlagen",
+    "STALE": "Veraltet / unbekannt"
+  },
+  "columns": {
+    "id": "ID",
+    "job": "Aufgabe",
+    "status": "Status",
+    "startedAt": "Gestartet",
+    "finishedAt": "Beendet",
+    "duration": "Dauer",
+    "summary": "Zusammenfassung",
+    "error": "Fehler"
+  }
+}

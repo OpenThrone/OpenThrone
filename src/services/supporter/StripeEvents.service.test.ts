@@ -81,7 +81,15 @@ beforeEach(() => {
         data,
       ),
     ),
-    updateMany: vi.fn(async () => ({ count: 0 })),
+    updateMany: vi.fn(async ({ where, data }: any) => {
+      const rows = eventRows.filter(
+        (r) =>
+          r.id === where.id &&
+          (!where.status?.in || where.status.in.includes(r.status)),
+      );
+      for (const row of rows) Object.assign(row, data);
+      return { count: rows.length };
+    }),
   };
   mockPrisma.payment = {
     create: vi.fn(async ({ data }: any) => {
@@ -156,6 +164,9 @@ beforeEach(() => {
     }),
   };
   mockPrisma.users = { update: vi.fn(), findUnique: vi.fn(async () => null) };
+  mockPrisma.alliances = {
+    findUnique: vi.fn(async () => ({ status: 'ACTIVE' })),
+  };
   mockPrisma.purchaseConsent = { findUnique: vi.fn(async () => null) };
 });
 
@@ -727,5 +738,53 @@ describe('stripe reconciliation', () => {
     const again = await reconcileStripe({ stripe });
     expect(again.applied).toEqual([]);
     expect(payments).toHaveLength(1);
+  });
+
+  it('reports why a gift checkout failed, then replays it once the secret is configured', async () => {
+    const saved = {
+      gift: process.env.GIFT_CODE_SECRET,
+      auth: process.env.NEXTAUTH_SECRET,
+      jwt: process.env.JWT_SECRET,
+    };
+    delete process.env.GIFT_CODE_SECRET;
+    delete process.env.NEXTAUTH_SECRET;
+    delete process.env.JWT_SECRET;
+    try {
+      const stripe = fakeStripe();
+      stripe.checkout.sessions.list.mockReturnValue(
+        asList([{ id: 'cs_test_1' }]),
+      );
+      stripe.checkout.sessions.retrieve.mockResolvedValue(
+        paidSession({
+          metadata: { userId: '7', planId: 'gift_1m' },
+          payment_intent: 'pi_gift',
+          amount_total: 499,
+        }),
+      );
+      const first = await reconcileStripe({ stripe });
+      expect(first.failed).toEqual(['stripe:checkout:cs_test_1']);
+      expect(first.failures).toEqual([
+        {
+          id: 'stripe:checkout:cs_test_1',
+          error: expect.stringContaining('JWT_SECRET'),
+        },
+      ]);
+      // The server only needs JWT_SECRET (the secret .env.sample ships).
+      process.env.JWT_SECRET = 'unit-test-secret';
+      const second = await reconcileStripe({ stripe });
+      expect(second.failed).toEqual([]);
+      expect(second.applied).toEqual(['stripe:checkout:cs_test_1']);
+      // IGNORED still counts as applied, not FAILED (the mock transaction does
+      // not roll back, so the replay is recorded as IGNORED).
+      expect(eventRows[0].status).not.toBe('FAILED');
+    } finally {
+      for (const [key, value] of [
+        ['GIFT_CODE_SECRET', saved.gift],
+        ['NEXTAUTH_SECRET', saved.auth],
+        ['JWT_SECRET', saved.jwt],
+      ] as const)
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+    }
   });
 });

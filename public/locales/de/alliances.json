@@ -291,5 +291,31 @@
     "cancelCrop": "Abbrechen",
     "applyCrop": "Ausschnitt übernehmen",
     "imageError": "Das Bild konnte nicht geladen werden. Schließe den Editor und wähle ein anderes Bild."
+  },
+  "reserved": {
+    "badge": "Reserviert",
+    "notRecruiting": "Reserviert: keine Aufnahme",
+    "theLeader": "der Anführer",
+    "title": "{{name}} ist reserviert",
+    "visitor": "Eine neue Ära hat begonnen. Diese Allianz ruht, bis ihr Anführer sie reaktiviert.",
+    "member": "Eine neue Ära hat begonnen, daher ruht deine Allianz. Name, Mitglieder, Ränge und Bilder bleiben erhalten. Schatzkammer, Kredite, Truppenverträge und Kriege gehörten zur alten Ära und wurden beendet.",
+    "stillOpen": "Weiterhin möglich: Mitglieder und Ränge ansehen, Ränge verwalten, Mitglieder entfernen, die Führung übergeben und die Allianz jederzeit verlassen – ohne den Anführer.",
+    "closed": "Gesperrt bis zur Reaktivierung: Schatzkammer und Kredite, Truppenverträge und Abgaben, Kriege, Diplomatie, Ziellisten, geteilte Aufklärung, Ankündigungen, Allianz-Chat, Anwerbung und Premium-Vorteile.",
+    "requirementsTitle": "Reaktivierung (nur Anführer)",
+    "requirementsIntro": "Der Anführer reaktiviert die Allianz in der neuen Ära, sobald er Stufe {{level}} erreicht hat und {{cost}} Gold zahlt.",
+    "reqLevel": "Stufe {{level}} erreicht",
+    "reqLevelNow": "{{current}} von {{level}}",
+    "reqGold": "{{cost}} Gold in der Hand",
+    "reqGoldNow": "{{current}} von {{cost}}",
+    "waitingForLeader": "Nur {{leader}} kann die Allianz reaktivieren. Du kannst warten oder austreten.",
+    "reactivate": "Für {{cost}} Gold reaktivieren",
+    "confirmTitle": "{{name}} reaktivieren?",
+    "confirmBody": "Dies kostet {{cost}} Gold aus deiner Hand. Die Allianzfunktionen öffnen sich wieder für alle.",
+    "confirm": "Bezahlen und reaktivieren",
+    "success": "Die Allianz ist wieder aktiv.",
+    "alreadyActive": "Die Allianz war bereits aktiv; es wurde nichts abgebucht.",
+    "error": "Die Allianz konnte nicht reaktiviert werden.",
+    "leave": "Allianz verlassen",
+    "leaveHint": "Du kannst jederzeit austreten; der Anführer muss nicht zuerst reaktivieren."
   }
 }

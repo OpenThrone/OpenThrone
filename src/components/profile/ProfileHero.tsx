@@ -4,6 +4,7 @@ import Image from '@/components/ArtworkImage';
 import frameClasses from '@/components/game/FantasyFrame.module.css';
 import PlayerIdentityLine from '@/components/player/PlayerIdentityLine';
 import { SupporterBadge } from '@/components/player/SupporterBadge';
+import { VeteranBadge } from '@/components/player/VeteranBadge';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 
 import classes from './Profile.module.css';
@@ -36,6 +37,8 @@ type ProfileHeroProps = {
   lastActive: string;
   supporterUntil?: string | null;
   badgeVisible?: boolean;
+  veteranTitle?: string | null;
+  veteranSince?: string | null;
 };
 
 /** Identity banner: framed portrait, name, lineage, rank and presence. */
@@ -51,6 +54,8 @@ export function ProfileHero({
   lastActive,
   supporterUntil,
   badgeVisible,
+  veteranTitle,
+  veteranSince,
 }: ProfileHeroProps) {
   const { t } = useTranslation('common');
   const raceKey = (race ?? 'ELF').toUpperCase();
@@ -76,6 +81,7 @@ export function ProfileHero({
           <h2 className={classes.name}>
             {name}
             <SupporterBadge supporter={{ supporterUntil, badgeVisible }} />
+            <VeteranBadge title={veteranTitle} since={veteranSince} />
           </h2>
           <div className={classes.lineage}>
             <RpgAwesomeIcon

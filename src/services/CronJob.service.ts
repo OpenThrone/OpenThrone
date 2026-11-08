@@ -4,7 +4,12 @@ import { multiplyCount } from '@/constants/gameEvents';
 import prisma from '@/lib/prisma';
 import type { Prisma, UnitType } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
+import { runAbuseDetection } from '@/services/AbuseDetection.service';
 import { AccountAnonymizationService } from '@/services/AccountAnonymization.service';
+import {
+  processDueErasures,
+  pruneErasureRecords,
+} from '@/services/AccountErasure.service';
 import { runInactivitySweep } from '@/services/AccountInactivity.service';
 import {
   AllianceLoanService,
@@ -19,9 +24,13 @@ import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
 import { KingdomMoraleService } from '@/services/KingdomMorale.service';
 import { pruneLoginTelemetry } from '@/services/LoginTelemetry.service';
 import { contractRoster, MercenaryService } from '@/services/Mercenary.service';
-import { pruneAuditLogIps } from '@/services/PrivacyRetention.service';
+import {
+  pruneAuditLogIps,
+  purgeErasedModerationRecords,
+} from '@/services/PrivacyRetention.service';
 import { getUpdatedStatus } from '@/services/User.service';
 import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
+import { CONTRACT_OWNER_ACTIVE } from '@/utils/forceContractFilters';
 import { logError } from '@/utils/logger';
 import { getEraParticipantWhere } from '@/utils/loginPolicy';
 import { calculateOverallRank } from '@/utils/utilities';
@@ -278,6 +287,17 @@ export class CronJobService {
         await runInactivitySweep({ dryRun: false });
       } catch {
         logError('Daily inactivity sweep failed');
+      }
+      // Admin-only abuse signals (#6); bounded and isolated, never throws.
+      await runAbuseDetection();
+      try {
+        // Privacy erasures whose 14-day grace period has ended, then the
+        // moderation records and request logs whose retention has lapsed.
+        await processDueErasures();
+        await purgeErasedModerationRecords();
+        await pruneErasureRecords();
+      } catch (error) {
+        logError('Daily privacy erasure pass failed', { error });
       }
 
       return {
@@ -670,7 +690,12 @@ export class CronJobService {
         const currentUser = new UserModel(row);
         // Hired and borrowed troops count toward army stats, not income.
         const contracts = await tx.forceContract.findMany({
-          where: { userId, eraId: row.currentEraId, status: 'ACTIVE' },
+          where: {
+            userId,
+            eraId: row.currentEraId,
+            status: 'ACTIVE',
+            ...CONTRACT_OWNER_ACTIVE,
+          },
         });
         const statUser = contracts.length
           ? new UserModel({

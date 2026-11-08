@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { ATTACK_TURN_INTERVAL_MINUTES } from '@/constants/Turns';
+
 const UserDataSchema = z.object({
   last_active: z.union([z.date(), z.string(), z.null()]).optional(),
 });
@@ -29,7 +31,7 @@ export class UserSessionService {
   }
 
   getTimeToNextTurn(date = new Date()): Date {
-    const ms = 1800000; // 30 minutes
+    const ms = ATTACK_TURN_INTERVAL_MINUTES * 60_000;
     return new Date(Math.ceil(date.getTime() / ms) * ms);
   }
 }

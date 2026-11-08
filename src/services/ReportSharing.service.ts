@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
+import { isAllianceActive } from '@/services/allianceStatus';
 
 export const ReportShareActionSchema = z.discriminatedUnion('action', [
   z.object({
@@ -73,7 +74,9 @@ export async function getReportSharing(logId: number, userId: number) {
       where: { user_id: userId },
       include: {
         role: true,
-        alliance: { select: { id: true, name: true, leader_id: true } },
+        alliance: {
+          select: { id: true, name: true, leader_id: true, status: true },
+        },
       },
     }),
   ]);
@@ -93,13 +96,15 @@ export async function getReportSharing(logId: number, userId: number) {
           '',
       })),
     alliances: memberships
-      .filter((m) =>
-        hasAlliancePermission(
-          m.alliance.leader_id,
-          userId,
-          m.role,
-          'share_reports',
-        ),
+      .filter(
+        (m) =>
+          isAllianceActive(m.alliance) &&
+          hasAlliancePermission(
+            m.alliance.leader_id,
+            userId,
+            m.role,
+            'share_reports',
+          ),
       )
       .map((m) => ({
         id: m.alliance.id,
@@ -179,10 +184,14 @@ export async function updateReportSharing(
           user_id: userId,
         },
       },
-      include: { role: true, alliance: { select: { leader_id: true } } },
+      include: {
+        role: true,
+        alliance: { select: { leader_id: true, status: true } },
+      },
     });
     if (
       !membership ||
+      !isAllianceActive(membership.alliance) ||
       !hasAlliancePermission(
         membership.alliance.leader_id,
         userId,

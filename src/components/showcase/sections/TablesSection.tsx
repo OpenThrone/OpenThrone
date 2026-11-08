@@ -998,6 +998,8 @@ export default function TablesSection() {
           '/home/admin/audit-logs',
           '/home/admin/analytics',
           '/home/admin/cheat-signals',
+          '/home/admin/cron-runs',
+          '/home/admin/ledgers',
         ]}
         note="Admin and moderation lists. One min-width rule by column count (compact 480, default 720, wide 1000), zebra rows and one accent hover. Paging is local here."
         wide

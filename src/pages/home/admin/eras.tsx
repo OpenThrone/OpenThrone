@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
+import FactoryRestoreEra from '@/components/admin/FactoryRestoreEra';
 import ResetCurrentEra from '@/components/admin/ResetCurrentEra';
 import ScheduleEraReset from '@/components/admin/ScheduleEraReset';
 import ConfirmationModal from '@/components/ConfirmationModal';
@@ -178,6 +179,13 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
           )}
           {current && (
             <ScheduleEraReset era={current} canSchedule={canStartEra} />
+          )}
+          {current && (
+            <FactoryRestoreEra
+              era={current}
+              canReset={canStartEra}
+              onReset={() => window.location.reload()}
+            />
           )}
           {canStartEra && (
             <>

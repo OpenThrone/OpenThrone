@@ -7,7 +7,11 @@ import { CheatDetectionService } from '@/services/CheatDetection.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp } from '@/utils/auditLogger';
 
-const Schema = z.object({ signalId: z.number().int().positive() });
+const REVIEW_NOTE_MAX_LENGTH = 1000;
+const Schema = z.object({
+  signalId: z.number().int().positive(),
+  note: z.string().trim().max(REVIEW_NOTE_MAX_LENGTH).optional(),
+});
 
 const guardedHandler = withApiGuard({
   methods: ['POST'],
@@ -25,21 +29,28 @@ async function handler(
   const staffUserId = req.session?.user?.id;
   if (!staffUserId) return res.status(401).json({ error: 'Unauthorized' });
 
-  const action = (req.url || '').split('/').pop();
+  const action = (req.url || '').split('?')[0].split('/').pop();
   if (!['acknowledge', 'dismiss', 'takeAction'].includes(action || '')) {
     return res.status(400).json({ error: 'Unknown action' });
   }
+  // Dismissing says "this is fine": the reason is recorded for the next reviewer.
+  if (action === 'dismiss' && !context.body.note)
+    return res.status(400).json({ error: 'A note is required to dismiss' });
   try {
     const result = await CheatDetectionService.applyAction(
       Number(staffUserId),
       context.body.signalId,
       action as 'acknowledge' | 'dismiss' | 'takeAction',
       getRequestIp(req),
+      context.body.note,
     );
     return res.status(200).json(result);
   } catch (error) {
     if (error instanceof Error && error.message === 'Signal not found') {
       return res.status(404).json({ error: 'Signal not found' });
+    }
+    if (error instanceof Error && error.message === 'Signal state changed') {
+      return res.status(409).json({ error: 'Signal state changed' });
     }
     throw error;
   }

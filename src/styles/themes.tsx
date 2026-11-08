@@ -74,6 +74,19 @@ const BUTTON_TONES: Record<string, { fill: string; border: string }> = {
   },
 };
 
+/**
+ * Hues whose filled badge plate fails AA with white label text in the dark
+ * scheme (Mantine filled shade); see the Badge override below.
+ */
+const BADGE_DEEPEN_HUES = new Set([
+  'yellow',
+  'lime',
+  'green',
+  'orange',
+  'teal',
+  'cyan',
+]);
+
 const rpgComponentOverrides = {
   Switch: Switch.extend({
     defaultProps: {
@@ -152,7 +165,25 @@ const rpgComponentOverrides = {
   Divider: Divider.extend({
     styles: { root: { borderColor: 'var(--ot-line)' } },
   }),
-  Badge: Badge.extend({ defaultProps: { radius: 'sm' } }),
+  Badge: Badge.extend({
+    defaultProps: { radius: 'sm' },
+    styles: (_, props) => {
+      if ((props.variant ?? 'filled') !== 'filled') return {};
+      // Filled badges carry white 11px labels. In the dark scheme Mantine's
+      // filled shade fails AA on these hues (yellow 2.5:1, lime 2.9, green
+      // 3.5, orange 3.6, teal 4.0, cyan 4.4). Only they get the deepened
+      // shade-9 plate from the filled-button tones; brand keeps its race
+      // colour, and gray/dark already pass while staying distinct surfaces.
+      const color = props.color ?? '';
+      if (!BADGE_DEEPEN_HUES.has(color)) return {};
+      return {
+        root: {
+          background: `color-mix(in srgb, var(--mantine-color-${color}-9) 75%, #000)`,
+          color: 'var(--mantine-color-white)',
+        },
+      };
+    },
+  }),
   Modal: Modal.extend({
     classNames: { title: classes.dialogTitle, header: classes.dialogHeader },
     styles: {

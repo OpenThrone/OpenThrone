@@ -4,6 +4,10 @@ import type { AlliancePermissionKey } from '@/constants/alliancePermissions';
 import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
+import {
+  assertAllianceActive,
+  isAllianceActive,
+} from '@/services/allianceStatus';
 import { getLevelFromXP } from '@/utils/utilities';
 
 export const ALLIANCE_LIST_TYPES = ['FARM', 'HIT', 'BLOCK'] as const;
@@ -59,12 +63,15 @@ export const requireAlliancePermission = async (
   userId: number,
   key: AlliancePermissionKey,
   denied: string,
+  options: { allowReserved?: boolean } = {},
 ) => {
   const alliance = await db.alliances.findUnique({
     where: { id: allianceId },
-    select: { id: true, name: true, leader_id: true },
+    select: { id: true, name: true, leader_id: true, status: true },
   });
   if (!alliance) throw new Error('Alliance not found');
+  // Lists and diplomacy are alliance features: closed while reserved (#13).
+  if (!options.allowReserved) assertAllianceActive(alliance);
   const membership = await db.alliance_memberships.findUnique({
     where: {
       unique_alliance_user: { alliance_id: allianceId, user_id: userId },
@@ -243,11 +250,21 @@ export class AllianceListsService {
       where: { user_id: userId },
       include: {
         role: true,
-        alliance: { select: { id: true, name: true, leader_id: true } },
+        alliance: {
+          select: { id: true, name: true, leader_id: true, status: true },
+        },
       },
     });
-    return memberships.filter((m) =>
-      hasAlliancePermission(m.alliance.leader_id, userId, m.role, 'view_list'),
+    // A reserved alliance's lists give no battle-page intel (#13).
+    return memberships.filter(
+      (m) =>
+        isAllianceActive(m.alliance) &&
+        hasAlliancePermission(
+          m.alliance.leader_id,
+          userId,
+          m.role,
+          'view_list',
+        ),
     );
   }
 

@@ -9,6 +9,7 @@ import AssassinateResult from '@/components/AssassinateResult';
 import AttackResult from '@/components/attackResult';
 import { BattleGameEventContext } from '@/components/battle/BattleGameEventContext';
 import { ReportShareModal } from '@/components/battle/ReportShareModal';
+import { VoidedBanner } from '@/components/battle/VoidedBanner';
 import InfiltrationResult from '@/components/InfiltrationResult';
 import IntelResult from '@/components/IntelResult';
 import MainArea from '@/components/MainArea';
@@ -64,6 +65,7 @@ const ResultsPage = ({
           />
         </Group>
       )}
+      {battle.voided && <VoidedBanner reason={battle.voided.reason} />}
       <OrnatePanel minHeight={300}>
         {battle.type !== 'attack' && (
           <BattleGameEventContext value={battle.stats?.gameEvents} />

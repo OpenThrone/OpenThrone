@@ -521,7 +521,9 @@
     "accept": "Annehmen",
     "decline": "Ablehnen",
     "loadFailed": "Anfragen konnten nicht geladen werden",
-    "responseFailed": "Antwort fehlgeschlagen"
+    "responseFailed": "Antwort fehlgeschlagen",
+    "minLevelSend": "Du musst Stufe {{level}} sein, um dieses Gold zu senden.",
+    "minLevelReceive": "Der Anfragende muss Stufe {{level}} sein, um Gold zu empfangen."
   },
   "walkthrough": {
     "offer": {
@@ -869,5 +871,12 @@
       "recovery": "Sie füllt sich alle {{minutes}} Minuten um {{amount}} auf. Eine erschöpfte Armee ist nach {{fullTime}} wieder voll ausgeruht.",
       "penalty": "Angriffe sind immer möglich, doch unter {{threshold}} Ausdauer kämpft Ihre Armee schwächer, bei null nur noch mit {{floor}} % Angriffskraft."
     }
+  },
+  "friendTransfer": {
+    "guide": "Freunde können sich Gold schicken, sobald beide die Kohlemine freigeschaltet haben. Beide Spieler müssen mindestens Stufe {{level}} sein und ein Konto haben, das mindestens {{days}} Tage alt ist. An Spieler, gegen die du in den letzten {{hours}} Stunden gekämpft hast, kannst du kein Gold senden. Für jede Überweisung fällt eine Gebühr an, die vernichtet wird."
+  },
+  "veteran": {
+    "badge": "Ära-1-Tester",
+    "since": "Spielt seit {{date}}"
   }
 }

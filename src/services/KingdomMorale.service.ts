@@ -762,7 +762,11 @@ export class KingdomMoraleService {
     const sharedAlliance = await tx.alliance_memberships.findFirst({
       where: {
         user_id: candidateId,
-        alliance: { members: { some: { user_id: userId } } },
+        // Only an ACTIVE alliance ties the two together (#13).
+        alliance: {
+          status: 'ACTIVE',
+          members: { some: { user_id: userId } },
+        },
       },
       select: { id: true },
     });
@@ -791,6 +795,8 @@ export class KingdomMoraleService {
       where: {
         defender_id: userId,
         type: 'attack',
+        // A voided battle gives its attacker no defectors (#229).
+        voidedAt: null,
         // A kingdom never receives its own defectors.
         attacker_id: { not: userId },
         timestamp: {

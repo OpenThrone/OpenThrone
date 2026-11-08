@@ -17,9 +17,22 @@ type Db = Prisma.TransactionClient;
  * is stored.
  */
 export function giftCodeFor(paymentId: number) {
-  const secret = process.env.GIFT_CODE_SECRET || process.env.NEXTAUTH_SECRET;
+  // JWT_SECRET is the secret .env.sample ships and the rest of the app (auth,
+  // sealed replays) accepts in place of NEXTAUTH_SECRET. As a fallback it is
+  // never used raw: like the replay and 2FA keys, a labelled key is derived
+  // from it. The first two secrets keep their original derivation so codes
+  // already issued under them still match.
+  const jwtSecret = process.env.JWT_SECRET;
+  const secret =
+    process.env.GIFT_CODE_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    (jwtSecret
+      ? createHmac('sha256', jwtSecret).update('ot-gift-key-v1').digest()
+      : undefined);
   if (!secret)
-    throw new Error('GIFT_CODE_SECRET or NEXTAUTH_SECRET is required');
+    throw new Error(
+      'GIFT_CODE_SECRET, NEXTAUTH_SECRET or JWT_SECRET is required',
+    );
   const raw = createHmac('sha256', secret)
     .update(`ot-gift:${paymentId}`)
     .digest('hex')

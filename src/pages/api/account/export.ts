@@ -1,132 +1,88 @@
-import prisma from '@/lib/prisma';
-import { withApiGuard } from '@/middleware/apiGuard';
+import { z } from 'zod';
 
+import { withApiGuard } from '@/middleware/apiGuard';
+import {
+  abandonExport,
+  beginExport,
+  completeExport,
+  streamAccountExport,
+} from '@/services/AccountDataExport.service';
+import { getRequestIp, logActionStrict } from '@/utils/auditLogger';
+import { isImpersonatedSession } from '@/utils/authorization';
+import { logError } from '@/utils/logger';
+import { respondPrivacyError } from '@/utils/privacyApi';
+import { requireReauth } from '@/utils/reauth';
+import { ClientGoneError, writeWithBackpressure } from '@/utils/streamWrite';
+
+const ExportRequestSchema = z
+  .object({
+    password: z.string().min(1).max(1024),
+    totpToken: z
+      .string()
+      .regex(/^\d{6}$/)
+      .optional(),
+  })
+  .strict();
+
+// The file can exceed Next's default 4 MB API response warning.
+export const config = { api: { responseLimit: false } };
+
+/**
+ * Downloads the player's own data as JSON. Re-authentication, one download per
+ * 24 hours and an audit row come first; the file is then generated and written
+ * in pieces. Banned and suspended players keep access to their own data.
+ */
 export default withApiGuard({
-  methods: ['GET'],
+  methods: ['POST'],
   authMode: 'required',
   rateLimitProfile: 'password_reset',
   allowRestrictedAccount: true,
-})(async (req, res) => {
-  const userId = Number(req.session.user.id);
-  const [user, attacks, defense, status, messages, reports, emailPreferences] =
-    await Promise.all([
-      prisma.users.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          display_name: true,
-          created_at: true,
-          last_active: true,
-          locale: true,
-          bio: true,
-          avatar: true,
-          colorScheme: true,
-        },
-      }),
-      prisma.attack_log.findMany({
-        where: { attacker_id: userId },
-        orderBy: { id: 'desc' },
-        take: 100,
-        select: {
-          id: true,
-          attacker_id: true,
-          defender_id: true,
-          timestamp: true,
-          winner: true,
-          type: true,
-          pillaged_gold: true,
-          attacker_losses_total: true,
-          defender_losses_total: true,
-        },
-      }),
-      prisma.attack_log.findMany({
-        where: { defender_id: userId },
-        orderBy: { id: 'desc' },
-        take: 100,
-        select: {
-          id: true,
-          attacker_id: true,
-          defender_id: true,
-          timestamp: true,
-          winner: true,
-          type: true,
-          pillaged_gold: true,
-          attacker_losses_total: true,
-          defender_losses_total: true,
-        },
-      }),
-      prisma.accountStatusHistory.findMany({
-        where: { user_id: userId },
-        orderBy: { id: 'desc' },
-        select: { id: true, status: true, start_date: true, end_date: true },
-      }),
-      prisma.messages.findMany({
-        where: { OR: [{ from_user_id: userId }, { to_user_id: userId }] },
-        orderBy: { id: 'desc' },
-        take: 50,
-        select: {
-          id: true,
-          subject: true,
-          body: true,
-          from_user_id: true,
-          to_user_id: true,
-          date_time: true,
-          unread: true,
-        },
-      }),
-      // Only reports authored by this user; reports against them contain other people's private statements.
-      prisma.report.findMany({
-        where: { reporterUserId: userId },
-        orderBy: { id: 'desc' },
-        select: {
-          id: true,
-          reportedUserId: true,
-          category: true,
-          status: true,
-          subject: true,
-          description: true,
-          createdAt: true,
-        },
-      }),
-      prisma.emailPreference.findUnique({
-        where: { userId },
-        select: {
-          newsEmails: true,
-          announcementEmails: true,
-          attackNotificationEmails: true,
-          unsubscribedAllAt: true,
-          updatedAt: true,
-        },
-      }),
-    ]);
-  const data = {
-    exportedAt: new Date().toISOString(),
-    user,
-    accountStatusHistory: status,
-    recentAttacks: attacks,
-    recentDefense: defense,
-    recentMessages: messages,
-    reports,
-    emailPreferences: emailPreferences ?? {
-      newsEmails: true,
-      announcementEmails: true,
-      attackNotificationEmails: false,
-      unsubscribedAllAt: null,
-    },
-    limits: { recentAttacks: 100, recentDefense: 100, recentMessages: 50 },
-  };
+  bodySchema: ExportRequestSchema,
+})(async (req, res, context) => {
   res.setHeader('Cache-Control', 'private, no-store');
-  res.setHeader('Content-Type', 'application/json');
+  const userId = Number(req.session.user.id);
+  if (isImpersonatedSession(req.session)) {
+    return res.status(403).json({ error: 'impersonated' });
+  }
+  let exportId: number | null = null;
+  try {
+    await requireReauth(userId, 'export', context.body);
+    exportId = (await beginExport(userId)).id;
+    await logActionStrict({
+      userId,
+      action: 'ACCOUNT_DATA_EXPORT',
+      ip: getRequestIp(req),
+      entityType: 'AccountDataExport',
+      entityId: exportId,
+    });
+  } catch (error) {
+    if (exportId !== null) await abandonExport(exportId);
+    if (respondPrivacyError(res, error)) return;
+    throw error;
+  }
+
+  res.status(200);
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader(
     'Content-Disposition',
     `attachment; filename="openthrone-data-${userId}.json"`,
   );
-  return res
-    .status(200)
-    .send(
-      JSON.stringify(data, (_, value) =>
-        typeof value === 'bigint' ? value.toString() : value,
-      ),
+  try {
+    const result = await streamAccountExport(userId, (chunk) =>
+      writeWithBackpressure(res, chunk),
     );
+    await completeExport(exportId, result);
+    res.end();
+  } catch (error) {
+    // Headers are already sent; cut the stream so the client sees a failure
+    // instead of a truncated file that parses as complete.
+    if (error instanceof ClientGoneError) {
+      // The player started the download and then walked away: the generation
+      // ran, so the 24-hour slot stays used. Only server-side failures refund it.
+    } else {
+      await abandonExport(exportId);
+      logError(error, { userId }, 'Account data export failed');
+    }
+    res.destroy(error instanceof Error ? error : undefined);
+  }
 });

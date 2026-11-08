@@ -388,6 +388,39 @@ describe('outbox worker empty-queue fast path', () => {
   });
 });
 
+describe('email outbox delivery slot', () => {
+  it('casts the advisory lock result so Prisma 7 can read it', async () => {
+    const runtime = require('@/services/RuntimeConfig.service');
+    const worker = require('@/server/emailOutboxWorker');
+    const configSpy = vi.spyOn(runtime, 'getRuntimeConfig').mockResolvedValue({
+      emailOutboxEnabled: true,
+      emailOutboxRatePerMinute: 60,
+    });
+    mockPrisma.emailOutbox.findFirst = vi.fn(async () => ({ id: 1 }));
+    const lockSql: string[] = [];
+    const tx = {
+      $queryRaw: vi.fn(async (strings: TemplateStringsArray) => {
+        lockSql.push(strings.join('?'));
+        return [];
+      }),
+      // A future slot ends the reservation before any delivery runs.
+      serverSetting: {
+        findUnique: vi.fn(async () => ({ value: Date.now() + 60_000 })),
+        upsert: vi.fn(),
+      },
+    };
+    mockPrisma.$transaction = vi.fn(async (callback: any) => callback(tx));
+    const stop = worker.startEmailOutboxWorker();
+    try {
+      for (let index = 0; index < 10; index++) await Promise.resolve();
+      expect(lockSql[0]).toContain('pg_advisory_xact_lock(741032, 2)::text');
+    } finally {
+      stop();
+      configSpy.mockRestore();
+    }
+  });
+});
+
 describe('SMTP transport policy', () => {
   it('does not construct a transport at module import', () => {
     expect(transportsAtImport).toBe(0);

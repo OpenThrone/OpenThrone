@@ -23,6 +23,12 @@ The daily job also grants every participating account the **Daily citizen bonus*
 
 Changing `TURN_INTERVAL_MINUTES` changes the application interval, not the external scheduler. Keep both aligned. Inspect [cron handlers](../src/pages/api/cronJobs) for current task behavior.
 
+## Run log
+
+Every authorized invocation of these endpoints is recorded in the `CronRun` table: job name, start, finish, duration, a sanitized summary (counts only; never secrets, headers or environment values) and, on failure, the truncated error message. Staff can read the log under **Administration → System → Cron run log** (`/home/admin/cron-runs`), filter it by job and status, and see the last successful run per job. Failures are highlighted.
+
+Rows older than 90 days are deleted by the daily job. Invocations that are rejected (missing or wrong scheduler secret) or disabled via the endpoint's `DO_*` flag record nothing: the job never ran, and a row per rejected tick would only add noise. A row can stay `RUNNING` for two reasons: the process died mid-run, or the start insert was lost or stalled past the 2-second log bound and could not be closed (a start insert that lands late is closed with the job's final status in the background, so this is rare). The admin page shows a `RUNNING` row older than 2 hours as **Stale / unknown**; such rows are pruned with everything else after 90 days. Log writes the job waits on are bounded to 2 seconds and fail open, so logging can never hold a job up. The in-process workers (scheduled era resets, temporary forces, Discord and email outbox) are continuous poll loops, not scheduled jobs, and are not recorded; their failures go to the server log.
+
 ## Bots
 
 Provision bots with `bun run scripts/seed-bots.ts`; configuration lives in [bot manifests](../config/bots/manifests) and [schedules](../config/bots/schedules). Set `BOT_DEFAULT_PASSWORD` for provisioning. Bots are user rows marked `isBot=true`.

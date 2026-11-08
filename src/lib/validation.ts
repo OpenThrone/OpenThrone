@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { FRIEND_TRANSFER_NOTE_MAX_LENGTH } from '@/constants/FriendTransfer';
+import { isReservedEmail, RESERVED_EMAIL_MESSAGE } from '@/utils/reservedEmail';
 
 const NOTE_TOO_LONG = `must be ${FRIEND_TRANSFER_NOTE_MAX_LENGTH} characters or fewer`;
 
@@ -11,7 +12,12 @@ export const IdQuerySchema = z.object({
 
 /** Register schema. */
 export const RegisterSchema = z.object({
-  email: z.string().email({ message: 'Invalid email format' }),
+  email: z
+    .string()
+    .email({ message: 'Invalid email format' })
+    .refine((value) => !isReservedEmail(value), {
+      message: RESERVED_EMAIL_MESSAGE,
+    }),
   password: z
     .string()
     .min(8, { message: 'Password must be at least 8 characters' }),

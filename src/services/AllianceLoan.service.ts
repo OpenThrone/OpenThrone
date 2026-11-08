@@ -23,6 +23,10 @@ import {
   transferInTx,
 } from '@/services/AllianceBank.service';
 import { postToAllianceRoom } from '@/services/AllianceRoom.service';
+import {
+  assertAllianceActive,
+  assertAllianceIdActive,
+} from '@/services/allianceStatus';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { logError } from '@/utils/logger';
 
@@ -194,20 +198,30 @@ const collectFromBorrower = async (
  * after locking the borrower's user row, then credit only `gross - diverted`.
  * Never takes more than the remaining balance. Returns the amount diverted.
  */
-export const divertIncomeToLoans = async (
+export const divertIncomeToLoansDetailed = async (
   tx: Prisma.TransactionClient,
   userId: number,
   gross: bigint,
   source: 'economy' | 'pillage',
-): Promise<bigint> => {
-  if (gross <= 0n || !tx.alliance_loans) return 0n;
+): Promise<{
+  diverted: bigint;
+  repayments: { loanId: number; allianceId: number; amount: bigint }[];
+}> => {
+  const repayments: { loanId: number; allianceId: number; amount: bigint }[] =
+    [];
+  if (gross <= 0n || !tx.alliance_loans) return { diverted: 0n, repayments };
   const incomeShare =
     (await getRuntimeConfig(tx)).allianceLoanIncomeSharePercent ??
     LOAN_INCOME_SHARE_PERCENT;
   let budget = (gross * BigInt(incomeShare)) / 100n;
-  if (budget <= 0n) return 0n;
+  if (budget <= 0n) return { diverted: 0n, repayments };
   const loans = await tx.alliance_loans.findMany({
-    where: { borrower_id: userId, status: { in: OPEN_STATUSES } },
+    // A RESERVED lender collects nothing (#13); the loan resumes on reactivation.
+    where: {
+      borrower_id: userId,
+      status: { in: OPEN_STATUSES },
+      alliance: { status: 'ACTIVE' },
+    },
     orderBy: { id: 'asc' },
   });
   let diverted = 0n;
@@ -225,9 +239,22 @@ export const divertIncomeToLoans = async (
     );
     budget -= pay;
     diverted += pay;
+    repayments.push({
+      loanId: loan.id,
+      allianceId: loan.alliance_id,
+      amount: pay,
+    });
   }
-  return diverted;
+  return { diverted, repayments };
 };
+
+export const divertIncomeToLoans = async (
+  tx: Prisma.TransactionClient,
+  userId: number,
+  gross: bigint,
+  source: 'economy' | 'pillage',
+): Promise<bigint> =>
+  (await divertIncomeToLoansDetailed(tx, userId, gross, source)).diverted;
 
 /** Throws when the user has a DEFAULTED treasury loan. */
 export const assertNoDefaultedLoan = async (
@@ -237,7 +264,12 @@ export const assertNoDefaultedLoan = async (
 ): Promise<void> => {
   if (!tx.alliance_loans) return;
   const count = await tx.alliance_loans.count({
-    where: { borrower_id: userId, status: AllianceLoanStatus.DEFAULTED },
+    // A reserved lender cannot enforce a default (#13).
+    where: {
+      borrower_id: userId,
+      status: AllianceLoanStatus.DEFAULTED,
+      alliance: { status: 'ACTIVE' },
+    },
   });
   if (count > 0) {
     throw new Error(message);
@@ -275,6 +307,16 @@ export const settleLoansOnExit = async (
     orderBy: { id: 'asc' },
   });
   if (open.length === 0) return;
+  // A reserved lender collects nothing (#13) and leaving stays possible, but
+  // leaving does not forgive: the paused debt stays on the borrower, who keeps
+  // owing it whether or not they are still a member (income diversion and the
+  // overdue sweep are keyed by loan and borrower, never by membership), and it
+  // resumes when the lender reactivates. Only the era boundary forgives.
+  const lender = await tx.alliances.findUnique({
+    where: { id: allianceId },
+    select: { status: true },
+  });
+  if (lender?.status === 'RESERVED') return;
   await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
   for (const loan of open) {
     const noteVerb = mode === 'leave' ? 'leaving' : 'removal';
@@ -460,11 +502,12 @@ export class AllianceLoanService {
     try {
       const alliance = await prisma.alliances.findFirst({
         where: { id: allianceId, leader_id: actorId },
-        select: { id: true },
+        select: { id: true, status: true },
       });
       if (!alliance) {
         throw new Error('Alliance not found or you are not the leader');
       }
+      assertAllianceActive(alliance);
       const updated = await prisma.alliances.update({
         where: { id: allianceId },
         data: v,
@@ -497,6 +540,7 @@ export class AllianceLoanService {
       return await prisma.$transaction(async (tx) => {
         await lockAllianceThenUsers(tx, v.allianceId, [v.userId]);
         const standing = await this.getStanding(tx, v.allianceId, v.userId);
+        assertAllianceActive(standing.alliance);
         if (!standing.canRequest) {
           throw new Error('You do not have permission to request gold');
         }
@@ -628,6 +672,7 @@ export class AllianceLoanService {
         if (!standing.canManageBank) {
           throw new Error('You do not have permission to manage the bank');
         }
+        if (v.decision === 'approve') assertAllianceActive(standing.alliance);
         const loan = await tx.alliance_loans.findFirst({
           where: { id: v.loanId, alliance_id: v.allianceId },
         });
@@ -749,6 +794,9 @@ export class AllianceLoanService {
     try {
       return await prisma.$transaction(async (tx) => {
         await lockAllianceThenUsers(tx, v.allianceId, [v.userId]);
+        // A reserved treasury takes no repayments (#13): the debt is paused
+        // and resumes on reactivation. Checked under the alliance lock.
+        await assertAllianceIdActive(tx, v.allianceId);
         const loan = await tx.alliance_loans.findFirst({
           where: {
             alliance_id: v.allianceId,
@@ -790,7 +838,11 @@ export class AllianceLoanService {
    */
   static async processOverdueLoans(now: Date = new Date()) {
     const overdue = await prisma.alliance_loans.findMany({
-      where: { status: { in: OPEN_STATUSES }, due_at: { lt: now } },
+      where: {
+        status: { in: OPEN_STATUSES },
+        due_at: { lt: now },
+        alliance: { status: 'ACTIVE' },
+      },
       select: { id: true, alliance_id: true, borrower_id: true },
     });
     let collected = 0;
@@ -804,6 +856,7 @@ export class AllianceLoanService {
               id: item.id,
               status: { in: OPEN_STATUSES },
               due_at: { lt: now },
+              alliance: { status: 'ACTIVE' },
             },
           });
           if (!loan) return 'skipped' as const;
@@ -889,6 +942,25 @@ export class AllianceLoanService {
 }
 
 /**
+ * Reactivation resumes the loans an alliance held while RESERVED (#13): each
+ * open loan's due date moves out by the time spent reserved, so none falls
+ * overdue (and is seized or defaulted) the moment the alliance reopens.
+ * Defaulted loans keep their dates. Call inside the reactivation transaction.
+ */
+export const resumeLoansAfterReserve = async (
+  tx: Prisma.TransactionClient,
+  allianceId: number,
+  reservedSince: Date | null,
+): Promise<void> => {
+  if (!reservedSince || !tx.alliance_loans) return;
+  await tx.$executeRaw`UPDATE alliance_loans
+    SET due_at = due_at + (now() - ${reservedSince}::timestamptz)
+    WHERE alliance_id = ${allianceId}
+      AND status = 'ACTIVE'::"AllianceLoanStatus"
+      AND due_at IS NOT NULL`;
+};
+
+/**
  * Moves one alliance's parked loan repayments into its treasury. The caller
  * must already hold the alliance row lock.
  */
@@ -946,6 +1018,8 @@ export const settleLoanTreasuryCredits = async (
     pending = await prisma.alliance_loans.findMany({
       where: {
         pending_treasury_credit: { gt: 0n },
+        // A reserved treasury takes no credits (#13); they stay parked.
+        alliance: { status: 'ACTIVE' },
         ...(allianceIds ? { alliance_id: { in: allianceIds } } : {}),
       },
       select: { alliance_id: true },
@@ -959,6 +1033,11 @@ export const settleLoanTreasuryCredits = async (
     try {
       await prisma.$transaction(async (tx) => {
         await lockAllianceThenUsers(tx, allianceId, []);
+        const lender = await tx.alliances.findUnique({
+          where: { id: allianceId },
+          select: { status: true },
+        });
+        if (lender?.status !== 'ACTIVE') return;
         await settleLoanCreditsInTx(tx, allianceId);
       });
     } catch (error) {

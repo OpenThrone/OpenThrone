@@ -3,6 +3,10 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { requireAlliancePermission } from '@/services/AllianceLists.service';
+import {
+  assertAllianceActive,
+  assertAllianceIdActive,
+} from '@/services/allianceStatus';
 
 const SendRequestSchema = z.object({
   allianceId: z.number().int().positive(),
@@ -125,9 +129,10 @@ export class AllianceDiplomacyService {
       }
       const target = await tx.alliances.findUnique({
         where: { id: targetAllianceId },
-        select: { id: true },
+        select: { id: true, status: true },
       });
       if (!target) throw new Error('Target alliance not found');
+      assertAllianceActive(target);
 
       const existing = await tx.alliance_relations.findFirst({
         where: {
@@ -182,6 +187,7 @@ export class AllianceDiplomacyService {
         await tx.alliance_relations.delete({ where: { id: relation.id } });
         return { message: 'Ally request declined' };
       }
+      await assertAllianceIdActive(tx, relation.alliance_id);
       await assertNoWar(tx, relation.alliance_id, allianceId);
       await tx.alliance_relations.update({
         where: { id: relation.id },
@@ -209,6 +215,7 @@ export class AllianceDiplomacyService {
         userId,
         'manage_allies',
         DENIED,
+        { allowReserved: true },
       );
       if (
         relation.status === 'PENDING' &&

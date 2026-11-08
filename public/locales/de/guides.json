@@ -1,0 +1,223 @@
+{
+  "index": {
+    "metaTitle": "Strategieleitfäden - OpenThrone",
+    "metaDescription": "Kostenlose OpenThrone-Strategieleitfäden: Ihr erstes Königreich, Wirtschaft und Wachstum sowie Kampf, Spionage und Ausdauer. Jede Zahl stammt aus den aktuellen Spielregeln.",
+    "title": "Strategieleitfäden",
+    "intro": "Drei praktische Leitfäden für neue und zurückkehrende Kommandanten. Jede Zahl darin wird aus den Regeln des Spiels gelesen und bleibt deshalb richtig, wenn sich die Regeln ändern.",
+    "read": "Leitfaden lesen",
+    "moreTitle": "Weiterlesen",
+    "moreText": "Alle Spielmechaniken finden Sie in der Spielanleitung, schnelle Antworten in den FAQ und die Geschichte der Reiche in den Chroniken.",
+    "cards": {
+      "first-kingdom": {
+        "title": "Ihr erstes Königreich",
+        "summary": "Womit Sie beginnen, was Sie zuerst kaufen, wie der Schutz funktioniert und wie Sie Ihr Gold in den ersten Tagen sichern."
+      },
+      "economy-and-growth": {
+        "title": "Wirtschaft und Wachstum",
+        "summary": "Woher Gold und Bürger kommen, was jedes Upgrade bringt und in welcher Reihenfolge Sie ausgeben."
+      },
+      "combat-spying-stamina": {
+        "title": "Kampf, Spionage und Ausdauer",
+        "summary": "Ziele wählen, was ein Überfall einbringt, wie Verluste und Erschöpfung wirken und wie Sie die Ausdauer Ihrer Armee einteilen."
+      }
+    }
+  },
+  "common": {
+    "tocLabel": "Auf dieser Seite",
+    "guideLabel": "Leitfaden {{number}} von {{total}}",
+    "numbersNote": "Die Zahlen auf dieser Seite stammen aus den Spielregeln und Servereinstellungen. Der Server kann sie zwischen Ären ändern; die Seite passt sich dann an.",
+    "relatedTitle": "Weiterlesen",
+    "allGuides": "Alle Leitfäden",
+    "howToPlay": "Spielanleitung",
+    "faq": "FAQ",
+    "chronicles": "Chroniken",
+    "createCommander": "Kommandanten erstellen",
+    "returnToBattle": "Zurück zur Schlacht",
+    "columns": {
+      "upgrade": "Upgrade",
+      "cost": "Kosten (Gold)",
+      "fortLevel": "Befestigungsstufe",
+      "goldPerWorker": "Gold pro Arbeiter und Zug",
+      "deposits": "Bankeinzahlungen pro Tag",
+      "citizens": "Bürger pro Tag",
+      "fortification": "Befestigung",
+      "goldPerTurn": "Gold pro Zug",
+      "hitpoints": "Trefferpunkte"
+    },
+    "free": "Kostenlos"
+  },
+  "first-kingdom": {
+    "metaTitle": "Ihr erstes Königreich: Leitfaden für Einsteiger - OpenThrone",
+    "metaDescription": "Was Sie in den ersten Tagen von OpenThrone tun sollten: Startressourcen, was Sie zuerst ausbilden, wie der Neulingsschutz funktioniert und wie Sie Ihr Gold sichern.",
+    "title": "Ihr erstes Königreich",
+    "intro": "Die ersten Tage entscheiden, wie schnell Sie wachsen. Dieser Leitfaden zeigt, womit Sie beginnen, was Sie kaufen, wie lange Sie geschützt sind und was Sie tun, bevor Sie sich abmelden.",
+    "sections": {
+      "start": {
+        "title": "Womit Sie beginnen",
+        "paragraphs": [
+          "Ein neuer Kommandant startet in einer frischen Ära normalerweise mit {{start.gold}} Gold, {{start.citizens}} Bürgern und {{start.attackTurns}} Angriffszügen. Eine Ära kann mit anderen Startwerten eingerichtet werden. Prüfen Sie daher am ersten Tag Ihre Übersicht.",
+          "Angriffszüge kehren nach einem festen Takt zurück: einer alle {{turnMinutes}} Minuten, also {{turnsPerDay}} pro Tag, auch wenn Sie nicht da sind. Ihr Königreich verdient sein Gold im selben Takt."
+        ]
+      },
+      "spend": {
+        "title": "Das erste Gold ausgeben",
+        "paragraphs": [
+          "Bürger tun nichts, bevor Sie sie ausbilden. Die Ausbildung macht aus einem Bürger eine Einheit und kostet Gold. Ein Arbeiter kostet {{costs.worker}} Gold, ein Soldat {{costs.soldier}}, eine Wache {{costs.guard}} und ein Spion {{costs.spy}}. Mit Ihrem Startgold erhalten Sie höchstens {{startBuys.workers}} Arbeiter oder {{startBuys.soldiers}} Soldaten.",
+          "Arbeiter sind die einzigen Einheiten, die Gold verdienen. Auf dem Start-Bauernhof bringt jeder Arbeiter {{income.farmPerWorker}} Gold pro Zug ein. Ein Arbeiter hat seinen Preis also nach etwa {{income.workerPaybackTurns}} Zügen wieder verdient, das sind rund {{income.workerPaybackHours}} Stunden. Ihr Herrenhaus liefert zusätzlich {{income.manorPerTurn}} Gold pro Zug, egal was Sie tun."
+        ],
+        "items": [
+          "Arbeiter steigern Ihr Einkommen und tragen wenig zu Ihrer Armee bei.",
+          "Soldaten erhöhen Ihren Angriff. Wachen erhöhen Ihre Verteidigung. Spione erkunden andere Königreiche.",
+          "Stärkere Einheiten brauchen eine stärkere Befestigung. Ein Ritter kostet zum Beispiel {{unlocks.knightCost}} Gold und braucht Befestigungsstufe {{unlocks.knightFortLevel}}."
+        ]
+      },
+      "protection": {
+        "title": "Ihre ersten Tage sind geschützt",
+        "paragraphs": [
+          "Neue Königreiche sind vor den schlimmsten Überfällen geschützt. Der Schutz endet an der ersten von drei Grenzen: {{protection.days}} Tage nach Ihrem Eintritt in die Ära, Stufe {{protection.level}} ({{protection.levelXp}} Erfahrung) oder wenn Ihre Bevölkerung über eine von der Ära abhängige Schwelle wächst. Solange Sie geschützt sind, kostet Sie ein Kampf höchstens {{protection.lossCapPercent}} % Ihrer Bevölkerung, mindestens aber eine Einheit.",
+          "Angreifen beendet Ihren Schutz nicht. Nutzen Sie die Zeit trotzdem, um Einkommen und Verteidigung aufzubauen, bevor Sie selbst plündern."
+        ]
+      },
+      "growth": {
+        "title": "Bürger sind Ihre knappste Ressource",
+        "paragraphs": [
+          "Der Wohnraum liefert Ihnen anfangs {{housing.baseDaily}} Bürger pro Tag. Anwerben bringt jedes Mal einen Bürger, bis zu {{recruitDailyCap}} pro Tag. Das Kontingent wird täglich zurückgesetzt, nutzen Sie es also.",
+          "Das erste Wohnraum-Upgrade erhöht Ihre täglichen Bürger auf {{housing.nextDaily}}. Es kostet {{housing.nextCost}} Gold und erfordert Befestigungsstufe {{housing.nextFortLevel}}."
+        ]
+      },
+      "bank": {
+        "title": "Bringen Sie Ihr Gold zur Bank",
+        "paragraphs": [
+          "Gold in Ihrer Hand kann geplündert werden. Gold in der Bank ist vor Plünderern sicher. Sie können bis zu {{bank.capPercent}} % des Goldes einzahlen, das Sie gerade halten, und der Start-Bauernhof erlaubt {{bank.depositsPerDay}} Einzahlungen pro Tag. Geben Sie aus, was Sie brauchen, und bringen Sie den Rest zur Bank, bevor Sie sich abmelden."
+        ]
+      },
+      "checklist": {
+        "title": "Ihre Checkliste für den ersten Tag",
+        "items": [
+          "Bilden Sie mit dem Großteil Ihres Startgoldes Arbeiter aus und danach ein paar Wachen.",
+          "Werben Sie bis zu Ihrem Tageskontingent von {{recruitDailyCap}} an.",
+          "Zahlen Sie Gold, das Sie nicht ausgeben müssen, bei der Bank ein.",
+          "Lesen Sie den Kampfleitfaden, bevor Sie Angriffszüge einsetzen. Sie können nur Königreiche angreifen, die höchstens {{combat.levelRange}} Stufen von Ihrer eigenen entfernt sind."
+        ]
+      }
+    },
+    "related": [
+      "economy-and-growth",
+      "combat-spying-stamina"
+    ]
+  },
+  "economy-and-growth": {
+    "metaTitle": "Leitfaden Wirtschaft und Wachstum - OpenThrone",
+    "metaDescription": "So funktioniert das Einkommen in OpenThrone: Arbeiter, Wirtschafts-Upgrades, Wohnraum, Befestigungen und die Bank, mit den genauen Kosten und Raten aus den Spielregeln.",
+    "title": "Wirtschaft und Wachstum",
+    "intro": "Gold und Bürger begrenzen alles andere. Dieser Leitfaden zeigt, woher beides kommt, was jedes Upgrade bringt und was Sie zuerst kaufen.",
+    "sections": {
+      "income": {
+        "title": "Woher das Gold kommt",
+        "paragraphs": [
+          "Alle {{turnMinutes}} Minuten verdient Ihr Königreich Gold. Jeder Arbeiter bringt den Satz Ihres Wirtschafts-Upgrades ein, und Ihre Befestigung liefert einen festen Betrag obendrauf. Einkommensboni erhöhen die Summe.",
+          "Ein Beispiel: {{income.exampleWorkers}} Arbeiter auf dem Start-Bauernhof verdienen {{income.exampleWorkerGold}} Gold pro Zug, und das Herrenhaus liefert {{income.manorPerTurn}} dazu. Das sind {{income.examplePerTurn}} Gold pro Zug oder {{income.examplePerDay}} Gold über die {{turnsPerDay}} Züge eines Tages."
+        ]
+      },
+      "economy": {
+        "title": "Wirtschafts-Upgrades",
+        "paragraphs": [
+          "Jedes Wirtschafts-Upgrade erhöht das Gold, das jeder Arbeiter verdient, und die Zahl der Bankeinzahlungen pro Tag. Viele Upgrades erfordern zudem eine Mindest-Befestigungsstufe.",
+          "Upgrades schalten auch Funktionen frei. Goldtransfers werden mit {{unlockNames.goldTransfer}} freigeschaltet, die Söldnerhalle mit {{unlockNames.mercenaryHall}}."
+        ],
+        "tableCaption": "Wirtschafts-Upgrades"
+      },
+      "housing": {
+        "title": "Wohnraum und Bürger",
+        "paragraphs": [
+          "Jeden Tag kommen Bürger an, und jeder kann ein Arbeiter oder Kämpfer werden. Wohnraum-Upgrades erhöhen, wie viele ankommen. Sie kosten Gold und erfordern wie die Wirtschafts-Upgrades eine Mindest-Befestigungsstufe."
+        ],
+        "tableCaption": "Wohnraum-Upgrades"
+      },
+      "fortifications": {
+        "title": "Befestigungen",
+        "paragraphs": [
+          "Befestigungen stärken Ihre Verteidigung und liefern jeden Zug einen festen Goldbetrag. Sie schalten außerdem höhere Einheitenstufen und viele weitere Upgrades frei. Mauern erleiden im Kampf Schaden und kosten Gold in der Reparatur.",
+          "Volks-Upgrades, die vierte Upgrade-Reihe, beginnen bei Befestigungsstufe {{racial.firstFortLevel}} und kosten für die erste Stufe {{racial.firstCost}} Gold. Goblins erreichen ihre erste Stufe bei Befestigungsstufe {{racial.goblinFirstFortLevel}}."
+        ],
+        "tableCaption": "Die ersten Befestigungsstufen"
+      },
+      "bank": {
+        "title": "Die Bank",
+        "paragraphs": [
+          "Gold in der Bank kann nicht geplündert werden. Jede Einzahlung ist auf {{bank.capPercent}} % des Goldes begrenzt, das Sie halten, und Ihre Wirtschaftsstufe bestimmt, wie viele Einzahlungen pro Tag möglich sind. Gold in Ihrer Hand kann ein Plünderer nehmen: ein Überfall nimmt höchstens {{combat.maxLootPercent}} %."
+        ]
+      },
+      "order": {
+        "title": "Was Sie in welcher Reihenfolge kaufen",
+        "items": [
+          "Zuerst Arbeiter. Zum Satz des Bauernhofs hat ein Arbeiter seine {{costs.worker}} Gold nach etwa {{income.workerPaybackTurns}} Zügen wieder verdient.",
+          "Danach Wohnraum, denn mehr Bürger pro Tag bedeuten mehr Arbeiter und Kämpfer.",
+          "Dann abwechselnd Wirtschafts- und Befestigungs-Upgrades, denn jedes schaltet das andere frei.",
+          "Eine Verteidigung, die zu Ihrer Schatzkammer passt, damit Überfälle klein bleiben."
+        ]
+      }
+    },
+    "related": [
+      "first-kingdom",
+      "combat-spying-stamina"
+    ]
+  },
+  "combat-spying-stamina": {
+    "metaTitle": "Leitfaden Kampf, Spionage und Ausdauer - OpenThrone",
+    "metaDescription": "So funktioniert der Kampf in OpenThrone: Ziele wählen, was ein Überfall einbringt, Verluste und Erschöpfung, Spionagemissionen und die Ausdauer der Armee, mit Zahlen aus den Spielregeln.",
+    "title": "Kampf, Spionage und Ausdauer",
+    "intro": "Angriffe kosten Züge, Verluste kosten Truppen, und die Ausdauer begrenzt, wie hart Sie vorgehen können. Dieser Leitfaden zeigt die Grenzen, damit Sie Überfälle planen, die sich lohnen.",
+    "sections": {
+      "targets": {
+        "title": "Ein Ziel wählen",
+        "paragraphs": [
+          "Sie können Königreiche angreifen, die höchstens {{combat.levelRange}} Stufen von Ihrer eigenen entfernt sind. Jeder Angriff setzt 1 bis {{combat.maxTurns}} Angriffszüge ein, und dasselbe Königreich dürfen Sie innerhalb von 24 Stunden höchstens {{combat.pairDailyLimit}}-mal angreifen.",
+          "Erfahren Sie die Stärke eines Ziels, bevor Sie Züge einsetzen. Schicken Sie Spione und rüsten Sie Ihre Truppen für den Druck aus, den Sie erwarten: Nahkampfangriffe treffen auf Nahkampfverteidigung, Fernangriffe auf Fernverteidigung."
+        ]
+      },
+      "loot": {
+        "title": "Was ein Sieg einbringt",
+        "paragraphs": [
+          "Ein erfolgreicher Überfall nimmt höchstens {{combat.maxLootPercent}} % des Goldes, das der Verteidiger hält. Stehende Mauern schützen die Schatzkammer: Solange die Festung unbeschädigt ist, sinkt die Grenze auf {{combat.fortShieldedLootPercent}} %, und sie steigt wieder Richtung voller Höhe, je mehr die Mauern durchbrochen werden. Gold in der Bank kann nicht genommen werden.",
+          "Neue, geschützte Königreiche zahlen deutlich weniger aus."
+        ]
+      },
+      "losses": {
+        "title": "Verluste, Verwundete und Erschöpfung",
+        "paragraphs": [
+          "Nicht jeder Verlust ist ein Todesfall. {{combat.woundedPercent}} % der in einem Kampf verlorenen Truppen sind stattdessen verwundet, und {{combat.woundedHealPercent}} % der Verwundeten kehren jeden Tag in den Dienst zurück, mindestens eine Einheit pro Gruppe. Kein einzelner Einheitenstapel verliert in einem Kampf mehr als {{combat.stackLossCapPercent}} % seiner Größe, doch jeder Stapel kann mindestens eine Einheit verlieren.",
+          "Ein Verteidiger, der immer wieder angegriffen wird, ermüdet. Ist die Garnisonserschöpfung auf dem Server eingeschaltet, können wiederholte Angriffe die Stärke eines Verteidigers an einem Tag um bis zu {{combat.fatiguePercent}} % senken."
+        ]
+      },
+      "spying": {
+        "title": "Spione und Wächter",
+        "paragraphs": [
+          "Spionagemissionen kosten ebenfalls Züge. Eine Mission dauert bis zu {{spy.missionMaxTurns}} Züge. Aufklärungsmissionen dauern bis zu {{spy.intelMaxTurns}}, Infiltrationen mindestens {{spy.infiltrationMinTurns}} und Attentate mindestens {{spy.assassinationMinTurns}} Züge.",
+          "Gegen dasselbe Ziel dürfen Sie in 24 Stunden höchstens {{spy.intelPerTargetPerDay}} Aufklärungsmissionen durchführen, und wiederholte Missionen gegen dasselbe Königreich werden im Laufe des Tages schwieriger. Ihre eigenen Spione und Wächter schützen Sie vor feindlichen Spionen.",
+          "Welche Missionen offen sind, ist eine Servereinstellung. Das Spionagemenü zeigt, was Sie gerade tun können."
+        ]
+      },
+      "stamina": {
+        "title": "Ausdauer der Armee",
+        "paragraphs": [
+          "Angriffs-Gebäudeverbesserungen senken die Ausdauer, die jeder eingesetzte Zug verbraucht, auf der höchsten Stufe um bis zu {{stamina.maxDrainReductionPercent}} %."
+        ],
+        "pacing": "Weniger, größere Angriffe sind günstiger. Ein Angriff mit {{stamina.turns}} Zügen kostet {{stamina.example}} Ausdauer, dieselben Züge als {{stamina.turns}} einzelne Ein-Zug-Angriffe kosten {{stamina.singlesExample}}."
+      },
+      "habits": {
+        "title": "Gewohnheiten ausdauernder Plünderer",
+        "items": [
+          "Erkunden Sie, bevor Sie angreifen, und lassen Sie Ziele aus, die Sie überbieten.",
+          "Setzen Sie Züge in wenigen entschlossenen Angriffen ein und lassen Sie die Ausdauer dazwischen regenerieren.",
+          "Halten Sie eine Verteidigung, die zu Ihrer Schatzkammer passt, und zahlen Sie bei der Bank ein, was Sie nicht brauchen.",
+          "Prüfen Sie nach jedem Überfall Ihre Kriegshistorie und passen Sie Ihr nächstes Ziel an."
+        ]
+      }
+    },
+    "related": [
+      "first-kingdom",
+      "economy-and-growth"
+    ]
+  }
+}

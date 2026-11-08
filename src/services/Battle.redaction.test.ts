@@ -10,7 +10,7 @@ const { redactAttackLogForViewer, redactRetestForViewer } =
 const ATTACKER_ID = 1;
 const DEFENDER_ID = 2;
 
-const attackLog = () => ({
+const attackLog = (overrides: Record<string, unknown> = {}) => ({
   id: 100,
   type: 'attack',
   timestamp: new Date('2026-10-01T00:00:00Z'),
@@ -76,6 +76,7 @@ const attackLog = () => ({
     defender_daily_gold_remaining: '123456',
     battle_contributions: { defender: { defense: 5 } },
   },
+  ...overrides,
 });
 
 const FORBIDDEN_STAT_KEYS = [
@@ -121,6 +122,27 @@ describe('redactAttackLogForViewer: attack reports', () => {
     }
   });
 
+  it('marks a voided battle for every reader with the reason, never the admin or the ledger', () => {
+    const log = attackLog({
+      voidedAt: new Date('2026-10-02T00:00:00.000Z'),
+      voidReason: 'Exploited a rule bug',
+      voidedById: 9,
+      stats: {
+        ...attackLog().stats,
+        voidLedger: { version: 1, loanRepayments: [{ loanId: 77777 }] },
+      },
+    });
+    for (const role of ['attacker', 'defender', 'shared'] as const) {
+      const out = redactAttackLogForViewer(log, role);
+      expect(out.voided).toEqual({
+        at: '2026-10-02T00:00:00.000Z',
+        reason: 'Exploited a rule bug',
+      });
+      expect(JSON.stringify(out)).not.toContain('voidLedger');
+      expect(JSON.stringify(out)).not.toContain('voidedById');
+    }
+  });
+
   it('gives a shared viewer exactly what the report shows', () => {
     const out = redactAttackLogForViewer(attackLog(), 'shared');
     expect(out).toEqual({
@@ -144,6 +166,7 @@ describe('redactAttackLogForViewer: attack reports', () => {
         race: 'HUMAN',
         experience: 20,
       },
+      voided: null,
       stats: {
         startOfAttack: {
           Attacker: {
@@ -443,6 +466,15 @@ describe('redactRetestForViewer', () => {
       newSimulationAttackerLossesTotal: 5,
       newSimulationDefenderLossesTotal: 40,
     });
+  });
+
+  it('keeps the sealed formula version label of a retest', () => {
+    expect(
+      redactRetestForViewer(
+        { ...attackRetest(), formulaVersion: 'combat-v10' },
+        'attacker',
+      ).formulaVersion,
+    ).toBe('combat-v10');
   });
 
   it('returns own-side strength to each party', () => {

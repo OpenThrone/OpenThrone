@@ -10,11 +10,12 @@ import prisma from '@/lib/prisma';
 import { getSocketIO } from '@/lib/socket';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { enforceIdempotency } from '@/middleware/idempotency';
+import { evaluateTransferPair } from '@/services/AbuseDetection.service';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
+import { friendTransferErrorBody } from '@/utils/friendTransferError';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
-import { publicErrorMessage } from '@/utils/publicError';
 
 const TransferQuerySchema = z.object({
   friendId: z.coerce.number().int().positive(),
@@ -81,6 +82,8 @@ const transferHandler = async (
     );
 
     if (result?.success) {
+      // Admin-only abuse signal (#6): cheap pair lookup, off the request path.
+      evaluateTransferPair(fromUserId, friendIdNum);
       const sender = await prisma.users.findUnique({
         where: { id: fromUserId },
         select: { display_name: true },
@@ -102,7 +105,7 @@ const transferHandler = async (
     return res.status(200).json(stringifyObj(result));
   } catch (error: any) {
     logError('Error transferring gold:', error);
-    return res.status(400).json({ error: publicErrorMessage(error) });
+    return res.status(400).json(friendTransferErrorBody(error));
   }
 };
 

@@ -7,6 +7,10 @@
   "reminderSubject": "Tu cuenta de OpenThrone: quedan 30 días",
   "notice": "Hola {{display_name}}:\n\nTu última actividad fue el {{lastActiveDate}}. Tu cuenta está programada para eliminarse el {{deletionDate}} tras un periodo de gracia de 180 días. Inicia sesión antes de esa fecha para conservarla.\n\nIniciar sesión: {{loginLink}}\nSolicitar eliminación: {{deleteLink}}",
   "reminder": "Hola {{display_name}}:\n\nTu última actividad fue el {{lastActiveDate}}. Quedan 30 días antes de la eliminación programada de tu cuenta el {{deletionDate}}. Inicia sesión para conservarla.\n\nIniciar sesión: {{loginLink}}\nSolicitar eliminación: {{deleteLink}}",
+  "relaunchNoticeSubject": "Ha comenzado una nueva era: tu cuenta de OpenThrone te espera",
+  "relaunchNotice": "Hola {{display_name}}:\n\nHa comenzado una nueva era en OpenThrone y el desarrollo está de nuevo activo. Lee la noticia: {{newsLink}}\n\nNos encantaría verte de nuevo. Inicia sesión antes del {{deletionDate}} para conservar tu cuenta: {{loginLink}}\n\nSi no lo haces, borraremos tu dirección de correo y tus datos personales. Conservaremos solo una huella irreversible para reconocerte si vuelves: vuelve a registrarte con el mismo correo dentro de dos años, confirma el enlace que te enviaremos a esa dirección y recibirás el título Probador de la Era 1, recuperarás tu fecha original de registro y podrás reclamar tu antiguo nombre.\n\n¿Prefieres borrarlo todo? Elimina tu cuenta ahora: {{deleteLink}}",
+  "relaunchReminderSubject": "Última oportunidad: ha comenzado una nueva era en OpenThrone",
+  "relaunchReminder": "Hola {{display_name}}:\n\nHa comenzado una nueva era en OpenThrone y el desarrollo está de nuevo activo. Lee la noticia: {{newsLink}}\n\nEl tiempo se agota: inicia sesión antes del {{deletionDate}} para conservar tu cuenta: {{loginLink}}\n\nDespués borraremos tu dirección de correo y tus datos personales, conservando solo una huella irreversible para reconocerte. Vuelve a registrarte con el mismo correo dentro de dos años y confirma el enlace que te enviaremos para obtener el título Probador de la Era 1, tu fecha original de registro y tu antiguo nombre.\n\nElimina tu cuenta ahora: {{deleteLink}}",
   "pageTitle": "Preferencias de correo",
   "pageDescription": "Elige qué correos de OpenThrone recibes. Los correos de seguridad y de cuenta se envían siempre.",
   "confirm": "Cancelar suscripción a esta categoría",
@@ -34,5 +38,7 @@
     "gift_3m": "Código de regalo de Patrón (90 días)",
     "gift_12m": "Código de regalo de Patrón (360 días)",
     "alliance_sponsorship": "patrocinio de alianza"
-  }
+  },
+  "veteranClaimSubject": "Bienvenido de nuevo a OpenThrone: confirma tu legado de la Era 1",
+  "veteranClaim": "Hola, {{display_name}}:\n\nEsta dirección pertenecía a una cuenta de OpenThrone de la Era 1. Para recuperar el título de Probador de la Era 1 y tu fecha de registro original, y para recuperar tu antiguo nombre visible, abre este enlace con la sesión iniciada en tu nueva cuenta en un plazo de 30 días:\n\n{{claimLink}}\n\nSi no acabas de crear una cuenta de OpenThrone con esta dirección, la ha creado otra persona: restablece su contraseña desde la página de inicio de sesión e inicia sesión para quedártela. Todavía no se ha concedido nada."
 }

@@ -84,6 +84,9 @@
       "title": "Fortifications",
       "text": "Strengthen your defenses. Higher walls mean fewer casualties when attacked."
     },
+    "transfers": {
+      "title": "Gold transfers"
+    },
     "mines": {
       "title": "Mines",
       "text": "Increase passive gold generation. Essential for long-term growth."
@@ -104,16 +107,26 @@
       "title": "Spy Operations",
       "text": "Send spies to scout enemy troop counts before committing to an attack."
     },
+    "losses": {
+      "title": "Losses",
+      "text": "Casualties fall on all of your unit levels in proportion to how many troops you field at each level, so cheap level 1 troops no longer shield your best units. Hired mercenaries still take the front line within their level."
+    },
     "stamina": {
       "title": "Stamina"
     }
   },
   "alliances": {
     "title": "Alliances",
-    "description": "No commander rules alone. Join or create an alliance for mutual protection, coordinated attacks, and shared glory."
+    "description": "No commander rules alone. Join or create an alliance for mutual protection, coordinated attacks, and shared glory.",
+    "eraReserve": "Alliances survive a new era. When an era ends every alliance becomes reserved: its name, roster, ranks and artwork are kept, but its treasury, loans, troop contracts and wars are closed and its features stay locked. Members can leave at any time. The leader reactivates the alliance in the new era by reaching level 10 and paying 10,000,000 gold (admins can change both)."
   },
   "cta": {
     "createCommander": "Create a Commander",
     "returnToBattle": "Return to Battle"
+  },
+  "yourData": {
+    "title": "Your data",
+    "description": "Settings has a Your data section: download a copy of your account and game data, or ask for your account to be erased. An erasure is confirmed by email and then waits 14 days, so you can still change your mind.",
+    "link": "Open your settings"
   }
 }

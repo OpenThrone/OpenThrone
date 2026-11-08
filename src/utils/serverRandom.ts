@@ -7,12 +7,18 @@ import {
   randomBytes,
 } from 'node:crypto';
 
+import {
+  CURRENT_COMBAT_RULESET,
+  getCombatRuleset,
+} from '@/utils/balance/combatRulesets';
 import type { RandomFn } from '@/utils/random';
 
+// The formula version names a CombatRuleset (see balance/combatRulesets.ts).
 // v7 (issue #200): assault chip taper and battle-wide casualty win quality.
 // v8: battle XP per turn tapers less above level 10.
 // v9 (#202): gear parity, troop-only chip, mercenaries take the front line.
-const COMBAT_FORMULA_VERSION = 'combat-v9';
+// v7 and v8 have no ruleset: they cannot be rebuilt, so their replays are unavailable.
+const COMBAT_FORMULA_VERSION = CURRENT_COMBAT_RULESET.version;
 const SERVER_RANDOM_ALGORITHM = 'hmac-sha256-counter-v1';
 
 type CombatDomain = 'attack' | 'spy';
@@ -42,9 +48,12 @@ function replayKey(): Buffer {
     .digest();
 }
 
-function replayContext(domain: CombatDomain): Buffer {
+function replayContext(
+  domain: CombatDomain,
+  formulaVersion: string = COMBAT_FORMULA_VERSION,
+): Buffer {
   return Buffer.from(
-    `${COMBAT_FORMULA_VERSION}\0${SERVER_RANDOM_ALGORITHM}\0${domain}`,
+    `${formulaVersion}\0${SERVER_RANDOM_ALGORITHM}\0${domain}`,
   );
 }
 
@@ -96,18 +105,23 @@ export function createCombatRandom(domain: CombatDomain): {
 
 /**
  * True for a replay sealed under an earlier combat formula (combat-vN below
- * the current one). Those battles cannot be replayed exactly, so callers
- * answer UNAVAILABLE; any other mismatch is still rejected.
+ * the current one) that has no ruleset to replay it with. Those battles cannot
+ * be replayed exactly, so callers answer UNAVAILABLE; any other mismatch is
+ * still rejected.
  */
 export function isRetiredCombatReplayVersion(version: unknown): boolean {
   const current = Number(COMBAT_FORMULA_VERSION.slice('combat-v'.length));
   const match = typeof version === 'string' && /^combat-v(\d+)$/.exec(version);
-  return Boolean(match) && Number(match && match[1]) < current;
+  return (
+    Boolean(match) &&
+    Number(match && match[1]) < current &&
+    getCombatRuleset(version) === undefined
+  );
 }
 
 function validateReplayMetadata(replay: CombatRandomReplay): void {
   if (
-    replay.formulaVersion !== COMBAT_FORMULA_VERSION ||
+    getCombatRuleset(replay.formulaVersion) === undefined ||
     replay.algorithm !== SERVER_RANDOM_ALGORITHM ||
     (replay.domain !== 'attack' && replay.domain !== 'spy')
   ) {
@@ -185,7 +199,7 @@ export function replayCombatRandom(replay: CombatRandomReplay): RandomFn {
     replayKey(),
     envelope.subarray(0, NONCE_BYTES),
   );
-  decipher.setAAD(replayContext(replay.domain));
+  decipher.setAAD(replayContext(replay.domain, replay.formulaVersion));
   decipher.setAuthTag(envelope.subarray(NONCE_BYTES, NONCE_BYTES + TAG_BYTES));
   const seed = Buffer.concat([
     decipher.update(envelope.subarray(NONCE_BYTES + TAG_BYTES)),

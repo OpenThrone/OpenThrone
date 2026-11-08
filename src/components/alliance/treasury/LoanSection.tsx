@@ -120,7 +120,13 @@ export const LoanSection = ({
         body: JSON.stringify({ allianceId, amount: value.toString() }),
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body?.error ?? 'Request failed');
+      if (!res.ok) {
+        throw new Error(
+          body?.code === 'ALLIANCE_RESERVED'
+            ? t('loan.reserved')
+            : (body?.error ?? 'Request failed'),
+        );
+      }
       alertService.success(t('loan.repaySuccess'));
       setRepayAmount(0n);
     });

@@ -13,7 +13,8 @@
     "news": "Neuigkeiten lesen",
     "password": "Passwort zurücksetzen",
     "discord": "Hilfe auf Discord",
-    "about": "Über OpenThrone"
+    "about": "Über OpenThrone",
+    "settings": "Einstellungen öffnen"
   },
   "questions": {
     "game": {
@@ -40,6 +41,9 @@
       "title": "Was prüfe ich vor einem Angriff?",
       "answer": "Prüfen Sie das Ziel, Ihre Angriffsstärke und die geplanten Angriffszüge. Spionageinformationen helfen bei der Einschätzung, doch Kämpfe können Verluste verursachen. Lesen Sie anschließend den Bericht und die Kriegshistorie, bevor Sie weitere Ressourcen einsetzen."
     },
+    "transfers": {
+      "title": "Kann ich einem Freund Gold schicken?"
+    },
     "stamina": {
       "title": "Was ist Ausdauer?"
     },
@@ -51,9 +55,17 @@
       "title": "Wie stelle ich ein vergessenes Passwort wieder her?",
       "answer": "Nutzen Sie die Seite zum Zurücksetzen des Passworts und folgen Sie den E-Mail-Anweisungen. Prüfen Sie den Spamordner, wenn keine Nachricht ankommt. Veröffentlichen Sie niemals einen Reset-Link, ein Passwort oder einen Zwei-Faktor-Code. Beschreiben Sie dem Support das Problem ohne diese Geheimnisse, falls die Wiederherstellung weiterhin scheitert."
     },
+    "data": {
+      "title": "Wie bekomme ich eine Kopie meiner Daten oder lösche mein Konto?",
+      "answer": "In den Einstellungen kannst du unter „Deine Daten“ eine Kopie deiner Daten herunterladen und die Löschung deines Kontos beantragen. Beides verlangt zuerst dein Passwort. Eine Löschung wird per E-Mail bestätigt und wartet dann 14 Tage, damit du es dir anders überlegen kannst. Die Möglichkeiten stehen allen Spielern offen, egal wo sie wohnen."
+    },
     "report": {
       "title": "Welche Angaben helfen bei einem Fehlerbericht?",
       "answer": "Nennen Sie die Seite, Ihre Aktion, das erwartete Ergebnis und das tatsächliche Verhalten. Fügen Sie die ungefähre Uhrzeit und gegebenenfalls einen Screenshot hinzu, nachdem Sie private Nachrichten, E-Mail-Adressen und andere sensible Angaben entfernt haben. Der Community-Discord und der Issue-Tracker des Repositorys sind die vom Projekt genannten Supportkanäle."
+    },
+    "allianceEra": {
+      "title": "Was passiert mit meiner Allianz, wenn eine neue Ära beginnt?",
+      "answer": "Deine Allianz bleibt bestehen, ist aber reserviert. Name, Mitglieder, Ränge und Bilder bleiben, während Schatzkammer, Kredite, Truppenverträge und Kriege mit der alten Ära enden und ihre Funktionen gesperrt bleiben. Du kannst jederzeit austreten, auch bevor der Anführer handelt. Nur der Anführer kann sie reaktivieren, sobald er in der neuen Ära Stufe 10 erreicht hat und 10.000.000 Gold zahlt."
     }
   }
 }

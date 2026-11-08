@@ -77,7 +77,8 @@
       "DECLINED": "Declined",
       "CANCELLED": "Cancelled"
     },
-    "overCap": "Loans are limited to {{cap}} gold."
+    "overCap": "Loans are limited to {{cap}} gold.",
+    "reserved": "Repayments are paused while this alliance is reserved. Your loan resumes when it is reactivated."
   },
   "settings": {
     "title": "Treasury Rules",

@@ -13,7 +13,8 @@
     "news": "Leer las noticias",
     "password": "Restablecer contraseña",
     "discord": "Ayuda en Discord",
-    "about": "Acerca de OpenThrone"
+    "about": "Acerca de OpenThrone",
+    "settings": "Abrir ajustes"
   },
   "questions": {
     "game": {
@@ -40,6 +41,9 @@
       "title": "¿Qué debo revisar antes de atacar?",
       "answer": "Revisa el objetivo, tu fuerza ofensiva y los turnos de ataque que vas a usar. La información de espionaje puede ayudarte a evaluar al objetivo, pero el combate puede causar pérdidas. Después, consulta el informe y el Historial de Guerra antes de comprometer más recursos."
     },
+    "transfers": {
+      "title": "¿Puedo enviar oro a un amigo?"
+    },
     "stamina": {
       "title": "¿Qué es la resistencia?"
     },
@@ -51,9 +55,17 @@
       "title": "¿Cómo recupero una contraseña olvidada?",
       "answer": "Usa la página de restablecimiento de contraseña y sigue las instrucciones del correo. Revisa la carpeta de spam si no llega. Nunca publiques un enlace de restablecimiento, una contraseña ni un código de doble factor. Si la recuperación sigue fallando, describe el problema al soporte sin incluir esos secretos."
     },
+    "data": {
+      "title": "¿Cómo obtengo una copia de mis datos o elimino mi cuenta?",
+      "answer": "En Ajustes, en «Tus datos», puedes descargar una copia de tus datos y pedir que se borre tu cuenta. Ambas cosas piden primero tu contraseña. Una eliminación se confirma por correo y luego espera 14 días para que puedas cambiar de opinión. Las mismas opciones están abiertas a todos los jugadores, vivan donde vivan."
+    },
     "report": {
       "title": "¿Qué información ayuda a reportar un error?",
       "answer": "Incluye la página que usabas, la acción realizada, lo que esperabas y lo que ocurrió. Añade la hora aproximada y una captura si resulta útil, después de quitar mensajes privados, correos y otros datos sensibles. El Discord de la comunidad y el registro de incidencias del repositorio son los canales de soporte indicados por el proyecto."
+    },
+    "allianceEra": {
+      "title": "¿Qué pasa con mi alianza cuando empieza una nueva era?",
+      "answer": "Tu alianza se conserva, pero queda reservada. Su nombre, miembros, rangos e imágenes permanecen, mientras que su tesorería, préstamos, contratos de tropas y guerras terminan con la era anterior y sus funciones siguen bloqueadas. Puedes abandonarla en cualquier momento, incluso antes de que el líder actúe. Solo el líder puede reactivarla, cuando haya alcanzado el nivel 10 en la nueva era y pague 10.000.000 de oro."
     }
   }
 }

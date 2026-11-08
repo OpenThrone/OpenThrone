@@ -569,6 +569,14 @@ const Index = ({
         badgeVisible={
           (users as unknown as { badgeVisible?: boolean }).badgeVisible
         }
+        veteranTitle={
+          (users as unknown as { veteranTitle?: string | null }).veteranTitle ??
+          null
+        }
+        veteranSince={
+          (users as unknown as { veteranSince?: string | null }).veteranSince ??
+          null
+        }
         race={profile?.race}
         playerClass={profile?.class}
         avatar={profile?.avatar}
@@ -595,13 +603,22 @@ const Index = ({
                   color={alliance.isLeader ? 'yellow' : undefined}
                   size="lg"
                   title={
-                    alliance.isLeader
-                      ? tAlliances('profile.leaderOf', { name: alliance.name })
-                      : undefined
+                    alliance.status === 'RESERVED'
+                      ? tAlliances('reserved.visitor')
+                      : alliance.isLeader
+                        ? tAlliances('profile.leaderOf', {
+                            name: alliance.name,
+                          })
+                        : undefined
                   }
-                  style={{ cursor: 'pointer' }}
+                  style={{
+                    cursor: 'pointer',
+                    opacity: alliance.status === 'RESERVED' ? 0.75 : 1,
+                  }}
                 >
                   {alliance.name}
+                  {alliance.status === 'RESERVED' &&
+                    ` · ${tAlliances('reserved.badge')}`}
                 </Badge>
               ))}
             </Group>

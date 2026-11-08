@@ -6,6 +6,7 @@ import {
   createCombatRandom,
   decryptCombatReplayInputs,
   encryptCombatReplayInputs,
+  isRetiredCombatReplayVersion,
   replayCombatRandom,
 } from '@/utils/serverRandom';
 
@@ -65,6 +66,27 @@ describe('private combat random streams', () => {
     expect(() =>
       replayCombatRandom({ ...replay, formulaVersion: 'unsupported-formula' }),
     ).toThrow('Unsupported combat replay');
+  });
+
+  it('answers UNAVAILABLE only for earlier versions that have no ruleset', () => {
+    expect(isRetiredCombatReplayVersion('combat-v7')).toBe(true);
+    expect(isRetiredCombatReplayVersion('combat-v8')).toBe(true);
+    // Versions with a ruleset replay.
+    expect(isRetiredCombatReplayVersion('combat-v9')).toBe(false);
+    expect(isRetiredCombatReplayVersion('combat-v10')).toBe(false);
+    // Anything else is not a retired version: it is rejected.
+    expect(isRetiredCombatReplayVersion('combat-v99')).toBe(false);
+    expect(isRetiredCombatReplayVersion('unsupported-formula')).toBe(false);
+    expect(isRetiredCombatReplayVersion(undefined)).toBe(false);
+  });
+
+  it('refuses to replay a version that has no ruleset', () => {
+    const { replay } = createCombatRandom('attack');
+    for (const formulaVersion of ['combat-v7', 'combat-v8', 'combat-v11']) {
+      expect(() => replayCombatRandom({ ...replay, formulaVersion })).toThrow(
+        'Unsupported combat replay',
+      );
+    }
   });
 
   it('keeps hidden defender inputs encrypted and restores their exact quantities', () => {

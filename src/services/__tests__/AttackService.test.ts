@@ -1,10 +1,20 @@
-import { afterAll, beforeEach, describe, expect, test, vi } from 'bun:test';
+import {
+  afterAll,
+  beforeEach,
+  describe,
+  expect,
+  spyOn,
+  test,
+  vi,
+} from 'bun:test';
 import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 
 import { levelXPArray, UnitTypes } from '@/constants';
 import type { UserUnit } from '@/lib/prisma-exports';
 import BattleResult from '@/models/BattleResult';
 import { BattleUser } from '@/models/BattleUser';
+import * as rulesetRegistry from '@/utils/balance/combatRulesets';
+import { CURRENT_COMBAT_RULESET } from '@/utils/balance/combatRulesets';
 import type { BattleGameEvents } from '@/utils/battleGameEvents';
 import type { CombatReplayEnvelope } from '@/utils/combatReplay';
 
@@ -539,6 +549,14 @@ describe('live combat persistence and replay', () => {
     expect(retest.newSimulationAttackerLossesBreakdown).toEqual(attackerDeaths);
     expect(retest.newSimulationDefenderLossesBreakdown).toEqual(defenderDeaths);
     expect(retest.wounded).toEqual(wounded);
+    // Totals compare like with like: the log stores killed + wounded.
+    expect(wounded.defender.length).toBeGreaterThan(0);
+    expect(retest.newSimulationDefenderLossesTotal).toBe(
+      log.defender_losses_total,
+    );
+    expect(retest.newSimulationAttackerLossesTotal).toBe(
+      log.attacker_losses_total,
+    );
     expect(retest.canonicalOutcome).toEqual(log.stats.canonical_outcome);
     expect(mockPrisma.users.findUnique).not.toHaveBeenCalled();
     expect(await BattleService.retestBattle(log.id)).toEqual(retest);
@@ -714,6 +732,75 @@ describe('live combat persistence and replay', () => {
     });
   }
 
+  test('combat-v10 charges losses to every unit tier and retests exactly', async () => {
+    players[1].UserUnit = player(1, [
+      { type: 'OFFENSE', level: 1, quantity: 3000 },
+      { type: 'OFFENSE', level: 2, quantity: 2000 },
+      { type: 'OFFENSE', level: 3, quantity: 1000 },
+    ]).UserUnit;
+    players[2].UserUnit = player(2, [
+      { type: 'DEFENSE', level: 1, quantity: 1500 },
+      { type: 'DEFENSE', level: 2, quantity: 1000 },
+      { type: 'DEFENSE', level: 3, quantity: 500 },
+      { type: 'WORKER', quantity: 1000 },
+    ]).UserUnit;
+    const before = structuredClone(players);
+    expect((await AttackService.executeAttack(1, 2, 10)).status).toBe(
+      'success',
+    );
+    const log = logs[0];
+    expect(parseCombatReplay(log.stats.replay).formulaVersion).toBe(
+      'combat-v10',
+    );
+    const killed: { total: number; units: UnitLoss[] } = JSON.parse(
+      log.stats.attacker_losses!,
+    );
+    const wounded: { attacker: UnitLoss[]; defender: UnitLoss[] } = JSON.parse(
+      log.stats.wounded!,
+    );
+    const levelsHit = new Set(
+      [...killed.units, ...wounded.attacker].map((unit) => unit.level),
+    );
+    // Lowest-first would have spent level 1 alone.
+    expect([...levelsHit].sort()).toEqual([1, 2, 3]);
+    expectCasualtyConservation(before[1].UserUnit, players[1].UserUnit, [
+      ...killed.units,
+      ...wounded.attacker,
+    ]);
+    const defenderKilled: { total: number; units: UnitLoss[] } = JSON.parse(
+      log.stats.defender_losses!,
+    );
+    expectCasualtyConservation(before[2].UserUnit, players[2].UserUnit, [
+      ...defenderKilled.units,
+      ...wounded.defender,
+    ]);
+    expect(
+      new Set(
+        [...defenderKilled.units, ...wounded.defender]
+          .filter((unit) => unit.type === 'DEFENSE')
+          .map((unit) => unit.level),
+      ).size,
+    ).toBeGreaterThan(1);
+
+    players = {};
+    const retest = await BattleService.retestBattle(log.id);
+    expect(retest.exactReplay).toBe(true);
+    expect(retest.formulaVersion).toBe('combat-v10');
+    expect(
+      JSON.parse(JSON.stringify(retest.newSimulationAttackerLossesBreakdown)),
+    ).toEqual(killed);
+    expect(
+      JSON.parse(JSON.stringify(retest.newSimulationDefenderLossesBreakdown)),
+    ).toEqual(defenderKilled);
+    expect(JSON.parse(JSON.stringify(retest.wounded))).toEqual(wounded);
+    expect(retest.newSimulationAttackerLossesTotal).toBe(
+      log.attacker_losses_total,
+    );
+    expect(retest.newSimulationDefenderLossesTotal).toBe(
+      log.defender_losses_total,
+    );
+  });
+
   test('legacy logs are explicitly unavailable, not falsely exact', async () => {
     logs.push({ id: 90, stats: { turns: 10 }, pillaged_gold: 12n });
     const result = await BattleService.retestBattle(90);
@@ -729,6 +816,21 @@ describe('live combat persistence and replay', () => {
     expect(result.replayMode).toBe('UNAVAILABLE');
     expect(result.exactReplay).toBe(false);
     expect(result).not.toHaveProperty('newGold');
+  });
+
+  test('a retest replays under the ruleset of its stored formula version', async () => {
+    expect((await AttackService.executeAttack(1, 2, 1)).status).toBe('success');
+    const stored = logs[0].stats.replay!.formulaVersion;
+    expect(stored).toBe(CURRENT_COMBAT_RULESET.version);
+    const picked = spyOn(rulesetRegistry, 'getCombatRuleset');
+    const result = await BattleService.retestBattle(logs[0].id);
+    expect(result.exactReplay).toBe(true);
+    expect(result.formulaVersion).toBe(stored);
+    expect(picked).toHaveBeenCalledWith(stored);
+    expect(picked.mock.results.at(-1)?.value).toBe(
+      rulesetRegistry.COMBAT_RULESETS[stored],
+    );
+    picked.mockRestore();
   });
 
   test('unsupported replay versions fail rather than silently resample', async () => {

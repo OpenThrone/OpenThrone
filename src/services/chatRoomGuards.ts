@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
+import { assertAllianceIdActive } from '@/services/allianceStatus';
 
 /**
  * Serialize room authorization and its effects with participant/permission
@@ -41,4 +42,19 @@ export async function assertAllianceChatMembership(
     });
     if (!membership) throw new Error('Not an alliance member.');
   }
+}
+
+/**
+ * Posting in an alliance room is an alliance feature: closed while the
+ * alliance is RESERVED (#13). Members keep read access and can still leave.
+ */
+export async function assertAllianceChatOpen(
+  tx: Prisma.TransactionClient,
+  roomId: number,
+): Promise<void> {
+  const room = await tx.chatRoom.findUnique({
+    where: { id: roomId },
+    select: { allianceId: true },
+  });
+  if (room?.allianceId) await assertAllianceIdActive(tx, room.allianceId);
 }

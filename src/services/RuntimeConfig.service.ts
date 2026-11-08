@@ -1,4 +1,8 @@
 import {
+  type AbuseDetectionConfig,
+  buildAbuseConfig,
+} from '@/constants/abuseSignals';
+import {
   RUNTIME_SETTING_KEYS,
   RUNTIME_SETTING_REGISTRY,
 } from '@/constants/runtimeSettings';
@@ -27,6 +31,8 @@ export interface RuntimeConfig {
   protectionLevelLimit?: number;
   depositCapPercent?: number;
   friendDailyReceivedCap?: number;
+  /** Minimum player level to send or receive a friend gold transfer (1-100). */
+  friendTransferMinLevel?: number;
   maxPendingGoldRequests?: number;
   forceMaxQuantity?: number;
   forceMaxTermDays?: number;
@@ -37,6 +43,12 @@ export interface RuntimeConfig {
   allianceMemberDailyCapMin?: number;
   allianceMemberDailyCapMax?: number;
   allianceLoanIncomeSharePercent?: number;
+  /** Level the leader must have to reactivate a reserved alliance (#13). */
+  allianceReactivationMinLevel?: number;
+  /** Gold the leader pays to reactivate a reserved alliance (#13). */
+  allianceReactivationCostGold?: number;
+  /** Admin-only abuse detection thresholds (group "abuse"). */
+  abuse: AbuseDetectionConfig;
   enableSupporter: boolean;
   enableAttacking: boolean;
   attackLevelRange: number;
@@ -167,6 +179,7 @@ export async function getRuntimeConfig(
         protectionLevelLimit: values['era.protectionLevelLimit'] as number,
         depositCapPercent: values['bank.depositCapPercent'] as number,
         friendDailyReceivedCap: values['friend.dailyReceivedCap'] as number,
+        friendTransferMinLevel: values['friend.transferMinLevel'] as number,
         maxPendingGoldRequests: values[
           'alliance.maxPendingGoldRequests'
         ] as number,
@@ -187,6 +200,13 @@ export async function getRuntimeConfig(
         allianceLoanIncomeSharePercent: values[
           'alliance.loanIncomeSharePercent'
         ] as number,
+        allianceReactivationMinLevel: values[
+          'alliance.reactivationMinLevel'
+        ] as number,
+        allianceReactivationCostGold: values[
+          'alliance.reactivationCostGold'
+        ] as number,
+        abuse: buildAbuseConfig(values),
         enableSupporter: values.ENABLE_SUPPORTER as boolean,
         enableAttacking: values.ENABLE_ATTACKING as boolean,
         attackLevelRange: values.ATTACK_LEVEL_RANGE as number,

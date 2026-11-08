@@ -156,7 +156,7 @@
     "loadError": "Daten konnten nicht geladen werden. Bitte aktualisieren Sie die Seite.",
     "empty": "Keine passenden Einträge.",
     "inactiveUsers": "Inaktive Benutzer",
-    "inactiveIntro": "Seit über 365 Tagen inaktive Konten, außer Mitarbeitern, anonymisierten und gesperrten Konten. Hinweise geben 180 Tage Schonfrist; eine Anmeldung hebt die Löschung auf.",
+    "inactiveIntro": "Konten, die seit über 365 Tagen oder seit dem unten gesetzten Stichtag inaktiv sind, außer Mitarbeitern, anonymisierten und gesperrten Konten. Hinweise geben die unten eingestellte Frist (standardmäßig 180 Tage); eine Anmeldung hebt die Löschung auf.",
     "dryRun": "Nächster Durchlauf: Vorschau",
     "dryCounts": "{{reminders}} Konten für Erinnerungen fällig; {{anonymized}} für Anonymisierung fällig; {{cancelled}} zurückgekehrt. Zahlen vor Anwendung der Einstellungen.",
     "gates": "Erinnerungen: {{reminders}}. Automatische Anonymisierung: {{anonymize}}.",
@@ -185,8 +185,8 @@
     "noticeResult": "{{noticed}} Hinweise gespeichert; {{queued}} E-Mails eingereiht; {{undeliverable}} ohne zustellbare E-Mail (Schonfrist gilt dennoch).",
     "sweepResult": "{{cancelled}} abgebrochen; {{reminders}} Erinnerungen eingereiht; {{anonymized}} anonymisiert; {{failed}} fehlgeschlagen.",
     "confirmSweep": "Durchlauf mit den aktuellen Einstellungen für Erinnerungen und Anonymisierung starten?",
-    "confirmAllNotices": "Alle berechtigten Konten ohne bisherigen Hinweis benachrichtigen? Jedes erhält 180 Tage zur Rückkehr, auch ohne zustellbare E-Mail.",
-    "confirmNotices": "{{count}} ausgewählte Konten benachrichtigen? Offene Hinweise werden übersprungen; abgebrochene starten die 180 Tage Schonfrist neu.",
+    "confirmAllNotices": "Allen übereinstimmenden Konten ohne Hinweis ({{count}}) den {{template}}-Hinweis senden? Frist {{deadline}}: Konten werden gelöscht, wenn sich der Spieler bis dann nicht angemeldet hat.",
+    "confirmNotices": "{{count}} ausgewählten Konten den {{template}}-Hinweis senden? Frist {{deadline}}: Konten werden gelöscht, wenn sich der Spieler bis dann nicht angemeldet hat.",
     "loading": "Wird geladen…",
     "alsoEmail": "Auch per E-Mail senden (Nachrichtenabonnenten)",
     "alreadySent": "Diese Nachricht hat bereits eine E-Mail-Kampagne. Keine weitere E-Mail wurde eingereiht.",
@@ -210,7 +210,32 @@
     },
     "noDeliverableEmail": "Keine zustellbare E-Mail — keine Frist gesetzt",
     "confirmNewsEmail": "Diese Nachricht veröffentlichen und E-Mails für {{count}} berechtigte Empfänger einreihen?",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "inactiveSince": "Inaktiv seit (Stichtag)",
+    "inactiveSinceHelp": "Leer = die übliche 365-Tage-Regel. Ein Datum wählt Spieler, deren letztes Spiel, letzte Anmeldung oder Erstellung davor liegt.",
+    "noticeDays": "Frist (Tage)",
+    "noticeDaysHelp": "Tage bis zur Löschung des Kontos (14–365).",
+    "template": "Vorlage",
+    "templates": {
+      "STANDARD": "Standard",
+      "ERA_RELAUNCH": "Ära-Relaunch"
+    },
+    "newsPostId": "News-Beitrags-ID",
+    "newsPostIdHelp": "Wird von der Ära-Relaunch-Vorlage verlinkt.",
+    "audienceCount": "{{count}} passende Konten. Die nächsten Hinweise nutzen die Vorlage {{template}} mit Frist {{deadline}}.",
+    "veteranRecords": "Veteranen-Einträge",
+    "veteranIntro": "Fingerabdrücke von Konten, die nach dem Ära-Relaunch gelöscht wurden. Ein unbeanspruchter, nicht abgelaufener Eintrag gewährt den Titel Ära-1-Tester und das ursprüngliche Beitrittsdatum, wenn sich dieselbe E-Mail-Adresse erneut registriert.",
+    "veteranId": "ID",
+    "veteranTitle": "Titel",
+    "veteranJoined": "Original-Beitritt",
+    "veteranRecorded": "Erfasst",
+    "veteranExpires": "Läuft ab",
+    "veteranClaimed": "Beanspruchung",
+    "veteranClaimedBy": "Beansprucht von #{{id}} am {{date}}",
+    "veteranUnclaimed": "Nicht beansprucht",
+    "veteranTitles": {
+      "ERA1_TESTER": "Ära-1-Tester"
+    }
   },
   "announcements": {
     "pageTitle": "Inhalte: Ankündigungen",

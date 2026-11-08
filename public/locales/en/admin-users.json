@@ -63,7 +63,10 @@
     "notes": "Notes",
     "operations": "Operations",
     "upgrades": "Upgrades",
-    "forces": "Mercenaries and forces"
+    "forces": "Mercenaries and forces",
+    "signals": "Abuse signals",
+    "signalsOpenFull": "Open the full abuse signals view",
+    "privacy": "Privacy"
   },
   "editor": {
     "title": "{{username}}",
@@ -79,7 +82,7 @@
     "username": "Username",
     "email": "Email",
     "status": "Account status",
-    "statusHelp": "Status is read-only here. Use the account penalty controls for status changes.",
+    "statusHelp": "Status is read-only here. Change it from Operations > Account status.",
     "accountId": "Account ID",
     "gold": "Gold on hand",
     "goldInBank": "Gold in bank",
@@ -117,7 +120,12 @@
     "locale": "Locale",
     "bio": "Bio",
     "derivedHelp": "Recalculated on save when units, items, fort, experience, race or class change.",
-    "mercenaryLocked": "Managed by mercenary contract"
+    "mercenaryLocked": "Managed by mercenary contract",
+    "veteranTitle": "Veteran title",
+    "veteranTitleNone": "None",
+    "veteranTitleERA1_TESTER": "Era 1 Tester",
+    "veteranSince": "Veteran since (original join date)",
+    "veteranSinceHelp": "ISO date of the original account's creation. Cleared when the title is removed."
   },
   "actions": {
     "edit": "Edit",
@@ -177,5 +185,75 @@
     "impersonation": "Could not start impersonation.",
     "stopImpersonation": "Could not end impersonation.",
     "stale": "This player changed since you opened the editor. Reload to see current values. Your edits were not saved."
+  },
+  "privacy": {
+    "title": "Privacy requests",
+    "intro": "Erasure requests wait 14 days after the player confirms by email. Cancelling or erasing early needs a written reason and is audited. Export downloads are listed for oversight; their content is never stored.",
+    "tabs": {
+      "label": "Request type",
+      "erasure": "Erasure requests",
+      "exports": "Data exports"
+    },
+    "columns": {
+      "player": "Player",
+      "status": "Status",
+      "requested": "Requested",
+      "scheduled": "Erases / done",
+      "detail": "Detail",
+      "actions": "Actions",
+      "completed": "Completed",
+      "size": "Size"
+    },
+    "status": {
+      "AWAITING_CONFIRMATION": "Unconfirmed",
+      "PENDING": "Grace period",
+      "COMPLETED": "Erased",
+      "CANCELLED": "Cancelled",
+      "EXPIRED": "Expired"
+    },
+    "by": {
+      "USER": "the player",
+      "ADMIN": "staff",
+      "EXPIRED": "expiry"
+    },
+    "failed": "Failed {{attempts}}x: {{error}}",
+    "expedited": "Erased early by staff (reason in the audit log)",
+    "cancelledByNoReason": "Cancelled by {{by}} (reason in the audit log)",
+    "loading": "Loading…",
+    "emptyErasure": "No erasure requests.",
+    "emptyExports": "No data exports yet.",
+    "reason": "Reason",
+    "reasonHint": "At least {{min}} characters. Recorded in the audit log.",
+    "dismiss": "Close",
+    "actions": {
+      "cancel": "Cancel",
+      "cancelTitle": "Cancel erasure for {{name}}",
+      "cancelBody": "The account is reactivated and the request is closed. Use this for a verified support request.",
+      "cancelConfirm": "Cancel erasure",
+      "expedite": "Erase now",
+      "expediteTitle": "Erase {{name}} now",
+      "expediteBody": "Skips the rest of the grace period. This cannot be undone.",
+      "expediteConfirm": "Erase now"
+    },
+    "open": {
+      "button": "Open request for a player",
+      "title": "Open an erasure request",
+      "body": "For a player who cannot sign in, after you verified their support request. The full 14-day grace period applies.",
+      "userId": "Player ID",
+      "confirm": "Open request"
+    },
+    "done": {
+      "cancel": "Erasure cancelled.",
+      "expedite": "Account erased.",
+      "open": "Request opened; the grace period has started."
+    },
+    "errors": {
+      "load": "Could not load or save. Try again.",
+      "not_pending": "That request is no longer open.",
+      "reason_required": "A reason of at least 10 characters is required.",
+      "staff_account": "Staff accounts must be closed through account actions.",
+      "already_scheduled": "That player already has an erasure scheduled.",
+      "not_found": "Player not found or already erased."
+    }
   }
 }

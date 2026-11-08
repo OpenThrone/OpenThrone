@@ -9,14 +9,11 @@ import type { BonusPointsType } from '@/lib/prisma-exports';
 import { rateLimiter } from '@/lib/rate-limiter';
 import UserModel from '@/models/Users';
 import { sendImmediate } from '@/services/Email.service';
-import { deleteUserAvatarFiles } from '@/services/PrivacyRetention.service';
-import { endSupporterBillingSoon } from '@/services/supporter/AccountBilling.service';
 import type { AvatarFraming } from '@/utils/avatarFraming';
 import { withAvatarFraming } from '@/utils/avatarFraming';
 import { logError } from '@/utils/logger';
 import { sanitizeUserForResponse } from '@/utils/sanitizeUser';
 
-import { AccountAnonymizationService } from './AccountAnonymization.service';
 import { getActiveEraStartSettings } from './Era.service';
 import {
   buildDefaultUserUpdate,
@@ -129,11 +126,6 @@ const AccountResetSchema = z.object({
 
 const DisableAccountSchema = z.object({
   password: z.string().min(1, { message: 'Password is required.' }),
-});
-
-const ForgetAccountSchema = z.object({
-  password: z.string().min(1, { message: 'Password is required.' }),
-  reason: z.string().optional(),
 });
 
 const _VacationStartSchema = z.object({
@@ -764,53 +756,6 @@ export class AccountService {
       return { message: 'Account disabled successfully.' };
     } catch (error: any) {
       logError(error, { userId }, 'Error disabling account');
-      throw error;
-    }
-  }
-
-  /**
-   * Right to be forgotten: verifies the password, then delegates to
-   * AccountAnonymizationService.anonymizeAccount (pseudonym, PII scrub,
-   * identity retention blocks, CLOSED status). No new AntiAbuseShadow
-   * deletion rows are written; retention now lives in IdentityBlock.
-   */
-  static async forgetAccount(
-    userId: number,
-    data: { password: string; reason?: string },
-  ) {
-    const validatedData = ForgetAccountSchema.parse(data);
-
-    try {
-      await prisma.$transaction(async (tx) => {
-        await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
-        const user = await tx.users.findUnique({
-          where: { id: userId },
-          select: { password_hash: true },
-        });
-
-        if (!user || !user.password_hash) {
-          throw new Error('User not found or password hash missing.');
-        }
-
-        const passwordMatches = await argon2.verify(
-          user.password_hash,
-          validatedData.password,
-        );
-        if (!passwordMatches) {
-          throw new Error('Invalid password.');
-        }
-
-        await AccountAnonymizationService.anonymizeAccount(tx, userId, {
-          reason: validatedData.reason ?? 'User requested deletion',
-          initiatedBy: 'SELF',
-        });
-      });
-      await endSupporterBillingSoon(userId, 'now');
-      await deleteUserAvatarFiles(userId);
-
-      return { message: 'Account data removed successfully.' };
-    } catch (error: any) {
-      logError(error, { userId }, 'Error forgetting account');
       throw error;
     }
   }

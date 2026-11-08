@@ -71,6 +71,7 @@ async function membershipOf(userId: number) {
           id: true,
           name: true,
           leader_id: true,
+          status: true,
           sponsorship: { select: { activeUntil: true } },
           _count: { select: { members: true } },
         },
@@ -159,7 +160,9 @@ async function stats({ locale }: CommandContext) {
   const era = await ensureActiveEra();
   const [players, battles, alliances] = await Promise.all([
     prisma.users.count({ where: await getEraParticipantWhere(era) }),
-    prisma.attack_log.count({ where: { timestamp: { gte: era.startDate } } }),
+    prisma.attack_log.count({
+      where: { voidedAt: null, timestamp: { gte: era.startDate } },
+    }),
     prisma.alliances.count(),
   ]);
   return discordText(locale, 'reply.stats', {
@@ -226,6 +229,7 @@ async function myclan(userId: number, { locale }: CommandContext) {
     select: { display_name: true },
   });
   const premium =
+    alliance.status === 'ACTIVE' &&
     !!alliance.sponsorship?.activeUntil &&
     alliance.sponsorship.activeUntil > new Date();
   return t('reply.myclan', {

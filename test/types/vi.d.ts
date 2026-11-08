@@ -10,6 +10,8 @@ declare module 'bun:test' {
     mock: (mod: string, factory: () => any) => void;
     spyOn: (obj: any, method: string) => any;
     clearAllMocks: () => void;
+    useFakeTimers: () => void;
     useRealTimers: () => void;
+    advanceTimersByTime: (ms: number) => void;
   };
 }

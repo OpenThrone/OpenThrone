@@ -2,13 +2,12 @@ import prisma from '@/lib/prisma';
 import {
   applyCancel,
   applySubscriptionDeleted,
+  applySubscriptionUpdate,
   revoke,
 } from '@/services/supporter/Entitlement.service';
 import { getPaymentProviderFor } from '@/services/supporter/PaymentProvider';
 import { getActiveAccountStatus } from '@/services/User.service';
 import { logError } from '@/utils/logger';
-
-const DELETED_EMAIL_SUFFIX = '@deleted.local';
 
 /**
  * Stops a player's subscription billing. `now` is for deleted accounts
@@ -71,6 +70,44 @@ export async function endSupporterBilling(
   return changed;
 }
 
+/**
+ * Undoes `endSupporterBilling(userId, 'period_end')` when the paid period is
+ * still running (used when an erasure request is cancelled). A subscription
+ * whose period has ended, or that the provider already closed, cannot be
+ * resumed: the player subscribes again. Returns true when renewal resumed.
+ */
+export async function resumeSupporterBilling(userId: number) {
+  const membership = await prisma.supporterMembership.findUnique({
+    where: { userId },
+  });
+  if (
+    !membership?.providerSubscriptionId ||
+    !membership.cancelAtPeriodEnd ||
+    membership.status === 'CANCELED' ||
+    membership.status === 'EXPIRED' ||
+    !membership.subscriptionPeriodEnd ||
+    membership.subscriptionPeriodEnd <= new Date()
+  )
+    return false;
+  const resumed = await getPaymentProviderFor(
+    membership.provider,
+  ).resumeSubscription(membership.providerSubscriptionId);
+  if (!resumed) return false;
+  await applySubscriptionUpdate(
+    userId,
+    membership.subscriptionPeriodEnd,
+    false,
+  );
+  return true;
+}
+
+/** Best-effort after a cancel commits; failures are logged, the player can resubscribe. */
+export const resumeSupporterBillingSoon = (userId: number) =>
+  resumeSupporterBilling(userId).catch(() => {
+    logError('Supporter billing resume failed', { userId });
+    return false;
+  });
+
 /** Best-effort call after an account action commits; the daily sweep retries. */
 export const endSupporterBillingSoon = (
   userId: number,
@@ -92,23 +129,25 @@ export async function sweepEndedAccountBilling() {
       providerSubscriptionId: { not: null },
       status: { not: 'CANCELED' },
     },
-    select: { userId: true, user: { select: { email: true } } },
+    select: { userId: true, user: { select: { anonymizedAt: true } } },
   });
   let ended = 0;
   let errors = 0;
+  const failures: { userId: number; error: unknown }[] = [];
   for (const { userId, user } of memberships) {
     try {
       const status = (await getActiveAccountStatus(userId))?.status;
-      const when = user.email.endsWith(DELETED_EMAIL_SUFFIX)
+      const when = user.anonymizedAt
         ? 'now'
         : status === 'BANNED' || status === 'CLOSED'
           ? 'period_end'
           : null;
       if (when && (await endSupporterBilling(userId, when))) ended++;
-    } catch {
+    } catch (error) {
       errors++;
-      logError('Supporter billing stop failed', { userId });
+      failures.push({ userId, error });
+      logError('Supporter billing stop failed', { userId, error });
     }
   }
-  return { ended, errors };
+  return { ended, errors, failures };
 }

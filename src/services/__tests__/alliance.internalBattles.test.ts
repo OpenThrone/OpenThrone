@@ -18,6 +18,9 @@ beforeEach(() => {
   mockPrisma.alliance_memberships = {
     findMany: vi.fn(async () => memberIds.map((user_id) => ({ user_id }))),
   };
+  mockPrisma.alliances = {
+    findUnique: vi.fn(async () => ({ status: 'ACTIVE' })),
+  };
   mockPrisma.era.findFirst = vi.fn(async () => ({ startDate: ERA_START }));
   mockPrisma.attack_log.count = vi.fn(async () => 41);
   mockPrisma.attack_log.findMany = vi.fn(async () => [
@@ -33,6 +36,16 @@ beforeEach(() => {
 });
 
 describe('alliance internal battles', () => {
+  it('is closed while the alliance is reserved', async () => {
+    mockPrisma.alliances.findUnique = vi.fn(async () => ({
+      status: 'RESERVED',
+    }));
+    await expect(
+      AllianceInternalBattlesService.list(5, { allianceId: ALLIANCE_ID }),
+    ).rejects.toThrow(/reserved/);
+    expect(mockPrisma.attack_log.findMany).not.toHaveBeenCalled();
+  });
+
   it('refuses non-members', async () => {
     await expect(
       AllianceInternalBattlesService.list(99, { allianceId: ALLIANCE_ID }),

@@ -2,6 +2,7 @@ import { Button } from '@mantine/core';
 import type { MouseEvent, ReactNode } from 'react';
 import { useState } from 'react';
 
+import VoidBattleModal from '@/components/admin/VoidBattleModal';
 import AssassinateResult from '@/components/AssassinateResult';
 import AttackResults from '@/components/attackResult';
 import { ArmyFatigueNotice } from '@/components/battle/ArmyFatigueNotice';
@@ -9,6 +10,7 @@ import { BattleGameEventContext } from '@/components/battle/BattleGameEventConte
 import { GarrisonFatigueNotice } from '@/components/battle/GarrisonFatigueNotice';
 import { ReportHeader } from '@/components/battle/ReportHeader';
 import { ReportSharingControls } from '@/components/battle/ReportSharingControls';
+import { VoidedBanner } from '@/components/battle/VoidedBanner';
 import BattleTestResults from '@/components/BattleTestResults';
 import InfiltrationResult from '@/components/InfiltrationResult';
 import IntelResult from '@/components/IntelResult';
@@ -355,6 +357,74 @@ function ReportSharingDemo() {
   );
 }
 
+const MOCK_VOID_PLAN = {
+  logId: 4412,
+  attackerName: 'Lady Morwen',
+  defenderName: 'Grukk the Vile',
+  goldMode: 'full',
+  hash: 'f'.repeat(64),
+  items: [
+    ['GOLD_ATTACKER', 'attacker', {}, '120000', '48000', 'capped', 'goldSpent'],
+    ['GOLD_DEFENDER', 'defender', {}, '120000', '120000', 'reverse'],
+    [
+      'UNITS_RESTORE',
+      'defender',
+      { type: 'DEFENSE', level: 2 },
+      '84',
+      '84',
+      'reverse',
+    ],
+    [
+      'CAPTIVE_RELEASE',
+      'defender',
+      { type: 'DEFENSE', level: 1 },
+      '12',
+      '0',
+      'not_reversed',
+      'captiveResolved',
+    ],
+    ['FORT_HP', 'defender', {}, '1900', '1900', 'reverse'],
+    ['XP', 'attacker', {}, '2400', '2400', 'reverse'],
+  ].map(([kind, side, vars, recorded, applied, status, note]) => ({
+    kind,
+    side,
+    vars,
+    recorded,
+    applied,
+    status,
+    note,
+    payload: {},
+  })),
+};
+
+/** The void dialog with a canned plan: no request reaches the API. */
+function VoidBattleDemo() {
+  const [opened, setOpened] = useState(false);
+  return (
+    <>
+      <Button variant="light" color="red" onClick={() => setOpened(true)}>
+        Void battle…
+      </Button>
+      <VoidBattleModal
+        opened={opened}
+        attackLogId={4412}
+        onClose={() => setOpened(false)}
+        onVoided={mockAction('Battle voided')}
+        request={async (body) =>
+          new Response(
+            JSON.stringify(
+              body.action === 'preview'
+                ? { plan: MOCK_VOID_PLAN }
+                : { voided: true },
+            ),
+            { status: 200 },
+          )
+        }
+      />
+    </>
+  );
+}
+
 export default function BattleReportsSection() {
   return (
     <ShowcaseSection
@@ -385,6 +455,22 @@ export default function BattleReportsSection() {
           }}
         />
         <BattleGameEventContext value={undefined} />
+      </Specimen>
+      <Specimen
+        name="Voided battle banner"
+        usedOn={[REPORT_PAGE]}
+        wide
+        note="Both participants see this above a report an administrator voided (#229). The report below it is unchanged history."
+      >
+        <VoidedBanner reason="Exploited a rule bug fixed in v0.11" />
+      </Specimen>
+      <Specimen
+        name="Admin: void battle"
+        usedOn={['/home/admin/attacks']}
+        wide
+        note="Preview, reason, confirm. The sample plan shows a capped effect and one that cannot be reversed; the buttons call a canned response, never the API."
+      >
+        <VoidBattleDemo />
       </Specimen>
       <Specimen
         name="Report sharing"

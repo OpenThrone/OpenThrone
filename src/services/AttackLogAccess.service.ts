@@ -45,11 +45,14 @@ export const ATTACK_LOG_ACL_SELECT = {
 const isPositiveId = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
 
-/** Returns the alliance IDs the user currently belongs to. */
+/**
+ * Returns the ACTIVE alliance IDs the user currently belongs to. A RESERVED
+ * alliance (#13) shares no reports until its leader reactivates it.
+ */
 export async function getCurrentAllianceIds(userId: number): Promise<number[]> {
   if (!isPositiveId(userId)) return [];
   const memberships = await prisma.alliance_memberships.findMany({
-    where: { user_id: userId },
+    where: { user_id: userId, alliance: { status: 'ACTIVE' } },
     select: { alliance_id: true },
   });
   return memberships.map((membership) => membership.alliance_id);
@@ -99,7 +102,11 @@ export async function getAttackLogViewerRole(
   }
 
   const membership = await client.alliance_memberships.findFirst({
-    where: { user_id: userId, alliance_id: { in: sharedAllianceIds } },
+    where: {
+      user_id: userId,
+      alliance_id: { in: sharedAllianceIds },
+      alliance: { status: 'ACTIVE' },
+    },
     select: { alliance_id: true },
   });
   return membership ? 'shared' : null;
@@ -621,6 +628,8 @@ export interface RedactedAttackLog {
   attackerPlayer: JsonRecord | null;
   defenderPlayer: JsonRecord | null;
   stats: JsonRecord;
+  /** Set when an administrator voided the battle (#229); never names the admin. */
+  voided?: { at: string | null; reason: string } | null;
 }
 
 /** Builds the attack log a reader in the given role may see. */
@@ -635,6 +644,8 @@ export function redactAttackLogForViewer(
     stats?: unknown;
     attackerPlayer?: unknown;
     defenderPlayer?: unknown;
+    voidedAt?: Date | string | null;
+    voidReason?: string | null;
   },
   role: AttackLogViewerRole,
 ): RedactedAttackLog {
@@ -649,6 +660,9 @@ export function redactAttackLogForViewer(
     defender_id: log.defender_id,
     attackerPlayer: pickPlayer(log.attackerPlayer),
     defenderPlayer: pickPlayer(log.defenderPlayer),
+    voided: log.voidedAt
+      ? { at: toTimestamp(log.voidedAt), reason: log.voidReason ?? '' }
+      : null,
     stats: {
       ...(type === 'attack'
         ? redactBattleStatsForViewer(stats, role)
@@ -675,7 +689,11 @@ export function redactRetestForViewer(
     exactReplay: result.exactReplay === true,
   };
   if ('formulaVersion' in result) {
-    out.formulaVersion = toOptionalNumber(result.formulaVersion);
+    // Sealed versions are labels such as 'combat-v10'; older logs carried numbers.
+    out.formulaVersion =
+      typeof result.formulaVersion === 'string'
+        ? toLabel(result.formulaVersion)
+        : toOptionalNumber(result.formulaVersion);
   }
   if ('message' in result) out.message = toLabel(result.message);
   if ('originalGold' in result)

@@ -291,5 +291,31 @@
     "cancelCrop": "Cancelar",
     "applyCrop": "Aplicar recorte",
     "imageError": "No se pudo cargar la imagen. Cierra el editor y elige otra imagen."
+  },
+  "reserved": {
+    "badge": "Reservada",
+    "notRecruiting": "Reservada: sin reclutar",
+    "theLeader": "el líder",
+    "title": "{{name}} está reservada",
+    "visitor": "Comenzó una nueva era, así que esta alianza queda en pausa hasta que su líder la reactive.",
+    "member": "Comenzó una nueva era, así que tu alianza está en pausa. Se conservan su nombre, miembros, rangos e imágenes. Su tesorería, préstamos, contratos de tropas y guerras pertenecían a la era anterior y se cerraron.",
+    "stillOpen": "Sigue disponible: ver los miembros y rangos, gestionar rangos, expulsar miembros, transferir el liderazgo y abandonar la alianza en cualquier momento sin el líder.",
+    "closed": "Cerrado hasta reactivarla: tesorería y préstamos, contratos y cuotas de tropas, guerras, diplomacia, listas de objetivos, inteligencia compartida, anuncios, chat de la alianza, reclutamiento y ventajas premium.",
+    "requirementsTitle": "Reactivación (solo el líder)",
+    "requirementsIntro": "El líder reactiva la alianza en la nueva era al alcanzar el nivel {{level}} y pagar {{cost}} de oro.",
+    "reqLevel": "Nivel {{level}} alcanzado",
+    "reqLevelNow": "{{current}} de {{level}}",
+    "reqGold": "{{cost}} de oro en mano",
+    "reqGoldNow": "{{current}} de {{cost}}",
+    "waitingForLeader": "Solo {{leader}} puede reactivar la alianza. Puedes esperar o abandonarla.",
+    "reactivate": "Reactivar por {{cost}} de oro",
+    "confirmTitle": "¿Reactivar {{name}}?",
+    "confirmBody": "Esto gasta {{cost}} de oro de tu mano. Las funciones de la alianza se reabren para todos.",
+    "confirm": "Pagar y reactivar",
+    "success": "La alianza vuelve a estar activa.",
+    "alreadyActive": "La alianza ya estaba activa; no se cobró nada.",
+    "error": "No se pudo reactivar la alianza.",
+    "leave": "Abandonar alianza",
+    "leaveHint": "Puedes abandonarla en cualquier momento; el líder no necesita reactivarla antes."
   }
 }

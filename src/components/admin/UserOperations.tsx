@@ -1,7 +1,10 @@
 import {
   Alert,
   Button,
+  Checkbox,
+  Divider,
   Group,
+  NumberInput,
   Paper,
   Stack,
   Text,
@@ -18,21 +21,63 @@ interface UserOperationsProps {
   userId: string;
   onSaved: () => void;
   isAdministrator: boolean;
+  /** Viewer holds MANAGE_ACCOUNT_STATUS (suspend, ban, reactivate). */
+  canManageStatus?: boolean;
+  /** Target's current account status, as shown on the profile tab. */
+  currentStatus?: string;
+  /** Called after a status change or erasure so the editor can refresh it. */
+  onStatusChanged?: () => void;
 }
 
-type Operation = 'password' | 'reset' | 'vacation-start' | 'vacation-end';
+type StatusOperation = 'suspend' | 'ban' | 'reactivate' | 'close' | 'erase';
+type Operation =
+  | 'password'
+  | 'reset'
+  | 'vacation-start'
+  | 'vacation-end'
+  | StatusOperation;
+
+const STATUS_OPERATIONS: readonly Operation[] = [
+  'suspend',
+  'ban',
+  'reactivate',
+  'close',
+  'erase',
+];
+const RESTRICTED_STATUSES = ['BANNED', 'SUSPENDED', 'CLOSED'];
+/** The erasure service rejects shorter reasons. */
+const ERASE_REASON_MIN = 10;
+const ERASURE_ERROR_KEYS: Record<string, string> = {
+  reason_required: 'user.erasureErrors.reason_required',
+  staff_account: 'user.erasureErrors.staff_account',
+  already_scheduled: 'user.erasureErrors.already_scheduled',
+  not_found: 'user.erasureErrors.not_found',
+};
 
 const UserOperations = ({
   userId,
   onSaved,
   isAdministrator,
+  canManageStatus = false,
+  currentStatus,
+  onStatusChanged,
 }: UserOperationsProps) => {
   const { t } = useTranslation('admin-operations');
   const [operation, setOperation] = useState<Operation | null>(null);
   const [reason, setReason] = useState('');
+  const [duration, setDuration] = useState<number | string>(7);
+  const [permanent, setPermanent] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
+
+  const open = (next: Operation) => {
+    setOperation(next);
+    setReason('');
+    setDuration(7);
+    setPermanent(true);
+    setError(null);
+  };
 
   const close = () => {
     if (pending) return;
@@ -41,12 +86,84 @@ const UserOperations = ({
     setError(null);
   };
 
+  const trimmedReason = reason.trim();
+  const durationDays =
+    typeof duration === 'number' && Number.isInteger(duration)
+      ? duration
+      : null;
+  const durationValid =
+    durationDays !== null && durationDays >= 1 && durationDays <= 3650;
+  const needsDuration =
+    operation === 'suspend' || (operation === 'ban' && !permanent);
+  const reasonRequired =
+    operation === 'suspend' ||
+    operation === 'ban' ||
+    operation === 'close' ||
+    operation === 'erase';
+  const reasonMin = operation === 'erase' ? ERASE_REASON_MIN : 1;
+  const confirmBlocked =
+    !operation ||
+    (reasonRequired && trimmedReason.length < reasonMin) ||
+    (needsDuration && !durationValid);
+
+  const statusPayload = (numericId: number) => {
+    const reasonValue = trimmedReason || undefined;
+    switch (operation) {
+      case 'suspend':
+        return {
+          userId: numericId,
+          action: 'SUSPENDED',
+          duration: durationDays ?? undefined,
+          reason: reasonValue,
+        };
+      case 'ban':
+        return {
+          userId: numericId,
+          action: 'BANNED',
+          duration: permanent ? undefined : (durationDays ?? undefined),
+          reason: reasonValue,
+        };
+      case 'close':
+        return { userId: numericId, action: 'CLOSED', reason: reasonValue };
+      default:
+        return { userId: numericId, action: 'ACTIVE', reason: reasonValue };
+    }
+  };
+
+  const successFor = (op: Operation, data: Record<string, unknown>) => {
+    switch (op) {
+      case 'password':
+        return t('user.passwordResult');
+      case 'reset':
+        return t('user.accountResetResult', {
+          newUserId: data.newUserId ?? t('user.unknown'),
+        });
+      case 'vacation-start':
+        return t('user.vacationStarted');
+      case 'vacation-end':
+        return t('user.vacationEnded');
+      case 'suspend':
+        return t('user.suspendResult', { count: durationDays ?? 0 });
+      case 'ban':
+        return permanent
+          ? t('user.banPermanentResult')
+          : t('user.banResult', { count: durationDays ?? 0 });
+      case 'close':
+        return t('user.closeResult');
+      case 'erase':
+        return t('user.eraseResult');
+      default:
+        return t('user.reactivateResult');
+    }
+  };
+
   const confirm = async () => {
     const numericId = Number(userId);
     if (!Number.isSafeInteger(numericId) || numericId <= 0 || !operation) {
       setError(t('user.invalidTarget'));
       return;
     }
+    if (confirmBlocked) return;
     setPending(true);
     setError(null);
     setResult(null);
@@ -55,13 +172,19 @@ const UserOperations = ({
       let payload: Record<string, unknown> = { userId: numericId };
       if (operation === 'reset') {
         endpoint = '/api/admin/account-reset';
-        payload = { ...payload, reason: reason.trim() || undefined };
+        payload = { ...payload, reason: trimmedReason || undefined };
       } else if (operation.startsWith('vacation-')) {
         endpoint = '/api/admin/vacation';
         payload = {
           ...payload,
           action: operation === 'vacation-start' ? 'start' : 'end',
         };
+      } else if (operation === 'erase') {
+        endpoint = '/api/admin/privacy/erasure';
+        payload = { action: 'open', userId: numericId, reason: trimmedReason };
+      } else if (STATUS_OPERATIONS.includes(operation)) {
+        endpoint = '/api/admin/account-action';
+        payload = statusPayload(numericId);
       }
 
       const response = await fetch(endpoint, {
@@ -71,25 +194,26 @@ const UserOperations = ({
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
+        const erasureKey =
+          operation === 'erase' && typeof data.error === 'string'
+            ? ERASURE_ERROR_KEYS[data.error]
+            : undefined;
         throw new Error(
-          typeof data.error === 'string' ? data.error : t('user.requestFailed'),
+          erasureKey
+            ? t(erasureKey)
+            : typeof data.error === 'string'
+              ? data.error
+              : t('user.requestFailed'),
         );
       }
 
-      const successMessage =
-        operation === 'password'
-          ? t('user.passwordResult')
-          : operation === 'reset'
-            ? t('user.accountResetResult', {
-                newUserId: data.newUserId ?? t('user.unknown'),
-              })
-            : operation === 'vacation-start'
-              ? t('user.vacationStarted')
-              : t('user.vacationEnded');
+      const successMessage = successFor(operation, data);
+      const changedStatus = STATUS_OPERATIONS.includes(operation);
       setResult(successMessage);
       setOperation(null);
       setReason('');
       onSaved();
+      if (changedStatus) onStatusChanged?.();
       alertService.notify('success', successMessage, {
         title: t('user.actionComplete'),
       });
@@ -106,6 +230,15 @@ const UserOperations = ({
 
   const actionTitle = operation ? t(`user.confirm.${operation}.title`) : '';
   const actionMessage = operation ? t(`user.confirm.${operation}.message`) : '';
+  const isRestricted =
+    currentStatus !== undefined && RESTRICTED_STATUSES.includes(currentStatus);
+  const showStatusControls = canManageStatus || isAdministrator;
+  const confirmTone =
+    operation === 'password' ||
+    operation === 'vacation-end' ||
+    operation === 'reactivate'
+      ? 'primary'
+      : 'destructive';
 
   return (
     <>
@@ -117,7 +250,7 @@ const UserOperations = ({
           <Group align="stretch" wrap="wrap">
             <Button
               variant="default"
-              onClick={() => setOperation('password')}
+              onClick={() => open('password')}
               disabled={pending}
             >
               {t('user.passwordAction')}
@@ -126,21 +259,21 @@ const UserOperations = ({
               <>
                 <Button
                   color="red"
-                  onClick={() => setOperation('reset')}
+                  onClick={() => open('reset')}
                   disabled={pending}
                 >
                   {t('user.accountResetAction')}
                 </Button>
                 <Button
                   variant="default"
-                  onClick={() => setOperation('vacation-start')}
+                  onClick={() => open('vacation-start')}
                   disabled={pending}
                 >
                   {t('user.vacationStartAction')}
                 </Button>
                 <Button
                   variant="default"
-                  onClick={() => setOperation('vacation-end')}
+                  onClick={() => open('vacation-end')}
                   disabled={pending}
                 >
                   {t('user.vacationEndAction')}
@@ -148,6 +281,70 @@ const UserOperations = ({
               </>
             )}
           </Group>
+          {showStatusControls && (
+            <>
+              <Divider
+                label={t('user.statusHeading')}
+                labelPosition="left"
+                mt="xs"
+              />
+              <Text size="sm" c="dimmed">
+                {t('user.statusDescription', {
+                  status: currentStatus ?? t('user.unknown'),
+                })}
+              </Text>
+              <Group align="stretch" wrap="wrap">
+                {canManageStatus && (
+                  <>
+                    <Button
+                      variant="default"
+                      onClick={() => open('suspend')}
+                      disabled={pending}
+                    >
+                      {t('user.suspendAction')}
+                    </Button>
+                    <Button
+                      color="red"
+                      onClick={() => open('ban')}
+                      disabled={pending}
+                    >
+                      {t('user.banAction')}
+                    </Button>
+                    {isRestricted && (
+                      <Button
+                        variant="default"
+                        onClick={() => open('reactivate')}
+                        disabled={pending}
+                      >
+                        {t('user.reactivateAction')}
+                      </Button>
+                    )}
+                  </>
+                )}
+                {isAdministrator && (
+                  <>
+                    {currentStatus !== 'CLOSED' && (
+                      <Button
+                        variant="default"
+                        onClick={() => open('close')}
+                        disabled={pending}
+                      >
+                        {t('user.closeAction')}
+                      </Button>
+                    )}
+                    <Button
+                      color="red"
+                      variant="outline"
+                      onClick={() => open('erase')}
+                      disabled={pending}
+                    >
+                      {t('user.eraseAction')}
+                    </Button>
+                  </>
+                )}
+              </Group>
+            </>
+          )}
           {result && <Alert color="green">{result}</Alert>}
           {error && (
             <Alert color="red" role="alert" title={t('user.errorTitle')}>
@@ -163,23 +360,47 @@ const UserOperations = ({
         onConfirm={confirm}
         title={actionTitle}
         message={actionMessage}
-        type={
-          operation === 'password' || operation === 'vacation-end'
-            ? 'primary'
-            : 'destructive'
-        }
+        type={confirmTone}
         confirmText={t('user.confirmAction')}
         cancelText={t('user.cancel')}
         isLoading={pending}
-        confirmDisabled={!operation}
+        confirmDisabled={confirmBlocked}
       >
-        {operation === 'reset' && (
+        {operation === 'ban' && (
+          <Checkbox
+            label={t('user.permanentLabel')}
+            checked={permanent}
+            onChange={(event) => setPermanent(event.currentTarget.checked)}
+          />
+        )}
+        {needsDuration && (
+          <NumberInput
+            label={t('user.durationLabel')}
+            description={t('user.durationHelp')}
+            min={1}
+            max={3650}
+            allowDecimal={false}
+            value={duration}
+            onChange={setDuration}
+            error={durationValid ? undefined : t('user.durationInvalid')}
+            required
+          />
+        )}
+        {(operation === 'reset' ||
+          (operation && STATUS_OPERATIONS.includes(operation))) && (
           <Textarea
             label={t('user.reasonLabel')}
-            description={t('user.reasonOptional')}
+            description={
+              operation === 'erase'
+                ? t('user.reasonMin', { count: ERASE_REASON_MIN })
+                : reasonRequired
+                  ? t('user.reasonRequired')
+                  : t('user.reasonOptional')
+            }
+            required={reasonRequired}
             value={reason}
             onChange={(event) => setReason(event.currentTarget.value)}
-            maxLength={500}
+            maxLength={operation === 'erase' ? 500 : 1000}
             autosize
             minRows={2}
             maxRows={5}

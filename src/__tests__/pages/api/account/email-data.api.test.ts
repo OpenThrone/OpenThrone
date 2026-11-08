@@ -20,7 +20,6 @@ const guardSpy = vi
   );
 const preferencesHandler =
   require('@/pages/api/account/email-preferences').default;
-const exportHandler = require('@/pages/api/account/export').default;
 
 const options = guardSpy.mock.calls.map((call) => call[0]);
 guardSpy.mockRestore();
@@ -52,25 +51,14 @@ beforeEach(() => {
       ...update,
     })),
   };
-  mockPrisma.attack_log.findMany = vi
-    .fn()
-    .mockResolvedValue([{ id: 1, pillaged_gold: 100n }]);
-  mockPrisma.accountStatusHistory = { findMany: vi.fn().mockResolvedValue([]) };
-  mockPrisma.messages = { findMany: vi.fn().mockResolvedValue([]) };
-  mockPrisma.report = { findMany: vi.fn().mockResolvedValue([]) };
 });
-describe('self-service email preferences and data export', () => {
-  it('requires authentication and limits requests on both endpoints', () => {
+describe('self-service email preferences', () => {
+  it('requires authentication and limits requests', () => {
     expect(options).toEqual([
       expect.objectContaining({
         authMode: 'required',
         rateLimitProfile: 'public_read',
         methods: ['GET', 'PUT'],
-      }),
-      expect.objectContaining({
-        authMode: 'required',
-        rateLimitProfile: 'password_reset',
-        methods: ['GET'],
       }),
     ]);
   });
@@ -123,38 +111,6 @@ describe('self-service email preferences and data export', () => {
       expect(failed.status).toHaveBeenCalledWith(422);
     }
     expect(mockPrisma.emailPreference.upsert).toHaveBeenCalledTimes(1);
-  });
-  it('exports only owned records with explicit safe selects, an attachment and bigint serialization', async () => {
-    const res = response();
-    await exportHandler(request('GET'), res);
-    expect(mockPrisma.users.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 9 } }),
-    );
-    const userSelect = mockPrisma.users.findUnique.mock.calls[0][0].select;
-    expect(userSelect).not.toHaveProperty('password');
-    expect(userSelect).not.toHaveProperty('twoFactorSecret');
-    expect(mockPrisma.messages.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { OR: [{ from_user_id: 9 }, { to_user_id: 9 }] },
-        take: 50,
-      }),
-    );
-    expect(mockPrisma.report.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { reporterUserId: 9 } }),
-    );
-    expect(
-      mockPrisma.report.findMany.mock.calls[0][0].select,
-    ).not.toHaveProperty('assignedToUserId');
-    expect(
-      mockPrisma.accountStatusHistory.findMany.mock.calls[0][0].select,
-    ).not.toHaveProperty('admin_id');
-    expect(res.setHeader).toHaveBeenCalledWith(
-      'Content-Disposition',
-      'attachment; filename="openthrone-data-9.json"',
-    );
-    const data = JSON.parse(res.send.mock.calls[0][0]);
-    expect(data.recentAttacks[0].pillaged_gold).toBe('100');
-    expect(data.emailPreferences.newsEmails).toBe(true);
   });
 });
 

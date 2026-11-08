@@ -241,3 +241,49 @@ describe('startNewEra repeated while a rollover runs', () => {
     expect(await prisma.userEra.count({ where: { eraId } })).toBe(50);
   });
 });
+
+describe('startNewEra keeps alliances (#13)', () => {
+  test('reserves every alliance instead of deleting it, with roster and treasury handled', async () => {
+    const { ids } = await seedEra(20);
+    const alliance = await prisma.alliances.create({
+      data: {
+        name: 'Survivors',
+        leader_id: ids[0],
+        gold_in_bank: 9_000_000n,
+        alliance_roles: { create: { name: 'Member' } },
+      },
+      include: { alliance_roles: true },
+    });
+    await prisma.alliance_memberships.createMany({
+      data: ids.slice(0, 5).map((user_id) => ({
+        alliance_id: alliance.id,
+        user_id,
+        role_id: alliance.alliance_roles[0]!.id,
+      })),
+    });
+
+    const newEra = await startNewEra();
+
+    const after = await prisma.alliances.findUniqueOrThrow({
+      where: { id: alliance.id },
+    });
+    expect(after).toMatchObject({
+      name: 'Survivors',
+      leader_id: ids[0],
+      status: 'RESERVED',
+      status_era_id: newEra.id,
+      // The treasury is old-era gold, discarded like every player's gold.
+      gold_in_bank: 0n,
+    });
+    expect(
+      await prisma.alliance_memberships.count({
+        where: { alliance_id: alliance.id },
+      }),
+    ).toBe(5);
+    expect(
+      await prisma.alliance_roles.count({
+        where: { alliance_id: alliance.id },
+      }),
+    ).toBe(1);
+  });
+});

@@ -99,4 +99,8 @@ export class MockProvider implements PaymentProvider {
   async cancelSubscription() {
     return true;
   }
+
+  async resumeSubscription() {
+    return true;
+  }
 }

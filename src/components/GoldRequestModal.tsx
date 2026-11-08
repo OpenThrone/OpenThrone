@@ -14,7 +14,10 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { FRIEND_TRANSFER_NOTE_MAX_LENGTH } from '@/constants/FriendTransfer';
+import {
+  FRIEND_TRANSFER_NOTE_MAX_LENGTH,
+  parseFriendTransferLevelError,
+} from '@/constants/FriendTransfer';
 import { useUser } from '@/context/users';
 import { GoldRequestSchema } from '@/lib/validation';
 import { getCompleteFriendTransferConfig } from '@/services/Config.service';
@@ -77,7 +80,17 @@ export function GoldRequestModal({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || t('goldRequests.requestFailed'));
+        const levelError = parseFriendTransferLevelError(errorData);
+        throw new Error(
+          levelError
+            ? t(
+                levelError.role === 'send'
+                  ? 'goldTransfer.requestLevelFriend'
+                  : 'goldTransfer.requestLevelSelf',
+                { level: levelError.minLevel },
+              )
+            : errorData.error || t('goldRequests.requestFailed'),
+        );
       }
 
       forceUpdate();

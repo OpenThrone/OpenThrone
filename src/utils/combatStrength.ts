@@ -1,7 +1,9 @@
-import { BattleUpgrades, ItemTypes, UnitTypes } from '@/constants';
+import { UnitTypes } from '@/constants';
 import type { BattleFormation, PerUnitCombatStats } from '@/types/combat';
 import type { UnitType } from '@/types/typings';
 
+import type { CombatRuleset } from './balance/combatRuleset';
+import { CURRENT_COMBAT_RULESET } from './balance/combatRulesets';
 import { getRaceIdentity } from './balance/v5Combat';
 
 interface CombatStrengthUnit {
@@ -43,6 +45,8 @@ export interface CombatStrengthOptions {
   unitLevels?: readonly number[];
   limit?: number;
   collateralFallback?: boolean;
+  /** Rules to compute under; defaults to the current combat ruleset. */
+  ruleset?: CombatRuleset;
 }
 
 type CalculatedStrength = PerUnitCombatStats;
@@ -89,8 +93,12 @@ function statsOf(value: Partial<CalculatedStrength>): CalculatedStrength {
   return stats;
 }
 
-function roleMultiplier(user: CombatStrengthUser, type: UnitType): number {
-  const race = getRaceIdentity(user.race);
+function roleMultiplier(
+  user: CombatStrengthUser,
+  type: UnitType,
+  ruleset: CombatRuleset,
+): number {
+  const race = getRaceIdentity(user.race, ruleset.race);
   switch (type) {
     case 'OFFENSE':
       return (1 + (user.attackBonus ?? 0) / 100) * race.offenseMultiplier;
@@ -146,6 +154,7 @@ function allocate(
   type: UnitType,
   options: CombatStrengthOptions,
 ): Allocation[] {
+  const ruleset = options.ruleset ?? CURRENT_COMBAT_RULESET;
   const roster = new Map<string, CombatStrengthUnit>();
   const partial: CombatStrengthUnit[] = [];
   const add = (unit: CombatStrengthUnit, mercenary: boolean) => {
@@ -154,7 +163,7 @@ function allocate(
       (options.unitLevels && !options.unitLevels.includes(unit.level))
     )
       return;
-    const info = UnitTypes.find(
+    const info = ruleset.units.find(
       (entry) => entry.type === unit.type && entry.level === unit.level,
     );
     if (
@@ -208,7 +217,7 @@ function allocate(
     const count = Math.min(unit.quantity, remaining);
     if (!count) continue;
     remaining -= count;
-    const info = UnitTypes.find(
+    const info = ruleset.units.find(
       (entry) => entry.type === unit.type && entry.level === unit.level,
     )!;
     const baseStats = statsOf(info);
@@ -241,7 +250,7 @@ function allocate(
   for (const group of groups) {
     if (!group.forceContractId) continue;
     for (const kit of group.forceEquipment ?? []) {
-      const item = ItemTypes.find(
+      const item = ruleset.items.find(
         (entry) =>
           entry.usage === type &&
           entry.type === kit.type &&
@@ -264,12 +273,14 @@ function allocate(
     user.structure_upgrades?.find((upgrade) => upgrade.type === 'ARMORY')
       ?.level ?? 1;
   for (const slot of ITEM_SLOTS) {
-    const items = ItemTypes.filter(
-      (item) =>
-        item.usage === type &&
-        item.type === slot &&
-        (item.armoryLevel ?? 0) <= armoryLevel,
-    ).sort((a, b) => b.level - a.level || a.id.localeCompare(b.id));
+    const items = ruleset.items
+      .filter(
+        (item) =>
+          item.usage === type &&
+          item.type === slot &&
+          (item.armoryLevel ?? 0) <= armoryLevel,
+      )
+      .sort((a, b) => b.level - a.level || a.id.localeCompare(b.id));
     for (const item of items) {
       let available = inventory.get(`${item.type}:${item.level}`) ?? 0;
       for (let index = 0; available > 0 && index < groups.length; index++) {
@@ -302,10 +313,12 @@ function allocate(
   const siegeLevel =
     user.structure_upgrades?.find((upgrade) => upgrade.type === 'OFFENSE')
       ?.level ?? 0;
-  const upgrades = BattleUpgrades.filter(
-    (upgrade) =>
-      upgrade.type === type && (upgrade.SiegeUpgradeLevel ?? 0) <= siegeLevel,
-  ).sort((a, b) => b.level - a.level);
+  const upgrades = ruleset.battleUpgrades
+    .filter(
+      (upgrade) =>
+        upgrade.type === type && (upgrade.SiegeUpgradeLevel ?? 0) <= siegeLevel,
+    )
+    .sort((a, b) => b.level - a.level);
   for (const upgrade of upgrades) {
     const coverage = upgrade.unitsCovered || 1;
     let available = (upgradeInventory.get(upgrade.level) ?? 0) * coverage;
@@ -324,7 +337,8 @@ function allocate(
     }
   }
 
-  const requestedMultiplier = options.multiplier ?? roleMultiplier(user, type);
+  const requestedMultiplier =
+    options.multiplier ?? roleMultiplier(user, type, ruleset);
   const multiplier = Number.isFinite(requestedMultiplier)
     ? Math.max(0, requestedMultiplier)
     : 0;
@@ -350,7 +364,10 @@ function allocate(
     (type === 'DEFENSE' || type === 'SENTRY')
   ) {
     for (const civilianType of ['CITIZEN', 'WORKER'] as const) {
-      const civilianGroups = allocate(user, civilianType, { multiplier });
+      const civilianGroups = allocate(user, civilianType, {
+        multiplier,
+        ruleset,
+      });
       for (const group of civilianGroups) {
         for (const key of STAT_KEYS) {
           group.baseStats[key] *= 0.1;

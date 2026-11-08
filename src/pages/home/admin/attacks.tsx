@@ -1,5 +1,6 @@
 import {
   Alert,
+  Badge,
   Button,
   Group,
   Loader,
@@ -20,6 +21,8 @@ import { useEffect, useRef, useState } from 'react';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import CombatDetails from '@/components/admin/CombatDetails';
+import VoidBattleModal from '@/components/admin/VoidBattleModal';
+import { useUser } from '@/context/users';
 import type { adminCombatDetails } from '@/utils/adminCombat';
 import { logError } from '@/utils/logger';
 
@@ -33,9 +36,15 @@ interface Attack {
   pillaged_gold: string | null;
   attacker_losses_total: number | null;
   defender_losses_total: number | null;
+  voidedAt: string | null;
+  voidReason: string | null;
 }
 export default function AttacksPage() {
   const { t } = useTranslation('admin-activity');
+  const { t: tBattle } = useTranslation('battle');
+  const { user } = useUser();
+  const isAdministrator = (user?.staffRoles ?? []).includes('ADMINISTRATOR');
+  const [voiding, setVoiding] = useState(false);
   const router = useRouter();
   const detailHeading = useRef<HTMLHeadingElement>(null);
   const [player, setPlayer] = useState('');
@@ -211,7 +220,14 @@ export default function AttacksPage() {
                 <Table.Tbody>
                   {data.logs.map((log) => (
                     <Table.Tr key={log.id}>
-                      <Table.Td>#{log.id}</Table.Td>
+                      <Table.Td>
+                        #{log.id}{' '}
+                        {log.voidedAt && (
+                          <Badge color="gray" variant="light">
+                            {tBattle('void.badge')}
+                          </Badge>
+                        )}
+                      </Table.Td>
                       <Table.Td>
                         {log.timestamp
                           ? new Date(log.timestamp).toLocaleString()
@@ -276,10 +292,28 @@ export default function AttacksPage() {
                 <Title order={2} ref={detailHeading} tabIndex={-1}>
                   {t('attackNumber', { id: selected })}
                 </Title>
-                <Button variant="default" onClick={() => setSelected(null)}>
-                  {t('closeDetails')}
-                </Button>
+                <Group>
+                  {isAdministrator &&
+                    detail?.type === 'attack' &&
+                    !detail.voidedAt && (
+                      <Button
+                        color="red"
+                        variant="light"
+                        onClick={() => setVoiding(true)}
+                      >
+                        {tBattle('void.action')}
+                      </Button>
+                    )}
+                  <Button variant="default" onClick={() => setSelected(null)}>
+                    {t('closeDetails')}
+                  </Button>
+                </Group>
               </Group>
+              {detail?.voidedAt && (
+                <Alert color="gray" title={tBattle('void.bannerTitle')}>
+                  {tBattle('void.banner', { reason: detail.voidReason ?? '' })}
+                </Alert>
+              )}
               {detailError ? (
                 <Alert color="red" role="alert">
                   {t('loadError')}{' '}
@@ -296,6 +330,14 @@ export default function AttacksPage() {
                 <Loader aria-label={t('loading')} />
               )}
             </Stack>
+            <VoidBattleModal
+              opened={voiding}
+              attackLogId={selected}
+              onClose={() => setVoiding(false)}
+              onVoided={() => {
+                setRetry((v) => v + 1);
+              }}
+            />
           </section>
         )}
       </Stack>
@@ -309,6 +351,7 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
       'home',
       'navigation',
       'admin-activity',
+      'battle',
     ])),
   },
 });

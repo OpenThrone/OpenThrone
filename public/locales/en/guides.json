@@ -1,0 +1,223 @@
+{
+  "index": {
+    "metaTitle": "Strategy Guides - OpenThrone",
+    "metaDescription": "Free OpenThrone strategy guides: your first kingdom, economy and growth, and combat, spying and stamina. Every figure is read from the live game rules.",
+    "title": "Strategy Guides",
+    "intro": "Three practical guides for new and returning commanders. Every number in them is read from the game's own rules, so they stay true when the rules change.",
+    "read": "Read the guide",
+    "moreTitle": "More to read",
+    "moreText": "For the full list of mechanics see How to Play, for quick answers see the FAQ, and for the story of the realms see the Chronicles.",
+    "cards": {
+      "first-kingdom": {
+        "title": "Your First Kingdom",
+        "summary": "What you start with, what to buy first, how protection works and how to keep your gold safe in the first days."
+      },
+      "economy-and-growth": {
+        "title": "Economy and Growth",
+        "summary": "Where gold and citizens come from, what each upgrade adds, and the order in which to spend."
+      },
+      "combat-spying-stamina": {
+        "title": "Combat, Spying and Stamina",
+        "summary": "Choosing targets, what a raid pays, how losses and fatigue work, and how to pace your army's stamina."
+      }
+    }
+  },
+  "common": {
+    "tocLabel": "On this page",
+    "guideLabel": "Guide {{number}} of {{total}}",
+    "numbersNote": "Figures on this page come from the game's rules and server settings. The server may change them between eras, and the page updates when it does.",
+    "relatedTitle": "Keep reading",
+    "allGuides": "All guides",
+    "howToPlay": "How to Play",
+    "faq": "FAQ",
+    "chronicles": "Chronicles",
+    "createCommander": "Create a Commander",
+    "returnToBattle": "Return to Battle",
+    "columns": {
+      "upgrade": "Upgrade",
+      "cost": "Cost (gold)",
+      "fortLevel": "Fortification level",
+      "goldPerWorker": "Gold per Worker per turn",
+      "deposits": "Bank deposits per day",
+      "citizens": "Citizens per day",
+      "fortification": "Fortification",
+      "goldPerTurn": "Gold per turn",
+      "hitpoints": "Hitpoints"
+    },
+    "free": "Free"
+  },
+  "first-kingdom": {
+    "metaTitle": "Your First Kingdom: A Beginner's Guide - OpenThrone",
+    "metaDescription": "What to do in the first days of OpenThrone: your starting resources, what to train first, how new-player protection works and how to keep your gold safe.",
+    "title": "Your First Kingdom",
+    "intro": "The first days decide how quickly you grow. This guide covers what you start with, what to buy, how long you are protected and what to do before you log off.",
+    "sections": {
+      "start": {
+        "title": "What you start with",
+        "paragraphs": [
+          "A new commander in a fresh era normally begins with {{start.gold}} gold, {{start.citizens}} citizens and {{start.attackTurns}} attack turns. An era can be set up with different starting values, so check your overview on the first day.",
+          "Attack turns return on a clock: one every {{turnMinutes}} minutes, or {{turnsPerDay}} a day, even while you are away. Your kingdom earns its gold on the same clock."
+        ]
+      },
+      "spend": {
+        "title": "Spending your first gold",
+        "paragraphs": [
+          "Citizens do nothing until you train them. Training turns a citizen into a unit and costs gold. A Worker costs {{costs.worker}} gold, a Soldier {{costs.soldier}}, a Guard {{costs.guard}} and a Spy {{costs.spy}}. Your starting gold buys at most {{startBuys.workers}} Workers, or {{startBuys.soldiers}} Soldiers.",
+          "Workers are the only unit that earns gold. On the starting Farm each Worker brings in {{income.farmPerWorker}} gold every turn, so a Worker repays its price in about {{income.workerPaybackTurns}} turns, roughly {{income.workerPaybackHours}} hours. Your Manor adds {{income.manorPerTurn}} gold per turn whatever you do."
+        ],
+        "items": [
+          "Workers grow your income and add little to your army.",
+          "Soldiers raise your attack. Guards raise your defense. Spies scout other kingdoms.",
+          "Stronger units need a stronger fortification. A Knight, for example, costs {{unlocks.knightCost}} gold and needs fortification level {{unlocks.knightFortLevel}}."
+        ]
+      },
+      "protection": {
+        "title": "Your first days are protected",
+        "paragraphs": [
+          "New kingdoms are shielded from the worst of a raid. Protection ends at the first of three limits: {{protection.days}} days after you join the era, level {{protection.level}} ({{protection.levelXp}} experience), or your population growing past a threshold that depends on the era. While you are protected, one battle can cost you at most {{protection.lossCapPercent}}% of your population, with a minimum of one unit.",
+          "Attacking does not end your protection, but use the time to build income and a defense before you start raiding."
+        ]
+      },
+      "growth": {
+        "title": "Citizens are your slowest resource",
+        "paragraphs": [
+          "Housing gives you {{housing.baseDaily}} citizen a day to begin with. Recruiting adds one citizen each time, up to {{recruitDailyCap}} a day. The allowance resets every day, so use it.",
+          "The first Housing upgrade raises your daily citizens to {{housing.nextDaily}}. It costs {{housing.nextCost}} gold and needs fortification level {{housing.nextFortLevel}}."
+        ]
+      },
+      "bank": {
+        "title": "Keep your gold in the Bank",
+        "paragraphs": [
+          "Gold in your hand can be plundered. Gold in the Bank is safe from raiders. You may deposit up to {{bank.capPercent}}% of the gold you are holding, and the starting Farm allows {{bank.depositsPerDay}} deposits a day. Spend what you need, then bank the rest before you log off."
+        ]
+      },
+      "checklist": {
+        "title": "Your first-day checklist",
+        "items": [
+          "Train Workers with most of your starting gold, then add a few Guards.",
+          "Recruit up to your daily allowance of {{recruitDailyCap}}.",
+          "Bank any gold you do not need to spend.",
+          "Read the combat guide before you spend attack turns. You can only attack kingdoms within {{combat.levelRange}} levels of your own."
+        ]
+      }
+    },
+    "related": [
+      "economy-and-growth",
+      "combat-spying-stamina"
+    ]
+  },
+  "economy-and-growth": {
+    "metaTitle": "Economy and Growth Guide - OpenThrone",
+    "metaDescription": "How income works in OpenThrone: Workers, Economy upgrades, Housing, fortifications and the Bank, with the exact costs and rates from the game rules.",
+    "title": "Economy and Growth",
+    "intro": "Gold and citizens limit everything else. This guide shows where each comes from, what every upgrade adds and what to buy first.",
+    "sections": {
+      "income": {
+        "title": "Where gold comes from",
+        "paragraphs": [
+          "Every {{turnMinutes}} minutes your kingdom earns gold. Each Worker brings in the rate of your Economy upgrade, and your fortification adds a flat amount on top. Income bonuses raise the total.",
+          "For example, {{income.exampleWorkers}} Workers on the starting Farm earn {{income.exampleWorkerGold}} gold a turn, and the Manor adds {{income.manorPerTurn}}. That is {{income.examplePerTurn}} gold a turn, or {{income.examplePerDay}} gold over the {{turnsPerDay}} turns of a day."
+        ]
+      },
+      "economy": {
+        "title": "Economy upgrades",
+        "paragraphs": [
+          "Each Economy upgrade raises the gold every Worker earns and the number of Bank deposits you may make per day. Many upgrades also need a minimum fortification level.",
+          "Upgrades open features too. Gold transfers unlock with the {{unlockNames.goldTransfer}}, and the mercenary hall with the {{unlockNames.mercenaryHall}}."
+        ],
+        "tableCaption": "Economy upgrades"
+      },
+      "housing": {
+        "title": "Housing and citizens",
+        "paragraphs": [
+          "Citizens arrive every day, and each one can become a Worker or a fighter. Housing upgrades raise how many arrive. They cost gold and, like Economy upgrades, need a minimum fortification level."
+        ],
+        "tableCaption": "Housing upgrades"
+      },
+      "fortifications": {
+        "title": "Fortifications",
+        "paragraphs": [
+          "Fortifications strengthen your defense and add a flat amount of gold every turn. They also open higher unit levels and many other upgrades. Walls take damage in battle and cost gold to repair.",
+          "Racial upgrades, the fourth upgrade track, open at fortification level {{racial.firstFortLevel}} and cost {{racial.firstCost}} gold for the first tier. Goblins reach their first tier at fortification level {{racial.goblinFirstFortLevel}}."
+        ],
+        "tableCaption": "First fortification levels"
+      },
+      "bank": {
+        "title": "The Bank",
+        "paragraphs": [
+          "Gold in the Bank cannot be plundered. Each deposit is limited to {{bank.capPercent}}% of the gold you are holding, and your Economy level sets how many deposits you may make a day. Gold you keep in hand is gold a raider can take: one raid takes at most {{combat.maxLootPercent}}%."
+        ]
+      },
+      "order": {
+        "title": "What to buy, in order",
+        "items": [
+          "Workers first. At the Farm rate a Worker repays its {{costs.worker}} gold in about {{income.workerPaybackTurns}} turns.",
+          "Housing next, because more citizens a day means more Workers and fighters.",
+          "Economy and fortification upgrades in turn, since each unlocks the other.",
+          "A defense that matches your treasury, so raids stay small."
+        ]
+      }
+    },
+    "related": [
+      "first-kingdom",
+      "combat-spying-stamina"
+    ]
+  },
+  "combat-spying-stamina": {
+    "metaTitle": "Combat, Spying and Stamina Guide - OpenThrone",
+    "metaDescription": "How combat works in OpenThrone: picking targets, what a raid pays, casualties and fatigue, spy missions and army stamina, with figures from the game rules.",
+    "title": "Combat, Spying and Stamina",
+    "intro": "Attacks cost turns, losses cost troops and stamina caps how hard you can push. This guide covers the limits so you can plan raids that pay.",
+    "sections": {
+      "targets": {
+        "title": "Choosing a target",
+        "paragraphs": [
+          "You can attack kingdoms within {{combat.levelRange}} levels of your own. Each attack commits 1 to {{combat.maxTurns}} attack turns, and you may attack the same kingdom at most {{combat.pairDailyLimit}} times in any 24 hours.",
+          "Learn a target's strength before you commit turns. Send spies, and equip your troops for the pressure you expect: melee attacks meet melee defense, and ranged attacks meet ranged defense."
+        ]
+      },
+      "loot": {
+        "title": "What a win pays",
+        "paragraphs": [
+          "One successful raid takes at most {{combat.maxLootPercent}}% of the gold the defender is holding. Standing walls shield the treasury: while the fort is undamaged the cap falls to {{combat.fortShieldedLootPercent}}%, and it rises toward the full amount as the walls are breached. Gold in the Bank cannot be taken.",
+          "New, protected kingdoms pay out far less."
+        ]
+      },
+      "losses": {
+        "title": "Casualties, wounded and fatigue",
+        "paragraphs": [
+          "Not every casualty is a death. {{combat.woundedPercent}}% of the troops lost in a battle are wounded instead, and {{combat.woundedHealPercent}}% of the wounded return to duty each day, at least one unit per group. No single unit stack loses more than {{combat.stackLossCapPercent}}% of its size in one battle, except that any stack can lose at least one unit.",
+          "A defender who is attacked again and again tires. When the server has garrison fatigue switched on, repeated attacks can cut a defender's power by up to {{combat.fatiguePercent}}% in a day."
+        ]
+      },
+      "spying": {
+        "title": "Spies and sentries",
+        "paragraphs": [
+          "Spy missions spend turns as well. A mission takes up to {{spy.missionMaxTurns}} turns. Intel missions take up to {{spy.intelMaxTurns}}, infiltrations at least {{spy.infiltrationMinTurns}} and assassinations at least {{spy.assassinationMinTurns}}.",
+          "You can run at most {{spy.intelPerTargetPerDay}} intel missions against one target in 24 hours, and repeated missions against the same kingdom get harder as the day goes on. Your own spies and sentries defend you against enemy spies.",
+          "Which missions are open is a server setting, so the Spy menu shows what you can do right now."
+        ]
+      },
+      "stamina": {
+        "title": "Army stamina",
+        "paragraphs": [
+          "Offense structure upgrades cut the stamina each committed turn drains, by up to {{stamina.maxDrainReductionPercent}}% at the top level."
+        ],
+        "pacing": "Fewer, larger attacks are cheaper. One attack of {{stamina.turns}} turns costs {{stamina.example}} stamina, while the same turns spent as {{stamina.turns}} separate one-turn attacks cost {{stamina.singlesExample}}."
+      },
+      "habits": {
+        "title": "Habits of steady raiders",
+        "items": [
+          "Scout before you attack, and skip targets that out-defend you.",
+          "Spend turns in a few committed attacks and let stamina recover between them.",
+          "Keep a defense that matches your treasury and bank what you do not need.",
+          "Check your war history after each raid and adjust your next target."
+        ]
+      }
+    },
+    "related": [
+      "first-kingdom",
+      "economy-and-growth"
+    ]
+  }
+}

@@ -14,19 +14,47 @@ import { logError } from '@/utils/logger';
 
 export const DAY_MS = 86_400_000;
 export type NoticeStatus = 'none' | 'warned' | 'cancelled' | 'completed';
+export type InactivityNoticeTemplateValue = 'STANDARD' | 'ERA_RELAUNCH';
+
+export interface InactiveUsersOptions {
+  /**
+   * Fixed cutoff (for example the era relaunch date): a user is eligible when
+   * the latest of last_gameplay_at / last_active / created_at is before it.
+   * Undefined keeps the legacy 365-day rule on last_active.
+   */
+  inactiveSince?: Date;
+}
 export function inactiveUsersWhere(
   now = new Date(),
   status?: NoticeStatus,
+  opts?: InactiveUsersOptions,
 ): Prisma.usersWhereInput {
   const cutoff = new Date(now.getTime() - 365 * DAY_MS);
   return {
     AND: [
-      {
-        OR: [
-          { last_active: { lt: cutoff } },
-          { last_active: null, created_at: { lt: cutoff } },
-        ],
-      },
+      opts?.inactiveSince
+        ? {
+            OR: [
+              { last_gameplay_at: { lt: opts.inactiveSince } },
+              {
+                last_gameplay_at: null,
+                last_active: { lt: opts.inactiveSince },
+              },
+              {
+                last_gameplay_at: null,
+                last_active: null,
+                created_at: { lt: opts.inactiveSince },
+              },
+            ],
+          }
+        : {
+            OR: [
+              { last_active: { lt: cutoff } },
+              { last_active: null, created_at: { lt: cutoff } },
+            ],
+          },
+      // Bot accounts never leave on their own; a relaunch wave is for people.
+      ...(opts?.inactiveSince ? [{ isBot: false }] : []),
       { NOT: { email: { endsWith: '@deleted.local', mode: 'insensitive' } } },
       { staffRoleAssignments: { none: { revokedAt: null } } },
       { permissions: { none: { revokedAt: null } } },
@@ -82,11 +110,13 @@ export function inactivityDecision(
       return 'skip';
     return 'anonymize';
   }
-  if (
-    !notice.reminderSentAt &&
-    notice.scheduledDeletionAt.getTime() - now.getTime() <= 30 * DAY_MS
-  )
-    return 'remind';
+  // Remind once the remaining time halves the notice period, capped at 30
+  // days, so a short relaunch deadline still gets a fair final warning.
+  const remaining = notice.scheduledDeletionAt.getTime() - now.getTime();
+  const noticeSpan =
+    notice.scheduledDeletionAt.getTime() - notice.warnedAt.getTime();
+  const reminderWindow = Math.min(30 * DAY_MS, noticeSpan / 2);
+  if (!notice.reminderSentAt && remaining <= reminderWindow) return 'remind';
   return 'skip';
 }
 export async function cancelInactivityOnLogin(userId: number) {
@@ -99,13 +129,34 @@ export async function cancelInactivityOnLogin(userId: number) {
     logError('Failed to cancel inactivity notice on login', { userId });
   }
 }
+export const MIN_NOTICE_DAYS = 14;
+export const MAX_NOTICE_DAYS = 365;
+export const DEFAULT_NOTICE_DAYS = 180;
+
+const noticeDaysInRange = (days: number | undefined) =>
+  Math.min(
+    MAX_NOTICE_DAYS,
+    Math.max(MIN_NOTICE_DAYS, days ?? DEFAULT_NOTICE_DAYS),
+  );
+
 export async function sendInactivityNotices(input: {
   userIds?: number[];
   actorId: number;
   ip: string;
+  /** Fixed eligibility cutoff (relaunch); undefined = legacy 365-day rule. */
+  inactiveSince?: Date;
+  /** Grace period before scheduled deletion; clamped to 14–365 days. */
+  noticeDays?: number;
+  /** Copy variant stored on the notice and rendered in the emails. */
+  template?: InactivityNoticeTemplateValue;
+  /** News post the ERA_RELAUNCH template links to. */
+  newsPostId?: number | null;
 }) {
   const now = new Date();
-  const scheduledDeletionAt = new Date(now.getTime() + 180 * DAY_MS);
+  const noticeDays = noticeDaysInRange(input.noticeDays);
+  const scheduledDeletionAt = new Date(now.getTime() + noticeDays * DAY_MS);
+  const template = input.template ?? 'STANDARD';
+  const relaunch = template === 'ERA_RELAUNCH';
   let afterId = 0;
   const totals = {
     noticed: 0,
@@ -118,7 +169,9 @@ export async function sendInactivityNotices(input: {
   while (hasMore) {
     const candidates = await prisma.users.findMany({
       where: {
-        ...inactiveUsersWhere(now, input.userIds ? undefined : 'none'),
+        ...inactiveUsersWhere(now, input.userIds ? undefined : 'none', {
+          inactiveSince: input.inactiveSince,
+        }),
         id: { gt: afterId, ...(input.userIds ? { in: input.userIds } : {}) },
       },
       select: { id: true },
@@ -142,7 +195,12 @@ export async function sendInactivityNotices(input: {
         for (const candidate of candidates) {
           await tx.$queryRaw`SELECT id FROM users WHERE id = ${candidate.id} FOR UPDATE`;
           const user = await tx.users.findFirst({
-            where: { ...inactiveUsersWhere(now), id: candidate.id },
+            where: {
+              ...inactiveUsersWhere(now, undefined, {
+                inactiveSince: input.inactiveSince,
+              }),
+              id: candidate.id,
+            },
             select: {
               id: true,
               last_active: true,
@@ -167,6 +225,9 @@ export async function sendInactivityNotices(input: {
             completedAt: null,
             reminderSentAt: null,
             createdByUserId: input.actorId,
+            inactiveSince: input.inactiveSince ?? null,
+            template,
+            newsPostId: input.newsPostId ?? null,
           };
           await tx.accountInactivityNotice.upsert({
             where: { userId: user.id },
@@ -191,7 +252,12 @@ export async function sendInactivityNotices(input: {
           audience: { all: !input.userIds, userIds: input.userIds ?? [] },
           createdByUserId: input.actorId,
           recipients: deliverable,
-          vars: { deletionDate: scheduledDeletionAt },
+          vars: {
+            deletionDate: scheduledDeletionAt,
+            ...(relaunch
+              ? { relaunch: true, newsId: input.newsPostId ?? undefined }
+              : {}),
+          },
           recipientVars: (recipient: { userId: number }) => ({
             lastActiveDate: lastActiveDates.get(recipient.userId) ?? undefined,
           }),
@@ -216,7 +282,13 @@ export async function sendInactivityNotices(input: {
             userId: input.actorId,
             action: 'ADMIN_INACTIVITY_NOTICE',
             ip: input.ip,
-            details: result,
+            details: {
+              ...result,
+              inactiveSince: input.inactiveSince?.toISOString() ?? null,
+              noticeDays,
+              template,
+              newsPostId: input.newsPostId ?? null,
+            },
           },
           tx,
         );
@@ -298,8 +370,16 @@ export async function runInactivitySweep({
             outcome = 'cancelled';
             return;
           }
+          // Re-check eligibility with this notice's own cutoff: a relaunch
+          // notice (inactiveSince set) must never fall back to the 365-day
+          // rule, or its deadline would never be enforced.
           const eligible = await tx.users.findFirst({
-            where: { ...inactiveUsersWhere(now), id: current.userId },
+            where: {
+              ...inactiveUsersWhere(now, undefined, {
+                inactiveSince: current.inactiveSince ?? undefined,
+              }),
+              id: current.userId,
+            },
             select: { id: true },
           });
           if (!eligible) return;
@@ -314,6 +394,7 @@ export async function runInactivitySweep({
               userIds: [current.userId],
             });
             if (!recipients.length) return;
+            const relaunch = current.template === 'ERA_RELAUNCH';
             const campaign = await createQueuedCampaign(tx, {
               kind: 'INACTIVITY_REMINDER',
               subject: 'Account inactivity reminder',
@@ -321,7 +402,12 @@ export async function runInactivitySweep({
               audience: { userIds: [current.userId] },
               createdByUserId: actorId,
               recipients,
-              vars: { deletionDate: current.scheduledDeletionAt },
+              vars: {
+                deletionDate: current.scheduledDeletionAt,
+                ...(relaunch
+                  ? { relaunch: true, newsId: current.newsPostId ?? undefined }
+                  : {}),
+              },
             });
             if (!campaign.recipientCount) return;
             await tx.accountInactivityNotice.update({
@@ -339,7 +425,9 @@ export async function runInactivitySweep({
               tx,
               current.userId,
               {
-                reason: 'Inactive for over 18 months',
+                reason: current.inactiveSince
+                  ? 'Inactive past the relaunch notice deadline'
+                  : 'Inactive for over 18 months',
                 initiatedBy: 'INACTIVITY',
               },
             );

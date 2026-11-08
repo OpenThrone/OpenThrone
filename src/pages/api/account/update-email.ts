@@ -10,6 +10,7 @@ import type { AuthenticatedRequest } from '@/types/api';
 import { verifyStoredPassword } from '@/utils/credentialGuards';
 import { logError } from '@/utils/logger';
 import { publicErrorMessage } from '@/utils/publicError';
+import { isReservedEmail, RESERVED_EMAIL_MESSAGE } from '@/utils/reservedEmail';
 // Removed getSession and stringifyObj imports
 
 // Zod schema for the request body
@@ -18,7 +19,10 @@ const UpdateEmailSchema = z.object({
     .string()
     .trim()
     .toLowerCase()
-    .email({ message: 'Invalid email address format.' }),
+    .email({ message: 'Invalid email address format.' })
+    .refine((value) => !isReservedEmail(value), {
+      message: RESERVED_EMAIL_MESSAGE,
+    }),
   password: z.string().min(1, { message: 'Password is required.' }),
   verify: z.string().min(1, { message: 'Verification code is required.' }), // Add length validation if applicable
 });

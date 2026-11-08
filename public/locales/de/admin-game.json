@@ -108,7 +108,7 @@
     "openButton": "Aktuelle Ära jetzt zurücksetzen",
     "modalTitle": "Aktuelle Ära zurücksetzen",
     "losses": "Dadurch wird der Fortschritt aller Spieler in der aktuellen Ära dauerhaft zurückgesetzt, einschließlich des Personals: Gold, Einheiten, Gegenstände, Gebäude, EP, Rang, Testdaten, Allianzschatz, Allianz-EP und Verbesserungen sowie Chroniken der aktuellen Ära.",
-    "retained": "Konten, lebenslange Erfolge, Moderationsverlauf der Konten, Personalzugriff, Gildenidentität und -aufstellungen, soziale Daten, Nachrichten und vergangene Ären bleiben erhalten.",
+    "retained": "Kontoidentität, Lebenszeit-Erfolge, Moderationsverlauf, Teamzugang, soziale Daten, Nachrichten und frühere Ären bleiben erhalten. Auch Allianzen bleiben erhalten, als reserviert: Name, Mitglieder, Ränge und Bilder bleiben, Schatzkammer, Kredite und Kriege werden beendet.",
     "baseline": "Jedes Konto wird auf diese Startwerte zurückgesetzt; sie werden auch als Starteinstellungen der Ära gespeichert.",
     "startSettingsTitle": "Startwerte für jedes Konto",
     "startGold": "Startgold",
@@ -197,5 +197,14 @@
       "running": "Läuft",
       "ended": "Beendet"
     }
+  },
+  "factoryRestore": {
+    "title": "Vollständige Werkswiederherstellung",
+    "description": "Der einzige Reset, der Allianzen löscht. Nutze ihn für einen sauberen Neustart vor dem Start, nie zwischen gewöhnlichen Ären: Neue Ären und der normale Reset behalten jede Allianz, reserviert, bis der Anführer sie reaktiviert.",
+    "openButton": "Werkswiederherstellung…",
+    "modalTitle": "Vollständige Werkswiederherstellung",
+    "losses": "Dies führt alles aus, was der Reset der aktuellen Ära tut, und löscht zusätzlich dauerhaft JEDE Allianz: Mitglieder, Ränge, Bilder, Chaträume, Schatzkammern (ohne Auszahlung), Kredite, Kriege und Truppenaufzeichnungen. Das lässt sich nicht rückgängig machen.",
+    "confirmButton": "Allianzen löschen & Ära zurücksetzen",
+    "requestError": "Die Werkswiederherstellung konnte nicht gestartet werden. Bitte erneut versuchen."
   }
 }

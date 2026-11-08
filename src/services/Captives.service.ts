@@ -184,12 +184,36 @@ export class CaptiveService {
       now?: Date;
     },
   ): Promise<number> {
+    return (await CaptiveService.captureFromBattleDetailed(tx, input)).taken;
+  }
+
+  /** As captureFromBattle, also returning the created rows (for the void ledger, #229). */
+  static async captureFromBattleDetailed(
+    tx: Tx,
+    input: {
+      captorId: number;
+      sourceId: number;
+      eraId: number | null;
+      captorFortLevel: number;
+      killedUnits: KilledUnitRow[];
+      now?: Date;
+    },
+  ): Promise<{
+    taken: number;
+    rows: { id: number; type: string; level: number; quantity: number }[];
+  }> {
     const now = input.now ?? new Date();
+    const rows: {
+      id: number;
+      type: string;
+      level: number;
+      quantity: number;
+    }[] = [];
     // A captor without a dungeon holds nobody, even if the battle hook is
     // called by mistake: capacity below the unlock level is zero anyway.
-    if (input.captorFortLevel < DUNGEON_FORT_LEVEL) return 0;
+    if (input.captorFortLevel < DUNGEON_FORT_LEVEL) return { taken: 0, rows };
     const combatRows = capturableCombatRows(input.killedUnits);
-    if (combatRows.length === 0) return 0;
+    if (combatRows.length === 0) return { taken: 0, rows };
     const captor = await tx.users.findUniqueOrThrow({
       where: { id: input.captorId },
       select: { race: true, racial_perk_tier: true },
@@ -199,7 +223,7 @@ export class CaptiveService {
     const wanted = tier
       ? Math.floor(killedTotal * raidersCapturePercent(tier))
       : captureQuantity(killedTotal);
-    if (wanted <= 0) return 0;
+    if (wanted <= 0) return { taken: 0, rows };
     const held = await tx.captive.aggregate({
       where: { captorId: input.captorId },
       _sum: { quantity: true },
@@ -210,7 +234,7 @@ export class CaptiveService {
         Number(held._sum.quantity ?? 0),
     );
     const captured = Math.min(wanted, freeSpace);
-    if (captured <= 0) return 0;
+    if (captured <= 0) return { taken: 0, rows };
 
     const takes = distributeCaptures(
       combatRows.map((row) => row.quantity),
@@ -222,7 +246,7 @@ export class CaptiveService {
       const quantity = takes[index];
       if (quantity <= 0) continue;
       const row = combatRows[index];
-      await tx.captive.create({
+      const created = await tx.captive.create({
         data: {
           captorId: input.captorId,
           sourceId: input.sourceId,
@@ -232,7 +256,9 @@ export class CaptiveService {
           capturedAt: now,
           eraId: input.eraId,
         },
+        select: { id: true },
       });
+      rows.push({ id: created.id, type: row.type, level: row.level, quantity });
       taken += quantity;
       events.push({
         captorId: input.captorId,
@@ -245,7 +271,7 @@ export class CaptiveService {
       });
     }
     if (events.length > 0) await tx.captiveEvent.createMany({ data: events });
-    return taken;
+    return { taken, rows };
   }
 
   /**

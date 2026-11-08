@@ -8,6 +8,8 @@ import type {
   UserUnit,
 } from '@/lib/prisma-exports';
 import type { FortHealth, PlayerBonus, UnitType } from '@/types/typings';
+import type { CombatRuleset } from '@/utils/balance/combatRuleset';
+import { CURRENT_COMBAT_RULESET } from '@/utils/balance/combatRulesets';
 import {
   calculateBonusPointMultiplier,
   getBonusPointLevel,
@@ -20,15 +22,6 @@ import {
   type DetailedCalculatedStrength,
 } from '@/utils/combatStrength';
 import { getLevelFromXP } from '@/utils/utilities';
-
-import {
-  Bonuses,
-  Fortifications,
-  levelXPArray,
-  OffensiveUpgrades,
-  SentryUpgrades,
-  SpyUpgrades,
-} from '../constants';
 
 const UserDataSchema = z.object({
   experience: z.number().optional(),
@@ -68,6 +61,8 @@ export class UserStatsService {
 
   private class: string;
 
+  private ruleset: CombatRuleset;
+
   constructor(
     userData: {
       experience?: number;
@@ -82,7 +77,9 @@ export class UserStatsService {
       race?: string;
       class?: string;
     } = {},
+    ruleset: CombatRuleset = CURRENT_COMBAT_RULESET,
   ) {
+    this.ruleset = ruleset;
     const validatedData = UserDataSchema.parse(userData);
     this.experience = validatedData.experience ?? 0;
     this.units = Array.isArray(validatedData.units) ? validatedData.units : [];
@@ -104,11 +101,11 @@ export class UserStatsService {
   }
 
   calculateLevel(): number {
-    return getLevelFromXP(this.experience);
+    return getLevelFromXP(this.experience, this.ruleset.levelXp);
   }
 
   xpRequiredForLevel(level: number): number {
-    const levelInfo = levelXPArray.find((l) => l.level === level);
+    const levelInfo = this.ruleset.levelXp.find((l) => l.level === level);
     return levelInfo?.xp ?? Infinity;
   }
 
@@ -120,7 +117,7 @@ export class UserStatsService {
   }
 
   getPlayerBonuses(): PlayerBonus[] {
-    return Bonuses.filter(
+    return this.ruleset.bonuses.filter(
       (bonus) => bonus.race === this.race || bonus.race === this.class,
     );
   }
@@ -156,7 +153,7 @@ export class UserStatsService {
       .filter((upgrade) => upgrade.type === 'OFFENSE')
       .map(
         (upgrade) =>
-          OffensiveUpgrades.find((u) => u.level === upgrade.level)
+          this.ruleset.offensiveUpgrades.find((u) => u.level === upgrade.level)
             ?.offenseBonusPercentage ?? 0,
       )
       .reduce((sum, bonus) => sum + bonus, 0);
@@ -177,7 +174,7 @@ export class UserStatsService {
       100;
 
     const fortBonus =
-      Fortifications.find((f) => f.level === this.fortLevel)
+      this.ruleset.fortifications.find((f) => f.level === this.fortLevel)
         ?.defenseBonusPercentage ?? 0;
 
     return baseBonus + pointsBonus + fortBonus;
@@ -201,15 +198,15 @@ export class UserStatsService {
   getSpyBonus(): number {
     const spyLevel = this.getSpyLevel();
     const structureBonus =
-      SpyUpgrades.find((u) => u.level === spyLevel)?.offenseBonusPercentage ??
-      0;
+      this.ruleset.spyUpgrades.find((u) => u.level === spyLevel)
+        ?.offenseBonusPercentage ?? 0;
     return structureBonus + this.getIntelBonus();
   }
 
   getSentryBonus(): number {
     const sentryLevel = this.getSentryLevel();
     const structureBonus =
-      SentryUpgrades[sentryLevel - 1]?.defenseBonusPercentage ?? 0;
+      this.ruleset.sentryUpgrades[sentryLevel - 1]?.defenseBonusPercentage ?? 0;
     return structureBonus + this.getIntelBonus();
   }
 
@@ -270,12 +267,14 @@ export class UserStatsService {
   calculateArmyStat(type: UnitType): DetailedCalculatedStrength {
     return calculateCombatStrength(this.combatUser(), type, {
       collateralFallback: true,
+      ruleset: this.ruleset,
     });
   }
 
   calculateArmyStatBreakdown(type: 'OFFENSE' | 'DEFENSE'): CombatBreakdown {
     return calculateCombatBreakdown(this.combatUser(), type, {
       collateralFallback: true,
+      ruleset: this.ruleset,
     });
   }
 
@@ -295,7 +294,8 @@ export class UserStatsService {
 
   getFortHealth(): FortHealth {
     const maxHP =
-      Fortifications.find((f) => f.level === this.fortLevel)?.hitpoints ?? 0;
+      this.ruleset.fortifications.find((f) => f.level === this.fortLevel)
+        ?.hitpoints ?? 0;
     const currentHP = this.fortHitpoints ?? 0;
     return {
       current: currentHP,

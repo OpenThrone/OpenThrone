@@ -32,6 +32,8 @@ import { AllianceRanks } from '@/components/alliance/AllianceRanks';
 import { AllianceSettings } from '@/components/alliance/AllianceSettings';
 import { getAllianceStanding } from '@/components/alliance/allianceStanding';
 import { AllianceWar } from '@/components/alliance/AllianceWar';
+import { ReservedBadge } from '@/components/alliance/ReservedAllianceNotice';
+import { ReservedAllianceSection } from '@/components/alliance/ReservedAllianceSection';
 import { PageLoading } from '@/components/game/PageLoading';
 import MainArea from '@/components/MainArea';
 import { PremiumAllianceMark } from '@/components/player/SupporterBadge';
@@ -90,6 +92,9 @@ const AlliancePage = ({
   const isLeader = alliance
     ? viewerId !== null && alliance.leader_id === viewerId
     : initialIsLeader;
+  // Reserved (#13): only the social shell is open; every game feature waits
+  // for the leader to reactivate the alliance in the new era.
+  const reserved = alliance?.status === 'RESERVED';
   const canEditRanks =
     isMember &&
     !!alliance &&
@@ -164,13 +169,25 @@ const AlliancePage = ({
                       new Date(premium.premiumUntil).getTime() >
                         Date.now())) && <PremiumAllianceMark />}
                 </Title>
+                {reserved && <ReservedBadge />}
                 <Text c="dimmed">{alliance.motto}</Text>
               </Box>
             </Group>
           </Box>
         </Paper>
 
-        {isMember && (
+        {reserved && (
+          <ReservedAllianceSection
+            allianceId={alliance.id}
+            allianceName={alliance.name}
+            leaderName={alliance.leader?.display_name}
+            isMember={isMember}
+            isLeader={isLeader}
+            onChanged={() => mutate()}
+          />
+        )}
+
+        {isMember && !reserved && (
           <Button
             component={Link}
             href={`/alliances/${alliance.id}/forces`}
@@ -184,28 +201,28 @@ const AlliancePage = ({
             <Tabs.Tab value="overview">
               {t('index.overview', 'Overview')}
             </Tabs.Tab>
-            {isMember && (
+            {isMember && !reserved && (
               <Tabs.Tab value="announcements">{tAnn('tab')}</Tabs.Tab>
             )}
             <Tabs.Tab value="members">{t('index.members', 'Members')}</Tabs.Tab>
-            {isMember && (
+            {isMember && !reserved && (
               <Tabs.Tab value="bank">{t('index.bank', 'Bank')}</Tabs.Tab>
             )}
-            {isMember && (
+            {isMember && !reserved && (
               <Tabs.Tab value="war">{t('index.war', 'War Room')}</Tabs.Tab>
             )}
-            {isMember && (
+            {isMember && !reserved && (
               <Tabs.Tab value="lists">{tLists('tabs.lists', 'Lists')}</Tabs.Tab>
             )}
-            {isMember && (
+            {isMember && !reserved && (
               <Tabs.Tab value="diplomacy">
                 {tLists('tabs.diplomacy', 'Diplomacy')}
               </Tabs.Tab>
             )}
-            {isMember && (
+            {isMember && !reserved && (
               <Tabs.Tab value="intel">{tIntel('tab', 'Intel')}</Tabs.Tab>
             )}
-            {isMember && (
+            {isMember && !reserved && (
               <Tabs.Tab value="infighting">
                 {t('index.infighting', 'Infighting')}
               </Tabs.Tab>
@@ -227,15 +244,17 @@ const AlliancePage = ({
                 isMember={isMember}
                 onViewAnnouncements={() => setActiveTab('announcements')}
               />
-              <Box mt="md">
-                <AllianceSponsorshipPanel
-                  allianceId={alliance.id}
-                  allianceName={alliance.name}
-                />
-              </Box>
+              {!reserved && (
+                <Box mt="md">
+                  <AllianceSponsorshipPanel
+                    allianceId={alliance.id}
+                    allianceName={alliance.name}
+                  />
+                </Box>
+              )}
             </Tabs.Panel>
 
-            {isMember && (
+            {isMember && !reserved && (
               <Tabs.Panel value="announcements">
                 <AllianceAnnouncements
                   allianceId={alliance.id}
@@ -252,7 +271,7 @@ const AlliancePage = ({
               />
             </Tabs.Panel>
 
-            {isMember && (
+            {isMember && !reserved && (
               <>
                 <Tabs.Panel value="bank">
                   <AllianceBank alliance={alliance} onUpdate={mutate} />
@@ -299,6 +318,7 @@ const AlliancePage = ({
                     isMember &&
                     getAllianceStanding(alliance, viewerId).can('edit_profile')
                   }
+                  reserved={reserved}
                 />
               </Tabs.Panel>
             )}

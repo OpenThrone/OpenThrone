@@ -12,6 +12,7 @@ import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
+import { ReservedBadge } from '@/components/alliance/ReservedAllianceNotice';
 import { GameCard } from '@/components/game/GameCard';
 import panelClasses from '@/components/game/Panels.module.css';
 import { PremiumAllianceMark } from '@/components/player/SupporterBadge';
@@ -35,6 +36,8 @@ type AllianceCardProps = {
   roleName?: string;
   isPremium?: boolean;
   premiumUntil?: string | null;
+  /** ACTIVE or RESERVED (#13): a reserved alliance takes no new members. */
+  status?: string;
 };
 
 /** Shared alliance identity, membership and actions for both directories. */
@@ -54,6 +57,7 @@ export const AllianceCard = ({
   roleName = undefined,
   isPremium,
   premiumUntil,
+  status,
 }: AllianceCardProps) => {
   const { t } = useTranslation('alliances');
   const { user } = useUser();
@@ -73,6 +77,7 @@ export const AllianceCard = ({
     router.push(`/alliances/${id}`);
   };
 
+  const isReserved = status === 'RESERVED';
   const isInviteOnly = joinMode === 'INVITE_ONLY';
   return (
     <GameCard
@@ -136,14 +141,19 @@ export const AllianceCard = ({
             }}
           />
         </Group>
-        {(isLeader || roleName) && (
+        {(isLeader || roleName || isReserved) && (
           <Group justify="center">
-            <Badge
-              color={isLeader ? 'yellow' : undefined}
-              variant={isLeader ? 'filled' : 'light'}
-            >
-              {isLeader ? t('mine.leader') : t('mine.role', { role: roleName })}
-            </Badge>
+            {isReserved && <ReservedBadge />}
+            {(isLeader || roleName) && (
+              <Badge
+                color={isLeader ? 'yellow' : undefined}
+                variant={isLeader ? 'filled' : 'light'}
+              >
+                {isLeader
+                  ? t('mine.leader')
+                  : t('mine.role', { role: roleName })}
+              </Badge>
+            )}
           </Group>
         )}
         <Text ta="center" fz="sm" c="dimmed">
@@ -182,15 +192,17 @@ export const AllianceCard = ({
               fullWidth
               radius="sm"
               size="sm"
-              disabled={isInviteOnly}
+              disabled={isInviteOnly || isReserved}
               loading={loading}
               onClick={handleJoinClick}
             >
-              {isInviteOnly
-                ? t('browse.inviteOnly')
-                : joinMode === 'REQUEST_TO_JOIN'
-                  ? t('browse.requestToJoin')
-                  : joinText || t('browse.join')}
+              {isReserved
+                ? t('reserved.notRecruiting')
+                : isInviteOnly
+                  ? t('browse.inviteOnly')
+                  : joinMode === 'REQUEST_TO_JOIN'
+                    ? t('browse.requestToJoin')
+                    : joinText || t('browse.join')}
             </Button>
           )}
         </Group>

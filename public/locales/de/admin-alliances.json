@@ -85,5 +85,15 @@
   "colKind": "Art",
   "colUpgrade": "Verbesserung",
   "colTier": "Stufe",
-  "colPurchased": "Gekauft"
+  "colPurchased": "Gekauft",
+  "statusLabel": "Allianzstatus",
+  "statusActive": "Aktiv",
+  "statusReserved": "Reserviert",
+  "statusSince": "seit {{date}}",
+  "reserve": "Reservieren",
+  "reserveTitle": "Allianz reservieren",
+  "reserveConfirm": "{{name}} reservieren? Ihre Funktionen sind für alle Mitglieder gesperrt, bis sie reaktiviert wird; Mitglieder können weiter austreten. Schatzkammer, Kredite und Kriege bleiben unberührt.",
+  "reactivate": "Reaktivieren",
+  "reactivateTitle": "Allianz reaktivieren",
+  "reactivateConfirm": "{{name}} reaktivieren, ohne den Anführer zu belasten?"
 }

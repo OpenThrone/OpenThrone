@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { mtRandImpl } from 'test/utils/mockMtRand';
 
-import { Fortifications, levelXPArray, UnitTypes } from '@/constants';
+import { Fortifications, levelXPArray } from '@/constants';
 import UserModel from '@/models/Users';
 import { executeAttack } from '@/utils/attackFunctions';
+import { deriveCombatRuleset } from '@/utils/balance/combatRuleset';
+import { CURRENT_COMBAT_RULESET } from '@/utils/balance/combatRulesets';
 import MockUserGenerator from '@/utils/MockUserGenerator';
 import { createSeededRandom } from '@/utils/random';
 
@@ -388,49 +390,43 @@ describe('canonical outcome', () => {
 
   it('an assault can succeed through ranged pressure even without melee pressure', async () => {
     // Exercise the catalog-driven channel against a standing line, not a mocked damage result.
-    // The live catalog currently has no offensive ranged troop; balance catalogs may add one.
-    const soldier = UnitTypes.find(
-      (unit) => unit.type === 'OFFENSE' && unit.level === 1,
-    )!;
-    const original = {
-      melee: soldier.MeleeAtkPower,
-      ranged: soldier.RangedAtkPower,
-    };
-    try {
-      soldier.MeleeAtkPower = 0;
-      soldier.RangedAtkPower = 250;
-      const attacker = buildUser({
-        race: 'HUMAN',
-        level: 20,
-        fortLevel: 6,
-        gold: 0n,
-        units: [['OFFENSE', 1, 100]],
-      });
-      const defender = buildUser({
-        race: 'UNDEAD',
-        level: 20,
-        fortLevel: 6,
-        gold: 1000000n,
-        units: [['DEFENSE', 1, 2000]],
-      });
-      const result = await executeAttack(attacker, defender, 1, false, {
-        random: () => 0.5,
-      });
-      expect(result.result).toBe('WIN');
-      expect(result.canonicalOutcome?.assaultSucceeded).toBe(true);
-      expect(result.pillagedGold).toBeGreaterThan(0n);
-      expect(
-        result.mitigationLog.some(
-          (entry) =>
-            entry.source === 'ATTACKER' &&
-            entry.attackType === 'RANGED' &&
-            entry.mitigatedDamage > 0,
-        ),
-      ).toBe(true);
-    } finally {
-      soldier.MeleeAtkPower = original.melee;
-      soldier.RangedAtkPower = original.ranged;
-    }
+    // The live catalog currently has no offensive ranged troop; a balance ruleset may add one.
+    const ranged = deriveCombatRuleset(CURRENT_COMBAT_RULESET, 'combat-test', {
+      units: CURRENT_COMBAT_RULESET.units.map((unit) =>
+        unit.type === 'OFFENSE' && unit.level === 1
+          ? { ...unit, MeleeAtkPower: 0, RangedAtkPower: 250 }
+          : unit,
+      ),
+    });
+    const attacker = buildUser({
+      race: 'HUMAN',
+      level: 20,
+      fortLevel: 6,
+      gold: 0n,
+      units: [['OFFENSE', 1, 100]],
+    });
+    const defender = buildUser({
+      race: 'UNDEAD',
+      level: 20,
+      fortLevel: 6,
+      gold: 1000000n,
+      units: [['DEFENSE', 1, 2000]],
+    });
+    const result = await executeAttack(attacker, defender, 1, false, {
+      random: () => 0.5,
+      ruleset: ranged,
+    });
+    expect(result.result).toBe('WIN');
+    expect(result.canonicalOutcome?.assaultSucceeded).toBe(true);
+    expect(result.pillagedGold).toBeGreaterThan(0n);
+    expect(
+      result.mitigationLog.some(
+        (entry) =>
+          entry.source === 'ATTACKER' &&
+          entry.attackType === 'RANGED' &&
+          entry.mitigatedDamage > 0,
+      ),
+    ).toBe(true);
   });
 
   it('ten committed turns alternate five assaults and five counters without a final-turn extra assault', async () => {

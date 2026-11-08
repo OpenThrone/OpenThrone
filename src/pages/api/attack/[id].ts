@@ -7,6 +7,7 @@ import { AttackSchema, IdQuerySchema } from '@/lib/validation';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { enforceIdempotency } from '@/middleware/idempotency';
 import { BattleService } from '@/services';
+import { evaluateAttackPair } from '@/services/AbuseDetection.service';
 import { markGameplayActivity } from '@/services/GameplayActivity.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp, logAction } from '@/utils/auditLogger';
@@ -62,6 +63,8 @@ const handler = async (
 
     if (results?.status === 'success') {
       await markGameplayActivity(sessionUserId);
+      // Admin-only abuse signal (#6): cheap pair lookup, off the request path.
+      evaluateAttackPair(sessionUserId, id);
     }
     if (results?.status === 'success' && results.attack_log) {
       const io = getSocketIO();

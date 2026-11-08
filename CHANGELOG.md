@@ -4,6 +4,123 @@ OpenThrone follows [Semantic Versioning](https://semver.org/) on the 0.x line:
 each production release raises the minor version and hotfixes raise the patch
 version. Alpha builds carry the next version with an `-alpha` suffix.
 
+## v0.11.0 (2026-10-31)
+
+### Added
+- **Era relaunch veterans:** before erasing long-inactive accounts, we can now
+  email everyone inactive since a fixed cutoff (the era relaunch date) with a
+  link to the news post and a shorter, admin-chosen deadline. Erased accounts
+  keep only a one-way fingerprint of the email address and display name: if
+  the same email registers again within two years, we email a claim link to
+  that address; opening it restores the "Era 1 Tester" title, the original
+  join date and, if they enter it, the old display name. The title shows as
+  a badge on profiles and is editable in the admin Edit Player screen,
+  alongside a read-only veteran records list on the inactive users page.
+- **Chronicles and strategy guides:** a public Chronicles page tells the
+  story of the Shattered Realms, the four peoples and the Great Turning
+  between eras. Three new guides (your first kingdom, economy and growth,
+  combat, spying and stamina) read their numbers from the live game rules.
+  Both are open without signing in, in English, German and Spanish, and are
+  linked from the menu and footer.
+- **Cron run log:** every scheduled-job run (daily, turns, bots, account
+  status) is now recorded with start, finish, duration, a sanitized summary
+  and any error, and staff can review it under Administration → System →
+  Cron run log, with filters by job and status and the last successful run
+  per job. Failures are highlighted; rows older than 90 days are pruned.
+- **Voided battles:** if a fight was won through a bug or under a broken rule,
+  an administrator can void it with a written reason. The battle report stays
+  as history, marked "Voided by an administrator" for both players, while the
+  gold, fallen and wounded troops, fort damage, attack turns, stamina and
+  experience it moved are returned or taken back. Both players get a message,
+  and a voided battle no longer counts toward leaderboards or the daily
+  attack limit.
+- **Your data:** Settings has a new Your data card. Download a copy of your
+  profile, kingdom, battles, messages you wrote, friends, alliance, payment and
+  sign-in records as a JSON file (password required, once every 24 hours), or
+  ask for your account to be erased. Erasure is confirmed by email, then waits
+  14 days: your account is deactivated, and signing in during that time offers
+  to cancel it. Afterwards your email, name, avatar, bio, sign-in history and
+  the messages you wrote are erased. The same options apply to every player,
+  wherever they live.
+- **Ban, suspend, close and delete from Edit Player:** the Operations tab now
+  has an Account status section. Staff with account-status access can suspend
+  a player for a set number of days, ban them for a set time or permanently,
+  and reactivate them, each with a recorded reason. Administrators can also
+  close an account or schedule it for deletion (closed now, personal data
+  erased after the 14-day grace period).
+
+### Changed
+- **Losses hit every unit tier:** battle casualties no longer eat your
+  cheapest troops first. The dead of a battle are now spread over all your
+  unit levels in proportion to how many troops you field at each level, so
+  a screen of level 1 troops can't shield your best units, for attackers
+  and defenders alike. Hired mercenaries still take the front line within
+  their level. The number of casualties in each battle is unchanged: the
+  same fight on the same dice costs the same units and wounded as before,
+  only which levels they come from differs. Battles fought earlier still
+  replay exactly under the rules they were fought with.
+- **Gold transfers need level 5:** both the player sending gold to a friend and
+  the friend receiving it must have reached the minimum level, on top of the
+  Coal Mine, account age and recent-fight rules. The transfer window says who
+  is too low, and administrators set the level (1-100) on the server settings
+  page. How to Play and the FAQ now explain the transfer rules.
+- **Alliances survive a new era:** an era change no longer leaves alliances
+  running on old-era gold. Every alliance becomes reserved: name, roster,
+  ranks and artwork stay, the treasury, loans, troop contracts and wars end
+  with the old era, and alliance features stay locked. Members see why and can
+  leave at any time. The leader reactivates it in the new era at level 10 for
+  10,000,000 gold (both adjustable by admins). Only an admin's complete factory
+  restore deletes alliances.
+- **Deleting your account has a grace period:** erasing an account is now
+  requested from Settings, confirmed by email, and waits 14 days before the
+  daily job erases it. Signing in during that time offers to cancel. The same
+  erasure now also removes your sign-in history and network addresses, and your
+  friends and chat activity.
+
+### Fixed
+- **Queued emails send again:** inactivity notices, reminders and admin email
+  campaigns sat in the outbox unsent, because the delivery worker failed on
+  every poll. It now delivers them at the configured rate.
+- **Timed bans and suspensions show in the admin user list:** a ban or
+  suspension with an end date was listed as active (or idle) in User
+  management and Edit Player until it expired; it now shows as banned or
+  suspended for its whole duration. An account scheduled for deletion can no
+  longer be reopened or re-sanctioned from account actions; cancel the
+  deletion in the Privacy tab instead.
+- **Supporter gifts work with only `JWT_SECRET` set, and the daily run log
+  names its failures:** gift checkouts failed (and the nightly Stripe
+  re-check failed them again) on servers configured from `.env.sample`, which
+  only has `JWT_SECRET`; gift codes now fall back to it like sign-in does. The
+  supporter run in the cron run log now lists the failed items with a short,
+  redacted cause instead of only an error count, and log lines no longer
+  drop the message of an error nested in their context.
+- **Sign-in works for accounts registered with capital letters in the
+  email:** registration saved the address as typed, while sign-in looks it
+  up in lowercase, so such accounts were created but could never sign in.
+  New accounts are saved in lowercase, and signing in with capitals in the
+  address no longer fails after the password matches.
+- **Filled status badges now pass text contrast on every hue:** white badge
+  labels (Owned, New, ACTIVE, Fully Repaired, TEST MODE, ...) sit on a
+  deepened shade-9 plate from the shared Mantine Badge override, matching the
+  filled-button tone rule; yellow previously measured 2.5:1 and green 3.4:1
+  against the 4.5:1 AA bar, on all four race themes.
+- **Game-options selectors are labelled:** the language/formatting and
+  colour-scheme dropdowns on Settings now carry programmatic labels for
+  screen readers and keyboard focus, matching the card's other selects.
+- **German auth title no longer clips on mobile:** the login/register
+  section heading (e.g. "Kommandantenzugang") now hyphenates or breaks long
+  locale compounds instead of overflowing its column at 390px.
+- **Auth form pending state joins the shared button styles:** the login and
+  register submit button now uses Mantine's `loading` state, so its pending
+  treatment (aria-busy, disabled, themed spinner plate) comes from the same
+  shared button overrides as every other form instead of a bespoke
+  disabled-plus-dots swap.
+
+### Removed
+- Unused `FeatureFlag` infrastructure: the table and the never-used
+  `MANAGE_FEATURE_FLAGS` permission. Runtime switches use server settings.
+- Immediate "Forget Me" account deletion. Use Your data in Settings instead.
+
 ## v0.10.0 (2026-10-29)
 
 ### Added

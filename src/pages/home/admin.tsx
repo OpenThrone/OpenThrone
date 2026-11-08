@@ -257,6 +257,7 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
       'home',
       'navigation',
       'admin-users',
+      'admin-abuse',
       'admin-forces',
       'admin-upgrades',
       'admin-supporters',

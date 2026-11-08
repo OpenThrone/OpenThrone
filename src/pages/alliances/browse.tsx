@@ -67,6 +67,7 @@ const Browse = () => {
               key={alliance.id}
               name={alliance.name}
               isPremium={alliance.isPremium}
+              status={alliance.status}
               premiumUntil={alliance.premiumUntil}
               description={alliance.motto}
               members={alliance._count.members}

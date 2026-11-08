@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import { getBattleConstants } from '../utils/attackFunctions';
+import { getDefaultBattleConstants } from '../utils/attackFunctions';
 import { runSingleBattle } from './engine';
 import { createSimPlayer } from './presets';
 import type {
@@ -479,11 +479,11 @@ describe('runSingleBattle ruleset integration', () => {
   });
 });
 
-describe('process-global battle override safety', () => {
-  it('restores constants in finally even when the battle throws', async () => {
+describe('simulator battle overrides stay per call', () => {
+  it('leaves the live constants untouched even when the battle throws', async () => {
     const attacker = makePlayer({ id: 'atk', level: 10, offense: 100 });
     const defender = makePlayer({ id: 'def', level: 10, defense: 100 });
-    const snapshot = getBattleConstants();
+    const snapshot = getDefaultBattleConstants();
 
     const throwingRandom = (): number => {
       throw new Error('injected RNG failure');
@@ -497,7 +497,7 @@ describe('process-global battle override safety', () => {
       }),
     ).rejects.toThrow('injected RNG failure');
 
-    expect(getBattleConstants()).toEqual(snapshot);
+    expect(getDefaultBattleConstants()).toEqual(snapshot);
 
     const healed = await runSingleBattle(attacker, defender, {
       ...NO_VARIANCE,
@@ -505,13 +505,13 @@ describe('process-global battle override safety', () => {
       random: seededRandom(606),
     });
     expect(healed.winner).toBeDefined();
-    expect(getBattleConstants()).toEqual(snapshot);
+    expect(getDefaultBattleConstants()).toEqual(snapshot);
   });
 
-  it('restores constants even when the ruleset is set and the battle throws', async () => {
+  it('leaves the live constants untouched when a ruleset is set and the battle throws', async () => {
     const attacker = makePlayer({ id: 'atk', level: 10, offense: 100 });
     const defender = makePlayer({ id: 'def', level: 10, defense: 100 });
-    const snapshot = getBattleConstants();
+    const snapshot = getDefaultBattleConstants();
 
     const throwingRandom = (): number => {
       throw new Error('ruleset-path RNG failure');
@@ -526,7 +526,7 @@ describe('process-global battle override safety', () => {
       }),
     ).rejects.toThrow('ruleset-path RNG failure');
 
-    expect(getBattleConstants()).toEqual(snapshot);
+    expect(getDefaultBattleConstants()).toEqual(snapshot);
   });
 
   it('running candidate then production yields the same production output as production alone', async () => {

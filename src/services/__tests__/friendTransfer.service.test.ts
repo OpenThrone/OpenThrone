@@ -11,6 +11,7 @@ let respondToGoldRequest: any;
 let getFriendTransferHistory: any;
 let getPendingFriendTransfers: any;
 let cancelFriendTransfer: any;
+let getFriendTransferStatus: any;
 let getFriendTransferConfig: any;
 let calculateTransferFee: any;
 let isValidTransferAmount: any;
@@ -57,8 +58,11 @@ respondToGoldRequest = serviceModule.respondToGoldRequest;
 getFriendTransferHistory = serviceModule.getFriendTransferHistory;
 getPendingFriendTransfers = serviceModule.getPendingFriendTransfers;
 cancelFriendTransfer = serviceModule.cancelFriendTransfer;
+getFriendTransferStatus = serviceModule.getFriendTransferStatus;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const LEVEL_5_XP = 26_000;
+const LEVEL_4_XP = 25_999;
 
 // A transfer participant row as the service reads it after locking. Defaults
 // to a fully unlocked, 30-day-old Meat Market player (economy level 6).
@@ -70,9 +74,15 @@ const participantRow = (
   race: 'HUMAN',
   fort_level: 20,
   economy_level: 6,
+  // Level 5 starts at 26,000 experience: exactly the default minimum level.
+  experience: LEVEL_5_XP,
   created_at: new Date(Date.now() - 30 * DAY_MS),
   ...overrides,
 });
+
+const levelSetting = (minLevel: number) => [
+  { key: 'friend.transferMinLevel', value: minLevel },
+];
 
 describe('FriendTransferService', () => {
   let mockTx: TransactionClient;
@@ -95,6 +105,7 @@ describe('FriendTransferService', () => {
       .mockResolvedValue({ _sum: { gold_amount: null } });
     mockPrisma.accountStatusHistory.findFirst = vi.fn().mockResolvedValue(null);
     mockPrisma.users.update = vi.fn();
+    mockPrisma.serverSetting.findMany = vi.fn(async () => []);
     // Phase 1 (#205): unlocked, 30-day-old participants and no recent combat.
     mockPrisma.users.findMany = vi
       .fn()
@@ -463,6 +474,7 @@ describe('FriendTransferService', () => {
       );
       expect(mockPrisma.attack_log.findFirst).toHaveBeenCalledWith({
         where: {
+          voidedAt: null,
           timestamp: expect.objectContaining({ gte: expect.any(Date) }),
           OR: [
             { attacker_id: 1, defender_id: 2 },
@@ -1181,6 +1193,141 @@ describe('FriendTransferService', () => {
       await expect(cancelFriendTransfer(123, 1)).rejects.toThrow(
         'Transfer request is not cancellable',
       );
+    });
+  });
+  describe('minimum player level', () => {
+    const transferParams = {
+      fromUserId: 1,
+      toUserId: 2,
+      amount: BigInt(1000),
+      friendshipId: 123,
+    };
+    const requestParams = {
+      fromUserId: 1,
+      toUserId: 2,
+      amount: BigInt(500),
+      notes: 'Please',
+    };
+    const setPlayers = (sender: number, recipient: number) =>
+      mockPrisma.users.findMany.mockResolvedValue([
+        participantRow(1, { experience: sender }),
+        participantRow(2, { experience: recipient }),
+      ]);
+    const allowTransfer = () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.users.findUnique
+        .mockResolvedValueOnce({ id: 1, gold: BigInt(5000) })
+        .mockResolvedValueOnce({ id: 2, gold: BigInt(0) });
+      mockPrisma.bank_history.create.mockResolvedValue({ id: 456 });
+    };
+
+    it('refuses a sender below the minimum level with a translatable code', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      setPlayers(LEVEL_4_XP, LEVEL_5_XP);
+
+      const error = await transferGoldToFriend(transferParams).catch(
+        (caught: any) => caught,
+      );
+      expect(error.message).toBe('You must be level 5 to send gold transfers');
+      expect(error.details).toEqual({
+        code: 'FRIEND_TRANSFER_MIN_LEVEL',
+        role: 'send',
+        minLevel: 5,
+      });
+      expect(mockPrisma.users.update).not.toHaveBeenCalled();
+    });
+
+    it('refuses a recipient below the minimum level with a translatable code', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      setPlayers(LEVEL_5_XP, LEVEL_4_XP);
+
+      const error = await transferGoldToFriend(transferParams).catch(
+        (caught: any) => caught,
+      );
+      expect(error.message).toBe(
+        'This player must be level 5 to receive gold transfers',
+      );
+      expect(error.details).toEqual({
+        code: 'FRIEND_TRANSFER_MIN_LEVEL',
+        role: 'receive',
+        minLevel: 5,
+      });
+      expect(mockPrisma.users.update).not.toHaveBeenCalled();
+    });
+
+    it('allows two players exactly at the minimum level', async () => {
+      allowTransfer();
+      setPlayers(LEVEL_5_XP, LEVEL_5_XP);
+
+      const result = await transferGoldToFriend(transferParams);
+      expect(result.success).toBe(true);
+      expect(mockPrisma.users.update).toHaveBeenCalledTimes(2);
+    });
+
+    it('follows the admin setting: a raised level refuses, a lowered level allows', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      setPlayers(LEVEL_5_XP, LEVEL_5_XP);
+      mockPrisma.serverSetting.findMany.mockResolvedValue(levelSetting(10));
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        'You must be level 10 to send gold transfers',
+      );
+      expect(mockPrisma.users.update).not.toHaveBeenCalled();
+
+      allowTransfer();
+      setPlayers(0, 0);
+      mockPrisma.serverSetting.findMany.mockResolvedValue(levelSetting(1));
+      const result = await transferGoldToFriend(transferParams);
+      expect(result.success).toBe(true);
+    });
+
+    it('refuses a gold request when the requester is below the minimum level', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      setPlayers(LEVEL_4_XP, LEVEL_5_XP);
+
+      const error = await createGoldRequest(requestParams).catch(
+        (caught: any) => caught,
+      );
+      expect(error.message).toBe('You must be level 5 to request gold');
+      expect(error.details.role).toBe('receive');
+      expect(mockPrisma.bank_history.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses a gold request aimed at a friend below the minimum level', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      setPlayers(LEVEL_5_XP, LEVEL_4_XP);
+
+      const error = await createGoldRequest(requestParams).catch(
+        (caught: any) => caught,
+      );
+      expect(error.message).toBe(
+        'This player must be level 5 to send gold transfers',
+      );
+      expect(error.details.role).toBe('send');
+      expect(mockPrisma.bank_history.create).not.toHaveBeenCalled();
+    });
+
+    it('reports to the transfer window which side is under the level', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.users.findUnique
+        .mockResolvedValueOnce(participantRow(1, { experience: LEVEL_5_XP }))
+        .mockResolvedValueOnce({ experience: LEVEL_4_XP });
+
+      const status = await getFriendTransferStatus(1, 2);
+      expect(status.minLevel).toBe(5);
+      expect(status.senderLevelMet).toBe(true);
+      expect(status.receiverLevelMet).toBe(false);
+    });
+
+    it('does not reveal the level of a player who is not a friend', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue(null);
+      mockPrisma.users.findUnique.mockResolvedValueOnce(
+        participantRow(1, { experience: LEVEL_4_XP }),
+      );
+
+      const status = await getFriendTransferStatus(1, 2);
+      expect(status.senderLevelMet).toBe(false);
+      expect(status.receiverLevelMet).toBe(true);
+      expect(mockPrisma.users.findUnique).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -4,8 +4,8 @@ import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
 import { assertNoDefaultedLoan } from '@/services/AllianceLoan.service';
-import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { ensureActiveEra } from '@/services/Era.service';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { getMaxDeposit } from '@/utils/bankLimits';
 import { parseBigInt } from '@/utils/jsonHelpers';
 import { stringifyObj } from '@/utils/numberFormatting';
@@ -62,6 +62,17 @@ export const withdrawGold = async (
  * Deposits gold from a user's hand into their bank account within a transaction.
  * The user row is locked first, so the deposit-count cap, balance and 80% cap
  * are all evaluated against committed state. Creates a bank history record.
+ *
+ * Transaction budget: Prisma defaults (timeout 5s / maxWait 2s) are kept.
+ * Both bank transactions are a handful of indexed statements under one user
+ * row lock; integration tests firing 8 concurrent deposits (F-18,
+ * test/integration/bankDepositCap.test.ts) and opposing attacks holding both
+ * user rows (F-04, test/integration/opposingAttacks.test.ts) complete every
+ * transaction in well under 500ms, three orders of magnitude inside the
+ * budget, with the bank rate-limit profile bounding per-user parallelism.
+ * The alliance bank takes the same locks under ALLIANCE_BANK_TX_OPTIONS
+ * (10s/5s) because it also locks the alliance row; this path does not.
+ *
  * @param userId - The ID of the user making the deposit.
  * @param depositAmount - The amount of gold to deposit (as a bigint).
  * @returns The updated user object with stringified BigInt fields.
@@ -97,7 +108,10 @@ const deposit = async (userId: number, depositAmount: bigint) => {
     if (validatedData.depositAmount > BigInt(user.gold ?? 0))
       throw new Error('Not enough gold for deposit');
 
-    if (validatedData.depositAmount > getMaxDeposit(BigInt(user.gold ?? 0), capPercent))
+    if (
+      validatedData.depositAmount >
+      getMaxDeposit(BigInt(user.gold ?? 0), capPercent)
+    )
       throw new Error(
         `Deposit amount exceeds the maximum allowed (${capPercent}% of gold on hand).`,
       );

@@ -1,11 +1,25 @@
+import {
+  ABUSE_BACKGROUND_LIMIT,
+  ABUSE_LOCK_MS,
+  ABUSE_SWEEP_STATEMENT_MS,
+  ABUSE_WRITE_STATEMENT_MS,
+  type AbuseDetectionConfig,
+  assessSharedNetwork,
+  DAY_MS,
+} from '@/constants/abuseSignals';
 import prisma from '@/lib/prisma';
+import { Prisma } from '@/lib/prisma-exports';
+import { getAbuseConfigBounded } from '@/services/AbuseConfig.service';
+import {
+  raiseAbuseSignal,
+  type RaiseAbuseSignalResult,
+} from '@/services/AbuseSignalStore.service';
 import { getAntiAbuseHash } from '@/utils/antiAbuse';
+import { createBestEffortRunner, withDbDeadline } from '@/utils/boundedWork';
 import { getTrustedProxyAddresses } from '@/utils/ipUtils';
 import { logError } from '@/utils/logger';
 
 const RETENTION_DAYS = 30;
-const MAX_EVENTS_PER_DEVICE_LOOKUP = 1000;
-const LINKED_ACCOUNT_THRESHOLD = 3;
 
 export interface LoginTelemetryInput {
   userId: number;
@@ -67,66 +81,140 @@ export async function recordSuccessfulLogin(
       },
     });
 
-    if (deviceHash) await refreshLinkedDeviceSignals(deviceHash);
+    // Off the sign-in path: authentication never waits on abuse detection.
+    loginChecks.run(() => refreshLinkedDeviceSignals(ipHash, deviceHash));
   } catch {
     // Telemetry is best effort. Do not log request identifiers or raw errors.
     logError('Unable to record login telemetry', { userId: input.userId });
   }
 }
 
-async function refreshLinkedDeviceSignals(deviceHash: string): Promise<void> {
-  const since = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000);
-  const lockKey = BigInt(`0x${deviceHash.slice(0, 15)}`);
+export interface LoginCluster {
+  via: 'ip' | 'device';
+  hash: string;
+  userIds: number[];
+}
 
-  await prisma.$transaction(async (tx) => {
-    // Serialize writers for this hashed pattern; the lock releases on commit.
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(${lockKey})`;
-    const events = await tx.loginEvent.findMany({
-      where: { deviceHash, occurredAt: { gte: since } },
-      select: { userId: true },
-      distinct: ['userId'],
-      orderBy: { occurredAt: 'desc' },
-      take: MAX_EVENTS_PER_DEVICE_LOOKUP,
-    });
-    const userIds = [...new Set(events.map((event) => event.userId))];
-    if (userIds.length < LINKED_ACCOUNT_THRESHOLD) return;
+const MAX_CLUSTERS_PER_RUN = 200;
+const MAX_ACCOUNTS_PER_CLUSTER = 50;
 
-    const now = new Date();
-    for (const userId of userIds) {
-      const openSignal = await tx.cheatSignal.findFirst({
-        where: {
-          userId,
-          type: 'LINKED_ACCOUNT_ACTIVITY',
-          status: { in: ['OPEN', 'ACKNOWLEDGED'] },
-          evidence: { path: ['deviceLink'], equals: 'network-browser-pattern' },
-        },
-        select: { id: true },
+/**
+ * Hashed IPs and IP+browser patterns shared by at least `minAccounts`
+ * distinct human accounts since `since`. Our own proxy address is everyone's
+ * address, so it never forms a cluster. `only` narrows the lookup to the
+ * hashes of one login (write-time evaluation); omitted, it sweeps the window.
+ */
+export async function findLoginClusters(options: {
+  since: Date;
+  minAccounts: number;
+  only?: { ipHash?: string | null; deviceHash?: string | null };
+}): Promise<LoginCluster[]> {
+  const proxies = [...proxyLoginIpHashes()];
+  const clusters: LoginCluster[] = [];
+  for (const via of ['ip', 'device'] as const) {
+    const column =
+      via === 'ip' ? Prisma.sql`"ipHash"` : Prisma.sql`"deviceHash"`;
+    const only = via === 'ip' ? options.only?.ipHash : options.only?.deviceHash;
+    if (options.only && !only) continue;
+    const narrow = only ? Prisma.sql`AND l.${column} = ${only}` : Prisma.empty;
+    const rows = await withDbDeadline(
+      (db) =>
+        db.$queryRaw<
+          Array<{ hash: string; users: number[] }>
+        >`SELECT l.${column} AS hash, array_agg(DISTINCT l."userId") AS users
+      FROM "LoginEvent" l
+      JOIN users u ON u.id = l."userId" AND u."isBot" = false
+      WHERE l."occurredAt" >= ${options.since}
+        AND l.${column} IS NOT NULL
+        AND NOT (l."ipHash" = ANY(${proxies}::text[]))
+        ${narrow}
+      GROUP BY l.${column}
+      HAVING COUNT(DISTINCT l."userId") >= ${options.minAccounts}
+      ORDER BY COUNT(DISTINCT l."userId") DESC
+      LIMIT ${MAX_CLUSTERS_PER_RUN}`,
+      {
+        statementMs: options.only
+          ? ABUSE_WRITE_STATEMENT_MS
+          : ABUSE_SWEEP_STATEMENT_MS,
+        lockMs: ABUSE_LOCK_MS,
+      },
+    );
+    for (const row of rows)
+      clusters.push({
+        via,
+        hash: row.hash,
+        userIds: row.users
+          .map(Number)
+          .sort((a, b) => a - b)
+          .slice(0, MAX_ACCOUNTS_PER_CLUSTER),
       });
-      if (openSignal) {
-        await tx.cheatSignal.update({
-          where: { id: openSignal.id },
-          data: { lastSeenAt: now },
-        });
-        continue;
-      }
-      await tx.cheatSignal.create({
-        data: {
-          userId,
-          type: 'LINKED_ACCOUNT_ACTIVITY',
-          severity: 'LOW',
-          score: 1,
-          status: 'OPEN',
-          summary:
-            'This account shares a network/browser pattern with at least two other accounts.',
-          evidence: {
-            deviceLink: 'network-browser-pattern',
-            distinctAccounts: userIds.length,
-            windowDays: RETENTION_DAYS,
-          },
-        },
-      });
-    }
+  }
+  return clusters;
+}
+
+/** Files (or refreshes) the shared-network signal for one cluster. */
+export async function raiseLoginClusterSignal(
+  cluster: LoginCluster,
+  config: AbuseDetectionConfig['network'],
+  now: Date,
+): Promise<RaiseAbuseSignalResult | null> {
+  const assessment = assessSharedNetwork({
+    via: cluster.via,
+    accounts: cluster.userIds.length,
+    minAccounts: config.minAccounts,
   });
+  if (!assessment.triggered) return null;
+  const [anchor, ...linked] = cluster.userIds;
+  return raiseAbuseSignal({
+    type: 'LINKED_ACCOUNT_ACTIVITY',
+    userId: anchor,
+    linkedUserIds: linked,
+    dedupeKey: `net:${cluster.via}:${cluster.hash.slice(0, 24)}`,
+    score: assessment.score,
+    summary:
+      cluster.via === 'device'
+        ? `${cluster.userIds.length} accounts logged in from the same network and browser within ${config.windowDays} days.`
+        : `${cluster.userIds.length} accounts logged in from the same network within ${config.windowDays} days.`,
+    evidence: {
+      kind: 'shared-network',
+      via: cluster.via,
+      distinctAccounts: cluster.userIds.length,
+      windowDays: config.windowDays,
+      // A short prefix of the salted hash lets staff tell clusters apart
+      // without exposing a value that could be matched elsewhere.
+      patternId: cluster.hash.slice(0, 10),
+      reasons: assessment.reasons,
+      thresholds: { minAccounts: config.minAccounts },
+    },
+    now,
+  });
+}
+
+/** Login-time cluster checks: bounded concurrency, dropped (the daily sweep catches up) when busy. */
+const loginChecks = createBestEffortRunner(
+  'Abuse login check',
+  ABUSE_BACKGROUND_LIMIT,
+);
+/** Resolves once every login-time check started so far has settled (tests). */
+export const settleLoginChecks = () => loginChecks.idle();
+
+/** Write-time check after a login: only this login's hashes are examined. */
+async function refreshLinkedDeviceSignals(
+  ipHash: string,
+  deviceHash: string | null,
+): Promise<void> {
+  // A login that resolved to our own proxy shares an address with everyone.
+  if (proxyLoginIpHashes().has(ipHash)) return;
+  const config = await getAbuseConfigBounded();
+  if (!config?.enabled) return;
+  const now = new Date();
+  const clusters = await findLoginClusters({
+    since: new Date(now.getTime() - config.network.windowDays * DAY_MS),
+    minAccounts: config.network.minAccounts,
+    only: { ipHash, deviceHash },
+  });
+  for (const cluster of clusters)
+    await raiseLoginClusterSignal(cluster, config.network, now);
 }
 
 /** Deletes telemetry beyond its bounded 30-day retention window. */

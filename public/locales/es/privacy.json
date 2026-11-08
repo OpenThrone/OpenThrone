@@ -66,9 +66,12 @@
         "Huellas de inicio de sesión: 30 días.",
         "Direcciones IP en nuestro registro de auditoría de administración: 90 días. El registro de la acción en sí se conserva por seguridad.",
         "Mensajes de alerta de Discord: 14 días después de enviarse.",
-        "Registros de pago: el tiempo que exija la ley fiscal y contable.",
-        "Registros de moderación (informes, notas, sanciones): el tiempo necesario para hacer cumplir las normas y atender apelaciones.",
+        "Registros de pago: el tiempo que exija la ley fiscal y contable, también tras eliminar una cuenta (entonces figuran bajo el nombre aleatorio).",
+        "Registros de moderación (informes, notas, sanciones): el tiempo necesario para hacer cumplir las normas y atender apelaciones. Si se elimina una cuenta mientras hay una expulsión o suspensión en curso, sus señales de abuso y notas del personal se conservan hasta que termine la sanción y luego se borran, igual que el texto de sus apelaciones y de los informes cerrados que presentó. Bajo el nombre aleatorio permanecen: el historial de sanciones y sus motivos, los informes que otros jugadores presentaron sobre la cuenta y las decisiones sobre sus apelaciones.",
+        "Solicitudes de eliminación de cuenta finalizadas: 365 días, como prueba de que se atendieron (no contienen texto libre).",
+        "Registro de descargas de datos (solo fecha y tamaño, sin contenido): 90 días.",
         "Huellas antiabuso tras eliminar una cuenta: una huella irreversible del correo durante 30 días (o hasta que termine una expulsión) y del nombre visible de forma permanente, para que no se puedan eludir expulsiones ni reutilizar nombres.",
+        "Cuentas borradas por inactividad: una huella irreversible de la dirección de correo durante dos años (para reconocer y honrar al jugador que vuelve); el nombre visible sigue reservado.",
         "Nuestros servidores también guardan registros técnicos, que pueden incluir direcciones IP, durante un periodo limitado por seguridad y para resolver problemas.",
         "Cuentas inactivas: si no inicias sesión en 12 meses, podemos escribirte y eliminar la cuenta 6 meses después salvo que inicies sesión."
       ]
@@ -76,15 +79,16 @@
     "delete": {
       "title": "Eliminar tu cuenta",
       "body": [
-        "Puedes eliminar tu cuenta desde Ajustes. Entonces borramos tu correo, contraseña, secreto de autenticación, biografía, archivos de avatar y vínculo con Discord, sustituimos tu nombre visible por un nombre aleatorio y borramos el texto de los mensajes privados y de chat que escribiste.",
-        "Conservamos: el historial de juego con el nombre aleatorio, para que los registros de batalla de otros jugadores sigan intactos; los registros de pago que exige la ley; y los registros de moderación.",
-        "Para evitar que se eludan expulsiones o se reutilicen nombres, conservamos una huella irreversible de tu correo durante 30 días (o hasta que termine una expulsión) y de tu nombre visible de forma permanente. Estas huellas no se pueden convertir de nuevo en los valores originales."
+        "Puedes pedir la eliminación de tu cuenta desde Ajustes. Vuelves a introducir tu contraseña (y el código del autenticador, si lo usas) y enviamos un enlace de confirmación al correo de la cuenta. Cuando lo abres y pulsas Confirmar en la página a la que lleva, la cuenta se desactiva y 14 días después borramos tu correo, contraseña, secreto de autenticación, biografía, archivos de avatar, vínculo con Discord, historial de inicios de sesión, las direcciones IP de tus entradas del registro de auditoría y de reclutamiento, tus amigos y tu actividad de chat, sustituimos tu nombre visible por un nombre aleatorio y borramos el texto de los mensajes privados y de chat que escribiste. Si inicias sesión durante esos 14 días puedes cancelar la eliminación. El mismo proceso se aplica a todos los jugadores, vivan donde vivan.",
+        "Conservamos: el historial de juego con el nombre aleatorio, para que los registros de batalla de otros jugadores sigan intactos; los registros de la alianza con el nombre aleatorio (el texto que escribiste en ellos, como notas del banco y motivos de préstamos o solicitudes de oro, se borra, pero las notas que otros miembros escribieron sobre ti y los anuncios que escribiste permanecen); los registros de pago que exige la ley; y los registros de moderación.",
+        "Para evitar que se eludan expulsiones o se reutilicen nombres, conservamos una huella irreversible de tu correo durante 30 días (o hasta que termine una expulsión) y de tu nombre visible de forma permanente. Estas huellas no se pueden convertir de nuevo en los valores originales.",
+        "Si dejas de jugar, podemos enviarte un aviso final y borrar la cuenta por inactividad una vez vencido el plazo indicado (véase Cuánto tiempo lo conservamos). Al borrar una cuenta de esta forma conservamos durante dos años una huella irreversible de tu dirección de correo, para reconocerte si vuelves a registrarte con la misma dirección y, cuando abras el enlace de confirmación que te enviemos a ella, darte el título Probador de la Era 1 y restaurar tu fecha original de registro. La huella no puede convertirse de nuevo en tu dirección y caduca por sí sola."
       ]
     },
     "rights": {
       "title": "Tus derechos",
       "body": [
-        "Puedes pedir acceder, corregir, eliminar o recibir una copia portable de tus datos personales, y oponerte o pedirnos que limitemos su uso. Cuando nos basamos en tu consentimiento, como en los correos de alertas de batalla, puedes retirarlo en cualquier momento; esto no afecta a lo que hicimos antes. En Ajustes hay un botón «Descargar mis datos» para una copia rápida; escribe a privacy@openthrone.dev para una copia completa o cualquier otra solicitud.",
+        "Puedes pedir acceder, corregir, eliminar o recibir una copia portable de tus datos personales, y oponerte o pedirnos que limitemos su uso. Cuando nos basamos en tu consentimiento, como en los correos de alertas de batalla, puedes retirarlo en cualquier momento; esto no afecta a lo que hicimos antes. En Ajustes hay un botón «Descargar mis datos» para una copia de los datos de tu cuenta y del juego; pide tu contraseña y permite una descarga cada 24 horas; escribe a privacy@openthrone.dev para una copia completa o cualquier otra solicitud.",
         "Respondemos en un plazo de 30 días y puede que necesitemos confirmar que la solicitud viene del titular de la cuenta. No te trataremos de forma distinta por ejercer estos derechos. Si rechazamos una solicitud, puedes recurrir respondiendo a nuestra respuesta o escribiendo a privacy@openthrone.dev con «Recurso de privacidad» en el asunto; respondemos a los recursos en un plazo de 45 días.",
         "Si estás en el EEE, el Reino Unido o Suiza, también puedes reclamar ante tu autoridad de protección de datos. Los residentes de estados de EE. UU. con leyes de privacidad tienen los derechos que esas leyes les dan, como saber, corregir, eliminar y recurrir, y los respetamos mediante el mismo proceso."
       ]

@@ -1,12 +1,12 @@
-import { SpyUpgrades, UnitTypes } from '@/constants';
 import type { UnitType } from '@/types/typings';
+import type { CombatRuleset } from '@/utils/balance/combatRuleset';
+import { CURRENT_COMBAT_RULESET } from '@/utils/balance/combatRulesets';
 import { resolveSpyForceContest } from '@/utils/balance/effectiveStats';
 import {
   calculateIntelQualityMultiplier,
   calculateSpyMissionPower,
   calculateSpyPressureProtection,
   clamp,
-  V5_COMBAT_CONSTANTS,
 } from '@/utils/balance/v5Combat';
 import {
   buildCombatFormations,
@@ -36,6 +36,8 @@ export type SpySimulationOptions = {
   defenderDailyCasualtyRemaining?: number;
   /** Kills of the targeted unit type still allowed today across all attackers. */
   targetTypeDailyRemaining?: number;
+  /** Rules the mission is fought under; defaults to the current combat ruleset. */
+  ruleset?: CombatRuleset;
 };
 
 function quantity(value: number): number {
@@ -45,17 +47,22 @@ function quantity(value: number): number {
 function missionTurns(
   options: SpySimulationOptions,
   minimum: number,
-  maximum: number = V5_COMBAT_CONSTANTS.MAX_SPY_MISSION_TURNS,
+  maximum: number = (options.ruleset ?? CURRENT_COMBAT_RULESET).constants
+    .MAX_SPY_MISSION_TURNS,
 ): number {
   return clamp(quantity(options.turns ?? minimum), minimum, maximum);
 }
 
-function missionCap(user: SpyMissionUser, tier: number): number {
+function missionCap(
+  user: SpyMissionUser,
+  tier: number,
+  ruleset: CombatRuleset,
+): number {
   if (tier === 1) return 10;
   const spyLevel =
     user.structure_upgrades?.find((upgrade) => upgrade.type === 'SPY')?.level ??
     0;
-  const upgrade = SpyUpgrades.find((entry) => entry.level === spyLevel);
+  const upgrade = ruleset.spyUpgrades.find((entry) => entry.level === spyLevel);
   const catalogCap =
     tier === 2
       ? upgrade?.maxInfiltratorsPerMission
@@ -71,11 +78,17 @@ function dispatchedCount(
   user: SpyMissionUser,
   requested: number,
   tier: number,
+  ruleset: CombatRuleset,
 ): number {
   const eligible = buildCombatFormations(user, 'SPY', {
     unitLevels: [tier],
+    ruleset,
   }).reduce((sum, formation) => sum + formation.quantity, 0);
-  return Math.min(quantity(requested), eligible, missionCap(user, tier));
+  return Math.min(
+    quantity(requested),
+    eligible,
+    missionCap(user, tier, ruleset),
+  );
 }
 
 /**
@@ -94,13 +107,15 @@ function entry(
   _modifier: number,
   options: SpySimulationOptions,
 ) {
+  const ruleset = options.ruleset ?? CURRENT_COMBAT_RULESET;
   const network =
     sent > 0
-      ? calculateCombatStrength(user, 'SPY').totalStats.MeleeAtkPower
+      ? calculateCombatStrength(user, 'SPY', { ruleset }).totalStats
+          .MeleeAtkPower
       : 0;
-  const spy = network * calculateSpyMissionPower(turns);
-  const sentry = calculateCombatStrength(defender, 'SENTRY').totalStats
-    .MeleeDefPower;
+  const spy = network * calculateSpyMissionPower(turns, ruleset);
+  const sentry = calculateCombatStrength(defender, 'SENTRY', { ruleset })
+    .totalStats.MeleeDefPower;
   const pressure = Math.max(
     0,
     Number(options.spyPressureToday ?? defender.spyPressureToday ?? 0) || 0,
@@ -108,7 +123,7 @@ function entry(
   const protection = calculateSpyPressureProtection(pressure);
   const adjustedSentry =
     Math.max(1, sentry / Math.max(0.35, protection)) +
-    pressure * V5_COMBAT_CONSTANTS.SPY_PRESSURE_PHANTOM_SENTRY_PER_TURN;
+    pressure * ruleset.constants.SPY_PRESSURE_PHANTOM_SENTRY_PER_TURN;
   return {
     ...resolveSpyForceContest({
       attackerSpy: spy,
@@ -179,16 +194,17 @@ function snapshotIntel(
   defender: SpyMissionUser,
   percentage: number,
   random: RandomFn,
+  ruleset: CombatRuleset,
 ): SpyIntelligence {
   const source: SpyIntelligence = {
-    offense: calculateCombatStrength(defender, 'OFFENSE').totalStats
+    offense: calculateCombatStrength(defender, 'OFFENSE', { ruleset })
+      .totalStats.MeleeAtkPower,
+    defense: calculateCombatStrength(defender, 'DEFENSE', { ruleset })
+      .totalStats.MeleeDefPower,
+    spyOffense: calculateCombatStrength(defender, 'SPY', { ruleset }).totalStats
       .MeleeAtkPower,
-    defense: calculateCombatStrength(defender, 'DEFENSE').totalStats
-      .MeleeDefPower,
-    spyOffense: calculateCombatStrength(defender, 'SPY').totalStats
-      .MeleeAtkPower,
-    spyDefense: calculateCombatStrength(defender, 'SENTRY').totalStats
-      .MeleeDefPower,
+    spyDefense: calculateCombatStrength(defender, 'SENTRY', { ruleset })
+      .totalStats.MeleeDefPower,
     units: defender.units.map((unit) => ({ ...unit })),
     mercenaries: (defender.mercenaries ?? []).map((unit) => ({ ...unit })),
     items: defender.items.map((item) => ({ ...item })),
@@ -254,8 +270,9 @@ export function simulateIntel(
   options: SpySimulationOptions,
 ): IntelResult {
   const random = requireRandom(options?.random);
-  const turns = missionTurns(options, 1, V5_COMBAT_CONSTANTS.MAX_INTEL_TURNS);
-  const sent = dispatchedCount(attacker, spies, 1);
+  const ruleset = options.ruleset ?? CURRENT_COMBAT_RULESET;
+  const turns = missionTurns(options, 1, ruleset.constants.MAX_INTEL_TURNS);
+  const sent = dispatchedCount(attacker, spies, 1, ruleset);
   const result = new IntelResult(sent, attacker.level, defender.level);
   result.turns = turns;
   const resolution = entry(attacker, defender, sent, 1, turns, 0.2, options);
@@ -272,13 +289,16 @@ export function simulateIntel(
   result.spiesLost = lossCount(result.spyLosses);
   result.intelPercentage = Math.min(
     100,
-    (sent - result.spiesLost) * 10 * calculateIntelQualityMultiplier(turns),
+    (sent - result.spiesLost) *
+      10 *
+      calculateIntelQualityMultiplier(turns, ruleset),
   );
   if (result.success && result.intelPercentage > 0) {
     result.intelligenceGathered = snapshotIntel(
       defender,
       result.intelPercentage,
       random,
+      ruleset,
     );
   }
   return result;
@@ -292,11 +312,10 @@ export function simulateAssassination(
   options: SpySimulationOptions,
 ): AssassinationResult {
   const random = requireRandom(options?.random);
-  const turns = missionTurns(
-    options,
-    V5_COMBAT_CONSTANTS.MIN_ASSASSINATION_TURNS,
-  );
-  const sent = dispatchedCount(attacker, spies, 3);
+  const ruleset = options.ruleset ?? CURRENT_COMBAT_RULESET;
+  const { constants } = ruleset;
+  const turns = missionTurns(options, constants.MIN_ASSASSINATION_TURNS);
+  const sent = dispatchedCount(attacker, spies, 3, ruleset);
   const result = new AssassinationResult(attacker, defender, sent, target);
   result.turns = turns;
   const resolution = entry(attacker, defender, sent, 3, turns, -0.2, options);
@@ -307,7 +326,7 @@ export function simulateAssassination(
     1,
     Math.max(0, 1 - resolution.ratio) * 0.6 +
       0.4 +
-      (turns / V5_COMBAT_CONSTANTS.MAX_SPY_MISSION_TURNS) * 0.15,
+      (turns / constants.MAX_SPY_MISSION_TURNS) * 0.15,
   );
   const losses = result.success
     ? successfulEntryLosses(sent, resolution.ratio, random)
@@ -328,15 +347,19 @@ export function simulateAssassination(
     calculateCombatStrength(attacker, 'SPY', {
       unitLevels: [3],
       limit: survivors,
-    }).totalStats.MeleeAtkPower * calculateSpyMissionPower(turns);
+      ruleset,
+    }).totalStats.MeleeAtkPower * calculateSpyMissionPower(turns, ruleset);
   const targetTypes: UnitType[] =
     target === CITIZEN_WORKERS_TARGET ? ['CITIZEN', 'WORKER'] : [target];
   let defense = 0;
   let targetQuantity = 0;
   let hitpoints = 0;
   for (const type of targetTypes) {
-    defense += calculateCombatStrength(defender, type).totalStats.MeleeDefPower;
-    for (const formation of buildCombatFormations(defender, type)) {
+    defense += calculateCombatStrength(defender, type, { ruleset }).totalStats
+      .MeleeDefPower;
+    for (const formation of buildCombatFormations(defender, type, {
+      ruleset,
+    })) {
       targetQuantity += formation.quantity;
       hitpoints += formation.maxHP * formation.quantity;
     }
@@ -351,7 +374,7 @@ export function simulateAssassination(
     ...(defender.mercenaries ?? []),
   ].reduce((sum, unit) => sum + quantity(unit.quantity), 0);
   const capShare =
-    0.01 + (turns / V5_COMBAT_CONSTANTS.MAX_SPY_MISSION_TURNS) ** 1.1 * 0.03;
+    0.01 + (turns / constants.MAX_SPY_MISSION_TURNS) ** 1.1 * 0.03;
   const dailyRemaining = Number.isFinite(options.defenderDailyCasualtyRemaining)
     ? quantity(options.defenderDailyCasualtyRemaining as number)
     : Number.POSITIVE_INFINITY;
@@ -370,7 +393,7 @@ export function simulateAssassination(
     budget,
     (unit) =>
       targetTypes.includes(unit.type) &&
-      UnitTypes.some(
+      ruleset.units.some(
         (entry) =>
           entry.type === unit.type &&
           entry.level === unit.level &&
@@ -390,11 +413,9 @@ export function simulateInfiltration(
   options: SpySimulationOptions,
 ): InfiltrationResult {
   const random = requireRandom(options?.random);
-  const turns = missionTurns(
-    options,
-    V5_COMBAT_CONSTANTS.MIN_INFILTRATION_TURNS,
-  );
-  const sent = dispatchedCount(attacker, spies, 2);
+  const ruleset = options.ruleset ?? CURRENT_COMBAT_RULESET;
+  const turns = missionTurns(options, ruleset.constants.MIN_INFILTRATION_TURNS);
+  const sent = dispatchedCount(attacker, spies, 2, ruleset);
   const result = new InfiltrationResult(sent, attacker.level, defender.level);
   result.turns = turns;
   const resolution = entry(attacker, defender, sent, 2, turns, 0, options);
@@ -416,7 +437,8 @@ export function simulateInfiltration(
     calculateCombatStrength(attacker, 'SPY', {
       unitLevels: [2],
       limit: survivors,
-    }).totalStats.MeleeAtkPower * calculateSpyMissionPower(turns);
+      ruleset,
+    }).totalStats.MeleeAtkPower * calculateSpyMissionPower(turns, ruleset);
   // Both saturating factors are monotone; commitment increases force and the cap.
   // A single shared damage roll never turns a stronger/longer mission into less damage.
   const capShare = Math.min(0.12, 0.025 + turns * 0.0095);

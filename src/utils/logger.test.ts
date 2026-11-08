@@ -129,3 +129,18 @@ describe('logger sinks', () => {
     expect(entries).toHaveLength(1);
   });
 });
+
+describe('logger error context', () => {
+  it('keeps the message of an Error nested in the log context', async () => {
+    setLogLevel('ERROR');
+    const { calls } = await withConsoleCaptured(() =>
+      logError('Supporter billing stop failed', {
+        userId: 4,
+        error: new Error('provider down'),
+      }),
+    );
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toContain('"userId":4');
+    expect(calls[0]).toContain('"message":"provider down"');
+  });
+});

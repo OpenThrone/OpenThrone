@@ -30,6 +30,11 @@ import {
   settleLoansOnExit,
   writeOffAllianceLoans,
 } from '@/services/AllianceLoan.service';
+import {
+  assertAllianceActive,
+  assertAllianceIdActive,
+  isAllianceActive,
+} from '@/services/allianceStatus';
 import { lockAllianceChatRooms } from '@/services/chatRoomGuards';
 import { returnMemberForcesInTx } from '@/services/ForceLifecycle.service';
 import { settleForcePillageInTx } from '@/services/ForcePillage.service';
@@ -127,6 +132,10 @@ export interface AllianceInfo {
   require_auth: boolean;
   closed_enrollment: boolean;
   roster_visibility?: 'PUBLIC' | 'MEMBERS_ONLY';
+  /** Era lifecycle (#13): ACTIVE features run; RESERVED waits for reactivation. */
+  status?: string;
+  status_changed_at?: Date | string | null;
+  status_era_id?: number | null;
   /** Treasury; only present for alliance members (ALL-08). */
   gold_in_bank?: bigint | string;
   created_at: Date;
@@ -562,10 +571,14 @@ export class AllianceService {
         redactAllianceForViewer(
           {
             ...alliance,
+            // The premium mark is a perk: withheld while RESERVED (#13).
             isPremium:
+              isAllianceActive(alliance) &&
               !!alliance.sponsorship?.activeUntil &&
               new Date(alliance.sponsorship.activeUntil) > new Date(),
-            premiumUntil: alliance.sponsorship?.activeUntil ?? null,
+            premiumUntil: isAllianceActive(alliance)
+              ? (alliance.sponsorship?.activeUntil ?? null)
+              : null,
             members: alliance.members.map((m: any) =>
               m.user
                 ? {
@@ -652,9 +665,12 @@ export class AllianceService {
       return {
         ...data,
         isPremium:
+          isAllianceActive(alliance) &&
           !!alliance.sponsorship?.activeUntil &&
           alliance.sponsorship.activeUntil > new Date(),
-        premiumUntil: alliance.sponsorship?.activeUntil?.toISOString() ?? null,
+        premiumUntil: isAllianceActive(alliance)
+          ? (alliance.sponsorship?.activeUntil?.toISOString() ?? null)
+          : null,
         members: (data.members ?? []).map((m: any) =>
           m.user
             ? {
@@ -703,9 +719,11 @@ export class AllianceService {
     try {
       const alliance = await prisma.alliances.findUnique({
         where: { id: allianceId },
-        select: { id: true, leader_id: true },
+        select: { id: true, leader_id: true, status: true },
       });
       if (!alliance) throw new Error('Alliance not found');
+      // Profile and settings editing is a feature of an active alliance (#13).
+      assertAllianceActive(alliance);
 
       // The leader edits everything; a rank with edit_profile may edit the
       // public profile (motto, description, avatar, banner) only.
@@ -822,11 +840,14 @@ export class AllianceService {
    * caller's transaction with the alliance row locked: pays out the treasury
    * (remainder to `payoutLeaderId`), writes off loans and removes chat rooms,
    * war records, shared logs, memberships and roles before the alliance row.
+   * `distributeTreasury: false` (factory restore) discards the old-era
+   * treasury instead of paying it out: a factory restore wipes players too.
    */
   private static async teardownAlliance(
     tx: Prisma.TransactionClient,
     allianceId: number,
     payoutLeaderId: number,
+    options: { distributeTreasury?: boolean } = {},
   ) {
     const forceMembers = await tx.alliance_memberships.findMany({
       where: { alliance_id: allianceId },
@@ -915,12 +936,19 @@ export class AllianceService {
       where: { id: allianceId },
       select: { gold_in_bank: true },
     });
-    await distributeTreasuryOnDisband(
-      tx,
-      allianceId,
-      payoutLeaderId,
-      BigInt(settled?.gold_in_bank ?? 0),
-    );
+    if (options.distributeTreasury !== false) {
+      await distributeTreasuryOnDisband(
+        tx,
+        allianceId,
+        payoutLeaderId,
+        BigInt(settled?.gold_in_bank ?? 0),
+      );
+    } else {
+      await tx.alliances.updateMany({
+        where: { id: allianceId },
+        data: { gold_in_bank: 0n },
+      });
+    }
     await writeOffAllianceLoans(tx, allianceId);
 
     const [members, rooms] = await Promise.all([
@@ -1000,6 +1028,43 @@ export class AllianceService {
       roomIds.forEach((roomId) => evictUserFromChatRoom(userId, roomId)),
     );
     return { message: 'Alliance dissolved' };
+  }
+
+  /**
+   * Factory restore (#13): dissolves EVERY alliance inside the caller's
+   * transaction. Only the explicit admin complete-factory-restore reset may
+   * call this; ordinary era rollovers reserve alliances instead. The old-era
+   * treasury is discarded (no payout) because the same reset wipes every
+   * player. Returns per-room evictions for after commit.
+   */
+  static async dissolveAllAlliancesForFactoryRestore(
+    tx: Prisma.TransactionClient,
+  ) {
+    // Every alliance chat room, ascending (same lock order as single removals).
+    await tx.$queryRaw`SELECT id FROM "ChatRoom" WHERE "allianceId" IS NOT NULL ORDER BY id FOR UPDATE`;
+    const rows = await tx.alliances.findMany({
+      select: { id: true, name: true, leader_id: true },
+      orderBy: { id: 'asc' },
+    });
+    // Serialize the rows, then dissolve in id order.
+    await tx.$queryRaw`SELECT id FROM alliances ORDER BY id FOR UPDATE`;
+    const evictions: { userId: number; roomId: number }[] = [];
+    for (const row of rows) {
+      const { memberIds, roomIds } = await AllianceService.teardownAlliance(
+        tx,
+        row.id,
+        row.leader_id ?? 0,
+        { distributeTreasury: false },
+      );
+      memberIds.forEach((userId) =>
+        roomIds.forEach((roomId) => evictions.push({ userId, roomId })),
+      );
+    }
+    return {
+      dissolved: rows.length,
+      evictions,
+      alliances: rows.map((row) => ({ id: row.id, name: row.name })),
+    };
   }
 
   /**
@@ -1112,6 +1177,10 @@ export class AllianceService {
         if (!alliance) {
           throw new Error('Alliance not found');
         }
+
+        // Recruiting is a feature of an active alliance (#13); a reserved
+        // alliance keeps its roster but takes no new members.
+        assertAllianceActive(alliance);
 
         if (alliance.join_mode === AllianceJoinMode.INVITE_ONLY) {
           throw new Error('This alliance is invite-only');
@@ -1534,6 +1603,7 @@ export class AllianceService {
               name: true,
               leader_id: true,
               roster_visibility: true,
+              status: true,
             },
           },
         },
@@ -1557,6 +1627,7 @@ export class AllianceService {
           id: a.id,
           name: a.name,
           isLeader: a.leader_id === targetUserId,
+          status: a.status,
         }));
     } catch (error: any) {
       logError('Error getting visible alliances for player', {
@@ -1947,6 +2018,16 @@ export class AllianceService {
    */
   static async createJoinRequest(userId: number, allianceId: number) {
     try {
+      // A reserved alliance accepts no applications or invitations (#13).
+      const alliance = await prisma.alliances.findUnique({
+        where: { id: allianceId },
+        select: { status: true },
+      });
+      if (!alliance) {
+        throw new Error('Alliance not found');
+      }
+      assertAllianceActive(alliance);
+
       // Check if user is already in this alliance
       const isMember = await prisma.alliance_memberships.findUnique({
         where: {
@@ -2054,6 +2135,8 @@ export class AllianceService {
         if (!acceptorMembership) {
           throw new Error('You are not a member of this alliance');
         }
+        // A reserved alliance takes no new members (#13).
+        assertAllianceActive(acceptorMembership.alliance);
 
         const canAccept = hasAlliancePermission(
           acceptorMembership.alliance.leader_id,
@@ -2228,6 +2311,7 @@ export class AllianceService {
     allianceId: number,
     displayName: string,
   ) {
+    await assertAllianceIdActive(prisma, allianceId);
     if (!(await this.canInvite(prisma, allianceId, inviterId))) {
       throw new Error('You do not have permission to invite players');
     }
@@ -2363,6 +2447,7 @@ export class AllianceService {
     await prisma.$transaction(async (tx) => {
       await lockEraLifecycleShared(tx);
       await lockAllianceThenUsers(tx, invite.alliance_id, [userId]);
+      await assertAllianceIdActive(tx, invite.alliance_id);
       const updated = await tx.alliance_join_requests.updateMany({
         where: { id: inviteId, status: 'PENDING', kind: 'INVITE' },
         data: { status: 'APPROVED', moderated_by: userId },

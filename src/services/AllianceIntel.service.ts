@@ -5,6 +5,10 @@ import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { postToAllianceRoom } from '@/services/AllianceRoom.service';
+import {
+  assertAllianceActive,
+  isAllianceActive,
+} from '@/services/allianceStatus';
 import { getAttackLogViewerRole } from '@/services/AttackLogAccess.service';
 import { getLevelFromXP } from '@/utils/utilities';
 
@@ -91,6 +95,8 @@ const requireMember = async (
   });
   if (!membership) throw new Error('You are not a member of this alliance');
   const { alliance } = membership;
+  // Shared reports and calls are alliance features: closed while reserved (#13).
+  assertAllianceActive(alliance);
   return {
     alliance: {
       id: alliance.id,
@@ -538,16 +544,20 @@ export class AllianceIntelService {
       where: { user_id: userId },
       include: {
         role: true,
-        alliance: { select: { id: true, name: true, leader_id: true } },
+        alliance: {
+          select: { id: true, name: true, leader_id: true, status: true },
+        },
       },
     });
-    const allowed = memberships.filter((m) =>
-      hasAlliancePermission(
-        m.alliance.leader_id,
-        userId,
-        m.role,
-        'share_reports',
-      ),
+    const allowed = memberships.filter(
+      (m) =>
+        isAllianceActive(m.alliance) &&
+        hasAlliancePermission(
+          m.alliance.leader_id,
+          userId,
+          m.role,
+          'share_reports',
+        ),
     );
     if (allowed.length === 0) return [];
     const shared = await prisma.alliance_intel_shares.findMany({

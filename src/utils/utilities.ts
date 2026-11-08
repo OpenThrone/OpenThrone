@@ -43,17 +43,21 @@ const generateRandomString = (length: number) => {
 };
 
 /**
- * Calculates the level of a user based on their XP using the levelXPArray.
+ * Calculates the level of a user based on their XP using the levelXPArray
+ * (or the XP table of a combat ruleset, when replaying a battle).
  * @param xp - The amount of XP the user has.
  * @returns The user's level.
  */
-const getLevelFromXP = (xp: number): number => {
-  for (let i = 0; i < levelXPArray.length; i++) {
-    if (xp < levelXPArray[i].xp) {
-      return levelXPArray[i].level - 1 == 0 ? 1 : levelXPArray[i].level - 1;
+const getLevelFromXP = (
+  xp: number,
+  table: readonly { level: number; xp: number }[] = levelXPArray,
+): number => {
+  for (let i = 0; i < table.length; i++) {
+    if (xp < table[i].xp) {
+      return table[i].level - 1 == 0 ? 1 : table[i].level - 1;
     }
   }
-  return levelXPArray[levelXPArray.length - 1].level; // Return max level if XP exceeds all defined levels
+  return table[table.length - 1].level; // Return max level if XP exceeds all defined levels
 };
 
 // Matches BattleUser.isProtected(): levels 1-9 are protected.

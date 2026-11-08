@@ -1,5 +1,13 @@
 import type { BonusType, PlayerRace } from '@/types/typings';
 
+type Widen<T> = T extends number
+  ? number
+  : T extends boolean
+    ? boolean
+    : T extends object
+      ? { readonly [K in keyof T]: Widen<T[K]> }
+      : T;
+
 export const V5_COMBAT_CONSTANTS = {
   MAX_ATTACK_TURNS: 10,
   /** Ranged defense supports melee-only attacker assaults; actual ranged pressure retains full matching defense. */
@@ -107,6 +115,9 @@ export const V5_COMBAT_CONSTANTS = {
   INTEL_MAX_PER_TARGET_PER_DAY: 5,
 } as const;
 
+/** The shape of the combat constants, with values free to differ per ruleset. */
+export type CombatConstants = Widen<typeof V5_COMBAT_CONSTANTS>;
+
 /** Defines the race identity modifiers shape used by related workflows. */
 export type RaceIdentityModifiers = {
   offenseMultiplier: number;
@@ -176,6 +187,20 @@ const RACE_IDENTITY: Record<PlayerRace, RaceIdentityModifiers> = {
   },
 };
 
+/**
+ * The tunables the combat formulas read. A ruleset supplies them for the
+ * battle's formula version; callers outside the engine get the live values.
+ */
+export type CombatTuning = {
+  constants: CombatConstants;
+  race: Readonly<Record<PlayerRace, RaceIdentityModifiers>>;
+};
+
+const LIVE_TUNING: CombatTuning = {
+  constants: V5_COMBAT_CONSTANTS,
+  race: RACE_IDENTITY,
+};
+
 const KNOWN_RACES = new Set(['HUMAN', 'ELF', 'GOBLIN', 'UNDEAD', 'ALL']);
 
 /**
@@ -193,8 +218,11 @@ function normalizeRace(race: unknown): PlayerRace {
 /**
  * Resolves combat identity multipliers for a known race, falling back to human defaults.
  */
-export function getRaceIdentity(race: unknown): RaceIdentityModifiers {
-  return RACE_IDENTITY[normalizeRace(race)] ?? DEFAULT_RACE_IDENTITY;
+export function getRaceIdentity(
+  race: unknown,
+  table: CombatTuning['race'] = RACE_IDENTITY,
+): RaceIdentityModifiers {
+  return table[normalizeRace(race)] ?? DEFAULT_RACE_IDENTITY;
 }
 
 /**
@@ -225,20 +253,24 @@ export function calculateGoldRewardMultiplier(turns: number): number {
   return clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS) ** 0.55;
 }
 
-function calculateEffectiveMorale(morale: number, turns: number): number {
+function calculateEffectiveMorale(
+  morale: number,
+  turns: number,
+  constants: CombatConstants,
+): number {
   const current = clamp((Number(morale) || 0) / 100, 0, 1);
-  return clamp(
-    current - V5_COMBAT_CONSTANTS.MORALE_EXHAUSTION_PER_TURN * turns,
-    0,
-    1,
-  );
+  return clamp(current - constants.MORALE_EXHAUSTION_PER_TURN * turns, 0, 1);
 }
 
 /**
  * Calculates the XP factor after morale exhaustion from committed attack turns.
  */
-export function calculateMoraleXpFactor(morale: number, turns: number): number {
-  return clamp(calculateEffectiveMorale(morale, turns), 0.25, 1);
+export function calculateMoraleXpFactor(
+  morale: number,
+  turns: number,
+  { constants }: CombatTuning = LIVE_TUNING,
+): number {
+  return clamp(calculateEffectiveMorale(morale, turns, constants), 0.25, 1);
 }
 
 /**
@@ -268,11 +300,14 @@ export function calculateDefenseCoverage(params: {
 /**
  * Increases fort damage and rewards when a defender is below the coverage threshold.
  */
-export function calculateUnderDefendedMultipliers(defenseCoverage: number): {
+export function calculateUnderDefendedMultipliers(
+  defenseCoverage: number,
+  { constants }: CombatTuning = LIVE_TUNING,
+): {
   fortDamageMultiplier: number;
   rewardMultiplier: number;
 } {
-  const threshold = V5_COMBAT_CONSTANTS.DEFENSE_COVERAGE_THRESHOLD;
+  const threshold = constants.DEFENSE_COVERAGE_THRESHOLD;
   if (defenseCoverage >= threshold) {
     return { fortDamageMultiplier: 1, rewardMultiplier: 1 };
   }
@@ -296,8 +331,11 @@ export function calculateSpyPressureProtection(
   return 1 / (1 + Math.max(0, Number(spyPressureToday) || 0) / 16);
 }
 
-function calculateTurnDamageFactor(turns: number): number {
-  return 0.08 * clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS) ** 1.15;
+function calculateTurnDamageFactor(
+  turns: number,
+  constants: CombatConstants,
+): number {
+  return 0.08 * clamp(turns, 1, constants.MAX_ATTACK_TURNS) ** 1.15;
 }
 
 /**
@@ -344,35 +382,44 @@ export function calculateDefenderDailyGoldRemaining(params: {
   return ceiling > params.goldTakenToday ? ceiling - params.goldTakenToday : 0n;
 }
 
-export function calculateDailyReplacementThroughput(params: {
-  houseCitizens: number;
-  isSubscriber?: boolean;
-  race?: unknown;
-}): number {
+export function calculateDailyReplacementThroughput(
+  params: {
+    houseCitizens: number;
+    isSubscriber?: boolean;
+    race?: unknown;
+  },
+  { constants, race }: CombatTuning = LIVE_TUNING,
+): number {
   const subscriberBudgetCitizens = params.isSubscriber
     ? Math.min(
-        V5_COMBAT_CONSTANTS.SUBSCRIBER_BUDGET_CITIZENS_PER_DAY_CAP,
-        V5_COMBAT_CONSTANTS.SUBSCRIBER_CITIZENS_PER_DAY * 0.6,
+        constants.SUBSCRIBER_BUDGET_CITIZENS_PER_DAY_CAP,
+        constants.SUBSCRIBER_CITIZENS_PER_DAY * 0.6,
       )
     : 0;
 
   return (
-    (V5_COMBAT_CONSTANTS.BASE_DAILY_SELF_CLICKS +
-      V5_COMBAT_CONSTANTS.BASE_DAILY_RECEIVED_CLICKS +
+    (constants.BASE_DAILY_SELF_CLICKS +
+      constants.BASE_DAILY_RECEIVED_CLICKS +
       Math.max(0, Number(params.houseCitizens) || 0) +
       subscriberBudgetCitizens) *
-    getRaceIdentity(params.race).citizenRecoveryMultiplier
+    getRaceIdentity(params.race, race).citizenRecoveryMultiplier
   );
 }
 
 /** Calculates spy mission power used by combat, economy, or presentation logic. */
-export function calculateSpyMissionPower(turns: number): number {
-  return clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_SPY_MISSION_TURNS) ** 0.35;
+export function calculateSpyMissionPower(
+  turns: number,
+  { constants }: CombatTuning = LIVE_TUNING,
+): number {
+  return clamp(turns, 1, constants.MAX_SPY_MISSION_TURNS) ** 0.35;
 }
 
 /** Calculates intel quality multiplier used by combat, economy, or presentation logic. */
-export function calculateIntelQualityMultiplier(turns: number): number {
-  return clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_INTEL_TURNS) ** 0.45;
+export function calculateIntelQualityMultiplier(
+  turns: number,
+  { constants }: CombatTuning = LIVE_TUNING,
+): number {
+  return clamp(turns, 1, constants.MAX_INTEL_TURNS) ** 0.45;
 }
 
 /**
@@ -384,33 +431,36 @@ export function calculateIntelQualityMultiplier(turns: number): number {
  * hard the battle pressed and how well the target was protected, never amplify
  * past the rebuild guarantee.
  */
-export function calculateCasualtyBudget(params: {
-  dailyThroughput: number;
-  population: number;
-  turns: number;
-  levelDifference: number;
-  winQuality: number;
-  fortHpPercent: number;
-  defensePressureToday: number;
-  /** Lowest win-quality multiplier; defaults to DEFENDER_WIN_QUALITY_FLOOR. */
-  winQualityFloor?: number;
-}): number {
+export function calculateCasualtyBudget(
+  params: {
+    dailyThroughput: number;
+    population: number;
+    turns: number;
+    levelDifference: number;
+    winQuality: number;
+    fortHpPercent: number;
+    defensePressureToday: number;
+    /** Lowest win-quality multiplier; defaults to DEFENDER_WIN_QUALITY_FLOOR. */
+    winQualityFloor?: number;
+  },
+  { constants }: CombatTuning = LIVE_TUNING,
+): number {
   const ceiling = Math.min(
     Math.max(0, Number(params.dailyThroughput) || 0) *
-      V5_COMBAT_CONSTANTS.CASUALTY_BUDGET_RECOVERY_DAYS,
+      constants.CASUALTY_BUDGET_RECOVERY_DAYS,
     Math.max(0, Number(params.population) || 0) *
-      V5_COMBAT_CONSTANTS.SINGLE_ATTACK_POPULATION_LOSS_CAP,
+      constants.SINGLE_ATTACK_POPULATION_LOSS_CAP,
   );
   const fortHp = clamp(params.fortHpPercent, 0, 1);
   const fortProtection = (1 - 0.3 * fortHp) * (1 - 0.25 * fortHp);
 
   return (
     ceiling *
-    Math.min(1, calculateTurnDamageFactor(params.turns)) *
+    Math.min(1, calculateTurnDamageFactor(params.turns, constants)) *
     clamp(1 - params.levelDifference * 0.08, 0.8, 1) *
     clamp(
       params.winQuality,
-      params.winQualityFloor ?? V5_COMBAT_CONSTANTS.DEFENDER_WIN_QUALITY_FLOOR,
+      params.winQualityFloor ?? constants.DEFENDER_WIN_QUALITY_FLOOR,
       1,
     ) *
     fortProtection *
@@ -436,8 +486,11 @@ export function softCapCasualties(
  * assaults above CHIP_MIN_RATIO still chip a fraction of a marginal success,
  * and anything weaker leaves the walls untouched.
  */
-export function calculateFortDamageShare(pressureRatio: number): number {
-  const c = V5_COMBAT_CONSTANTS.FORT_DAMAGE;
+export function calculateFortDamageShare(
+  pressureRatio: number,
+  { constants }: CombatTuning = LIVE_TUNING,
+): number {
+  const c = constants.FORT_DAMAGE;
   const ratio = Math.max(0, Number(pressureRatio) || 0);
   if (ratio >= 1) {
     const t = clamp((ratio - 1) / Math.max(1e-9, c.OVERWHELM_RATIO - 1), 0, 1);

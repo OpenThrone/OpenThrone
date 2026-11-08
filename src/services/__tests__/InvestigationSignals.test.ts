@@ -37,7 +37,7 @@ beforeAll(async () => {
   CREATE TABLE users (id int PRIMARY KEY,display_name text,"isBot" boolean NOT NULL DEFAULT false);
   CREATE TABLE bank_history (id serial PRIMARY KEY,from_user_id int,to_user_id int,date_time timestamptz,history_type text,stats jsonb,gold_amount bigint);
   CREATE TABLE "LoginEvent" ("userId" int,"deviceHash" text,"occurredAt" timestamptz);
-  CREATE TABLE attack_log (id serial PRIMARY KEY,attacker_id int,defender_id int,timestamp timestamptz,type text,winner int,pillaged_gold bigint,attacker_losses_total int,defender_losses_total int,stats jsonb);
+  CREATE TABLE attack_log (id serial PRIMARY KEY,attacker_id int,defender_id int,timestamp timestamptz,type text,winner int,pillaged_gold bigint,attacker_losses_total int,defender_losses_total int,stats jsonb,"voidedAt" timestamptz);
   CREATE TABLE recruit_history (id serial PRIMARY KEY,from_user int,to_user int,timestamp timestamptz);
   CREATE TABLE alliance_bank_history (id serial PRIMARY KEY,alliance_id int,performed_by_user_id int,related_user_id int,created_at timestamptz,transaction_type text,amount bigint);
   CREATE TABLE "ChatMessage" (id serial PRIMARY KEY,"senderId" int,"sentAt" timestamptz,content text);

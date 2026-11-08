@@ -9,7 +9,14 @@ import {
   faSortUp,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Stack, Table, Text, UnstyledButton } from '@mantine/core';
+import {
+  Badge,
+  Stack,
+  Table,
+  Text,
+  Tooltip,
+  UnstyledButton,
+} from '@mantine/core';
 import router from 'next/router';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useMemo, useState } from 'react';
@@ -320,6 +327,17 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
                     collapsed={collapsedLogs[log.id] ?? true}
                   />
                   <Table.Td style={{ borderColor: 'var(--ot-line)' }}>
+                    {log.voided && (
+                      <Tooltip
+                        label={t('void.banner', { reason: log.voided.reason })}
+                        multiline
+                        maw={280}
+                      >
+                        <Badge color="gray" variant="light" mb={4} tabIndex={0}>
+                          {t('void.badge')}
+                        </Badge>
+                      </Tooltip>
+                    )}
                     <StatsList
                       stats={log.stats}
                       type={type}

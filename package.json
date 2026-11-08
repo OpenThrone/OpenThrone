@@ -1,6 +1,6 @@
 {
   "name": "openthrone",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "scripts": {
     "dev": "bun run src/server/index.ts",
     "era-reset-worker": "bun scripts/run-era-reset-worker.ts",

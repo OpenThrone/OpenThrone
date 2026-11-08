@@ -46,7 +46,13 @@ const subMenus = {
   ],
   howToPlay: [
     { key: 'howToPlay', labelKey: 'loggedOut.howToPlay', url: '/how-to-play' },
+    { key: 'guides', labelKey: 'loggedOut.guides', url: '/guides' },
     { key: 'faq', labelKey: 'loggedOut.faq', url: '/faq' },
+    {
+      key: 'chronicles',
+      labelKey: 'loggedOut.chronicles',
+      url: '/chronicles',
+    },
   ],
   community: [
     { key: 'news', labelKey: 'loggedOut.news', url: '/community/news' },
@@ -70,10 +76,14 @@ export const NavLoggedOut: React.FC = () => {
         : pathName;
   const getChildren = (key: string) =>
     subMenus[key as keyof typeof subMenus] ?? [];
+  // A page inside a section (a guide, a news article) keeps its section lit.
+  const isCurrent = (url: string) =>
+    url === normalizedPath ||
+    (url !== '/' && normalizedPath.startsWith(`${url}/`));
   const activeParent = parentLinks.find(
     (link) =>
       link.url === normalizedPath ||
-      getChildren(link.key).some((child) => child.url === normalizedPath),
+      getChildren(link.key).some((child) => isCurrent(child.url)),
   );
   const visibleChildren = getChildren(
     previewParent ?? activeParent?.key ?? 'home',
@@ -176,7 +186,7 @@ export const NavLoggedOut: React.FC = () => {
                 <Link
                   href={link.url}
                   className={classes.subLink}
-                  data-active={normalizedPath === link.url || undefined}
+                  data-active={isCurrent(link.url) || undefined}
                   aria-current={
                     normalizedPath === link.url ? 'page' : undefined
                   }

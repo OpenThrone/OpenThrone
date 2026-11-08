@@ -1,0 +1,223 @@
+{
+  "index": {
+    "metaTitle": "Guías de estrategia - OpenThrone",
+    "metaDescription": "Guías de estrategia gratuitas de OpenThrone: tu primer reino, economía y crecimiento, y combate, espionaje y resistencia. Cada cifra se lee de las reglas actuales del juego.",
+    "title": "Guías de estrategia",
+    "intro": "Tres guías prácticas para comandantes nuevos y veteranos. Cada número se lee de las reglas del propio juego, así que sigue siendo cierto cuando las reglas cambian.",
+    "read": "Leer la guía",
+    "moreTitle": "Sigue leyendo",
+    "moreText": "Para ver todas las mecánicas consulta Cómo Jugar, para respuestas rápidas las Preguntas frecuentes y para la historia de los reinos las Crónicas.",
+    "cards": {
+      "first-kingdom": {
+        "title": "Tu primer reino",
+        "summary": "Con qué empiezas, qué comprar primero, cómo funciona la protección y cómo mantener tu oro a salvo en los primeros días."
+      },
+      "economy-and-growth": {
+        "title": "Economía y crecimiento",
+        "summary": "De dónde salen el oro y los ciudadanos, qué aporta cada mejora y en qué orden conviene gastar."
+      },
+      "combat-spying-stamina": {
+        "title": "Combate, espionaje y resistencia",
+        "summary": "Cómo elegir objetivos, cuánto paga un saqueo, cómo funcionan las bajas y el cansancio y cómo dosificar la resistencia de tu ejército."
+      }
+    }
+  },
+  "common": {
+    "tocLabel": "En esta página",
+    "guideLabel": "Guía {{number}} de {{total}}",
+    "numbersNote": "Las cifras de esta página proceden de las reglas del juego y de la configuración del servidor. El servidor puede cambiarlas entre eras y la página se actualiza cuando lo hace.",
+    "relatedTitle": "Sigue leyendo",
+    "allGuides": "Todas las guías",
+    "howToPlay": "Cómo Jugar",
+    "faq": "Preguntas frecuentes",
+    "chronicles": "Crónicas",
+    "createCommander": "Crear un comandante",
+    "returnToBattle": "Volver a la batalla",
+    "columns": {
+      "upgrade": "Mejora",
+      "cost": "Coste (oro)",
+      "fortLevel": "Nivel de fortificación",
+      "goldPerWorker": "Oro por trabajador y turno",
+      "deposits": "Depósitos en el banco al día",
+      "citizens": "Ciudadanos al día",
+      "fortification": "Fortificación",
+      "goldPerTurn": "Oro por turno",
+      "hitpoints": "Puntos de vida"
+    },
+    "free": "Gratis"
+  },
+  "first-kingdom": {
+    "metaTitle": "Tu primer reino: guía para principiantes - OpenThrone",
+    "metaDescription": "Qué hacer en los primeros días de OpenThrone: tus recursos iniciales, qué entrenar primero, cómo funciona la protección de novatos y cómo mantener tu oro a salvo.",
+    "title": "Tu primer reino",
+    "intro": "Los primeros días deciden lo rápido que creces. Esta guía explica con qué empiezas, qué comprar, cuánto tiempo estás protegido y qué hacer antes de desconectarte.",
+    "sections": {
+      "start": {
+        "title": "Con qué empiezas",
+        "paragraphs": [
+          "Un comandante nuevo en una era recién empezada suele comenzar con {{start.gold}} de oro, {{start.citizens}} ciudadanos y {{start.attackTurns}} turnos de ataque. Una era puede configurarse con otros valores iniciales, así que revisa tu resumen el primer día.",
+          "Los turnos de ataque vuelven según un reloj: uno cada {{turnMinutes}} minutos, o {{turnsPerDay}} al día, incluso cuando no estás. Tu reino gana su oro con el mismo reloj."
+        ]
+      },
+      "spend": {
+        "title": "Cómo gastar tu primer oro",
+        "paragraphs": [
+          "Los ciudadanos no hacen nada hasta que los entrenas. Entrenar convierte a un ciudadano en una unidad y cuesta oro. Un trabajador cuesta {{costs.worker}} de oro, un soldado {{costs.soldier}}, un guardia {{costs.guard}} y un espía {{costs.spy}}. Con tu oro inicial puedes comprar como máximo {{startBuys.workers}} trabajadores o {{startBuys.soldiers}} soldados.",
+          "Los trabajadores son la única unidad que gana oro. En la granja inicial cada trabajador aporta {{income.farmPerWorker}} de oro por turno, así que recupera su precio en unos {{income.workerPaybackTurns}} turnos, aproximadamente {{income.workerPaybackHours}} horas. Tu mansión añade {{income.manorPerTurn}} de oro por turno hagas lo que hagas."
+        ],
+        "items": [
+          "Los trabajadores aumentan tus ingresos y aportan poco a tu ejército.",
+          "Los soldados aumentan tu ataque. Los guardias aumentan tu defensa. Los espías exploran otros reinos.",
+          "Las unidades más fuertes necesitan una fortificación mayor. Un caballero, por ejemplo, cuesta {{unlocks.knightCost}} de oro y requiere el nivel de fortificación {{unlocks.knightFortLevel}}."
+        ]
+      },
+      "protection": {
+        "title": "Tus primeros días están protegidos",
+        "paragraphs": [
+          "Los reinos nuevos están a salvo de lo peor de un saqueo. La protección termina con el primero de tres límites: {{protection.days}} días después de unirte a la era, el nivel {{protection.level}} ({{protection.levelXp}} de experiencia) o que tu población supere un umbral que depende de la era. Mientras estés protegido, una batalla puede costarte como máximo el {{protection.lossCapPercent}} % de tu población, con un mínimo de una unidad.",
+          "Atacar no pone fin a tu protección, pero aprovecha el tiempo para construir ingresos y una defensa antes de empezar a saquear."
+        ]
+      },
+      "growth": {
+        "title": "Los ciudadanos son tu recurso más lento",
+        "paragraphs": [
+          "La vivienda te da al principio {{housing.baseDaily}} ciudadano al día. Reclutar añade un ciudadano cada vez, hasta {{recruitDailyCap}} al día. El cupo se reinicia a diario, así que aprovéchalo.",
+          "La primera mejora de vivienda sube tus ciudadanos diarios a {{housing.nextDaily}}. Cuesta {{housing.nextCost}} de oro y requiere el nivel de fortificación {{housing.nextFortLevel}}."
+        ]
+      },
+      "bank": {
+        "title": "Guarda tu oro en el banco",
+        "paragraphs": [
+          "El oro que llevas encima puede ser saqueado. El oro del banco está a salvo de los saqueadores. Puedes depositar hasta el {{bank.capPercent}} % del oro que tienes y la granja inicial permite {{bank.depositsPerDay}} depósitos al día. Gasta lo que necesites y deposita el resto antes de desconectarte."
+        ]
+      },
+      "checklist": {
+        "title": "Tu lista del primer día",
+        "items": [
+          "Entrena trabajadores con la mayor parte de tu oro inicial y después unos cuantos guardias.",
+          "Recluta hasta tu cupo diario de {{recruitDailyCap}}.",
+          "Deposita en el banco el oro que no necesites gastar.",
+          "Lee la guía de combate antes de gastar turnos de ataque. Solo puedes atacar reinos a {{combat.levelRange}} niveles o menos del tuyo."
+        ]
+      }
+    },
+    "related": [
+      "economy-and-growth",
+      "combat-spying-stamina"
+    ]
+  },
+  "economy-and-growth": {
+    "metaTitle": "Guía de economía y crecimiento - OpenThrone",
+    "metaDescription": "Cómo funcionan los ingresos en OpenThrone: trabajadores, mejoras de economía, vivienda, fortificaciones y el banco, con los costes y tasas exactos de las reglas del juego.",
+    "title": "Economía y crecimiento",
+    "intro": "El oro y los ciudadanos limitan todo lo demás. Esta guía muestra de dónde sale cada uno, qué aporta cada mejora y qué comprar primero.",
+    "sections": {
+      "income": {
+        "title": "De dónde sale el oro",
+        "paragraphs": [
+          "Cada {{turnMinutes}} minutos tu reino gana oro. Cada trabajador aporta la tasa de tu mejora de economía y tu fortificación suma una cantidad fija. Las bonificaciones de ingresos aumentan el total.",
+          "Por ejemplo, {{income.exampleWorkers}} trabajadores en la granja inicial ganan {{income.exampleWorkerGold}} de oro por turno y la mansión suma {{income.manorPerTurn}}. Son {{income.examplePerTurn}} de oro por turno, o {{income.examplePerDay}} de oro en los {{turnsPerDay}} turnos de un día."
+        ]
+      },
+      "economy": {
+        "title": "Mejoras de economía",
+        "paragraphs": [
+          "Cada mejora de economía aumenta el oro que gana cada trabajador y el número de depósitos en el banco que puedes hacer al día. Muchas mejoras también exigen un nivel mínimo de fortificación.",
+          "Las mejoras también desbloquean funciones. Las transferencias de oro se desbloquean con {{unlockNames.goldTransfer}} y el salón de mercenarios con {{unlockNames.mercenaryHall}}."
+        ],
+        "tableCaption": "Mejoras de economía"
+      },
+      "housing": {
+        "title": "Vivienda y ciudadanos",
+        "paragraphs": [
+          "Cada día llegan ciudadanos y cada uno puede convertirse en trabajador o combatiente. Las mejoras de vivienda aumentan cuántos llegan. Cuestan oro y, como las de economía, requieren un nivel mínimo de fortificación."
+        ],
+        "tableCaption": "Mejoras de vivienda"
+      },
+      "fortifications": {
+        "title": "Fortificaciones",
+        "paragraphs": [
+          "Las fortificaciones refuerzan tu defensa y añaden una cantidad fija de oro cada turno. También desbloquean niveles superiores de unidades y muchas otras mejoras. Los muros sufren daño en combate y cuesta oro repararlos.",
+          "Las mejoras raciales, la cuarta línea de mejoras, se abren en el nivel de fortificación {{racial.firstFortLevel}} y el primer nivel cuesta {{racial.firstCost}} de oro. Los goblins alcanzan su primer nivel en el nivel de fortificación {{racial.goblinFirstFortLevel}}."
+        ],
+        "tableCaption": "Primeros niveles de fortificación"
+      },
+      "bank": {
+        "title": "El banco",
+        "paragraphs": [
+          "El oro del banco no se puede saquear. Cada depósito está limitado al {{bank.capPercent}} % del oro que tienes, y tu nivel de economía determina cuántos depósitos puedes hacer al día. El oro que llevas encima puede tomarlo un saqueador: un saqueo toma como máximo el {{combat.maxLootPercent}} %."
+        ]
+      },
+      "order": {
+        "title": "Qué comprar y en qué orden",
+        "items": [
+          "Primero, trabajadores. Con la tasa de la granja, un trabajador recupera sus {{costs.worker}} de oro en unos {{income.workerPaybackTurns}} turnos.",
+          "Después, vivienda, porque más ciudadanos al día significan más trabajadores y combatientes.",
+          "A continuación, mejoras de economía y de fortificación por turnos, ya que cada una desbloquea la otra.",
+          "Una defensa acorde con tu tesoro, para que los saqueos sean pequeños."
+        ]
+      }
+    },
+    "related": [
+      "first-kingdom",
+      "combat-spying-stamina"
+    ]
+  },
+  "combat-spying-stamina": {
+    "metaTitle": "Guía de combate, espionaje y resistencia - OpenThrone",
+    "metaDescription": "Cómo funciona el combate en OpenThrone: elegir objetivos, cuánto paga un saqueo, bajas y cansancio, misiones de espionaje y resistencia del ejército, con cifras de las reglas del juego.",
+    "title": "Combate, espionaje y resistencia",
+    "intro": "Los ataques cuestan turnos, las bajas cuestan tropas y la resistencia limita hasta dónde puedes presionar. Esta guía explica los límites para que planees saqueos que compensen.",
+    "sections": {
+      "targets": {
+        "title": "Elegir un objetivo",
+        "paragraphs": [
+          "Puedes atacar reinos a {{combat.levelRange}} niveles o menos del tuyo. Cada ataque compromete de 1 a {{combat.maxTurns}} turnos de ataque y puedes atacar al mismo reino como máximo {{combat.pairDailyLimit}} veces en cualquier periodo de 24 horas.",
+          "Conoce la fuerza del objetivo antes de comprometer turnos. Envía espías y equipa a tus tropas para la presión que esperas: los ataques cuerpo a cuerpo se enfrentan a la defensa cuerpo a cuerpo y los ataques a distancia, a la defensa a distancia."
+        ]
+      },
+      "loot": {
+        "title": "Cuánto paga una victoria",
+        "paragraphs": [
+          "Un saqueo con éxito toma como máximo el {{combat.maxLootPercent}} % del oro que tiene el defensor. Los muros en pie protegen el tesoro: mientras el fuerte está intacto, el límite baja al {{combat.fortShieldedLootPercent}} % y sube hacia la cantidad completa a medida que se abren brechas. El oro del banco no se puede tomar.",
+          "Los reinos nuevos y protegidos pagan mucho menos."
+        ]
+      },
+      "losses": {
+        "title": "Bajas, heridos y cansancio",
+        "paragraphs": [
+          "No toda baja es una muerte. El {{combat.woundedPercent}} % de las tropas perdidas en una batalla quedan heridas en lugar de morir, y el {{combat.woundedHealPercent}} % de los heridos vuelve al servicio cada día, al menos una unidad por grupo. Ninguna pila de unidades pierde más del {{combat.stackLossCapPercent}} % de su tamaño en una batalla, aunque cualquier pila puede perder al menos una unidad.",
+          "Un defensor al que atacan una y otra vez se cansa. Cuando el servidor tiene activado el cansancio de guarnición, los ataques repetidos pueden reducir la fuerza de un defensor hasta un {{combat.fatiguePercent}} % en un día."
+        ]
+      },
+      "spying": {
+        "title": "Espías y centinelas",
+        "paragraphs": [
+          "Las misiones de espionaje también gastan turnos. Una misión usa hasta {{spy.missionMaxTurns}} turnos. Las de inteligencia usan hasta {{spy.intelMaxTurns}}, las infiltraciones al menos {{spy.infiltrationMinTurns}} y los asesinatos al menos {{spy.assassinationMinTurns}}.",
+          "Puedes hacer como máximo {{spy.intelPerTargetPerDay}} misiones de inteligencia contra un mismo objetivo en 24 horas, y las misiones repetidas contra el mismo reino se vuelven más difíciles a lo largo del día. Tus propios espías y centinelas te defienden de los espías enemigos.",
+          "Qué misiones están abiertas es un ajuste del servidor, así que el menú de espionaje muestra lo que puedes hacer ahora mismo."
+        ]
+      },
+      "stamina": {
+        "title": "Resistencia del ejército",
+        "paragraphs": [
+          "Las mejoras de ofensiva reducen la resistencia que consume cada turno comprometido, hasta un {{stamina.maxDrainReductionPercent}} % en el nivel más alto."
+        ],
+        "pacing": "Menos ataques, pero más grandes, salen más baratos. Un ataque de {{stamina.turns}} turnos cuesta {{stamina.example}} de resistencia, mientras que esos mismos turnos gastados en {{stamina.turns}} ataques de un turno cuestan {{stamina.singlesExample}}."
+      },
+      "habits": {
+        "title": "Hábitos de los saqueadores constantes",
+        "items": [
+          "Explora antes de atacar y descarta los objetivos que te superan en defensa.",
+          "Gasta los turnos en pocos ataques decididos y deja que la resistencia se recupere entre ellos.",
+          "Mantén una defensa acorde con tu tesoro y deposita en el banco lo que no necesites.",
+          "Revisa tu historial de guerra después de cada saqueo y ajusta tu siguiente objetivo."
+        ]
+      }
+    },
+    "related": [
+      "first-kingdom",
+      "economy-and-growth"
+    ]
+  }
+}

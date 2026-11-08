@@ -85,7 +85,10 @@ export async function hasForbiddenForceTarget(
       kind: 'ALLIANCE',
       status: 'ACTIVE',
       expiresAt: { gt: new Date() },
-      alliance: { members: { some: { user_id: defenderId } } },
+      alliance: {
+        status: 'ACTIVE',
+        members: { some: { user_id: defenderId } },
+      },
     },
     select: { id: true },
   });

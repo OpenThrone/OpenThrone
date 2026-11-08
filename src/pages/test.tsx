@@ -14,6 +14,7 @@ import FoundationsSection from '@/components/showcase/sections/FoundationsSectio
 import MercenariesSection from '@/components/showcase/sections/MercenariesSection';
 import ModalsSection from '@/components/showcase/sections/ModalsSection';
 import NewsSection from '@/components/showcase/sections/NewsSection';
+import PrivacySection from '@/components/showcase/sections/PrivacySection';
 import ProfileMediaSection from '@/components/showcase/sections/ProfileMediaSection';
 import RecruitmentSection from '@/components/showcase/sections/RecruitmentSection';
 import SupporterAdminSection from '@/components/showcase/sections/SupporterAdminSection';
@@ -46,6 +47,7 @@ const SECTIONS = [
   { id: 'banners', title: 'Banners & notices', Component: BannersSection },
   { id: 'modals', title: 'Modals & dialogs', Component: ModalsSection },
   { id: 'profile', title: 'Profile & artwork', Component: ProfileMediaSection },
+  { id: 'privacy', title: 'Your data', Component: PrivacySection },
   { id: 'news', title: 'News & articles', Component: NewsSection },
   { id: 'chat', title: 'Chat & messaging', Component: ChatSection },
   { id: 'alliance', title: 'Alliances', Component: AllianceSection },

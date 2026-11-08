@@ -11,7 +11,8 @@ export async function divertForcePillageInTx(
 ) {
   if (gross <= 0n) return 0n;
   const memberships = await tx.alliance_memberships.findMany({
-    where: { user_id: userId },
+    // Reserved alliances take no pillage share (#13).
+    where: { user_id: userId, alliance: { status: 'ACTIVE' } },
     select: { alliance_id: true, role_id: true },
   });
   if (!memberships.length) return 0n;

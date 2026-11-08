@@ -116,6 +116,9 @@ export default class MockUserGenerator {
       botCreatedAt: null,
       botLastRunAt: null,
       botStats: null,
+      anonymizedAt: null,
+      veteranTitle: null,
+      veteranSince: null,
     };
   }
 

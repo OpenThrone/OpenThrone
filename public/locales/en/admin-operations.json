@@ -36,7 +36,54 @@
       "vacation-end": {
         "title": "End vacation mode?",
         "message": "Vacation mode will end immediately for this account."
+      },
+      "suspend": {
+        "title": "Suspend this account?",
+        "message": "The player cannot sign in or play until the suspension ends. Their email is blocked from registering again for the same period."
+      },
+      "ban": {
+        "title": "Ban this account?",
+        "message": "The player cannot sign in or play, and their email cannot register a new account. Supporter renewals stop. They may file a ban appeal."
+      },
+      "reactivate": {
+        "title": "Reactivate this account?",
+        "message": "Ends the current suspension, ban or closure immediately and lifts the re-registration block."
+      },
+      "close": {
+        "title": "Close this account?",
+        "message": "The account is closed, its password and staff access are revoked, and supporter renewals stop. Game data is kept; an administrator can reactivate it."
+      },
+      "erase": {
+        "title": "Delete this account?",
+        "message": "The account is closed now and its personal data is permanently erased after a 14-day grace period. You can cancel or expedite the deletion from the Privacy tab."
       }
+    },
+    "statusHeading": "Account status",
+    "statusDescription": "Current status: {{status}}. Suspensions and bans block sign-in and are recorded in the status history.",
+    "suspendAction": "Suspend",
+    "banAction": "Ban",
+    "reactivateAction": "Reactivate",
+    "closeAction": "Close account",
+    "eraseAction": "Delete account",
+    "permanentLabel": "Permanent ban",
+    "durationLabel": "Duration (days)",
+    "durationHelp": "Between 1 and 3650 days.",
+    "durationInvalid": "Enter a whole number of days from 1 to 3650.",
+    "reasonRequired": "Required; recorded in the status history and staff audit log.",
+    "reasonMin": "Required, at least {{count}} characters; recorded in the staff audit log.",
+    "suspendResult_one": "Account suspended for {{count}} day.",
+    "suspendResult_other": "Account suspended for {{count}} days.",
+    "banResult_one": "Account banned for {{count}} day.",
+    "banResult_other": "Account banned for {{count}} days.",
+    "banPermanentResult": "Account banned permanently.",
+    "reactivateResult": "Account reactivated.",
+    "closeResult": "Account closed.",
+    "eraseResult": "Account closed and scheduled for deletion. Track or expedite it in the Privacy tab.",
+    "erasureErrors": {
+      "reason_required": "A reason of at least 10 characters is required.",
+      "staff_account": "Staff accounts must be closed, not deleted. Remove their staff roles first.",
+      "already_scheduled": "This account already has a deletion scheduled. See the Privacy tab.",
+      "not_found": "Player not found or already deleted."
     }
   },
   "export": {

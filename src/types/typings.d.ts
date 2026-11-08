@@ -343,6 +343,8 @@ export interface Log {
   stats: any; // Keep as any for now, complex structure
   type: string;
   acl?: any[]; // Add acl field based on prisma include
+  /** Set when an administrator voided the battle (#229). */
+  voided?: { at: string | null; reason: string } | null;
 }
 
 export interface ShareableArmyData {

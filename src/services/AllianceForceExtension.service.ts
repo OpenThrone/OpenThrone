@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
 import { lockAllianceThenUsers } from '@/services/AllianceBank.service';
+import { assertAllianceActive } from '@/services/allianceStatus';
 import { assertForceBorrowingAllowed } from '@/services/ForceLifecycle.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
@@ -66,6 +67,7 @@ export async function extendAllianceForce(input: z.input<typeof schema>) {
     const alliance = await tx.alliances.findUniqueOrThrow({
       where: { id: owner.allianceId! },
     });
+    assertAllianceActive(alliance);
     const policy = await tx.allianceForcePolicy.findFirstOrThrow({
       where: { allianceId: owner.allianceId! },
       orderBy: { version: 'desc' },

@@ -62,7 +62,6 @@ enum PermissionType {
   VIEW_CHEAT_SIGNALS
 
   // System
-  MANAGE_FEATURE_FLAGS
   MANAGE_SERVER_SETTINGS
   MANAGE_API_TOKENS
   USE_IMPERSONATION
@@ -189,12 +188,23 @@ enum CheatSignalType {
   CHAT_SPAM
   ALLIANCE_BANK_ABUSE
   DEFECTOR_FARMING
+  RESOURCE_FUNNELLING
+  BOT_TIMING
+  FRESH_ACCOUNT_FARMING
 }
 
 enum AllianceJoinMode {
   OPEN
   REQUEST_TO_JOIN
   INVITE_ONLY
+}
+
+/// Lifecycle across eras (#13): ACTIVE alliances run game features; an
+/// ordinary era rollover moves every alliance to RESERVED until its leader
+/// reactivates it for the new era. Deletion happens only in a factory restore.
+enum AllianceStatus {
+  ACTIVE
+  RESERVED
 }
 
 enum AllianceRosterVisibility {
@@ -420,8 +430,7 @@ model users {
   cheatSignalsRelatedUser CheatSignal[]         @relation("CheatSignalsRelatedUser")
   cheatSignalsAssigned    CheatSignal[]         @relation("CheatSignalsAssigned")
   cheatSignalsResolved    CheatSignal[]         @relation("CheatSignalsResolved")
-  featureFlagsCreated     FeatureFlag[]         @relation("FeatureFlagsCreated")
-  featureFlagsUpdated     FeatureFlag[]         @relation("FeatureFlagsUpdated")
+  activityDays            ActivityDay[]         @relation("ActivityDaysOnUser")
   serverSettingsUpdated   ServerSetting[]       @relation("ServerSettingsUpdated")
 
   // Email and identity lifecycle relations
@@ -432,6 +441,17 @@ model users {
   accountInactivityNotice  AccountInactivityNotice?  @relation("InactivityNoticeOnUser")
   inactivityNoticesCreated AccountInactivityNotice[] @relation("InactivityNoticesCreated")
   identityBlocks           IdentityBlock[]           @relation("IdentityBlocksSource")
+  veteranRecordsSourced    VeteranRecord[]           @relation("VeteranRecordSource")
+  veteranRecordsClaimed    VeteranRecord[]           @relation("VeteranRecordClaimant")
+  erasureRequests          AccountErasureRequest[]   @relation("ErasureRequestsOnUser")
+  erasureRequestsHandled   AccountErasureRequest[]   @relation("ErasureRequestsHandledBy")
+  dataExports              AccountDataExport[]       @relation("DataExportsOnUser")
+  /// Set when the account was erased (anonymized). Players cannot set it, unlike an email address.
+  anonymizedAt             DateTime?                 @db.Timestamptz(3)
+  /// Veteran title earned by reclaiming an erased Era 1 account (null = none).
+  veteranTitle             VeteranTitle?
+  /// The original join date restored when a veteran record is claimed.
+  veteranSince             DateTime?                 @db.Timestamptz(3)
 
   //Migration step
   units              Json? // Don't delete yet
@@ -462,6 +482,7 @@ model users {
   @@index([created_at])
   @@index([currentEraId])
   @@index([isBot])
+  @@index([anonymizedAt])
   @@index([currentEraId, last_gameplay_at])
 }
 
@@ -541,17 +562,43 @@ model attack_log {
   pillaged_gold         BigInt?
   attacker_losses_total Int?
   defender_losses_total Int?
+  /// Admin void (#229): the log itself is never rewritten; a void is a
+  /// separate compensating record (AttackLogVoid) plus these display fields.
+  voidedAt              DateTime?               @db.Timestamptz(3)
+  voidedById            Int?
+  voidReason            String?                 @db.VarChar(500)
   attackerPlayer        users                   @relation("AttackLogs", fields: [attacker_id], references: [id])
   defenderPlayer        users                   @relation("DefenseLogs", fields: [defender_id], references: [id])
   acl                   attack_log_acl[]
   chatMessages          ChatMessage[] // Added for shared logs relation
   intelShares           alliance_intel_shares[]
+  voidRecord            AttackLogVoid?
 
   @@index([attacker_id, defender_id, timestamp])
   @@index([attacker_id])
   @@index([defender_id])
   @@index([winner])
   @@index([type, timestamp])
+}
+
+/// One row per voided battle (#229). The unique attackLogId is the once-only
+/// guard; `ledger` holds every compensating operation with before/after values.
+model AttackLogVoid {
+  id            Int        @id @default(autoincrement())
+  /// Null once the log is cleaned up; battleId keeps which battle this was.
+  attackLogId   Int?       @unique
+  battleId      Int
+  actorId       Int
+  reason        String     @db.VarChar(500)
+  planHash      String     @db.VarChar(64)
+  goldMode      String     @db.VarChar(16)
+  ledger        Json
+  shortfalls    Json
+  notReversed   Json
+  createdAt     DateTime   @default(now()) @db.Timestamptz(3)
+  attackLog     attack_log? @relation(fields: [attackLogId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
 }
 
 model bank_history {
@@ -566,6 +613,7 @@ model bank_history {
   stats                  Json?     @default("[]")
 
   @@index([from_user_id, to_user_id, date_time])
+  @@index([history_type, date_time])
 }
 
 enum RecruitmentSource {
@@ -589,6 +637,7 @@ model recruit_history {
   @@index([source, to_user, timestamp])
   @@index([source, to_user, ip_addr, timestamp])
   @@index([source, ip_addr, timestamp])
+  @@index([source, timestamp])
 }
 
 model blog_posts {
@@ -688,6 +737,13 @@ model alliances {
   loan_interest_pct Int    @default(10)
   member_daily_cap  BigInt @default(5000000)
 
+  // Era-scoped lifecycle (#13): reserved at an ordinary era rollover until
+  // the leader pays to reactivate it for the new era.
+  status            AllianceStatus @default(ACTIVE)
+  status_changed_at DateTime?      @db.Timestamptz(6)
+  status_era_id     Int?
+  status_changed_by Int?
+
   // New Relations
   join_requests  alliance_join_requests[]
   cooldowns      alliance_cooldowns[] // Global cooldowns might not have alliance_id, but alliance-specific ones will
@@ -707,6 +763,7 @@ model alliances {
   intel_shares   alliance_intel_shares[]
 
   @@index([leader_id], map: "idx_alliance_leader")
+  @@index([status])
 }
 
 model alliance_announcements {
@@ -1549,19 +1606,28 @@ model BanAppeal {
   @@index([userId, createdAt])
 }
 
-model FeatureFlag {
-  id              Int      @id @default(autoincrement())
-  key             String   @unique
-  description     String?
-  enabled         Boolean  @default(false)
-  rules           Json?
-  createdByUserId Int?
-  updatedByUserId Int?
-  createdAt       DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+// One row per scheduled-job invocation (see docs/operations.md). Rows are
+// diagnostics only: summaries are sanitized before they are stored and never
+// contain secrets, headers or environment values.
+enum CronRunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+}
 
-  createdBy users? @relation("FeatureFlagsCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  updatedBy users? @relation("FeatureFlagsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+model CronRun {
+  id         Int           @id @default(autoincrement())
+  job        String
+  status     CronRunStatus @default(RUNNING)
+  startedAt  DateTime      @default(now()) @db.Timestamptz(3)
+  finishedAt DateTime?     @db.Timestamptz(3)
+  durationMs Int?
+  summary    Json?
+  error      String?
+
+  @@index([job, startedAt])
+  @@index([status, startedAt])
+  @@index([startedAt])
 }
 
 model ServerSetting {
@@ -1616,6 +1682,7 @@ model LoginEvent {
   @@index([ipHash, occurredAt])
   @@index([ipPrefixHash, occurredAt])
   @@index([deviceHash, occurredAt])
+  @@index([occurredAt])
 }
 
 model CheatSignal {
@@ -1631,6 +1698,12 @@ model CheatSignal {
   assignedToUserId Int?
   resolvedByUserId Int?
   resolvedAt       DateTime?           @db.Timestamptz(3)
+  /// Staff note recorded when the signal is reviewed or dismissed.
+  reviewNote       String?             @db.VarChar(1000)
+  /// Other accounts the pattern links to the signal's user (staff only).
+  linkedUserIds    Int[]               @default([])
+  /// Stable key of the pattern (detector + accounts) used to dedupe re-detections.
+  dedupeKey        String?
   firstSeenAt      DateTime            @default(now()) @db.Timestamptz(3)
   lastSeenAt       DateTime            @default(now()) @db.Timestamptz(3)
   createdAt        DateTime            @default(now()) @db.Timestamptz(3)
@@ -1643,6 +1716,29 @@ model CheatSignal {
 
   @@index([status, severity, createdAt])
   @@index([userId, status])
+  @@index([type, dedupeKey])
+  @@index([linkedUserIds], type: Gin)
+}
+
+/// One row per player and UTC day of gameplay-action timing counters, used only
+/// by the admin-only bot-timing signal. Holds no IP, device or content data;
+/// rows are pruned after ACTIVITY_DAY_RETENTION_DAYS.
+model ActivityDay {
+  userId  Int
+  day     DateTime @db.Date
+  /// Bit h set when the player took a gameplay action in UTC hour h.
+  hourMask Int     @default(0)
+  actions Int      @default(0)
+  /// In-session gaps (seconds between consecutive actions, capped).
+  gapCount Int     @default(0)
+  gapSum   Float   @default(0)
+  gapSumSq Float   @default(0)
+  lastAt  DateTime @db.Timestamptz(3)
+
+  user users @relation("ActivityDaysOnUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day])
+  @@index([day])
 }
 
 model RateLimitBucket {
@@ -1715,6 +1811,39 @@ enum IdentityBlockReason {
   SANCTION
   DELETION_COOLDOWN
   RESERVED_NAME
+}
+
+/// Titles a returning player can earn by reclaiming an erased account.
+enum VeteranTitle {
+  ERA1_TESTER
+}
+
+/// Copy variant for inactivity notices; ERA_RELAUNCH points at a news post.
+enum InactivityNoticeTemplate {
+  STANDARD
+  ERA_RELAUNCH
+}
+
+/// Keyed fingerprint of an erased account's identity, kept so a returning
+/// player can be recognised and honoured. Holds no plaintext personal data.
+model VeteranRecord {
+  id               Int           @id @default(autoincrement())
+  emailHash        String        @unique
+  displayNameHash  String
+  title            VeteranTitle
+  /// The pseudonymized old users row (SetNull keeps the record if it goes).
+  sourceUserId     Int?
+  originalJoinedAt DateTime      @db.Timestamptz(3)
+  recordedAt       DateTime      @default(now()) @db.Timestamptz(3)
+  expiresAt        DateTime?     @db.Timestamptz(3)
+  /// The account that reclaimed this record; unique so one record claims once.
+  claimedByUserId  Int?          @unique
+  claimedAt        DateTime?     @db.Timestamptz(3)
+
+  sourceUser users? @relation("VeteranRecordSource", fields: [sourceUserId], references: [id], onDelete: SetNull)
+  claimedBy  users? @relation("VeteranRecordClaimant", fields: [claimedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([expiresAt])
 }
 
 model EmailPreference {
@@ -1797,6 +1926,12 @@ model AccountInactivityNotice {
   completedAt         DateTime? @db.Timestamptz(3)
   lastActiveAtWarning DateTime? @db.Timestamptz(3)
   createdByUserId     Int?
+  /// Cutoff this notice was issued under (relaunch campaigns use a fixed date);
+  /// null = the legacy 365-day rule. The sweep re-checks eligibility with it.
+  inactiveSince       DateTime? @db.Timestamptz(3)
+  template            InactivityNoticeTemplate @default(STANDARD)
+  /// News post the relaunch template links to.
+  newsPostId          Int?
 
   user      users  @relation("InactivityNoticeOnUser", fields: [userId], references: [id], onDelete: Cascade)
   createdBy users? @relation("InactivityNoticesCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
@@ -2287,4 +2422,66 @@ model SupporterPlanPrice {
   providerPriceId String?
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
   updatedById Int?
+}
+
+enum ErasureRequestStatus {
+  AWAITING_CONFIRMATION
+  PENDING
+  CANCELLED
+  COMPLETED
+  EXPIRED
+}
+
+/// Privacy erasure request: re-authenticated, confirmed by email, then a grace
+/// period before the daily job erases the account. Completed rows stay as
+/// minimal proof of fulfilment (no free text) and are pruned by retention.
+model AccountErasureRequest {
+  id                Int                  @id @default(autoincrement())
+  userId            Int
+  status            ErasureRequestStatus @default(AWAITING_CONFIRMATION)
+  /// SHA-256 of the emailed confirmation token; cleared once used or expired.
+  tokenHash         String?              @unique
+  tokenExpiresAt    DateTime?            @db.Timestamptz(3)
+  requestedAt       DateTime             @default(now()) @db.Timestamptz(3)
+  confirmedAt       DateTime?            @db.Timestamptz(3)
+  /// confirmedAt + grace period; the daily job erases once this has passed.
+  scheduledFor      DateTime?            @db.Timestamptz(3)
+  /// AccountStatusHistory CLOSED row written while the grace period runs.
+  closedStatusId    Int?
+  cancelledAt       DateTime?            @db.Timestamptz(3)
+  /// USER, ADMIN or EXPIRED.
+  cancelledBy       String?
+  completedAt       DateTime?            @db.Timestamptz(3)
+  /// Free text the player typed; cleared when the request ends.
+  userReason        String?
+  /// Staff member who erased before the grace period ended (the reason is in the audit log).
+  expeditedByUserId Int?
+  attempts          Int                  @default(0)
+  lastError         String?
+  /// True when this request stopped subscription renewal (so a cancel resumes it).
+  billingStopped    Boolean              @default(false)
+  /// Staff member who opened the request on a verified support request (no email step).
+  openedByUserId    Int?
+
+  user        users  @relation("ErasureRequestsOnUser", fields: [userId], references: [id], onDelete: Cascade)
+  expeditedBy users? @relation("ErasureRequestsHandledBy", fields: [expeditedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([status, scheduledFor])
+}
+
+/// One row per data-export download; drives the once-per-24-hours limit and
+/// the admin export list. Holds no export content.
+model AccountDataExport {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  requestedAt DateTime  @default(now()) @db.Timestamptz(3)
+  completedAt DateTime? @db.Timestamptz(3)
+  byteSize    Int?
+  sections    Int?
+
+  user users @relation("DataExportsOnUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, requestedAt])
+  @@index([requestedAt])
 }

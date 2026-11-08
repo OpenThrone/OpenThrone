@@ -70,6 +70,17 @@ const callUpdate = async (newEmail = 'new@example.invalid') => {
   return res;
 };
 
+describe('reserved system email domain', () => {
+  it.each(['x@deleted.local', 'X@Deleted.Local', '7-reset@deleted.local'])(
+    'refuses a player changing their address to %s',
+    async (address) => {
+      const res = await callUpdate(address);
+      expect(res._getStatusCode()).toBe(400);
+      expect(mockPrisma.users.update).not.toHaveBeenCalled();
+    },
+  );
+});
+
 describe('email change credentials', () => {
   it('rejects signed-out token requests before sending mail', async () => {
     const spy = vi.spyOn(AccountService, 'requestEmailChange');

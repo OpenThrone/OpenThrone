@@ -24,6 +24,37 @@ export const FRIEND_TRANSFER_FEE_PERCENT_BY_ECONOMY_LEVEL: Record<
 /** Accounts younger than this many days cannot send or receive transfers. */
 export const FRIEND_TRANSFER_MIN_ACCOUNT_AGE_DAYS = 7;
 
+/**
+ * Default minimum player level to send or receive a transfer. The live value
+ * is the `friend.transferMinLevel` runtime setting (admin settings page).
+ */
+export const FRIEND_TRANSFER_MIN_LEVEL_DEFAULT = 5;
+
+/** Error code the transfer routes return when a player is below the level. */
+export const FRIEND_TRANSFER_MIN_LEVEL_CODE = 'FRIEND_TRANSFER_MIN_LEVEL';
+
+/** Which side of the transfer is below the minimum level. */
+export type FriendTransferLevelRole = 'send' | 'receive';
+
+/** Reads a level refusal from a transfer route's error body, or null for any other error. */
+export const parseFriendTransferLevelError = (
+  body: unknown,
+): { role: FriendTransferLevelRole; minLevel: number } | null => {
+  const raw = (body ?? {}) as {
+    code?: unknown;
+    role?: unknown;
+    minLevel?: unknown;
+  };
+  if (
+    raw.code !== FRIEND_TRANSFER_MIN_LEVEL_CODE ||
+    (raw.role !== 'send' && raw.role !== 'receive') ||
+    typeof raw.minLevel !== 'number'
+  ) {
+    return null;
+  }
+  return { role: raw.role, minLevel: raw.minLevel };
+};
+
 /** Players who fought each other within this window cannot transfer gold. */
 export const FRIEND_TRANSFER_ATTACK_BLOCK_HOURS = 24;
 

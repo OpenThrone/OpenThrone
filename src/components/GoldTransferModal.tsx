@@ -16,7 +16,11 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { getRequiredEconomyUpgradeName } from '@/constants/FeatureUnlocks';
-import { FRIEND_TRANSFER_NOTE_MAX_LENGTH } from '@/constants/FriendTransfer';
+import {
+  FRIEND_TRANSFER_MIN_LEVEL_DEFAULT,
+  FRIEND_TRANSFER_NOTE_MAX_LENGTH,
+  parseFriendTransferLevelError,
+} from '@/constants/FriendTransfer';
 import { useUser } from '@/context/users';
 import { GoldTransferSchema } from '@/lib/validation';
 import { getCompleteFriendTransferConfig } from '@/services/Config.service';
@@ -39,6 +43,12 @@ export interface TransferLimits {
   sentToday: string;
   /** Gold already received today. */
   receivedToday: string;
+  /** Minimum player level to send or receive a transfer. */
+  minLevel: number;
+  /** Whether the player has reached the minimum level to send. */
+  senderLevelMet: boolean;
+  /** Whether the friend has reached the minimum level to receive. */
+  receiverLevelMet: boolean;
 }
 
 interface GoldTransferModalProps {
@@ -79,6 +89,12 @@ const parseTransferLimits = (data: unknown): TransferLimits => {
         : 0,
     sentToday: toAmountString(raw.sentToday),
     receivedToday: toAmountString(raw.receivedToday),
+    minLevel:
+      typeof raw.minLevel === 'number' && Number.isFinite(raw.minLevel)
+        ? raw.minLevel
+        : FRIEND_TRANSFER_MIN_LEVEL_DEFAULT,
+    senderLevelMet: raw.senderLevelMet !== false,
+    receiverLevelMet: raw.receiverLevelMet !== false,
   };
 };
 
@@ -135,7 +151,9 @@ export function GoldTransferModal({
       setLimitsLoading(true);
       setLimitsError(null);
       try {
-        const response = await fetch('/api/social/friends/transfer-limits');
+        const response = await fetch(
+          `/api/social/friends/transfer-limits?friendId=${targetUserId}`,
+        );
         if (!response.ok) {
           throw new Error(`Transfer limits request failed: ${response.status}`);
         }
@@ -155,11 +173,21 @@ export function GoldTransferModal({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, limitsOverride, t]);
+  }, [isOpen, limitsOverride, targetUserId, t]);
 
   const activeLimits = limitsOverride ?? limits;
   const isLocked = activeLimits !== null && !activeLimits.unlocked;
   const upgradeName = getRequiredEconomyUpgradeName('GOLD_TRANSFER');
+  // Which side is under the minimum player level; the sender's own level wins.
+  const levelBlock: 'send' | 'receive' | null =
+    activeLimits === null
+      ? null
+      : !activeLimits.senderLevelMet
+        ? 'send'
+        : !activeLimits.receiverLevelMet
+          ? 'receive'
+          : null;
+  const isBlocked = isLocked || levelBlock !== null;
 
   const feePercent = activeLimits?.feePercent ?? config.feePercentage;
   const watchedAmount = watch('amount');
@@ -206,7 +234,17 @@ export function GoldTransferModal({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || t('goldTransfer.transferFailed'));
+        const levelError = parseFriendTransferLevelError(errorData);
+        throw new Error(
+          levelError
+            ? t(
+                levelError.role === 'send'
+                  ? 'goldTransfer.minLevelSend'
+                  : 'goldTransfer.minLevelReceive',
+                { level: levelError.minLevel },
+              )
+            : errorData.error || t('goldTransfer.transferFailed'),
+        );
       }
 
       forceUpdate();
@@ -255,8 +293,26 @@ export function GoldTransferModal({
           </Alert>
         )}
 
+        {levelBlock && (
+          <Alert
+            color="yellow"
+            mb="md"
+            role="alert"
+            title={t('goldTransfer.levelLockedTitle')}
+          >
+            {levelBlock === 'send'
+              ? t('goldTransfer.levelLockedSelf', {
+                  level: activeLimits?.minLevel,
+                })
+              : t('goldTransfer.levelLockedFriend', {
+                  player: targetUserName,
+                  level: activeLimits?.minLevel,
+                })}
+          </Alert>
+        )}
+
         <Stack gap="md">
-          {!isLocked && (
+          {!isBlocked && (
             <>
               <TextInput
                 label={t('goldTransfer.amountLabel')}
@@ -308,7 +364,7 @@ export function GoldTransferModal({
                     </Text>
                   </Group>
 
-                  {activeLimits && !isLocked && (
+                  {activeLimits && !isBlocked && (
                     <>
                       <Text size="sm" c="var(--ot-body)" mt="xs">
                         {t('goldTransfer.sentToday', {
@@ -323,7 +379,7 @@ export function GoldTransferModal({
                     </>
                   )}
 
-                  {limitsLoading && !isLocked && (
+                  {limitsLoading && !isBlocked && (
                     <Group gap={6} mt="xs">
                       <Loader size={12} />
                       <Text size="sm" c="var(--ot-muted)">
@@ -394,7 +450,7 @@ export function GoldTransferModal({
                 toBigIntSafe(watchedAmount) <= BigInt(0) ||
                 totalCost > userGold ||
                 !config.enabled ||
-                isLocked ||
+                isBlocked ||
                 limitsLoading ||
                 overAllowance
               }

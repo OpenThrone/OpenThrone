@@ -8,6 +8,10 @@ import {
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { AllianceTransactionType } from '@/lib/prisma-exports';
+import {
+  assertAllianceActive,
+  assertAllianceIdActive,
+} from '@/services/allianceStatus';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { getMaxDeposit } from '@/utils/bankLimits';
@@ -96,11 +100,13 @@ export const transferInTx = async (
   const { allianceId, actorId, targetUserId, amount, notes } = params;
   const alliance = await tx.alliances.findUnique({
     where: { id: allianceId },
-    select: { leader_id: true, member_daily_cap: true },
+    select: { leader_id: true, member_daily_cap: true, status: true },
   });
   if (!alliance) {
     throw new Error('Alliance not found');
   }
+  // Every treasury payout (transfer, gold request, loan) stops while reserved.
+  assertAllianceActive(alliance);
 
   if (alliance.leader_id !== actorId) {
     const actorMembership = await tx.alliance_memberships.findUnique({
@@ -198,6 +204,7 @@ export class AllianceBankService {
         await lockAllianceThenUsers(tx, validatedData.allianceId, [
           validatedData.userId,
         ]);
+        await assertAllianceIdActive(tx, validatedData.allianceId);
 
         const membership = await tx.alliance_memberships.count({
           where: {

@@ -67,6 +67,16 @@ const consoleFor: Record<LogLevelKey, (...args: unknown[]) => void> = {
   TRACE: (...args: unknown[]) => console.trace(...args),
 };
 
+/**
+ * JSON.stringify replacer: an Error has no enumerable own properties, so a
+ * wrapped `{ userId, error }` would otherwise log as `{"userId":1,"error":{}}`
+ * and lose the cause.
+ */
+const errorReplacer = (_key: string, value: unknown): unknown =>
+  value instanceof Error
+    ? { name: value.name, message: value.message, stack: value.stack }
+    : value;
+
 const formatMessage = (
   level: LogLevelKey,
   message: any,
@@ -85,7 +95,7 @@ const formatMessage = (
         }
         if (typeof param === 'object' && param !== null) {
           try {
-            return JSON.stringify(param);
+            return JSON.stringify(param, errorReplacer);
           } catch {
             return '[Unserializable Object]';
           }

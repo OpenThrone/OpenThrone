@@ -12,6 +12,7 @@ import type {
   StructureUpgrade,
   UnitType,
 } from '@/types/typings';
+import type { CombatRuleset } from '@/utils/balance/combatRuleset';
 import { forceCombatIdentity } from '@/utils/forceCombatIdentity';
 import type { CombatRandomReplay } from '@/utils/serverRandom';
 import {
@@ -393,10 +394,16 @@ function restoreUserData(snapshot: CombatUserSnapshot): PrismaUser {
   } as unknown as PrismaUser;
 }
 
-export function restoreBattleUser(snapshot: CombatUserSnapshot): BattleUser {
-  return new BattleUser(restoreUserData(snapshot));
+export function restoreBattleUser(
+  snapshot: CombatUserSnapshot,
+  ruleset?: CombatRuleset,
+): BattleUser {
+  return new BattleUser(restoreUserData(snapshot), {}, ruleset);
 }
 
-export function restoreSpyUser(snapshot: CombatUserSnapshot): SpyUser {
-  return new SpyUser(restoreUserData(snapshot));
+export function restoreSpyUser(
+  snapshot: CombatUserSnapshot,
+  ruleset?: CombatRuleset,
+): SpyUser {
+  return new SpyUser(restoreUserData(snapshot), {}, ruleset);
 }

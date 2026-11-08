@@ -111,6 +111,9 @@ const buildTx = () => ({
   },
   staffRoleAssignment: { updateMany: vi.fn(async () => ({ count: 0 })) },
   permissionGrant: { updateMany: vi.fn(async () => ({ count: 0 })) },
+  accountErasureRequest: {
+    findFirst: vi.fn(async (): Promise<{ id: number } | null> => null),
+  },
 });
 
 let tx: ReturnType<typeof buildTx>;
@@ -183,6 +186,7 @@ describe('account-action identity blocks', () => {
   it('rejects every non-CLOSED action on anonymized accounts before any status write', async () => {
     tx.users.findUnique.mockResolvedValue({
       email: '10-deleted@deleted.local',
+      anonymizedAt: new Date(),
     });
     for (const action of ['ACTIVE', 'BANNED', 'SUSPENDED']) {
       const res = makeRes();
@@ -194,6 +198,16 @@ describe('account-action identity blocks', () => {
     }
     expect(tx.accountStatusHistory.create).not.toHaveBeenCalled();
     expect(tx.identityBlock.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('a live account on the reserved domain (never erased) can still be reopened', async () => {
+    tx.users.findUnique.mockResolvedValue({
+      email: 'old-player@deleted.local',
+      anonymizedAt: null,
+    });
+    const res = makeRes();
+    await handler(post({ userId: TARGET_ID, action: 'ACTIVE' }), res);
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 
   it('closing an account does not write or clear sanction blocks', async () => {
@@ -214,5 +228,29 @@ describe('account-action identity blocks', () => {
     expect(res.status).toHaveBeenCalledWith(500);
     // The strict audit row only commits when the whole transaction does.
     expect(logActionStrict).not.toHaveBeenCalled();
+  });
+
+  it('refuses to reopen or re-sanction an account with a scheduled erasure', async () => {
+    tx.accountErasureRequest.findFirst.mockResolvedValue({ id: 7 });
+    for (const action of ['ACTIVE', 'BANNED', 'SUSPENDED']) {
+      const res = makeRes();
+      await handler(post({ userId: TARGET_ID, action }), res);
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.json.mock.calls[0][0].error).toContain(
+        'scheduled for deletion',
+      );
+    }
+    expect(tx.accountStatusHistory.create).not.toHaveBeenCalled();
+    expect(tx.accountErasureRequest.findFirst).toHaveBeenCalledWith({
+      where: { userId: TARGET_ID, status: 'PENDING' },
+      select: { id: true },
+    });
+  });
+
+  it('still lets an administrator close an account with a scheduled erasure', async () => {
+    tx.accountErasureRequest.findFirst.mockResolvedValue({ id: 7 });
+    const res = makeRes();
+    await handler(post({ userId: TARGET_ID, action: 'CLOSED' }), res);
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 });

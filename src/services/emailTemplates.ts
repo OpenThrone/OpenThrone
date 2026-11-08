@@ -24,13 +24,20 @@ export interface EmailTemplateVars {
   amountCents?: number;
   consentText?: string;
   accessUntil?: string | Date;
+  /** Era-relaunch inactivity copy variant. */
+  relaunch?: boolean;
+  /** News post the relaunch copy links to. */
+  newsId?: number;
+  /** Single-use veteran claim link token. */
+  claimToken?: string;
 }
 export interface RenderEmailInput {
   kind:
     | EmailCampaignKind
     | 'ATTACK_NOTIFICATION'
     | 'SUPPORTER_RECEIPT'
-    | 'SUPPORTER_CANCELED';
+    | 'SUPPORTER_CANCELED'
+    | 'VETERAN_CLAIM';
   locale: string;
   vars: EmailTemplateVars;
 }
@@ -60,7 +67,9 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
   const absolute = (path: string) => new URL(path, root).href;
   const category =
     vars.category ??
-    (kind === 'SUPPORTER_RECEIPT' || kind === 'SUPPORTER_CANCELED'
+    (kind === 'SUPPORTER_RECEIPT' ||
+    kind === 'SUPPORTER_CANCELED' ||
+    kind === 'VETERAN_CLAIM'
       ? 'TRANSACTIONAL'
       : kind === 'ATTACK_NOTIFICATION'
         ? 'ATTACK_NOTIFICATION'
@@ -102,6 +111,10 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
     manageLink: absolute('/home/supporter'),
     termsLink: absolute('/legal/terms'),
     refundsLink: absolute('/legal/refunds'),
+    newsLink: absolute(`/community/news/${vars.newsId ?? ''}`),
+    claimLink: absolute(
+      `/account/veteran-claim?token=${encodeURIComponent(vars.claimToken ?? '')}`,
+    ),
   };
   let subject: string;
   let body: string;
@@ -125,14 +138,22 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
       body = `${vars.title ?? ''}\n\n${vars.excerpt ?? ''}\n\n${absolute(`/community/news/${vars.id ?? ''}`)}`;
       break;
     case 'INACTIVITY_NOTICE':
-      subject = copy.noticeSubject;
-      body = interpolate(copy.notice, values);
+      subject = vars.relaunch ? copy.relaunchNoticeSubject : copy.noticeSubject;
+      body = interpolate(
+        vars.relaunch ? copy.relaunchNotice : copy.notice,
+        values,
+      );
       break;
     case 'INACTIVITY_REMINDER':
       if (!vars.deletionDate)
         throw new Error('Reminder requires the scheduled deletion date');
-      subject = copy.reminderSubject;
-      body = interpolate(copy.reminder, values);
+      subject = vars.relaunch
+        ? copy.relaunchReminderSubject
+        : copy.reminderSubject;
+      body = interpolate(
+        vars.relaunch ? copy.relaunchReminder : copy.reminder,
+        values,
+      );
       break;
     case 'SUPPORTER_RECEIPT':
       subject = copy.receiptSubject;
@@ -150,6 +171,11 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
       subject = copy.canceledSubject;
       body = interpolate(copy.canceledBody, values);
       break;
+    case 'VETERAN_CLAIM':
+      if (!vars.claimToken) throw new Error('Claim email requires a token');
+      subject = copy.veteranClaimSubject;
+      body = interpolate(copy.veteranClaim, values);
+      break;
     default:
       throw new Error('Unknown email template');
   }
@@ -159,10 +185,14 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
       : kind === 'NEWS'
         ? [absolute(`/community/news/${vars.id ?? ''}`)]
         : kind === 'INACTIVITY_NOTICE' || kind === 'INACTIVITY_REMINDER'
-          ? [values.loginLink, values.deleteLink]
+          ? vars.relaunch
+            ? [values.loginLink, values.deleteLink, values.newsLink]
+            : [values.loginLink, values.deleteLink]
           : kind === 'SUPPORTER_RECEIPT' || kind === 'SUPPORTER_CANCELED'
             ? [values.manageLink, values.termsLink, values.refundsLink]
-            : [];
+            : kind === 'VETERAN_CLAIM'
+              ? [values.claimLink]
+              : [];
   const linkParagraph = (paragraph: string) => {
     let html = escapeEmailHtml(paragraph).replace(/\n/g, '<br>');
     for (const link of bodyLinks) {

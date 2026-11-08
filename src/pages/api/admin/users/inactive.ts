@@ -13,6 +13,7 @@ import { logError } from '@/utils/logger';
 const Query = z.object({
   page: z.coerce.number().int().min(1).default(1),
   status: z.enum(['none', 'warned', 'cancelled', 'completed']).optional(),
+  inactiveSince: z.coerce.date().optional(),
 });
 export default withApiGuard({
   methods: ['GET'],
@@ -26,15 +27,21 @@ export default withApiGuard({
   context: { query: z.infer<typeof Query> },
 ) => {
   try {
-    const { page, status } = context.query;
-    const where = inactiveUsersWhere(new Date(), status);
+    const { page, status, inactiveSince } = context.query;
+    const where = inactiveUsersWhere(new Date(), status, {
+      inactiveSince,
+    });
     const data = await prisma.$transaction(async (tx) => {
       await logActionStrict(
         {
           userId: Number(req.session.user.id),
           action: 'ADMIN_INACTIVE_USERS_READ',
           ip: getRequestIp(req),
-          details: { page, status: status ?? null },
+          details: {
+            page,
+            status: status ?? null,
+            inactiveSince: inactiveSince?.toISOString() ?? null,
+          },
         },
         tx,
       );

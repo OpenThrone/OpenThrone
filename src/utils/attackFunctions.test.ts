@@ -8,14 +8,14 @@ const {
   simulateBattle,
   calculateLoot,
   calculateStrength,
-  resetBattleConstants,
-  setBattleConstants,
   newComputeCasualties,
   distributeCasualties,
 } = require('./attackFunctions');
 const UserModel = require('../models/Users').default;
 const MockUserGenerator = require('./MockUserGenerator').default;
 const { Fortifications } = require('@/constants');
+const { deriveCombatRuleset } = require('./balance/combatRuleset');
+const { CURRENT_COMBAT_RULESET } = require('./balance/combatRulesets');
 
 const user = new MockUserGenerator();
 
@@ -223,22 +223,20 @@ describe('Gold Pillage Fix', () => {
       mercenaries: [],
     };
 
-    try {
-      setBattleConstants({ MAX_PILLAGE_SHARE_PER_ATTACK: 0.005 });
-      const loot = calculateLoot(attacker, defender, 10, () => 0.99, {
-        assaultSucceeded: true,
-        attackPressure: 1000,
-        defensePressure: 1,
-        fortHpPercent: 0,
-      });
+    const loot = calculateLoot(attacker, defender, 10, () => 0.99, {
+      assaultSucceeded: true,
+      attackPressure: 1000,
+      defensePressure: 1,
+      fortHpPercent: 0,
+      ruleset: deriveCombatRuleset(CURRENT_COMBAT_RULESET, 'combat-test', {
+        battle: { MAX_PILLAGE_SHARE_PER_ATTACK: 0.005 },
+      }),
+    });
 
-      // Linear loot never exceeds the override cap; the mocked roll in this
-      // suite scales the share below it.
-      expect(loot).toBeLessThanOrEqual(BigInt(5000));
-      expect(loot).toBeGreaterThan(BigInt(0));
-    } finally {
-      resetBattleConstants();
-    }
+    // Linear loot never exceeds the override cap; the mocked roll in this
+    // suite scales the share below it.
+    expect(loot).toBeLessThanOrEqual(BigInt(5000));
+    expect(loot).toBeGreaterThan(BigInt(0));
   });
 });
 

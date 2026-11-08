@@ -20,12 +20,14 @@ import {
   getUpdatedStatus,
   userExists,
 } from '@/services/User.service';
+import { VeteranClaimService } from '@/services/VeteranClaim.service';
 import { logAction } from '@/utils/auditLogger';
 import { isAdmin, isModerator } from '@/utils/authorization';
 import { verifyTotpOnce } from '@/utils/credentialGuards';
 import { missingEmailSecrets } from '@/utils/emailSecrets';
 import { logError } from '@/utils/logger';
 import { canAccessGame } from '@/utils/loginPolicy';
+import { isReservedEmail, RESERVED_EMAIL_MESSAGE } from '@/utils/reservedEmail';
 import { isPrivileged2FAEnforced } from '@/utils/securityPolicies';
 
 const argon2 = require('argon2');
@@ -57,7 +59,12 @@ export interface RegisterData {
 }
 
 const RegisterSchema = z.object({
-  email: z.string().email(),
+  email: z
+    .string()
+    .email()
+    .refine((value) => !isReservedEmail(value), {
+      message: RESERVED_EMAIL_MESSAGE,
+    }),
   password: z.string().min(8),
   display_name: z.string().min(3),
   race: z.string(),
@@ -206,14 +213,11 @@ export class AuthService {
     }
 
     if (storedHash.startsWith('$2b$')) {
-      await this.updatePasswordEncryption(
-        validatedData.email,
-        validatedData.password,
-      );
+      await this.updatePasswordEncryption(user.email, validatedData.password);
     }
 
     // Update last active timestamp
-    await AuthService.updateLastActive(validatedData.email);
+    await AuthService.updateLastActive(user.email);
 
     // Log successful login if IP is provided
     if (validatedData.ip) {
@@ -289,6 +293,14 @@ export class AuthService {
       userClass,
       'en-US',
     );
+
+    // A returning veteran gets a claim link at this address; nothing is
+    // granted until it is opened (sign-up does not prove email ownership).
+    try {
+      await VeteranClaimService.sendClaimLink(user.id);
+    } catch (error) {
+      logError('Failed to offer veteran claim', { userId: user.id, error });
+    }
 
     // Log creation if IP is provided (optional, not in original route but good practice)
     if (ip) {

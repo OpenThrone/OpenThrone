@@ -28,7 +28,6 @@ import { Controller, useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { z } from 'zod';
 
-import LoadingDots from '@/components/loading-dots';
 import { logError } from '@/utils/logger';
 import { safeLoginReturnPath } from '@/utils/loginReturn';
 
@@ -139,10 +138,12 @@ const Form: React.FC<FormProps> = ({
   layout = 'paper',
 }) => {
   const [loading, setLoading] = useState(false);
-  const { t } = useTranslation('account');
+  const { t, i18n } = useTranslation('account');
   const { t: tCommon } = useTranslation('common');
   const { t: tLore } = useTranslation('how-to-play');
   const [showVacationModal, setShowVacationModal] = useState(false);
+  const [erasureDate, setErasureDate] = useState<string | null>(null);
+  const [cancellingErasure, setCancellingErasure] = useState(false);
   const [showAppealModal, setShowAppealModal] = useState(false);
   const [appealBody, setAppealBody] = useState('');
   const [appealNotice, setAppealNotice] = useState('');
@@ -294,7 +295,11 @@ const Form: React.FC<FormProps> = ({
     email: string,
     password: string,
     totpToken?: string,
-    options: { endVacation?: boolean; captchaToken?: string } = {},
+    options: {
+      endVacation?: boolean;
+      cancelErasure?: boolean;
+      captchaToken?: string;
+    } = {},
   ): Promise<boolean> => {
     try {
       const res = await signIn('credentials', {
@@ -306,6 +311,7 @@ const Form: React.FC<FormProps> = ({
           ? { turnstileToken: options.captchaToken ?? turnstileToken }
           : {}),
         ...(options.endVacation ? { endVacation: 'true' } : {}),
+        ...(options.cancelErasure ? { cancelErasure: 'true' } : {}),
       });
 
       if (res?.ok) {
@@ -318,7 +324,11 @@ const Form: React.FC<FormProps> = ({
       }
 
       const error = res?.error;
-      let parsed: { message?: string; code?: string } | null = null;
+      let parsed: {
+        message?: string;
+        code?: string;
+        erasureDate?: string;
+      } | null = null;
       try {
         parsed = JSON.parse(error || '{}');
       } catch {
@@ -327,6 +337,9 @@ const Form: React.FC<FormProps> = ({
       if (parsed?.code === 'vacation') {
         resetTurnstile(dialogTurnstileRef, setDialogTurnstileToken);
         setShowVacationModal(true);
+      } else if (parsed?.code === 'erasure') {
+        resetTurnstile(dialogTurnstileRef, setDialogTurnstileToken);
+        setErasureDate(parsed.erasureDate ?? '');
       } else if (parsed?.code === 'restricted') {
         resetTurnstile(dialogTurnstileRef, setDialogTurnstileToken);
         setAppealNotice('');
@@ -372,6 +385,30 @@ const Form: React.FC<FormProps> = ({
       if (ok) toast.success(t('auth.vacationEnded'));
     } finally {
       setEndingVacation(false);
+    }
+  };
+
+  /**
+   * Cancels a scheduled erasure by signing in again with the credentials just
+   * typed; the server re-verifies captcha, password and TOTP first.
+   */
+  const handleErasureCancel = async () => {
+    if (cancellingErasure) return;
+    setCancellingErasure(true);
+    const loginValues = form.getValues() as LoginFormData;
+    const captchaToken = dialogTurnstileToken;
+    resetTurnstile(dialogTurnstileRef, setDialogTurnstileToken);
+    setErasureDate(null);
+    try {
+      const ok = await handleLogin(
+        loginValues.email,
+        loginValues.password,
+        loginValues.totpToken,
+        { cancelErasure: true, captchaToken },
+      );
+      if (ok) toast.success(t('auth.erasureCancelled'));
+    } finally {
+      setCancellingErasure(false);
     }
   };
 
@@ -729,30 +766,18 @@ const Form: React.FC<FormProps> = ({
             </>
           )}
           <Button
-            disabled={
-              loading || isSubmitting || (captchaEnabled && !turnstileToken)
-            }
             type="submit"
             fullWidth
             size="md"
             id="submit-button"
             data-testid="submit-button"
-            styles={{
-              root: {
-                minHeight: 48,
-                fontFamily: 'MedievalSharp, serif',
-                fontSize: 16,
-                letterSpacing: '0.04em',
-              },
-            }}
+            loading={loading || isSubmitting}
+            disabled={captchaEnabled && !turnstileToken}
+            styles={{ root: { minHeight: 48 } }}
           >
-            {loading || isSubmitting ? (
-              <LoadingDots color="var(--ot-heading)" />
-            ) : (
-              <Text inherit>
-                {type === 'login' ? t('auth.signIn') : t('auth.signUp')}
-              </Text>
-            )}
+            <Text inherit>
+              {type === 'login' ? t('auth.signIn') : t('auth.signUp')}
+            </Text>
           </Button>
           <Space h="md" />
           {type === 'login' ? (
@@ -820,6 +845,43 @@ const Form: React.FC<FormProps> = ({
           disabled={dialogCaptchaPending}
         >
           {t('auth.endVacation')}
+        </Button>
+      </Modal>
+
+      <Modal
+        opened={erasureDate !== null}
+        onClose={() => setErasureDate(null)}
+        title={t('auth.erasureTitle')}
+      >
+        <Text>
+          {erasureDate
+            ? t('auth.erasureBody', {
+                date: new Date(erasureDate).toLocaleDateString(i18n.language, {
+                  dateStyle: 'long',
+                }),
+              })
+            : t('auth.erasureBodyNoDate')}
+        </Text>
+        <Text size="sm" c="dimmed" mt="xs">
+          {t('auth.erasureNote')}
+        </Text>
+        {renderDialogCaptcha()}
+        <Button
+          onClick={handleErasureCancel}
+          mt="md"
+          fullWidth
+          loading={cancellingErasure}
+          disabled={dialogCaptchaPending}
+        >
+          {t('auth.cancelErasure')}
+        </Button>
+        <Button
+          onClick={() => setErasureDate(null)}
+          mt="xs"
+          fullWidth
+          variant="default"
+        >
+          {t('auth.keepErasure')}
         </Button>
       </Modal>
 

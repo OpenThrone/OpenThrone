@@ -42,7 +42,10 @@ const handler = async (
     });
     return res.status(200).json(stringifyObj(result));
   } catch (error: any) {
-    return res.status(400).json({ error: publicErrorMessage(error) });
+    return res.status(400).json({
+      error: publicErrorMessage(error),
+      ...(typeof error?.code === 'string' ? { code: error.code } : {}),
+    });
   }
 };
 

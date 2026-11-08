@@ -7,6 +7,10 @@
   "reminderSubject": "Ihr OpenThrone-Konto: noch 30 Tage",
   "notice": "Hallo {{display_name}},\n\nIhre letzte Aktivität war am {{lastActiveDate}}. Nach einer Frist von 180 Tagen wird Ihr Konto am {{deletionDate}} zur Löschung vorgemerkt. Melden Sie sich vor diesem Datum an, um Ihr Konto zu behalten.\n\nAnmelden: {{loginLink}}\nLöschung beantragen: {{deleteLink}}",
   "reminder": "Hallo {{display_name}},\n\nIhre letzte Aktivität war am {{lastActiveDate}}. Bis zur geplanten Löschung Ihres Kontos am {{deletionDate}} bleiben noch 30 Tage. Melden Sie sich an, um Ihr Konto zu behalten.\n\nAnmelden: {{loginLink}}\nLöschung beantragen: {{deleteLink}}",
+  "relaunchNoticeSubject": "Eine neue Ära hat begonnen – Ihr OpenThrone-Konto wartet",
+  "relaunchNotice": "Hallo {{display_name}},\n\nEine neue Ära hat bei OpenThrone begonnen, und die Entwicklung ist wieder aktiv. Lesen Sie die Neuigkeiten: {{newsLink}}\n\nWir würden uns freuen, Sie wiederzusehen. Melden Sie sich bis zum {{deletionDate}} an, um Ihr Konto zu behalten: {{loginLink}}\n\nAndernfalls löschen wir Ihre E-Mail-Adresse und Ihre persönlichen Daten. Wir behalten nur einen unumkehrbaren Fingerabdruck, um Sie bei einer Rückkehr zu erkennen: Registrieren Sie sich innerhalb von zwei Jahren erneut mit derselben E-Mail-Adresse, und bestätigen Sie den Link, den wir an diese Adresse senden, dann erhalten Sie den Titel „Ära-1-Tester“, Ihr ursprüngliches Beitrittsdatum zurück und können Ihren alten Anzeigenamen zurückfordern.\n\nLieber ganz aufhören? Löschen Sie Ihr Konto jetzt: {{deleteLink}}",
+  "relaunchReminderSubject": "Letzte Chance: Eine neue Ära hat bei OpenThrone begonnen",
+  "relaunchReminder": "Hallo {{display_name}},\n\nEine neue Ära hat bei OpenThrone begonnen, und die Entwicklung ist wieder aktiv. Lesen Sie die Neuigkeiten: {{newsLink}}\n\nDie Zeit läuft ab: Melden Sie sich bis zum {{deletionDate}} an, um Ihr Konto zu behalten – {{loginLink}}\n\nDanach löschen wir Ihre E-Mail-Adresse und Ihre persönlichen Daten und behalten nur einen unumkehrbaren Fingerabdruck, um Sie zu erkennen. Registrieren Sie sich innerhalb von zwei Jahren erneut mit derselben E-Mail-Adresse, bestätigen Sie den Link, den wir dorthin senden, und erhalten Sie den Titel „Ära-1-Tester“, Ihr ursprüngliches Beitrittsdatum und Ihren alten Anzeigenamen.\n\nLöschen Sie Ihr Konto jetzt: {{deleteLink}}",
   "pageTitle": "E-Mail-Einstellungen",
   "pageDescription": "Wählen Sie, welche OpenThrone-E-Mails Sie erhalten. Sicherheits- und Konto-E-Mails werden immer gesendet.",
   "confirm": "Diese E-Mail-Kategorie abbestellen",
@@ -34,5 +38,7 @@
     "gift_3m": "Patron-Geschenkcode (90 Tage)",
     "gift_12m": "Patron-Geschenkcode (360 Tage)",
     "alliance_sponsorship": "Allianz-Sponsoring"
-  }
+  },
+  "veteranClaimSubject": "Willkommen zurück bei OpenThrone – bestätigen Sie Ihr Erbe aus Ära 1",
+  "veteranClaim": "Hallo {{display_name}},\n\ndiese Adresse gehörte zu einem OpenThrone-Konto aus Ära 1. Um den Titel „Ära-1-Tester“ und Ihr ursprüngliches Beitrittsdatum wiederherzustellen und Ihren alten Anzeigenamen zurückzubekommen, öffnen Sie innerhalb von 30 Tagen diesen Link, während Sie in Ihrem neuen Konto angemeldet sind:\n\n{{claimLink}}\n\nFalls Sie gerade kein OpenThrone-Konto mit dieser Adresse erstellt haben, hat das jemand anderes getan: Setzen Sie auf der Anmeldeseite das Passwort zurück und melden Sie sich an, um es zu behalten. Bisher wurde nichts gewährt."
 }

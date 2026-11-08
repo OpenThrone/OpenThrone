@@ -37,10 +37,6 @@ describe('resetCurrentEra', () => {
         findUnique: vi.fn().mockResolvedValue({ value: true }),
         upsert: vi.fn(),
       },
-      featureFlag: {
-        findUnique: vi.fn().mockResolvedValue(null),
-        upsert: vi.fn(),
-      },
       users: {
         findMany: vi.fn().mockResolvedValue([{ id: 2 }]),
         update: vi.fn(),
@@ -67,14 +63,26 @@ describe('resetCurrentEra', () => {
       },
       recruit_history: { deleteMany: vi.fn() },
       alliance_bank_history: { deleteMany: vi.fn() },
-      alliance_wars: { deleteMany: vi.fn() },
-      alliance_join_requests: { deleteMany: vi.fn() },
+      alliance_wars: {
+        deleteMany: vi.fn(),
+        updateMany: vi.fn(async () => ({ count: 0 })),
+      },
+      alliance_join_requests: {
+        deleteMany: vi.fn(),
+        updateMany: vi.fn(async () => ({ count: 0 })),
+      },
+      alliance_loans: { updateMany: vi.fn(async () => ({ count: 0 })) },
+      alliance_gold_requests: { updateMany: vi.fn(async () => ({ count: 0 })) },
       alliance_cooldowns: { deleteMany: vi.fn() },
       autoRecruitSession: { deleteMany: vi.fn() },
       userEra: { deleteMany: vi.fn() },
       // Dungeon captives (#210) are freed without returning at era reset.
       captive: { deleteMany: vi.fn(async () => ({ count: 0 })) },
-      alliances: { updateMany: vi.fn() },
+      alliances: {
+        updateMany: vi.fn(async () => ({ count: 2 })),
+        delete: vi.fn(),
+        findMany: vi.fn(async () => []),
+      },
       alliance_xp: { deleteMany: vi.fn() },
       alliance_upgrades: { deleteMany: vi.fn() },
       responseCache: { deleteMany: vi.fn() },
@@ -154,6 +162,45 @@ describe('resetCurrentEra', () => {
       }),
       tx,
     );
+  });
+
+  it('reserves alliances instead of deleting them in an ordinary reset', async () => {
+    const result = await resetCurrentEra({
+      eraId: 7,
+      expectedEraStartDate: startDate,
+      confirmation: 'RESET ERA 7',
+      adminUserId: 1,
+      ip: '127.0.0.1',
+    });
+
+    expect(tx.alliances.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { status: 'ACTIVE' },
+        data: expect.objectContaining({ status: 'RESERVED', status_era_id: 7 }),
+      }),
+    );
+    expect(tx.alliances.updateMany).toHaveBeenCalledWith({
+      data: { gold_in_bank: 0n },
+    });
+    expect(tx.alliances.delete).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      alliancesReserved: 2,
+      alliancesDissolved: 0,
+    });
+  });
+
+  it('refuses a factory restore confirmed with the ordinary phrase', async () => {
+    await expect(
+      resetCurrentEra({
+        eraId: 7,
+        expectedEraStartDate: startDate,
+        confirmation: 'RESET ERA 7',
+        factoryRestore: true,
+        adminUserId: 1,
+        ip: '127.0.0.1',
+      }),
+    ).rejects.toThrow('Explicit confirmation');
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
   it('resets accounts to the chosen starting settings and saves them to the era', async () => {
@@ -247,8 +294,7 @@ describe('resetCurrentEra', () => {
     expect(tx.users.update).not.toHaveBeenCalled();
   });
 
-  it('ignores a leftover feature flag row and refuses while the login setting is on', async () => {
-    tx.featureFlag.findUnique.mockResolvedValue({ enabled: true });
+  it('refuses to reset while the login setting is on', async () => {
     tx.serverSetting.findUnique.mockResolvedValue({ value: false });
 
     await expect(
@@ -314,7 +360,6 @@ describe('resetCurrentEra', () => {
     expect(tx.serverSetting.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ update: { value: false, updatedByUserId: 1 } }),
     );
-    expect(tx.featureFlag.upsert).not.toHaveBeenCalled();
   });
 
   it('fails the transaction if the login setting write fails', async () => {

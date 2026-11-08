@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'bun:test';
+import { beforeEach, describe, expect, mock, test, vi } from 'bun:test';
 import {
   installMockPrisma,
   mockPrisma,
@@ -7,11 +7,19 @@ import {
 import { silenceLogger } from 'test/utils/silenceLogger';
 
 import UserModel from '@/models/Users';
+import * as erasure from '@/services/AccountErasure.service';
+import * as retention from '@/services/PrivacyRetention.service';
 import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { calculateOverallRank } from '@/utils/utilities';
 
 installMockPrisma(vi);
 silenceLogger();
+// The abuse sweep opens its own deadline transactions; this suite counts only
+// the per-user daily transactions, so the sweep is stubbed out here (it has its
+// own tests).
+mock.module('@/services/AbuseDetection.service', () => ({
+  runAbuseDetection: async () => ({ skipped: true }),
+}));
 
 // Dynamic import so the Prisma mock is installed before the service loads.
 const { CronJobService, CRON_USER_TX_OPTIONS, computeWoundedHealing } =
@@ -155,7 +163,15 @@ const applyData = (row: Row, data: Row) => {
   }
 };
 
+// The privacy erasure pass has its own tests (test/integration/privacy.test.ts);
+// here its transactions would only blur the per-user lock assertions.
+const dueErasures = vi.spyOn(erasure, 'processDueErasures');
 beforeEach(() => {
+  dueErasures
+    .mockReset()
+    .mockResolvedValue({ erased: 0, failed: 0, expired: 0 });
+  vi.spyOn(retention, 'purgeErasedModerationRecords').mockResolvedValue(0);
+  vi.spyOn(erasure, 'pruneErasureRecords').mockResolvedValue(undefined);
   resetMockPrisma();
   store = new Map();
   history = [];
@@ -509,6 +525,17 @@ describe('daily cron', () => {
     expect(
       store.get(3)!.UserUnit.find((u: Row) => u.type === 'CITIZEN').quantity,
     ).toBeGreaterThan(80);
+  });
+
+  test('the daily pass runs the privacy erasure job, and its failure does not fail the day', async () => {
+    seed(representativeRows());
+    await CronJobService.processDailyUpdates();
+    expect(dueErasures).toHaveBeenCalledTimes(1);
+
+    dueErasures.mockRejectedValue(new Error('database hiccup'));
+    const result = await CronJobService.processDailyUpdates();
+    expect(dueErasures).toHaveBeenCalledTimes(2);
+    expect(result.success).toBe(true);
   });
 
   test('a daily citizen bonus event goes only to accounts with recent gameplay activity', async () => {

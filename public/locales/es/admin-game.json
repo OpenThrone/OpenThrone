@@ -108,7 +108,7 @@
     "openButton": "Reiniciar la era actual ahora",
     "modalTitle": "Reiniciar era actual",
     "losses": "Esto reinicia permanentemente el progreso de todos los jugadores en la era actual, incluido el personal: oro, unidades, objetos, estructuras, XP, rango, datos de prueba, tesoro y XP de alianzas, mejoras e historiales de la era actual.",
-    "retained": "Se conservan las cuentas, los logros de por vida, el historial de moderación de las cuentas, el acceso del personal, la identidad y las plantillas de los gremios, los datos sociales, los mensajes y las eras anteriores.",
+    "retained": "Se conservan la identidad de la cuenta, los logros acumulados, el historial de moderación, el acceso del personal, los datos sociales, los mensajes y las eras pasadas. Las alianzas también se conservan, como reservadas: nombre, miembros, rangos e imágenes permanecen, mientras que la tesorería, los préstamos y las guerras se cierran.",
     "baseline": "Todas las cuentas se reinician con estos valores iniciales, que también se guardan como la configuración inicial de la era.",
     "startSettingsTitle": "Valores iniciales de cada cuenta",
     "startGold": "Oro inicial",
@@ -197,5 +197,14 @@
       "running": "En curso",
       "ended": "Terminado"
     }
+  },
+  "factoryRestore": {
+    "title": "Restauración de fábrica completa",
+    "description": "El único reinicio que elimina alianzas. Úsalo para empezar de cero antes del lanzamiento, nunca entre eras normales: las nuevas eras y el reinicio normal conservan todas las alianzas, reservadas hasta que su líder las reactive.",
+    "openButton": "Restauración de fábrica…",
+    "modalTitle": "Restauración de fábrica completa",
+    "losses": "Esto hace todo lo que hace el reinicio de la era actual y además elimina de forma permanente TODAS las alianzas: miembros, rangos, imágenes, salas de chat, tesorerías (sin reparto), préstamos, guerras y registros de fuerzas. No se puede deshacer.",
+    "confirmButton": "Eliminar alianzas y reiniciar la era",
+    "requestError": "No se pudo iniciar la restauración de fábrica. Inténtalo de nuevo."
   }
 }

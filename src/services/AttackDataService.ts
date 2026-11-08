@@ -5,6 +5,7 @@ import { BattleUpgrades, ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import type { PlayerStat, PlayerUnit } from '@/types/typings';
+import { CONTRACT_OWNER_ACTIVE } from '@/utils/forceContractFilters';
 import { getEraParticipantWhere } from '@/utils/loginPolicy';
 import { getOTStartDate } from '@/utils/timefunctions';
 
@@ -51,7 +52,11 @@ export const getUserById = async (
     include: {
       UserUnit: true,
       forceContracts: {
-        where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+        where: {
+          status: 'ACTIVE',
+          expiresAt: { gt: new Date() },
+          ...CONTRACT_OWNER_ACTIVE,
+        },
       },
       UserItem: true,
       UserStructureUpgrade: true,
@@ -343,6 +348,7 @@ export const getTop10AttacksByTotalCasualties = async (timeFrame: number) => {
 
     const relations = await prisma.attack_log.findMany({
       where: {
+        voidedAt: null,
         timestamp: {
           gte: new Date(
             Math.max(
@@ -403,6 +409,7 @@ export const getTop10TotalAttackerCasualties = async (timeFrame: number) => {
 
     const relations = await prisma.attack_log.findMany({
       where: {
+        voidedAt: null,
         timestamp: {
           gte: new Date(
             Math.max(
@@ -463,6 +470,7 @@ export const getTop10TotalDefenderCasualties = async (timeFrame: number) => {
 
     const relations = await prisma.attack_log.findMany({
       where: {
+        voidedAt: null,
         timestamp: {
           gte: new Date(
             Math.max(
@@ -658,6 +666,7 @@ export async function getTopSuccessfulAttacks() {
     // Fetch attacks within the last 7 days
     const attacks = await prisma.attack_log.findMany({
       where: {
+        voidedAt: null,
         timestamp: {
           gte: sevenDaysAgo,
         },

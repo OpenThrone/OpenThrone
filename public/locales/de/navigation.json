@@ -38,10 +38,12 @@
     "staffSettings": "Servereinstellungen",
     "staffUsers": "Benutzerverwaltung",
     "staffInactiveUsers": "Inaktive Benutzer",
+    "staffPrivacyRequests": "Datenschutzanfragen",
     "staffAttackLedger": "Angriffsprotokoll",
     "staffBots": "Bot-Verwaltung",
     "staffForces": "Söldner und Truppen",
     "staffLedgers": "Protokolle",
+    "staffCronRuns": "Cron-Protokoll",
     "staffSupporters": "Supporters"
   },
   "battle": {
@@ -82,7 +84,9 @@
     "discord": "Discord",
     "github": "GitHub",
     "faq": "FAQ",
-    "privacy": "Datenschutzerklärung"
+    "privacy": "Datenschutzerklärung",
+    "guides": "Leitfäden",
+    "chronicles": "Chroniken"
   },
   "actions": {
     "signIn": "Anmelden",

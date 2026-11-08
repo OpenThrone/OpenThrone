@@ -84,6 +84,9 @@
       "title": "Befestigungen",
       "text": "Stärken Sie Ihre Verteidigung. Höhere Mauern bedeuten weniger Verluste bei Angriffen."
     },
+    "transfers": {
+      "title": "Goldüberweisungen"
+    },
     "mines": {
       "title": "Minen",
       "text": "Erhöhen Sie die passive Goldgenerierung. Unverzichtbar für langfristiges Wachstum."
@@ -104,16 +107,26 @@
       "title": "Spionageoperationen",
       "text": "Senden Sie Spione, um feindliche Truppenstärken vor einem Angriff auszukundschaften."
     },
+    "losses": {
+      "title": "Verluste",
+      "text": "Verluste treffen alle Ihre Einheitenstufen im Verhältnis zur Zahl der Truppen auf jeder Stufe. Billige Truppen der Stufe 1 schützen Ihre besten Einheiten nicht mehr. Angeheuerte Söldner stehen innerhalb ihrer Stufe weiterhin in vorderster Reihe."
+    },
     "stamina": {
       "title": "Ausdauer"
     }
   },
   "alliances": {
     "title": "Allianzen",
-    "description": "Kein Kommandant herrscht allein. Treten Sie einer Allianz bei oder gründen Sie eine für gegenseitigen Schutz, koordinierte Angriffe und geteilten Ruhm."
+    "description": "Kein Kommandant herrscht allein. Treten Sie einer Allianz bei oder gründen Sie eine für gegenseitigen Schutz, koordinierte Angriffe und geteilten Ruhm.",
+    "eraReserve": "Allianzen überstehen eine neue Ära. Wenn eine Ära endet, wird jede Allianz reserviert: Name, Mitglieder, Ränge und Bilder bleiben erhalten, aber Schatzkammer, Kredite, Truppenverträge und Kriege werden beendet und ihre Funktionen bleiben gesperrt. Mitglieder können jederzeit austreten. Der Anführer reaktiviert die Allianz in der neuen Ära, indem er Stufe 10 erreicht und 10.000.000 Gold zahlt (Admins können beide Werte ändern)."
   },
   "cta": {
     "createCommander": "Kommandant erstellen",
     "returnToBattle": "Zurück zur Schlacht"
+  },
+  "yourData": {
+    "title": "Deine Daten",
+    "description": "In den Einstellungen gibt es den Bereich „Deine Daten“: Lade eine Kopie deiner Konto- und Spieldaten herunter oder beantrage die Löschung deines Kontos. Eine Löschung wird per E-Mail bestätigt und wartet dann 14 Tage, sodass du es dir noch anders überlegen kannst.",
+    "link": "Einstellungen öffnen"
   }
 }

@@ -9,7 +9,7 @@ import SeoHead from '@/components/SeoHead';
 import { serverSideTranslations } from '@/utils/serverTranslations';
 
 /** Bump with any change to the policy wording. */
-const UPDATED = '2026-10-29';
+const UPDATED = '2026-10-31';
 
 const SECTIONS = [
   'who',

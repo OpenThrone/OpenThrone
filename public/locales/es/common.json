@@ -521,7 +521,9 @@
     "accept": "Aceptar",
     "decline": "Rechazar",
     "loadFailed": "No se pudieron cargar las solicitudes",
-    "responseFailed": "No se pudo enviar la respuesta"
+    "responseFailed": "No se pudo enviar la respuesta",
+    "minLevelSend": "Debes ser nivel {{level}} para enviar este oro.",
+    "minLevelReceive": "Quien solicita debe ser nivel {{level}} para recibir oro."
   },
   "walkthrough": {
     "offer": {
@@ -869,5 +871,12 @@
       "recovery": "Se recupera {{amount}} cada {{minutes}} minutos, así que un ejército agotado vuelve a estar descansado en {{fullTime}}.",
       "penalty": "Los ataques siempre se realizan, pero por debajo de {{threshold}} de resistencia tu ejército lucha peor: con cero, ataca al {{floor}} %."
     }
+  },
+  "friendTransfer": {
+    "guide": "Los amigos pueden enviarse oro cuando ambos han desbloqueado la Mina de carbón. Ambos jugadores deben ser al menos de nivel {{level}} y tener cuentas con al menos {{days}} días de antigüedad, y no puedes enviar oro a un jugador contra el que hayas combatido en las últimas {{hours}} horas. Cada transferencia paga una comisión que se destruye."
+  },
+  "veteran": {
+    "badge": "Probador de la Era 1",
+    "since": "Jugando desde {{date}}"
   }
 }

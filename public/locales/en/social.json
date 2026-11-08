@@ -105,7 +105,14 @@
     "overDailyLimit": "More than your remaining daily allowance of {{amount}} gold.",
     "lockedTitle": "Gold transfers locked",
     "locked": "Gold transfers unlock with the {{upgrade}}.",
-    "limitsFailed": "Could not load your transfer limits."
+    "limitsFailed": "Could not load your transfer limits.",
+    "levelLockedTitle": "Level too low",
+    "levelLockedSelf": "Requires level {{level}}. Reach level {{level}} to send gold transfers.",
+    "levelLockedFriend": "Requires level {{level}}. {{player}} must reach level {{level}} to receive gold transfers.",
+    "minLevelSend": "You must be level {{level}} to send gold transfers.",
+    "minLevelReceive": "This player must be level {{level}} to receive gold transfers.",
+    "requestLevelSelf": "You must be level {{level}} to request gold.",
+    "requestLevelFriend": "This player must be level {{level}} to send gold transfers."
   },
   "notifications": {
     "newFriendRequest": "{{player}} wants to be your friend!",

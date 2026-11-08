@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { truncateErrorMessage } from '@/services/CronRun.service';
 import {
   enqueueDailyDigests,
   pruneDiscordOutbox,
@@ -13,6 +14,10 @@ import {
 import { logError } from '@/utils/logger';
 
 const SPONSORSHIP_MONTH_CENTS = 499;
+/** Failure lines kept on the report; `errors` still counts every failure. */
+const MAX_FAILURES = 10;
+/** Longest cause kept per failure line (the run log caps strings at 200). */
+const FAILURE_CAUSE_LENGTH = 120;
 
 export interface SupporterDailyReport {
   poolsConverted: number;
@@ -21,6 +26,11 @@ export interface SupporterDailyReport {
   billingEnded: number;
   discordDigests: number;
   errors: number;
+  /**
+   * One line per failure (`kind ref: cause`), capped at MAX_FAILURES. Ids and
+   * redacted messages only, so the cron run log can show what went wrong.
+   */
+  failures: string[];
 }
 
 /**
@@ -43,6 +53,13 @@ export async function runSupporterDaily(
     billingEnded: 0,
     discordDigests: 0,
     errors: 0,
+    failures: [],
+  };
+  const fail = (kind: string, ref: string | number | null, error: unknown) => {
+    report.errors++;
+    if (report.failures.length >= MAX_FAILURES) return;
+    const cause = truncateErrorMessage(error).slice(0, FAILURE_CAUSE_LENGTH);
+    report.failures.push(`${kind}${ref === null ? '' : ` ${ref}`}: ${cause}`);
   };
   const pools = await prisma.allianceSponsorship.findMany({
     where: { poolCents: { gte: SPONSORSHIP_MONTH_CENTS } },
@@ -53,7 +70,7 @@ export async function runSupporterDaily(
       await convertPool(allianceId);
       report.poolsConverted++;
     } catch (error) {
-      report.errors++;
+      fail('pool', allianceId, error);
       logError('Supporter pool conversion failed', { allianceId, error });
     }
   }
@@ -69,7 +86,7 @@ export async function runSupporterDaily(
       await recompute(userId);
       report.membershipsLapsed++;
     } catch (error) {
-      report.errors++;
+      fail('recompute', userId, error);
       logError('Supporter membership recompute failed', { userId, error });
     }
   }
@@ -78,21 +95,25 @@ export async function runSupporterDaily(
     process.env.STRIPE_SECRET_KEY
   )
     try {
-      const { applied, failed } = await reconcileStripe({ days: 3 });
+      const { applied, failed, failures } = await reconcileStripe({ days: 3 });
       report.reconcile = { applied, failed };
-      report.errors += failed.length;
+      for (const { id, error } of failures) {
+        fail('reconcile', id, error);
+        logError('Stripe reconcile event failed', { eventId: id, error });
+      }
     } catch (error) {
-      report.errors++;
+      fail('reconcile', null, error);
       logError('Stripe reconciliation failed', error);
     }
   const billing = await sweepEndedAccountBilling();
   report.billingEnded = billing.ended;
-  report.errors += billing.errors;
+  for (const { userId, error } of billing.failures)
+    fail('billing', userId, error);
   try {
     report.discordDigests = await enqueueDailyDigests(now);
     await pruneDiscordOutbox();
   } catch (error) {
-    report.errors++;
+    fail('discord', null, error);
     logError('Discord digest failed', error);
   }
   return report;

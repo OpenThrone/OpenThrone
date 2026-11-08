@@ -12,6 +12,9 @@ beforeEach(() => {
   mockPrisma.$queryRaw = vi.fn().mockResolvedValue([]);
   mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(mockPrisma));
   mockPrisma.users = { update: vi.fn() };
+  mockPrisma.alliances = {
+    findUnique: vi.fn(async () => ({ status: 'ACTIVE' })),
+  };
   mockPrisma.discordOutbox = { deleteMany: vi.fn() };
   mockPrisma.paymentEvent = { updateMany: vi.fn(), upsert: vi.fn() };
 });
@@ -87,6 +90,8 @@ it('stops renewals for banned accounts and cancels deleted ones at once', async 
     // Perks already lapsed and a cancel was scheduled, but the account was
     // deleted: billing must still stop at once.
     4: { userId: 4, status: 'EXPIRED', cancelAtPeriodEnd: true },
+    // Live account whose address is on the reserved domain: not erased.
+    5: { userId: 5, status: 'ACTIVE', cancelAtPeriodEnd: false },
   };
   for (const row of Object.values(rows))
     Object.assign(row, {
@@ -99,10 +104,12 @@ it('stops renewals for banned accounts and cancels deleted ones at once', async 
     findMany: vi.fn(async ({ where }: any) =>
       where.providerSubscriptionId
         ? [
-            { userId: 1, user: { email: 'banned@example.test' } },
-            { userId: 2, user: { email: '2-deleted@deleted.local' } },
-            { userId: 3, user: { email: 'fine@example.test' } },
-            { userId: 4, user: { email: '4-deleted@deleted.local' } },
+            { userId: 1, user: { anonymizedAt: null } },
+            { userId: 2, user: { anonymizedAt: new Date() } },
+            { userId: 3, user: { anonymizedAt: null } },
+            { userId: 4, user: { anonymizedAt: new Date() } },
+            // Live account whose address is on the reserved domain: not erased.
+            { userId: 5, user: { anonymizedAt: null } },
           ]
         : [],
     ),
@@ -131,6 +138,7 @@ it('stops renewals for banned accounts and cancels deleted ones at once', async 
   });
   expect(rows[2].currentPeriodEnd.getTime()).toBeLessThanOrEqual(Date.now());
   expect(rows[3]).toMatchObject({ status: 'ACTIVE', cancelAtPeriodEnd: false });
+  expect(rows[5]).toMatchObject({ status: 'ACTIVE', cancelAtPeriodEnd: false });
 });
 
 it('records a failed billing stop for admins and retries it the next day', async () => {
@@ -157,4 +165,32 @@ it('records a failed billing stop for admins and retries it the next day', async
     create: { type: 'billing.stop', status: 'FAILED' },
   });
   spy.mockRestore();
+});
+
+it('names each failed billing stop and its cause in the report', async () => {
+  const { MockProvider } = await import('@/services/supporter/MockProvider');
+  process.env.PAYMENT_PROVIDER = 'mock';
+  mockPrisma.allianceSponsorship = { findMany: vi.fn(async () => []) };
+  mockPrisma.supporterMembership = {
+    findMany: vi.fn(async ({ where }: any) =>
+      where.providerSubscriptionId
+        ? [{ userId: 1, user: { anonymizedAt: new Date() } }]
+        : [],
+    ),
+    findUnique: vi.fn(async () => ({
+      userId: 1,
+      status: 'ACTIVE',
+      provider: 'mock',
+      providerSubscriptionId: 'sub_1',
+    })),
+  };
+  const spy = vi
+    .spyOn(MockProvider.prototype, 'cancelSubscription')
+    .mockRejectedValue(new Error('provider down for a@b.example'));
+  const report = await runSupporterDaily();
+  spy.mockRestore();
+
+  expect(report.errors).toBe(1);
+  // Id and redacted cause only: never the address inside the message.
+  expect(report.failures).toEqual(['billing 1: provider down for [email]']);
 });

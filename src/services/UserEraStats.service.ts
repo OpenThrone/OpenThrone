@@ -332,6 +332,7 @@ async function getHistoricalTopSuccessfulAttackers(
   try {
     const attacks = await prisma.attack_log.findMany({
       where: {
+        voidedAt: null,
         timestamp: { gte: era.startDate, lt: era.endDate },
         type: 'attack',
       },
@@ -384,6 +385,7 @@ async function getHistoricalTopAttackerCasualties(
   try {
     const attacks = await prisma.attack_log.findMany({
       where: {
+        voidedAt: null,
         timestamp: { gte: era.startDate, lt: era.endDate },
       },
       include: {
@@ -425,6 +427,7 @@ async function getHistoricalTopDefenderCasualties(
   try {
     const attacks = await prisma.attack_log.findMany({
       where: {
+        voidedAt: null,
         timestamp: { gte: era.startDate, lt: era.endDate },
       },
       include: {
@@ -466,6 +469,7 @@ async function getHistoricalTopAttacksByTotalCasualties(
   try {
     const attacks = await prisma.attack_log.findMany({
       where: {
+        voidedAt: null,
         timestamp: { gte: era.startDate, lt: era.endDate },
       },
       include: {

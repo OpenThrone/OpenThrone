@@ -336,6 +336,7 @@ export class GeneralService {
       const attacksSinceLastActive = await prisma.attack_log.findMany({
         where: {
           defender_id: user.id,
+          voidedAt: null,
           timestamp: { gte: lastActiveDate },
         },
         select: {
@@ -355,7 +356,11 @@ export class GeneralService {
       // Count won attacks, won defends, total attacks, and total defends
       // Battle records cover the current era's attacks only, not spy missions.
       const era = await ensureActiveEra();
-      const eraAttacks = { type: 'attack', timestamp: { gte: era.startDate } };
+      const eraAttacks = {
+        type: 'attack',
+        voidedAt: null,
+        timestamp: { gte: era.startDate },
+      };
       const [wonAttacks, wonDefends, totalAttacks, totalDefends] =
         await Promise.all([
           prisma.attack_log.count({

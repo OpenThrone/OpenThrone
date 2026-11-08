@@ -27,6 +27,12 @@ export interface PaymentProvider {
     subscriptionId: string,
     when: 'now' | 'period_end',
   ): Promise<boolean>;
+  /**
+   * Undoes a period-end cancellation while the subscription still runs.
+   * Idempotent; resolves false when there was nothing to undo (already
+   * renewing, or ended for good).
+   */
+  resumeSubscription(subscriptionId: string): Promise<boolean>;
 }
 export function getPaymentProvider(): PaymentProvider {
   const provider = process.env.PAYMENT_PROVIDER ?? 'mock';

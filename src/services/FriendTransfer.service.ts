@@ -5,15 +5,19 @@ import {
   FRIEND_TRANSFER_ATTACK_BLOCK_HOURS,
   FRIEND_TRANSFER_DAILY_RECEIVED_CAP,
   FRIEND_TRANSFER_MIN_ACCOUNT_AGE_DAYS,
+  FRIEND_TRANSFER_MIN_LEVEL_CODE,
+  FRIEND_TRANSFER_MIN_LEVEL_DEFAULT,
   FRIEND_TRANSFER_NOTE_MAX_LENGTH,
+  type FriendTransferLevelRole,
   getFriendTransferLimits,
 } from '@/constants/FriendTransfer';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
-import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { ensureActiveEra } from '@/services/Era.service';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { getActiveAccountStatus } from '@/services/User.service';
 import { createApiError } from '@/utils/api-error';
+import { getLevelFromXP } from '@/utils/utilities';
 
 import {
   canMakeTransfer,
@@ -70,6 +74,7 @@ interface TransferParticipant {
   race: string;
   fort_level: number;
   economy_level: number;
+  experience: number;
   created_at: Date | null;
 }
 
@@ -86,6 +91,7 @@ const getTransferParticipants = async (
       race: true,
       fort_level: true,
       economy_level: true,
+      experience: true,
       created_at: true,
     },
   });
@@ -111,6 +117,35 @@ const assertTransferAccountAge = (
   }
 };
 
+/** The live minimum player level for transfers (admin runtime setting). */
+const getMinTransferLevel = async (tx?: TransactionClient): Promise<number> =>
+  (await getRuntimeConfig(tx)).friendTransferMinLevel ??
+  FRIEND_TRANSFER_MIN_LEVEL_DEFAULT;
+
+/** The refusal for a player below the minimum level, with a code clients translate. */
+const minLevelError = (
+  role: FriendTransferLevelRole,
+  minLevel: number,
+  message: string,
+) =>
+  createApiError(message, 400, {
+    code: FRIEND_TRANSFER_MIN_LEVEL_CODE,
+    role,
+    minLevel,
+  });
+
+/** Throws unless the player has reached the minimum level to send or receive. */
+const assertTransferLevel = (
+  participant: TransferParticipant,
+  role: FriendTransferLevelRole,
+  minLevel: number,
+  message: string,
+) => {
+  if (getLevelFromXP(participant.experience ?? 0) < minLevel) {
+    throw minLevelError(role, minLevel, message);
+  }
+};
+
 /** Finds an attack in either direction inside the combat-block window. */
 const findRecentAttack = (
   fromUserId: number,
@@ -119,6 +154,8 @@ const findRecentAttack = (
 ) =>
   tx.attack_log.findFirst({
     where: {
+      // A voided battle is no recent fight (#229).
+      voidedAt: null,
       timestamp: { gte: new Date(Date.now() - ATTACK_BLOCK_MS) },
       OR: [
         { attacker_id: fromUserId, defender_id: toUserId },
@@ -317,6 +354,20 @@ const validateGoldRequest = async (
       error: `This player must be at least ${FRIEND_TRANSFER_MIN_ACCOUNT_AGE_DAYS} days old to send gold transfers`,
     };
   }
+  // The requester would receive the gold and the friend would send it.
+  const requestMinLevel = await getMinTransferLevel(tx);
+  assertTransferLevel(
+    participants.get(fromUserId) as TransferParticipant,
+    'receive',
+    requestMinLevel,
+    `You must be level ${requestMinLevel} to request gold`,
+  );
+  assertTransferLevel(
+    participants.get(toUserId) as TransferParticipant,
+    'send',
+    requestMinLevel,
+    `This player must be level ${requestMinLevel} to send gold transfers`,
+  );
   if (await findRecentAttack(fromUserId, toUserId, tx)) {
     return { valid: false, error: FRIEND_TRANSFER_ATTACK_BLOCK_MESSAGE };
   }
@@ -419,6 +470,19 @@ const transferGoldWithinTransaction = async (
   }
   assertTransferAccountAge(senderRow, 'send');
   assertTransferAccountAge(recipientRow, 'receive');
+  const minLevel = await getMinTransferLevel(tx);
+  assertTransferLevel(
+    senderRow,
+    'send',
+    minLevel,
+    `You must be level ${minLevel} to send gold transfers`,
+  );
+  assertTransferLevel(
+    recipientRow,
+    'receive',
+    minLevel,
+    `This player must be level ${minLevel} to receive gold transfers`,
+  );
   if (
     await findRecentAttack(
       validatedParams.fromUserId,
@@ -969,7 +1033,10 @@ export const cancelFriendTransfer = async (
  * rolling-24h totals already sent and received (#205).
  * @param userId - The ID of the signed-in user
  */
-export const getFriendTransferStatus = async (userId: number) => {
+export const getFriendTransferStatus = async (
+  userId: number,
+  friendId?: number,
+) => {
   const user = await prisma.users.findUnique({
     where: { id: userId },
     select: {
@@ -977,11 +1044,28 @@ export const getFriendTransferStatus = async (userId: number) => {
       race: true,
       fort_level: true,
       economy_level: true,
+      experience: true,
     },
   });
   if (!user) {
     throw createApiError('Player not found', 404);
   }
+  // The level rule applies to both sides; the friend's level is only ever
+  // reported as met or not, never as a number.
+  const minLevel = await getMinTransferLevel();
+  const isFriend = friendId
+    ? await verifyFriendship(userId, friendId, prisma).then(
+        () => true,
+        () => false,
+      )
+    : false;
+  const friend =
+    friendId && isFriend
+      ? await prisma.users.findUnique({
+          where: { id: friendId },
+          select: { experience: true },
+        })
+      : null;
 
   const limits = limitsOf(user);
   const since = new Date(Date.now() - DAY_MS);
@@ -1016,5 +1100,10 @@ export const getFriendTransferStatus = async (userId: number) => {
     feePercent: limits?.feePercent ?? 0,
     sentToday: BigInt(sent?._sum?.gold_amount ?? 0).toString(),
     receivedToday: BigInt(received?._sum?.gold_amount ?? 0).toString(),
+    minLevel,
+    senderLevelMet: getLevelFromXP(user.experience ?? 0) >= minLevel,
+    receiverLevelMet: friend
+      ? getLevelFromXP(friend.experience ?? 0) >= minLevel
+      : true,
   };
 };

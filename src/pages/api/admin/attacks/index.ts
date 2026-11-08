@@ -46,6 +46,8 @@ async function handler(
       pillaged_gold: true,
       attacker_losses_total: true,
       defender_losses_total: true,
+      voidedAt: true,
+      voidReason: true,
       attackerPlayer: { select: { id: true, display_name: true } },
       defenderPlayer: { select: { id: true, display_name: true } },
     } as const;

@@ -60,7 +60,8 @@
         "depositCapPercent": "Límite de depósito bancario (%)"
       },
       "friend": {
-        "dailyReceivedCap": "Límite diario de oro recibido por transferencias de amigos"
+        "dailyReceivedCap": "Límite diario de oro recibido por transferencias de amigos",
+        "transferMinLevel": "Nivel mínimo para transferencias de amigos (1-100; remitente y destinatario)"
       },
       "alliance": {
         "maxPendingGoldRequests": "Máximo de solicitudes de oro pendientes",
@@ -69,7 +70,9 @@
         "loanInterestMaxPercent": "Interés máximo de préstamos de tesorería (%)",
         "memberDailyCapMin": "Límite diario mínimo por miembro",
         "memberDailyCapMax": "Límite diario máximo por miembro",
-        "loanIncomeSharePercent": "Porcentaje de ingresos de préstamos de tesorería (%)"
+        "loanIncomeSharePercent": "Porcentaje de ingresos de préstamos de tesorería (%)",
+        "reactivationMinLevel": "Reactivación de alianza: nivel mínimo del líder",
+        "reactivationCostGold": "Reactivación de alianza: coste en oro"
       },
       "mercenary": {
         "hireMultiplier": "Multiplicador de contratación de mercenarios",
@@ -93,6 +96,7 @@
       "era.protectionLevelLimit": "Límite de nivel de protección",
       "bank.depositCapPercent": "Límite de depósito bancario (%)",
       "friend.dailyReceivedCap": "Límite diario recibido en transferencias de amigos",
+      "friend.transferMinLevel": "Nivel mínimo para transferencias de amigos (1-100; remitente y destinatario)",
       "alliance.maxPendingGoldRequests": "Máximo de solicitudes de oro pendientes",
       "mercenary.hireMultiplier": "Multiplicador de contratación de mercenarios",
       "mercenary.dailyPriceRate": "Tarifa diaria de mercenarios",
@@ -104,7 +108,26 @@
       "alliance.loanInterestMaxPercent": "Interés máximo de préstamos del tesoro (%)",
       "alliance.memberDailyCapMin": "Límite diario mínimo por miembro",
       "alliance.memberDailyCapMax": "Límite diario máximo por miembro",
-      "alliance.loanIncomeSharePercent": "Participación de ingresos en préstamos del tesoro (%)"
+      "alliance.loanIncomeSharePercent": "Participación de ingresos en préstamos del tesoro (%)",
+      "alliance.reactivationMinLevel": "Reactivación de alianza: nivel mínimo del líder",
+      "alliance.reactivationCostGold": "Reactivación de alianza: coste en oro",
+      "abuse.enabled": "Detección de abusos (señales solo para administración)",
+      "abuse.network.minAccounts": "Red compartida: cuentas necesarias",
+      "abuse.network.windowDays": "Red compartida: ventana (días, máx. 30)",
+      "abuse.funnel.windowDays": "Canalización de recursos: ventana (días, máx. 20)",
+      "abuse.funnel.minSources": "Canalización de recursos: cuentas de origen necesarias",
+      "abuse.funnel.minSharePercent": "Canalización de recursos: parte de lo que envía un origen (%)",
+      "abuse.funnel.minGold": "Canalización de recursos: volumen de oro necesario",
+      "abuse.funnel.minActionsPerSource": "Canalización de recursos: acciones necesarias por origen",
+      "abuse.pingPong.minTransfersEachWay": "Oro de ida y vuelta: transferencias en cada sentido",
+      "abuse.pingPong.minGoldEachWay": "Oro de ida y vuelta: oro en cada sentido",
+      "abuse.bot.minHoursPerDay": "Ritmo de bot: horas activas en un día",
+      "abuse.bot.minDays": "Ritmo de bot: días con ese nivel",
+      "abuse.bot.minGapSamples": "Ritmo de bot: intervalos entre acciones necesarios",
+      "abuse.bot.maxVariationPercent": "Ritmo de bot: variación de intervalos como máximo (%)",
+      "abuse.fresh.accountAgeDays": "Cuentas nuevas: cuentan si tienen menos de (días)",
+      "abuse.fresh.windowDays": "Cuentas nuevas: ventana (días)",
+      "abuse.fresh.minAttacks": "Cuentas nuevas: ataques necesarios de un jugador"
     },
     "resetBeforeLogin": "Reiniciar la era actual antes de habilitar los inicios de sesión",
     "groups": {
@@ -116,7 +139,8 @@
       "economy": "Economía y banco",
       "mercenaries": "Mercenarios y fuerzas",
       "alliances": "Alianzas",
-      "accounts": "Cuentas y correo"
+      "accounts": "Cuentas y correo",
+      "abuse": "Detección de abusos"
     },
     "staminaTitle": "Reglas de resistencia",
     "staminaHelp": "La resistencia determina los costes, la recuperación y la penalización de ataque bajo el umbral. Espiar no cuesta resistencia.",

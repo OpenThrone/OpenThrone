@@ -23,6 +23,9 @@ export const AllianceAdminActionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('forgive_loan'), loanId: id }),
   z.object({ action: z.literal('cancel_loan'), loanId: id }),
   z.object({ action: z.literal('end_war'), warId: id }),
+  // Era lifecycle (#13): staff can reserve an alliance or reactivate it free.
+  z.object({ action: z.literal('reserve') }),
+  z.object({ action: z.literal('reactivate') }),
 ]);
 
 export type AllianceAdminAction = z.infer<typeof AllianceAdminActionSchema>;
@@ -40,6 +43,8 @@ export const ALLIANCE_ADMIN_AUDIT_ACTIONS: Record<
   forgive_loan: 'ADMIN_ALLIANCE_FORGIVE_LOAN',
   cancel_loan: 'ADMIN_ALLIANCE_CANCEL_LOAN',
   end_war: 'ADMIN_ALLIANCE_END_WAR',
+  reserve: 'ADMIN_ALLIANCE_RESERVE',
+  reactivate: 'ADMIN_ALLIANCE_REACTIVATE',
 };
 
 /** Loan statuses that still carry a balance (AllianceLoan.service OPEN_STATUSES). */

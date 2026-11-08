@@ -36,7 +36,54 @@
       "vacation-end": {
         "title": "¿Finalizar el modo vacaciones?",
         "message": "El modo vacaciones de esta cuenta finalizará de inmediato."
+      },
+      "suspend": {
+        "title": "¿Suspender esta cuenta?",
+        "message": "El jugador no podrá iniciar sesión ni jugar hasta que termine la suspensión. Su correo no podrá registrarse de nuevo durante ese periodo."
+      },
+      "ban": {
+        "title": "¿Banear esta cuenta?",
+        "message": "El jugador no podrá iniciar sesión ni jugar, y su correo no podrá registrar una cuenta nueva. Las renovaciones de supporter se detienen. Puede presentar una apelación."
+      },
+      "reactivate": {
+        "title": "¿Reactivar esta cuenta?",
+        "message": "Termina de inmediato la suspensión, el baneo o el cierre actual y levanta el bloqueo de registro."
+      },
+      "close": {
+        "title": "¿Cerrar esta cuenta?",
+        "message": "La cuenta se cierra, se revocan su contraseña y el acceso de staff, y se detienen las renovaciones de supporter. Los datos de juego se conservan; un administrador puede reactivarla."
+      },
+      "erase": {
+        "title": "¿Eliminar esta cuenta?",
+        "message": "La cuenta se cierra ahora y sus datos personales se borran de forma permanente tras un periodo de gracia de 14 días. Puedes cancelar o acelerar la eliminación desde la pestaña Privacidad."
       }
+    },
+    "statusHeading": "Estado de la cuenta",
+    "statusDescription": "Estado actual: {{status}}. Las suspensiones y los baneos impiden iniciar sesión y quedan en el historial de estado.",
+    "suspendAction": "Suspender",
+    "banAction": "Banear",
+    "reactivateAction": "Reactivar",
+    "closeAction": "Cerrar cuenta",
+    "eraseAction": "Eliminar cuenta",
+    "permanentLabel": "Baneo permanente",
+    "durationLabel": "Duración (días)",
+    "durationHelp": "Entre 1 y 3650 días.",
+    "durationInvalid": "Introduce un número entero de días entre 1 y 3650.",
+    "reasonRequired": "Obligatorio; se guarda en el historial de estado y en el registro del staff.",
+    "reasonMin": "Obligatorio, al menos {{count}} caracteres; se guarda en el registro del staff.",
+    "suspendResult_one": "Cuenta suspendida durante {{count}} día.",
+    "suspendResult_other": "Cuenta suspendida durante {{count}} días.",
+    "banResult_one": "Cuenta baneada durante {{count}} día.",
+    "banResult_other": "Cuenta baneada durante {{count}} días.",
+    "banPermanentResult": "Cuenta baneada permanentemente.",
+    "reactivateResult": "Cuenta reactivada.",
+    "closeResult": "Cuenta cerrada.",
+    "eraseResult": "Cuenta cerrada y programada para eliminación. Síguela o acelérala en la pestaña Privacidad.",
+    "erasureErrors": {
+      "reason_required": "Se requiere un motivo de al menos 10 caracteres.",
+      "staff_account": "Las cuentas del staff se cierran, no se eliminan. Quita primero sus roles de staff.",
+      "already_scheduled": "Esta cuenta ya tiene una eliminación programada. Consulta la pestaña Privacidad.",
+      "not_found": "Jugador no encontrado o ya eliminado."
     }
   },
   "export": {

@@ -63,7 +63,10 @@
     "notes": "Notizen",
     "operations": "Aktionen",
     "upgrades": "Verbesserungen",
-    "forces": "Söldner und Truppen"
+    "forces": "Söldner und Truppen",
+    "signals": "Missbrauchshinweise",
+    "signalsOpenFull": "Vollständige Ansicht der Missbrauchshinweise öffnen",
+    "privacy": "Datenschutz"
   },
   "editor": {
     "title": "{{username}}",
@@ -79,7 +82,7 @@
     "username": "Benutzername",
     "email": "E-Mail",
     "status": "Kontostatus",
-    "statusHelp": "Der Status ist hier schreibgeschützt. Verwenden Sie die Kontosperren für Statusänderungen.",
+    "statusHelp": "Der Status ist hier schreibgeschützt. Ändern Sie ihn unter Aktionen > Kontostatus.",
     "accountId": "Konto-ID",
     "gold": "Gold im Besitz",
     "goldInBank": "Gold auf der Bank",
@@ -117,7 +120,12 @@
     "locale": "Sprache",
     "bio": "Biografie",
     "derivedHelp": "Wird beim Speichern neu berechnet, wenn Einheiten, Gegenstände, Festung, Erfahrung, Volk oder Klasse geändert werden.",
-    "mercenaryLocked": "Durch Söldnervertrag verwaltet"
+    "mercenaryLocked": "Durch Söldnervertrag verwaltet",
+    "veteranTitle": "Veteranentitel",
+    "veteranTitleNone": "Keiner",
+    "veteranTitleERA1_TESTER": "Ära-1-Tester",
+    "veteranSince": "Veteran seit (ursprüngliches Beitrittsdatum)",
+    "veteranSinceHelp": "ISO-Datum der Erstellung des ursprünglichen Kontos. Wird geleert, wenn der Titel entfernt wird."
   },
   "actions": {
     "edit": "Bearbeiten",
@@ -177,5 +185,75 @@
     "impersonation": "Die Identitätsübernahme konnte nicht gestartet werden.",
     "stopImpersonation": "Die Identitätsübernahme konnte nicht beendet werden.",
     "stale": "Dieser Spieler wurde geändert, seit du den Editor geöffnet hast. Lade neu, um die aktuellen Werte zu sehen. Deine Änderungen wurden nicht gespeichert."
+  },
+  "privacy": {
+    "title": "Datenschutzanfragen",
+    "intro": "Löschanträge warten 14 Tage, nachdem der Spieler per E-Mail bestätigt hat. Ein früherer Abbruch oder eine frühere Löschung braucht eine schriftliche Begründung und wird protokolliert. Datenexporte werden zur Kontrolle gelistet; ihr Inhalt wird nie gespeichert.",
+    "tabs": {
+      "label": "Anfrageart",
+      "erasure": "Löschanträge",
+      "exports": "Datenexporte"
+    },
+    "columns": {
+      "player": "Spieler",
+      "status": "Status",
+      "requested": "Beantragt",
+      "scheduled": "Löschung / erledigt",
+      "detail": "Details",
+      "actions": "Aktionen",
+      "completed": "Abgeschlossen",
+      "size": "Größe"
+    },
+    "status": {
+      "AWAITING_CONFIRMATION": "Unbestätigt",
+      "PENDING": "Wartefrist",
+      "COMPLETED": "Gelöscht",
+      "CANCELLED": "Abgebrochen",
+      "EXPIRED": "Abgelaufen"
+    },
+    "by": {
+      "USER": "den Spieler",
+      "ADMIN": "das Team",
+      "EXPIRED": "Ablauf"
+    },
+    "failed": "{{attempts}}x fehlgeschlagen: {{error}}",
+    "expedited": "Vorzeitig vom Team gelöscht (Grund im Audit-Protokoll)",
+    "cancelledByNoReason": "Abgebrochen durch {{by}} (Grund im Audit-Protokoll)",
+    "loading": "Lädt…",
+    "emptyErasure": "Keine Löschanträge.",
+    "emptyExports": "Noch keine Datenexporte.",
+    "reason": "Begründung",
+    "reasonHint": "Mindestens {{min}} Zeichen. Wird im Audit-Protokoll festgehalten.",
+    "dismiss": "Schließen",
+    "actions": {
+      "cancel": "Abbrechen",
+      "cancelTitle": "Löschung für {{name}} abbrechen",
+      "cancelBody": "Das Konto wird reaktiviert und der Antrag geschlossen. Nutze dies bei einer geprüften Support-Anfrage.",
+      "cancelConfirm": "Löschung abbrechen",
+      "expedite": "Jetzt löschen",
+      "expediteTitle": "{{name}} jetzt löschen",
+      "expediteBody": "Überspringt den Rest der Wartefrist. Das lässt sich nicht rückgängig machen.",
+      "expediteConfirm": "Jetzt löschen"
+    },
+    "open": {
+      "button": "Antrag für Spieler öffnen",
+      "title": "Löschantrag öffnen",
+      "body": "Für einen Spieler, der sich nicht anmelden kann, nachdem du seine Support-Anfrage geprüft hast. Die volle 14-tägige Wartefrist gilt.",
+      "userId": "Spieler-ID",
+      "confirm": "Antrag öffnen"
+    },
+    "done": {
+      "cancel": "Löschung abgebrochen.",
+      "expedite": "Konto gelöscht.",
+      "open": "Antrag geöffnet; die Wartefrist läuft."
+    },
+    "errors": {
+      "load": "Laden oder Speichern fehlgeschlagen. Versuche es erneut.",
+      "not_pending": "Dieser Antrag ist nicht mehr offen.",
+      "reason_required": "Eine Begründung mit mindestens 10 Zeichen ist nötig.",
+      "staff_account": "Team-Konten werden über die Kontoaktionen geschlossen.",
+      "already_scheduled": "Für diesen Spieler ist bereits eine Löschung vorgemerkt.",
+      "not_found": "Spieler nicht gefunden oder bereits gelöscht."
+    }
   }
 }

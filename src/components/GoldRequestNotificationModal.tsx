@@ -12,6 +12,7 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { parseFriendTransferLevelError } from '@/constants/FriendTransfer';
 import { useUser } from '@/context/users';
 import type { Locales } from '@/types/typings';
 import { formatGold } from '@/utils/numberFormatting';
@@ -156,8 +157,16 @@ export function GoldRequestNotificationModal({
 
         if (!response.ok) {
           const errorData = await response.json();
+          const levelError = parseFriendTransferLevelError(errorData);
           throw new Error(
-            errorData.error || t('goldRequestInbox.responseFailed'),
+            levelError
+              ? t(
+                  levelError.role === 'send'
+                    ? 'goldRequestInbox.minLevelSend'
+                    : 'goldRequestInbox.minLevelReceive',
+                  { level: levelError.minLevel },
+                )
+              : errorData.error || t('goldRequestInbox.responseFailed'),
           );
         }
 

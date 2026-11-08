@@ -1,0 +1,70 @@
+{
+  "metaTitle": "Chroniken der Zersplitterten Reiche - OpenThrone",
+  "metaDescription": "Die Geschichte von OpenThrone: wie die Alte Welt fiel, wie die Zersplitterten Reiche entstanden, die vier Völker, die sie beherrschen, und die Große Wende, die jedes Zeitalter erneuert.",
+  "title": "Chroniken",
+  "intro": "Wie die Alte Welt fiel, wie die Zersplitterten Reiche entstanden und warum jedes Zeitalter von vorn beginnt.",
+  "tocLabel": "In diesen Chroniken",
+  "sections": {
+    "oldWorld": {
+      "title": "Die Alte Welt",
+      "paragraphs": [
+        "Vor der Zerschlagung hielt ein einziges Reich alle Länder zwischen den Nordpässen und der Südküste. Seine Herrscher saßen auf den Alten Thronen, gewaltigen Sitzen aus Stein und Eisen, die das Land angeblich zusammenhielten.",
+        "Das Reich bestand jahrhundertelang. Seine Kriege dauerten länger. Jeder Grenzstreit nährte den nächsten, und die Throne sollten mehr tragen, als ein Sitz der Macht je tragen kann."
+      ]
+    },
+    "sundering": {
+      "title": "Die Zerschlagung",
+      "paragraphs": [
+        "Die Throne zerbrachen einer nach dem anderen. Mit ihnen gingen die Straßen, die Kornspeicher und die Eide, die die Lehnsherren an die Krone banden. Der Boden selbst riss entlang alter Schlachtlinien auf, und dort, wo die Heere am längsten gekämpft hatten, öffneten sich Risse.",
+        "Die Städte leerten sich. In langen Kolonnen zogen die Menschen aus den Ruinen und nahmen Saatgut, Werkzeug und alles mit, was sie verteidigen konnten."
+      ]
+    },
+    "realms": {
+      "title": "Die Zersplitterten Reiche",
+      "paragraphs": [
+        "Die Überlebenden entdeckten, dass sich die Risse überqueren ließen. Dahinter lag offenes, zerklüftetes Land. In kleinen Gruppen nahmen sie es in Besitz, errichteten ein Herrenhaus, bestellten Felder und drillten ein paar Wachen.",
+        "Diese Besitzungen sind die Zersplitterten Reiche, und Sie herrschen über eines davon. Sie beginnen mit einem Herrenhaus, einer Handvoll Bürger und etwas Gold. Sie entscheiden, wer arbeitet, wer kämpft und wer die Mauern bewacht.",
+        "Heute herrscht keine Krone über die Reiche. Kommandanten überfallen einander um Gold und Ruhm, und die Stärksten schließen sich zu Allianzen zusammen. Noch hat niemand einen Thron errichtet, der stehen bleibt."
+      ]
+    },
+    "peoples": {
+      "title": "Vier Völker",
+      "paragraphs": [
+        "Vier Völker überquerten die Risse. Jedes brachte etwas von der Alten Welt mit, und jedes kämpft noch heute auf seine Art."
+      ],
+      "races": {
+        "ELF": {
+          "name": "Elfen",
+          "text": "Die Elfen bewahrten die Kunst der Späher. Ihre Spione und Wächter sehen weiter, und ihre Schützen halten eine Mauer gut. Wenn Elfen getroffen werden, rettet ihr Heiligtum einen Teil der Gefallenen."
+        },
+        "HUMAN": {
+          "name": "Menschen",
+          "text": "Die Menschen bewahrten die Musterrollen. Sie kämpfen gut im Angriff, und ihre Disziplin hält die Reihen zusammen, wenn die Moral sinkt, sodass weniger Soldaten desertieren."
+        },
+        "GOBLIN": {
+          "name": "Goblins",
+          "text": "Die Goblins bewahrten die Raubzüge. Sie verteidigen ihre Besitzungen erbittert und leben von der Beute. Mit den Plünderern nehmen sie im Kampf Gefangene, halten sie in einem Verlies fest und verkaufen sie gegen Lösegeld zurück."
+        },
+        "UNDEAD": {
+          "name": "Untote",
+          "text": "Die Untoten bewahrten, was die Zerschlagung nicht ruhen ließ. Sie schlagen hart zu, und mit der Nekropole erheben sie gefallene Soldaten vom Schlachtfeld, damit sie erneut kämpfen."
+        }
+      },
+      "closing": "Die anderen Völker haben eine Antwort auf die Toten. Geweihter Boden schützt ein Königreich, sodass untote Angreifer seine Gefallenen nicht erheben können."
+    },
+    "greatTurning": {
+      "title": "Die Große Wende",
+      "paragraphs": [
+        "Jedes Zeitalter der Zersplitterten Reiche endet in einer Großen Wende. Die Risse schwellen an, die Grenzen verschwimmen und das Land erneuert sich. Jedes Königreich beginnt von vorn, mit einem Herrenhaus, neuen Bürgern und einer frischen Schatzkammer.",
+        "Die Taten eines Zeitalters gehen nicht verloren. Seine Ranglisten und Ergebnisse bleiben auf der Seite Weltstatistiken unter Vergangene Ären erhalten.",
+        "Wenn das nächste Zeitalter anbricht, kehrt die alte Frage zurück: Wer baut ein Königreich, das Bestand hat?"
+      ],
+      "statsLink": "Vergangene Ären ansehen"
+    }
+  },
+  "cta": {
+    "createCommander": "Kommandanten erstellen",
+    "howToPlay": "Spielanleitung",
+    "guides": "Strategieleitfäden"
+  }
+}

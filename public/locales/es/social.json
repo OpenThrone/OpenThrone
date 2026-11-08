@@ -105,7 +105,14 @@
     "overDailyLimit": "Más que tu límite diario restante de {{amount}} de oro.",
     "lockedTitle": "Transferencias de oro bloqueadas",
     "locked": "Las transferencias de oro se desbloquean con el {{upgrade}}.",
-    "limitsFailed": "No se pudieron cargar tus límites de transferencia."
+    "limitsFailed": "No se pudieron cargar tus límites de transferencia.",
+    "levelLockedTitle": "Nivel demasiado bajo",
+    "levelLockedSelf": "Requiere nivel {{level}}. Alcanza el nivel {{level}} para enviar transferencias de oro.",
+    "levelLockedFriend": "Requiere nivel {{level}}. {{player}} debe alcanzar el nivel {{level}} para recibir transferencias de oro.",
+    "minLevelSend": "Debes ser nivel {{level}} para enviar transferencias de oro.",
+    "minLevelReceive": "Este jugador debe ser nivel {{level}} para recibir transferencias de oro.",
+    "requestLevelSelf": "Debes ser nivel {{level}} para solicitar oro.",
+    "requestLevelFriend": "Este jugador debe ser nivel {{level}} para enviar transferencias de oro."
   },
   "notifications": {
     "newFriendRequest": "¡{{player}} quiere ser tu amigo!",

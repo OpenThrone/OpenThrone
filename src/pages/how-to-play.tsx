@@ -10,6 +10,7 @@ import MainArea from '@/components/MainArea';
 import PublicHero from '@/components/public/PublicHero';
 import classes from '@/components/public/PublicPages.module.css';
 import SeoHead from '@/components/SeoHead';
+import { useFriendTransferGuide } from '@/hooks/useFriendTransferGuide';
 import { useStaminaGuide } from '@/hooks/useStaminaGuide';
 import { serverSideTranslations } from '@/utils/serverTranslations';
 
@@ -26,6 +27,7 @@ const races = ['elf', 'human', 'goblin', 'undead'] as const;
 const HowToPlay = () => {
   const { t } = useTranslation('how-to-play');
   const staminaGuide = useStaminaGuide();
+  const transferGuide = useFriendTransferGuide();
   // The browser's own jump to a shared #anchor happens before the layout
   // settles and lands at the top; scroll again once the page is mounted.
   useEffect(() => {
@@ -131,11 +133,17 @@ const HowToPlay = () => {
                 },
                 {
                   key: 'economy',
-                  entries: ['bank', 'armory', 'fortifications', 'mines'],
+                  entries: [
+                    'bank',
+                    'armory',
+                    'fortifications',
+                    'mines',
+                    'transfers',
+                  ],
                 },
                 {
                   key: 'combat',
-                  entries: ['attack', 'defense', 'spy', 'stamina'],
+                  entries: ['attack', 'defense', 'spy', 'losses', 'stamina'],
                 },
               ].map(({ key, entries }) => (
                 <Box
@@ -157,7 +165,7 @@ const HowToPlay = () => {
                         key={entry}
                         id={`${key}-${entry}`}
                         className={
-                          entry === 'stamina'
+                          entry === 'stamina' || entry === 'transfers'
                             ? classes.definitionWide
                             : undefined
                         }
@@ -171,13 +179,37 @@ const HowToPlay = () => {
                         <Text component="dd" className={classes.prose} m={0}>
                           {entry === 'stamina'
                             ? staminaGuide
-                            : t(`${key}.${entry}.text`)}
+                            : entry === 'transfers'
+                              ? transferGuide
+                              : t(`${key}.${entry}.text`)}
                         </Text>
                       </Box>
                     ))}
                   </Box>
                 </Box>
               ))}
+              <Box
+                component="section"
+                id="your-data"
+                className={classes.guideSection}
+              >
+                <Title order={2} className={classes.sectionTitle}>
+                  {t('yourData.title')}
+                </Title>
+                <Text className={classes.prose}>
+                  {t('yourData.description')}
+                </Text>
+                <Group className={classes.actions}>
+                  <Button
+                    component={Link}
+                    href="/home/settings#privacy"
+                    variant="outline"
+                    size="md"
+                  >
+                    {t('yourData.link')}
+                  </Button>
+                </Group>
+              </Box>
               <Box
                 component="section"
                 id="alliances"
@@ -188,6 +220,9 @@ const HowToPlay = () => {
                 </Title>
                 <Text className={classes.prose}>
                   {t('alliances.description')}
+                </Text>
+                <Text className={classes.prose}>
+                  {t('alliances.eraReserve')}
                 </Text>
                 <Group className={classes.actions}>
                   <Button component={Link} href="/account/register" size="md">

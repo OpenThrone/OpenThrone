@@ -43,10 +43,12 @@
     "staffApiTokens": "API Tokens",
     "staffMaintenance": "Maintenance Mode",
     "staffInactiveUsers": "Inactive users",
+    "staffPrivacyRequests": "Privacy requests",
     "staffAttackLedger": "Attack ledger",
     "staffBots": "Bot operations",
     "staffForces": "Mercenaries and Forces",
     "staffLedgers": "Ledgers",
+    "staffCronRuns": "Cron run log",
     "staffSupporters": "Supporters"
   },
   "battle": {
@@ -87,7 +89,9 @@
     "discord": "Discord",
     "github": "GitHub",
     "faq": "FAQ",
-    "privacy": "Privacy Policy"
+    "privacy": "Privacy Policy",
+    "guides": "Guides",
+    "chronicles": "Chronicles"
   },
   "actions": {
     "signIn": "Sign In",

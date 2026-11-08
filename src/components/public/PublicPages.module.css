@@ -79,6 +79,42 @@
   text-wrap: balance;
 }
 
+/* Auth funnel only: German compounds (Kommandantenzugang) run wider than the
+   auth column at 390px; hyphenate along the html lang, break as last resort. */
+.authSectionTitle {
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
+/* Long single words (Kommandantenzugang) must fit the narrow auth column on
+   phones; browsers without a German hyphenation dictionary would otherwise
+   break them mid-word. */
+@media (max-width: 480px) {
+  .authSectionTitle {
+    font-size: clamp(22px, 6.8vw, 30px);
+  }
+}
+
+/* Auth funnel only: long German labels (Einen Kommandanten erstellen, Ein
+   verlorenes Konto wiederherstellen) must wrap inside the narrow scene and
+   form columns. Mantine's inner label is nowrap + overflow hidden by
+   default, so both the root and the label need the treatment. The root
+   never drops below its variant height, so short locales look unchanged. */
+.authActionButton {
+  height: auto;
+  min-height: var(--button-height);
+  padding-block: 6px;
+  line-height: 1.2;
+  max-width: 100%;
+}
+
+.authActionButtonLabel {
+  white-space: normal;
+  height: auto;
+  overflow: visible;
+  text-align: center;
+}
+
 .prose {
   max-width: 70ch;
   font-size: 16px;
@@ -430,3 +466,48 @@
 .footerNote { opacity: .88; }
 .heroDescription, .prose, .articleBody { --public-ink: color-mix(in srgb, var(--ot-heading) 50%, white); }
 .page :global(.mantine-Button-root[data-variant="outline"]) { color: var(--ot-heading); }
+
+/* Guides and Chronicles: lists, reference tables, index cards, race entries */
+.guideList { max-width: 70ch; margin: 16px 0 0; padding-inline-start: 1.4em; }
+.guideList { list-style: disc; }
+ol.guideList { list-style: decimal; }
+.guideList li { padding-inline-start: .4em; }
+.guideList li + li { margin-top: 12px; }
+.guideList li::marker { color: var(--ot-accent); }
+.guideList .prose { display: inline; }
+
+.guideTableWrap { margin-top: 28px; max-width: 100%; overflow-x: auto; }
+.guideTable { color: var(--public-ink); font-size: 15px; font-variant-numeric: tabular-nums; }
+.guideTable caption { caption-side: top; padding-bottom: 12px; color: var(--ot-heading); font-family: MedievalSharp, serif; font-size: 20px; text-align: start; }
+.guideTable :is(th, td) { border-color: var(--ot-line); text-align: start; }
+.guideTable td, .guideTable tbody th { white-space: nowrap; }
+.guideTable thead th { color: var(--ot-heading); font-weight: 600; }
+.guideTable tbody th { color: var(--ot-heading); font-weight: 500; }
+.guideCellLabel { display: none; }
+
+.guideCards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 40px; }
+.guideCard { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 28px; border: 1px solid var(--frame-edge); background: var(--ot-panel); box-shadow: var(--frame-shadow); }
+.guideCard .prose { flex: 1 1 auto; }
+.guideCardNumber { font-family: MedievalSharp, serif; font-size: 18px; color: var(--ot-accent); }
+
+.relatedLinks { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--ot-border); }
+
+
+@media (max-width: 900px) {
+  .guideCards { grid-template-columns: minmax(0, 1fr); }
+}
+
+.guideFooter { margin-top: 8px; padding-top: 32px; border-top: 1px solid var(--ot-border); }
+.guideFooter .highlightTitle { margin-top: 24px; margin-bottom: 0; }
+.guideFooter .relatedLinks { margin-top: 16px; padding-top: 0; border-top: 0; }
+
+.relatedLinks > * { white-space: normal; height: auto; min-height: 44px; padding-block: 10px; }
+@media (max-width: 768px) {
+  .guideTable, .guideTable tbody, .guideTable tr, .guideTable th, .guideTable td { display: block; }
+  .guideTable caption { display: block; }
+  .guideTable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .guideTable tbody tr { margin-bottom: 12px; padding-block: 6px; border: 1px solid var(--ot-line); background: var(--ot-inset); }
+  .guideTable tbody th { padding: 8px 14px 6px; border: 0; background: none; font-family: MedievalSharp, serif; font-size: 17px; }
+  .guideTable tbody td { display: flex; justify-content: space-between; gap: 16px; padding: 5px 14px; border: 0; text-align: end; white-space: normal; }
+  .guideCellLabel { display: inline; color: var(--ot-muted); text-align: start; }
+}

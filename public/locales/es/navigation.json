@@ -38,10 +38,12 @@
     "staffSettings": "Ajustes del servidor",
     "staffUsers": "Gestión de usuarios",
     "staffInactiveUsers": "Usuarios inactivos",
+    "staffPrivacyRequests": "Solicitudes de privacidad",
     "staffAttackLedger": "Registro de ataques",
     "staffBots": "Gestión de bots",
     "staffForces": "Mercenarios y tropas",
     "staffLedgers": "Registros",
+    "staffCronRuns": "Registro de tareas",
     "staffSupporters": "Supporters"
   },
   "battle": {
@@ -82,7 +84,9 @@
     "discord": "Discord",
     "github": "GitHub",
     "faq": "Preguntas",
-    "privacy": "Política de privacidad"
+    "privacy": "Política de privacidad",
+    "guides": "Guías",
+    "chronicles": "Crónicas"
   },
   "actions": {
     "signIn": "Iniciar sesión",

@@ -1,0 +1,4850 @@
+{
+  "mirrored": {
+    "result": {
+      "attacker": {
+        "id": 1,
+        "displayName": "attacker-1",
+        "race": "HUMAN",
+        "class": "FIGHTER",
+        "level": 28,
+        "fortLevel": 6,
+        "fortHitpoints": 22,
+        "gold": "1099643253",
+        "units": [
+          {
+            "id": 100,
+            "userId": 1,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 101,
+            "userId": 1,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 102,
+            "userId": 1,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 103,
+            "userId": 1,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "defender": {
+        "id": 1,
+        "displayName": "attacker-1",
+        "race": "HUMAN",
+        "class": "FIGHTER",
+        "level": 28,
+        "fortLevel": 6,
+        "fortHitpoints": 22,
+        "gold": "1099643253",
+        "units": [
+          {
+            "id": 100,
+            "userId": 1,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 101,
+            "userId": 1,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 102,
+            "userId": 1,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 103,
+            "userId": 1,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "fortHitpoints": 17,
+      "turnsTaken": 1,
+      "pillagedGold": "23565007n",
+      "experienceGained": {
+        "attacker": 99,
+        "defender": 25
+      },
+      "finalFortHP": 17,
+      "fortDamaged": true,
+      "result": "WIN",
+      "casualtySummary": {
+        "attacker": [],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 18,
+            "description": "DEFENSE Level 1"
+          }
+        ],
+        "attackerTotal": 0,
+        "defenderTotal": 18,
+        "fortDamage": 5,
+        "mitigation": {
+          "averageMultiplier": 0.9788666666666667,
+          "minMultiplier": 0.9788666666666667,
+          "maxMultiplier": 0.9788666666666667,
+          "samples": 1
+        },
+        "fortBreached": false,
+        "battleStats": {
+          "attacker": {
+            "offenseRemaining": 1000,
+            "meleeAtkPower": 5100,
+            "meleeDefPower": 2040,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 1020
+          },
+          "defender": {
+            "defenseRemaining": 975,
+            "meleeAtkPower": 3060,
+            "meleeDefPower": 5100,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 0
+          }
+        },
+        "wounded": {
+          "attacker": [],
+          "defender": [
+            {
+              "type": "DEFENSE",
+              "level": 1,
+              "quantity": 7,
+              "isMercenary": false
+            }
+          ]
+        },
+        "routedStacks": []
+      },
+      "mitigationLog": [
+        {
+          "turn": 1,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 263,
+          "mitigatedDamage": 254,
+          "fortSoakMultiplier": 0.9886666666666667,
+          "mitigationMultiplier": 0.9788666666666667,
+          "fortHpStart": 22,
+          "fortHpEnd": 17,
+          "fortHpRatio": 0.02266666666666667,
+          "defenderFortLevel": 6,
+          "defenderFortMitigationPct": 5,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 2,
+          "totalMitigationPct": 2.1133333333333333,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        }
+      ],
+      "Losses": {
+        "Attacker": {
+          "total": 0,
+          "units": []
+        },
+        "Defender": {
+          "total": 18,
+          "units": [
+            {
+              "id": 101,
+              "userId": 1,
+              "type": "DEFENSE",
+              "level": 1,
+              "isMercenary": false,
+              "quantity": 18
+            }
+          ]
+        }
+      },
+      "wounded": {
+        "attacker": [],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 7,
+            "isMercenary": false
+          }
+        ]
+      },
+      "damageAudit": {
+        "attacker": {
+          "rawIn": 0,
+          "applied": 0,
+          "suppressed": 0,
+          "caps": {
+            "singleAttackCap": null,
+            "softCap": null,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": null
+          },
+          "bindingCap": "none",
+          "suppressedBy": {}
+        },
+        "defender": {
+          "rawIn": 254,
+          "applied": 250,
+          "suppressed": 4,
+          "caps": {
+            "singleAttackCap": 320,
+            "softCap": 25,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 25
+          },
+          "bindingCap": "soft",
+          "suppressedBy": {
+            "soft": 4
+          }
+        }
+      },
+      "damageReceived": {
+        "attacker": 0,
+        "defender": 254
+      },
+      "defenderFatiguePercent": 0,
+      "attackerFatiguePercent": 0,
+      "routedStacks": [],
+      "canonicalOutcome": {
+        "winner": "ATTACKER",
+        "reason": "ASSAULT_SUCCEEDED",
+        "attackerValueLost": 0,
+        "defenderValueLost": 37500,
+        "fortValueDamage": 1125,
+        "pillagedGoldValue": 23565007,
+        "netGainValue": 23565007,
+        "defenseUnitsBroken": 25,
+        "assaultSucceeded": true
+      },
+      "defenderStats": {
+        "defenseRemaining": 975,
+        "meleeAtkPower": 3060,
+        "meleeDefPower": 5100,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 0
+      },
+      "attackerStats": {
+        "offenseRemaining": 1000,
+        "meleeAtkPower": 5100,
+        "meleeDefPower": 2040,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 1020
+      }
+    },
+    "attacker": {
+      "id": 1,
+      "displayName": "attacker-1",
+      "level": 28,
+      "race": "HUMAN",
+      "class": "FIGHTER",
+      "gold": "1099643253n",
+      "fortLevel": 6,
+      "fortHitpoints": 22,
+      "units": [
+        {
+          "id": 100,
+          "userId": 1,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 101,
+          "userId": 1,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 102,
+          "userId": 1,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 103,
+          "userId": 1,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [
+        {
+          "type": "ARMORY",
+          "level": 2
+        }
+      ],
+      "battle_upgrades": [],
+      "bonus_points": []
+    },
+    "defender": {
+      "id": 1,
+      "displayName": "attacker-1",
+      "level": 28,
+      "race": "HUMAN",
+      "class": "FIGHTER",
+      "gold": "1076078246n",
+      "fortLevel": 6,
+      "fortHitpoints": 22,
+      "units": [
+        {
+          "id": 100,
+          "userId": 1,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 101,
+          "userId": 1,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 975,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 102,
+          "userId": 1,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 103,
+          "userId": 1,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [
+        {
+          "type": "ARMORY",
+          "level": 2
+        }
+      ],
+      "battle_upgrades": [],
+      "bonus_points": []
+    }
+  },
+  "overwhelming-attack": {
+    "result": {
+      "attacker": {
+        "id": 1,
+        "displayName": "attacker-1",
+        "race": "ELF",
+        "class": "FIGHTER",
+        "level": 27,
+        "fortLevel": 10,
+        "fortHitpoints": 1895,
+        "gold": "1514192620",
+        "units": [
+          {
+            "id": 100,
+            "userId": 1,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 101,
+            "userId": 1,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 102,
+            "userId": 1,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 103,
+            "userId": 1,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "defender": {
+        "id": 2,
+        "displayName": "defender-2",
+        "race": "GOBLIN",
+        "class": "FIGHTER",
+        "level": 39,
+        "fortLevel": 4,
+        "fortHitpoints": 300,
+        "gold": "2816485819",
+        "units": [
+          {
+            "id": 200,
+            "userId": 2,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 10,
+            "isMercenary": false
+          },
+          {
+            "id": 201,
+            "userId": 2,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 10,
+            "isMercenary": false
+          },
+          {
+            "id": 202,
+            "userId": 2,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 10,
+            "isMercenary": false
+          },
+          {
+            "id": 203,
+            "userId": 2,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 10,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "fortHitpoints": 210,
+      "turnsTaken": 10,
+      "pillagedGold": "294286880n",
+      "experienceGained": {
+        "attacker": 2121,
+        "defender": 530
+      },
+      "finalFortHP": 210,
+      "fortDamaged": true,
+      "result": "WIN",
+      "casualtySummary": {
+        "attacker": [
+          {
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1,
+            "description": "OFFENSE Level 1"
+          }
+        ],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 2,
+            "description": "DEFENSE Level 1"
+          }
+        ],
+        "attackerTotal": 1,
+        "defenderTotal": 2,
+        "fortDamage": 90,
+        "mitigation": {
+          "averageMultiplier": 0.9760399999999999,
+          "minMultiplier": 0.9721,
+          "maxMultiplier": 0.979,
+          "samples": 5
+        },
+        "fortBreached": false,
+        "battleStats": {
+          "attacker": {
+            "offenseRemaining": 999,
+            "meleeAtkPower": 4100,
+            "meleeDefPower": 1640.0000000000002,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 820.0000000000001
+          },
+          "defender": {
+            "defenseRemaining": 8,
+            "meleeAtkPower": 24,
+            "meleeDefPower": 40,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 0
+          }
+        },
+        "wounded": {
+          "attacker": [],
+          "defender": []
+        },
+        "routedStacks": []
+      },
+      "mitigationLog": [
+        {
+          "turn": 1,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 15062,
+          "mitigatedDamage": 7834,
+          "fortSoakMultiplier": 0.5349999999999999,
+          "mitigationMultiplier": 0.9721,
+          "fortHpStart": 300,
+          "fortHpEnd": 279,
+          "fortHpRatio": 0.93,
+          "defenderFortLevel": 4,
+          "defenderFortMitigationPct": 3,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 2.79,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 2,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 2,
+          "mitigatedDamage": 2,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 279,
+          "fortHpEnd": 279,
+          "fortHpRatio": 0.93,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 3,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 13544,
+          "mitigatedDamage": 7521,
+          "fortSoakMultiplier": 0.5700000000000001,
+          "mitigationMultiplier": 0.9742,
+          "fortHpStart": 279,
+          "fortHpEnd": 258,
+          "fortHpRatio": 0.86,
+          "defenderFortLevel": 4,
+          "defenderFortMitigationPct": 3,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 2.58,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 4,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 2,
+          "mitigatedDamage": 2,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 258,
+          "fortHpEnd": 258,
+          "fortHpRatio": 0.86,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 5,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 13799,
+          "mitigatedDamage": 8174,
+          "fortSoakMultiplier": 0.6066666666666667,
+          "mitigationMultiplier": 0.9764,
+          "fortHpStart": 258,
+          "fortHpEnd": 236,
+          "fortHpRatio": 0.7866666666666666,
+          "defenderFortLevel": 4,
+          "defenderFortMitigationPct": 3,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 2.36,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 6,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 2,
+          "mitigatedDamage": 2,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 236,
+          "fortHpEnd": 236,
+          "fortHpRatio": 0.7866666666666666,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 7,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 13060,
+          "mitigatedDamage": 8200,
+          "fortSoakMultiplier": 0.6416666666666666,
+          "mitigationMultiplier": 0.9785,
+          "fortHpStart": 236,
+          "fortHpEnd": 215,
+          "fortHpRatio": 0.7166666666666667,
+          "defenderFortLevel": 4,
+          "defenderFortMitigationPct": 3,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 2.15,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 8,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 2,
+          "mitigatedDamage": 2,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 215,
+          "fortHpEnd": 215,
+          "fortHpRatio": 0.7166666666666667,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 9,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 13434,
+          "mitigatedDamage": 8549,
+          "fortSoakMultiplier": 0.65,
+          "mitigationMultiplier": 0.979,
+          "fortHpStart": 215,
+          "fortHpEnd": 210,
+          "fortHpRatio": 0.7,
+          "defenderFortLevel": 4,
+          "defenderFortMitigationPct": 3,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 2.0999999999999996,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 10,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 2,
+          "mitigatedDamage": 2,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 210,
+          "fortHpEnd": 210,
+          "fortHpRatio": 0.7,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        }
+      ],
+      "Losses": {
+        "Attacker": {
+          "total": 1,
+          "units": [
+            {
+              "id": 100,
+              "userId": 1,
+              "type": "OFFENSE",
+              "level": 1,
+              "isMercenary": false,
+              "quantity": 1
+            }
+          ]
+        },
+        "Defender": {
+          "total": 2,
+          "units": [
+            {
+              "id": 201,
+              "userId": 2,
+              "type": "DEFENSE",
+              "level": 1,
+              "isMercenary": false,
+              "quantity": 2
+            }
+          ]
+        }
+      },
+      "wounded": {
+        "attacker": [],
+        "defender": []
+      },
+      "damageAudit": {
+        "attacker": {
+          "rawIn": 10,
+          "applied": 10,
+          "suppressed": 0,
+          "caps": {
+            "singleAttackCap": 80,
+            "softCap": 31,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 31
+          },
+          "bindingCap": "none",
+          "suppressedBy": {}
+        },
+        "defender": {
+          "rawIn": 40278,
+          "applied": 20,
+          "suppressed": 40258,
+          "caps": {
+            "singleAttackCap": 3,
+            "softCap": 2,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 1
+          },
+          "bindingCap": "soft",
+          "suppressedBy": {
+            "soft": 40258
+          }
+        }
+      },
+      "damageReceived": {
+        "attacker": 10,
+        "defender": 40278
+      },
+      "defenderFatiguePercent": 0,
+      "attackerFatiguePercent": 0,
+      "routedStacks": [],
+      "canonicalOutcome": {
+        "winner": "ATTACKER",
+        "reason": "ASSAULT_SUCCEEDED",
+        "attackerValueLost": 1500,
+        "defenderValueLost": 3000,
+        "fortValueDamage": 6750,
+        "pillagedGoldValue": 294286880,
+        "netGainValue": 294285380,
+        "defenseUnitsBroken": 2,
+        "assaultSucceeded": true
+      },
+      "defenderStats": {
+        "defenseRemaining": 8,
+        "meleeAtkPower": 24,
+        "meleeDefPower": 40,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 0
+      },
+      "attackerStats": {
+        "offenseRemaining": 999,
+        "meleeAtkPower": 4100,
+        "meleeDefPower": 1640.0000000000002,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 820.0000000000001
+      }
+    },
+    "attacker": {
+      "id": 1,
+      "displayName": "attacker-1",
+      "level": 27,
+      "race": "ELF",
+      "class": "FIGHTER",
+      "gold": "1514192620n",
+      "fortLevel": 10,
+      "fortHitpoints": 1895,
+      "units": [
+        {
+          "id": 100,
+          "userId": 1,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 999,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 101,
+          "userId": 1,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 102,
+          "userId": 1,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 103,
+          "userId": 1,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [],
+      "battle_upgrades": [],
+      "bonus_points": []
+    },
+    "defender": {
+      "id": 2,
+      "displayName": "defender-2",
+      "level": 39,
+      "race": "GOBLIN",
+      "class": "FIGHTER",
+      "gold": "2522198939n",
+      "fortLevel": 4,
+      "fortHitpoints": 300,
+      "units": [
+        {
+          "id": 200,
+          "userId": 2,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 10,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 201,
+          "userId": 2,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 8,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 202,
+          "userId": 2,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 10,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 203,
+          "userId": 2,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 10,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [
+        {
+          "type": "ARMORY",
+          "level": 1
+        }
+      ],
+      "battle_upgrades": [],
+      "bonus_points": []
+    }
+  },
+  "overwhelming-defense": {
+    "result": {
+      "attacker": {
+        "id": 1,
+        "displayName": "attacker-1",
+        "race": "ELF",
+        "class": "FIGHTER",
+        "level": 25,
+        "fortLevel": 10,
+        "fortHitpoints": 54,
+        "gold": "1273498735",
+        "units": [
+          {
+            "id": 100,
+            "userId": 1,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 10,
+            "isMercenary": false
+          },
+          {
+            "id": 101,
+            "userId": 1,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 10,
+            "isMercenary": false
+          },
+          {
+            "id": 102,
+            "userId": 1,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 10,
+            "isMercenary": false
+          },
+          {
+            "id": 103,
+            "userId": 1,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 10,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "defender": {
+        "id": 2,
+        "displayName": "defender-2",
+        "race": "ELF",
+        "class": "FIGHTER",
+        "level": 19,
+        "fortLevel": 7,
+        "fortHitpoints": 996,
+        "gold": "1149237894",
+        "units": [
+          {
+            "id": 200,
+            "userId": 2,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 201,
+            "userId": 2,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 202,
+            "userId": 2,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 203,
+            "userId": 2,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "fortHitpoints": 996,
+      "turnsTaken": 10,
+      "pillagedGold": "0n",
+      "experienceGained": {
+        "attacker": 193,
+        "defender": 658
+      },
+      "finalFortHP": 996,
+      "fortDamaged": false,
+      "result": "LOSS",
+      "casualtySummary": {
+        "attacker": [],
+        "defender": [],
+        "attackerTotal": 0,
+        "defenderTotal": 0,
+        "fortDamage": 0,
+        "mitigation": {
+          "averageMultiplier": 0.94024,
+          "minMultiplier": 0.94024,
+          "maxMultiplier": 0.94024,
+          "samples": 5
+        },
+        "fortBreached": false,
+        "battleStats": {
+          "attacker": {
+            "offenseRemaining": 10,
+            "meleeAtkPower": 41,
+            "meleeDefPower": 16.400000000000002,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 8.200000000000001
+          },
+          "defender": {
+            "defenseRemaining": 1000,
+            "meleeAtkPower": 3000,
+            "meleeDefPower": 5000,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 0
+          }
+        },
+        "wounded": {
+          "attacker": [],
+          "defender": []
+        },
+        "routedStacks": []
+      },
+      "mitigationLog": [
+        {
+          "turn": 1,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 0,
+          "mitigatedDamage": 0,
+          "fortSoakMultiplier": 0.502,
+          "mitigationMultiplier": 0.94024,
+          "fortHpStart": 996,
+          "fortHpEnd": 996,
+          "fortHpRatio": 0.996,
+          "defenderFortLevel": 7,
+          "defenderFortMitigationPct": 6,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 5.976,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 2,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 9324,
+          "mitigatedDamage": 9324,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 996,
+          "fortHpEnd": 996,
+          "fortHpRatio": 0.996,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 3,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 0,
+          "mitigatedDamage": 0,
+          "fortSoakMultiplier": 0.502,
+          "mitigationMultiplier": 0.94024,
+          "fortHpStart": 996,
+          "fortHpEnd": 996,
+          "fortHpRatio": 0.996,
+          "defenderFortLevel": 7,
+          "defenderFortMitigationPct": 6,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 5.976,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 4,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 9566,
+          "mitigatedDamage": 9566,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 996,
+          "fortHpEnd": 996,
+          "fortHpRatio": 0.996,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 5,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 0,
+          "mitigatedDamage": 0,
+          "fortSoakMultiplier": 0.502,
+          "mitigationMultiplier": 0.94024,
+          "fortHpStart": 996,
+          "fortHpEnd": 996,
+          "fortHpRatio": 0.996,
+          "defenderFortLevel": 7,
+          "defenderFortMitigationPct": 6,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 5.976,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 6,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 8479,
+          "mitigatedDamage": 8479,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 996,
+          "fortHpEnd": 996,
+          "fortHpRatio": 0.996,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 7,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 0,
+          "mitigatedDamage": 0,
+          "fortSoakMultiplier": 0.502,
+          "mitigationMultiplier": 0.94024,
+          "fortHpStart": 996,
+          "fortHpEnd": 996,
+          "fortHpRatio": 0.996,
+          "defenderFortLevel": 7,
+          "defenderFortMitigationPct": 6,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 5.976,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 8,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 9023,
+          "mitigatedDamage": 9023,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 996,
+          "fortHpEnd": 996,
+          "fortHpRatio": 0.996,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 9,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 0,
+          "mitigatedDamage": 0,
+          "fortSoakMultiplier": 0.502,
+          "mitigationMultiplier": 0.94024,
+          "fortHpStart": 996,
+          "fortHpEnd": 996,
+          "fortHpRatio": 0.996,
+          "defenderFortLevel": 7,
+          "defenderFortMitigationPct": 6,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 5.976,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 10,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 9334,
+          "mitigatedDamage": 9334,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 996,
+          "fortHpEnd": 996,
+          "fortHpRatio": 0.996,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        }
+      ],
+      "Losses": {
+        "Attacker": {
+          "total": 0,
+          "units": []
+        },
+        "Defender": {
+          "total": 0,
+          "units": []
+        }
+      },
+      "wounded": {
+        "attacker": [],
+        "defender": []
+      },
+      "damageAudit": {
+        "attacker": {
+          "rawIn": 45726,
+          "applied": 0,
+          "suppressed": 45726,
+          "caps": {
+            "singleAttackCap": 0,
+            "softCap": 0,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 0
+          },
+          "bindingCap": "singleAttack",
+          "suppressedBy": {
+            "singleAttack": 45726
+          }
+        },
+        "defender": {
+          "rawIn": 0,
+          "applied": 0,
+          "suppressed": 0,
+          "caps": {
+            "singleAttackCap": null,
+            "softCap": null,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": null
+          },
+          "bindingCap": "none",
+          "suppressedBy": {}
+        }
+      },
+      "damageReceived": {
+        "attacker": 45726,
+        "defender": 0
+      },
+      "defenderFatiguePercent": 0,
+      "attackerFatiguePercent": 0,
+      "routedStacks": [],
+      "canonicalOutcome": {
+        "winner": "DEFENDER",
+        "reason": "DEFENDER_HELD",
+        "attackerValueLost": 0,
+        "defenderValueLost": 0,
+        "fortValueDamage": 0,
+        "pillagedGoldValue": 0,
+        "netGainValue": 0,
+        "defenseUnitsBroken": 0,
+        "assaultSucceeded": false
+      },
+      "defenderStats": {
+        "defenseRemaining": 1000,
+        "meleeAtkPower": 3000,
+        "meleeDefPower": 5000,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 0
+      },
+      "attackerStats": {
+        "offenseRemaining": 10,
+        "meleeAtkPower": 41,
+        "meleeDefPower": 16.400000000000002,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 8.200000000000001
+      }
+    },
+    "attacker": {
+      "id": 1,
+      "displayName": "attacker-1",
+      "level": 25,
+      "race": "ELF",
+      "class": "FIGHTER",
+      "gold": "1273498735n",
+      "fortLevel": 10,
+      "fortHitpoints": 54,
+      "units": [
+        {
+          "id": 100,
+          "userId": 1,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 10,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 101,
+          "userId": 1,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 10,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 102,
+          "userId": 1,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 10,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 103,
+          "userId": 1,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 10,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [],
+      "battle_upgrades": [],
+      "bonus_points": []
+    },
+    "defender": {
+      "id": 2,
+      "displayName": "defender-2",
+      "level": 19,
+      "race": "ELF",
+      "class": "FIGHTER",
+      "gold": "1149237894n",
+      "fortLevel": 7,
+      "fortHitpoints": 996,
+      "units": [
+        {
+          "id": 200,
+          "userId": 2,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 201,
+          "userId": 2,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 202,
+          "userId": 2,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 203,
+          "userId": 2,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [],
+      "battle_upgrades": [],
+      "bonus_points": []
+    }
+  },
+  "tiny": {
+    "result": {
+      "attacker": {
+        "id": 1,
+        "displayName": "attacker-1",
+        "race": "GOBLIN",
+        "class": "FIGHTER",
+        "level": 22,
+        "fortLevel": 10,
+        "fortHitpoints": 1896,
+        "gold": "4650938408",
+        "units": [
+          {
+            "id": 100,
+            "userId": 1,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 2,
+            "isMercenary": false
+          },
+          {
+            "id": 101,
+            "userId": 1,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 2,
+            "isMercenary": false
+          },
+          {
+            "id": 102,
+            "userId": 1,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 2,
+            "isMercenary": false
+          },
+          {
+            "id": 103,
+            "userId": 1,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 2,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "defender": {
+        "id": 2,
+        "displayName": "defender-2",
+        "race": "UNDEAD",
+        "class": "FIGHTER",
+        "level": 14,
+        "fortLevel": 1,
+        "fortHitpoints": 50,
+        "gold": "0",
+        "units": [
+          {
+            "id": 200,
+            "userId": 2,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 2,
+            "isMercenary": false
+          },
+          {
+            "id": 201,
+            "userId": 2,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 2,
+            "isMercenary": false
+          },
+          {
+            "id": 202,
+            "userId": 2,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 2,
+            "isMercenary": false
+          },
+          {
+            "id": 203,
+            "userId": 2,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 2,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "fortHitpoints": 49,
+      "turnsTaken": 1,
+      "pillagedGold": "0n",
+      "experienceGained": {
+        "attacker": 9,
+        "defender": 31
+      },
+      "finalFortHP": 49,
+      "fortDamaged": true,
+      "result": "LOSS",
+      "casualtySummary": {
+        "attacker": [],
+        "defender": [],
+        "attackerTotal": 0,
+        "defenderTotal": 0,
+        "fortDamage": 1,
+        "mitigation": {
+          "averageMultiplier": 1,
+          "minMultiplier": 1,
+          "maxMultiplier": 1,
+          "samples": 1
+        },
+        "fortBreached": false,
+        "battleStats": {
+          "attacker": {
+            "offenseRemaining": 2,
+            "meleeAtkPower": 10,
+            "meleeDefPower": 4,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 2
+          },
+          "defender": {
+            "defenseRemaining": 2,
+            "meleeAtkPower": 6,
+            "meleeDefPower": 10,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 0
+          }
+        },
+        "wounded": {
+          "attacker": [],
+          "defender": []
+        },
+        "routedStacks": []
+      },
+      "mitigationLog": [
+        {
+          "turn": 1,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 1,
+          "mitigatedDamage": 1,
+          "fortSoakMultiplier": 0.51,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 50,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "defenderFortLevel": 1,
+          "defenderFortMitigationPct": 0,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 0,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        }
+      ],
+      "Losses": {
+        "Attacker": {
+          "total": 0,
+          "units": []
+        },
+        "Defender": {
+          "total": 0,
+          "units": []
+        }
+      },
+      "wounded": {
+        "attacker": [],
+        "defender": []
+      },
+      "damageAudit": {
+        "attacker": {
+          "rawIn": 0,
+          "applied": 0,
+          "suppressed": 0,
+          "caps": {
+            "singleAttackCap": null,
+            "softCap": null,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": null
+          },
+          "bindingCap": "none",
+          "suppressedBy": {}
+        },
+        "defender": {
+          "rawIn": 1,
+          "applied": 0,
+          "suppressed": 1,
+          "caps": {
+            "singleAttackCap": 0,
+            "softCap": 0,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 0
+          },
+          "bindingCap": "singleAttack",
+          "suppressedBy": {
+            "singleAttack": 1
+          }
+        }
+      },
+      "damageReceived": {
+        "attacker": 0,
+        "defender": 1
+      },
+      "defenderFatiguePercent": 0,
+      "attackerFatiguePercent": 0,
+      "routedStacks": [],
+      "canonicalOutcome": {
+        "winner": "DEFENDER",
+        "reason": "DEFENDER_HELD",
+        "attackerValueLost": 0,
+        "defenderValueLost": 0,
+        "fortValueDamage": 5,
+        "pillagedGoldValue": 0,
+        "netGainValue": 0,
+        "defenseUnitsBroken": 0,
+        "assaultSucceeded": false
+      },
+      "defenderStats": {
+        "defenseRemaining": 2,
+        "meleeAtkPower": 6,
+        "meleeDefPower": 10,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 0
+      },
+      "attackerStats": {
+        "offenseRemaining": 2,
+        "meleeAtkPower": 10,
+        "meleeDefPower": 4,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 2
+      }
+    },
+    "attacker": {
+      "id": 1,
+      "displayName": "attacker-1",
+      "level": 22,
+      "race": "GOBLIN",
+      "class": "FIGHTER",
+      "gold": "4650938408n",
+      "fortLevel": 10,
+      "fortHitpoints": 1896,
+      "units": [
+        {
+          "id": 100,
+          "userId": 1,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 2,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 101,
+          "userId": 1,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 2,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 102,
+          "userId": 1,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 2,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 103,
+          "userId": 1,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 2,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [
+        {
+          "type": "ARMORY",
+          "level": 3
+        }
+      ],
+      "battle_upgrades": [],
+      "bonus_points": []
+    },
+    "defender": {
+      "id": 2,
+      "displayName": "defender-2",
+      "level": 14,
+      "race": "UNDEAD",
+      "class": "FIGHTER",
+      "gold": "0n",
+      "fortLevel": 1,
+      "fortHitpoints": 50,
+      "units": [
+        {
+          "id": 200,
+          "userId": 2,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 2,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 201,
+          "userId": 2,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 2,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 202,
+          "userId": 2,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 2,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 203,
+          "userId": 2,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 2,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [],
+      "battle_upgrades": [],
+      "bonus_points": []
+    }
+  },
+  "mercenaries": {
+    "result": {
+      "attacker": {
+        "id": 1,
+        "displayName": "attacker-1",
+        "race": "GOBLIN",
+        "class": "FIGHTER",
+        "level": 6,
+        "fortLevel": 4,
+        "fortHitpoints": 0,
+        "gold": "495742657",
+        "units": [
+          {
+            "id": 100,
+            "userId": 1,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 101,
+            "userId": 1,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 102,
+            "userId": 1,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 103,
+            "userId": 1,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": [
+          {
+            "id": 1000,
+            "userId": 1,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 500,
+            "isMercenary": true
+          }
+        ]
+      },
+      "defender": {
+        "id": 2,
+        "displayName": "defender-2",
+        "race": "HUMAN",
+        "class": "FIGHTER",
+        "level": 23,
+        "fortLevel": 10,
+        "fortHitpoints": 2500,
+        "gold": "159428415",
+        "units": [
+          {
+            "id": 200,
+            "userId": 2,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 201,
+            "userId": 2,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 202,
+            "userId": 2,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 203,
+            "userId": 2,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": [
+          {
+            "id": 2000,
+            "userId": 2,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 500,
+            "isMercenary": true
+          }
+        ]
+      },
+      "fortHitpoints": 2441,
+      "turnsTaken": 10,
+      "pillagedGold": "2223541n",
+      "experienceGained": {
+        "attacker": 1016,
+        "defender": 3465
+      },
+      "finalFortHP": 2441,
+      "fortDamaged": true,
+      "result": "LOSS",
+      "casualtySummary": {
+        "attacker": [
+          {
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 67,
+            "description": "OFFENSE Level 1"
+          }
+        ],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 41,
+            "description": "DEFENSE Level 1"
+          }
+        ],
+        "attackerTotal": 67,
+        "defenderTotal": 41,
+        "fortDamage": 59,
+        "mitigation": {
+          "averageMultiplier": 0.9113248,
+          "minMultiplier": 0.910432,
+          "maxMultiplier": 0.912124,
+          "samples": 5
+        },
+        "fortBreached": false,
+        "battleStats": {
+          "attacker": {
+            "offenseRemaining": 1405,
+            "meleeAtkPower": 5809.700000000001,
+            "meleeDefPower": 2323.88,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 1161.94
+          },
+          "defender": {
+            "defenseRemaining": 1443,
+            "meleeAtkPower": 4416,
+            "meleeDefPower": 7360,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 0
+          }
+        },
+        "wounded": {
+          "attacker": [
+            {
+              "type": "OFFENSE",
+              "level": 1,
+              "quantity": 28,
+              "isMercenary": true
+            }
+          ],
+          "defender": [
+            {
+              "type": "DEFENSE",
+              "level": 1,
+              "quantity": 9,
+              "isMercenary": true
+            },
+            {
+              "type": "DEFENSE",
+              "level": 1,
+              "quantity": 7,
+              "isMercenary": false
+            }
+          ]
+        },
+        "routedStacks": []
+      },
+      "mitigationLog": [
+        {
+          "turn": 1,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 347,
+          "mitigatedDamage": 159,
+          "fortSoakMultiplier": 0.5024,
+          "mitigationMultiplier": 0.910432,
+          "fortHpStart": 2500,
+          "fortHpEnd": 2488,
+          "fortHpRatio": 0.9952,
+          "defenderFortLevel": 10,
+          "defenderFortMitigationPct": 9,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 8.9568,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 2,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1606,
+          "mitigatedDamage": 1606,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 2488,
+          "fortHpEnd": 2488,
+          "fortHpRatio": 0.9952,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 3,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 383,
+          "mitigatedDamage": 176,
+          "fortSoakMultiplier": 0.5052,
+          "mitigationMultiplier": 0.910936,
+          "fortHpStart": 2488,
+          "fortHpEnd": 2474,
+          "fortHpRatio": 0.9896,
+          "defenderFortLevel": 10,
+          "defenderFortMitigationPct": 9,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 8.9064,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 4,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 2410,
+          "mitigatedDamage": 2410,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 2474,
+          "fortHpEnd": 2474,
+          "fortHpRatio": 0.9896,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 5,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 352,
+          "mitigatedDamage": 163,
+          "fortSoakMultiplier": 0.5078,
+          "mitigationMultiplier": 0.911404,
+          "fortHpStart": 2474,
+          "fortHpEnd": 2461,
+          "fortHpRatio": 0.9844,
+          "defenderFortLevel": 10,
+          "defenderFortMitigationPct": 9,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 8.8596,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 6,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 2532,
+          "mitigatedDamage": 2532,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 2461,
+          "fortHpEnd": 2461,
+          "fortHpRatio": 0.9844,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 7,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 295,
+          "mitigatedDamage": 138,
+          "fortSoakMultiplier": 0.5096,
+          "mitigationMultiplier": 0.911728,
+          "fortHpStart": 2461,
+          "fortHpEnd": 2452,
+          "fortHpRatio": 0.9808,
+          "defenderFortLevel": 10,
+          "defenderFortMitigationPct": 9,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 8.8272,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 8,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 2522,
+          "mitigatedDamage": 2522,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 2452,
+          "fortHpEnd": 2452,
+          "fortHpRatio": 0.9808,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 9,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 313,
+          "mitigatedDamage": 146,
+          "fortSoakMultiplier": 0.5118,
+          "mitigationMultiplier": 0.912124,
+          "fortHpStart": 2452,
+          "fortHpEnd": 2441,
+          "fortHpRatio": 0.9764,
+          "defenderFortLevel": 10,
+          "defenderFortMitigationPct": 9,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 8.7876,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 10,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 3172,
+          "mitigatedDamage": 3172,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 2441,
+          "fortHpEnd": 2441,
+          "fortHpRatio": 0.9764,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        }
+      ],
+      "Losses": {
+        "Attacker": {
+          "total": 67,
+          "units": [
+            {
+              "id": 1000,
+              "userId": 1,
+              "type": "OFFENSE",
+              "level": 1,
+              "isMercenary": true,
+              "quantity": 67
+            }
+          ]
+        },
+        "Defender": {
+          "total": 41,
+          "units": [
+            {
+              "id": 2000,
+              "userId": 2,
+              "type": "DEFENSE",
+              "level": 1,
+              "isMercenary": true,
+              "quantity": 22
+            },
+            {
+              "id": 201,
+              "userId": 2,
+              "type": "DEFENSE",
+              "level": 1,
+              "isMercenary": false,
+              "quantity": 19
+            }
+          ]
+        }
+      },
+      "wounded": {
+        "attacker": [
+          {
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 28,
+            "isMercenary": true
+          }
+        ],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 9,
+            "isMercenary": true
+          },
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 7,
+            "isMercenary": false
+          }
+        ]
+      },
+      "damageAudit": {
+        "attacker": {
+          "rawIn": 12242,
+          "applied": 950,
+          "suppressed": 11292,
+          "caps": {
+            "singleAttackCap": 120,
+            "softCap": 95,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 12
+          },
+          "bindingCap": "soft",
+          "suppressedBy": {
+            "soft": 11292
+          }
+        },
+        "defender": {
+          "rawIn": 782,
+          "applied": 571.2134228622476,
+          "suppressed": 210.78657713775237,
+          "caps": {
+            "singleAttackCap": 360,
+            "softCap": 57,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 16
+          },
+          "bindingCap": "soft",
+          "suppressedBy": {
+            "soft": 210.78657713775237
+          }
+        }
+      },
+      "damageReceived": {
+        "attacker": 12242,
+        "defender": 782
+      },
+      "defenderFatiguePercent": 0,
+      "attackerFatiguePercent": 0,
+      "routedStacks": [],
+      "canonicalOutcome": {
+        "winner": "DEFENDER",
+        "reason": "DEFENDER_HELD",
+        "attackerValueLost": 142500,
+        "defenderValueLost": 85500,
+        "fortValueDamage": 39825,
+        "pillagedGoldValue": 2223541,
+        "netGainValue": 2081041,
+        "defenseUnitsBroken": 57,
+        "assaultSucceeded": true
+      },
+      "defenderStats": {
+        "defenseRemaining": 1443,
+        "meleeAtkPower": 4416,
+        "meleeDefPower": 7360,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 0
+      },
+      "attackerStats": {
+        "offenseRemaining": 1405,
+        "meleeAtkPower": 5809.700000000001,
+        "meleeDefPower": 2323.88,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 1161.94
+      }
+    },
+    "attacker": {
+      "id": 1,
+      "displayName": "attacker-1",
+      "level": 6,
+      "race": "GOBLIN",
+      "class": "FIGHTER",
+      "gold": "495742657n",
+      "fortLevel": 4,
+      "fortHitpoints": 0,
+      "units": [
+        {
+          "id": 100,
+          "userId": 1,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 101,
+          "userId": 1,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 102,
+          "userId": 1,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 103,
+          "userId": 1,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [
+        {
+          "id": 1000,
+          "userId": 1,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 405,
+          "isMercenary": true,
+          "currentHP": 10
+        }
+      ],
+      "items": [],
+      "structure_upgrades": [
+        {
+          "type": "ARMORY",
+          "level": 3
+        }
+      ],
+      "battle_upgrades": [],
+      "bonus_points": []
+    },
+    "defender": {
+      "id": 2,
+      "displayName": "defender-2",
+      "level": 23,
+      "race": "HUMAN",
+      "class": "FIGHTER",
+      "gold": "157204874n",
+      "fortLevel": 10,
+      "fortHitpoints": 2500,
+      "units": [
+        {
+          "id": 200,
+          "userId": 2,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 201,
+          "userId": 2,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 974,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 202,
+          "userId": 2,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 203,
+          "userId": 2,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [
+        {
+          "id": 2000,
+          "userId": 2,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 469,
+          "isMercenary": true,
+          "currentHP": 8.78657713775236
+        }
+      ],
+      "items": [],
+      "structure_upgrades": [],
+      "battle_upgrades": [],
+      "bonus_points": []
+    }
+  },
+  "fort-destroyed": {
+    "result": {
+      "attacker": {
+        "id": 1,
+        "displayName": "attacker-1",
+        "race": "HUMAN",
+        "class": "FIGHTER",
+        "level": 31,
+        "fortLevel": 1,
+        "fortHitpoints": 20,
+        "gold": "286096334",
+        "units": [
+          {
+            "id": 100,
+            "userId": 1,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 101,
+            "userId": 1,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 102,
+            "userId": 1,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 103,
+            "userId": 1,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "defender": {
+        "id": 2,
+        "displayName": "defender-2",
+        "race": "UNDEAD",
+        "class": "FIGHTER",
+        "level": 26,
+        "fortLevel": 1,
+        "fortHitpoints": 0,
+        "gold": "4467675834",
+        "units": [
+          {
+            "id": 200,
+            "userId": 2,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 201,
+            "userId": 2,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 202,
+            "userId": 2,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 203,
+            "userId": 2,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "fortHitpoints": 0,
+      "turnsTaken": 1,
+      "pillagedGold": "72026368n",
+      "experienceGained": {
+        "attacker": 59,
+        "defender": 15
+      },
+      "finalFortHP": 0,
+      "fortDamaged": false,
+      "result": "WIN",
+      "casualtySummary": {
+        "attacker": [],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 14,
+            "description": "DEFENSE Level 1"
+          }
+        ],
+        "attackerTotal": 0,
+        "defenderTotal": 14,
+        "fortDamage": 0,
+        "mitigation": {
+          "averageMultiplier": 1,
+          "minMultiplier": 1,
+          "maxMultiplier": 1,
+          "samples": 1
+        },
+        "fortBreached": true,
+        "battleStats": {
+          "attacker": {
+            "offenseRemaining": 1000,
+            "meleeAtkPower": 5100,
+            "meleeDefPower": 2040,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 1020
+          },
+          "defender": {
+            "defenseRemaining": 980,
+            "meleeAtkPower": 3080,
+            "meleeDefPower": 5110,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 0
+          }
+        },
+        "wounded": {
+          "attacker": [],
+          "defender": [
+            {
+              "type": "DEFENSE",
+              "level": 1,
+              "quantity": 6,
+              "isMercenary": false
+            }
+          ]
+        },
+        "routedStacks": []
+      },
+      "mitigationLog": [
+        {
+          "turn": 1,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 350,
+          "mitigatedDamage": 350,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 0,
+          "fortHpEnd": 0,
+          "fortHpRatio": 0,
+          "defenderFortLevel": 1,
+          "defenderFortMitigationPct": 0,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 0,
+          "fortBreached": true,
+          "includeCitz": true,
+          "includeOffense": false
+        }
+      ],
+      "Losses": {
+        "Attacker": {
+          "total": 0,
+          "units": []
+        },
+        "Defender": {
+          "total": 14,
+          "units": [
+            {
+              "id": 201,
+              "userId": 2,
+              "type": "DEFENSE",
+              "level": 1,
+              "isMercenary": false,
+              "quantity": 14
+            }
+          ]
+        }
+      },
+      "wounded": {
+        "attacker": [],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 6,
+            "isMercenary": false
+          }
+        ]
+      },
+      "damageAudit": {
+        "attacker": {
+          "rawIn": 0,
+          "applied": 0,
+          "suppressed": 0,
+          "caps": {
+            "singleAttackCap": null,
+            "softCap": null,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": null
+          },
+          "bindingCap": "none",
+          "suppressedBy": {}
+        },
+        "defender": {
+          "rawIn": 350,
+          "applied": 200,
+          "suppressed": 150,
+          "caps": {
+            "singleAttackCap": 320,
+            "softCap": 20,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 20
+          },
+          "bindingCap": "soft",
+          "suppressedBy": {
+            "soft": 150
+          }
+        }
+      },
+      "damageReceived": {
+        "attacker": 0,
+        "defender": 350
+      },
+      "defenderFatiguePercent": 0,
+      "attackerFatiguePercent": 0,
+      "routedStacks": [],
+      "canonicalOutcome": {
+        "winner": "ATTACKER",
+        "reason": "ASSAULT_SUCCEEDED",
+        "attackerValueLost": 0,
+        "defenderValueLost": 30000,
+        "fortValueDamage": 0,
+        "pillagedGoldValue": 72026368,
+        "netGainValue": 72026368,
+        "defenseUnitsBroken": 20,
+        "assaultSucceeded": true
+      },
+      "defenderStats": {
+        "defenseRemaining": 980,
+        "meleeAtkPower": 3080,
+        "meleeDefPower": 5110,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 0
+      },
+      "attackerStats": {
+        "offenseRemaining": 1000,
+        "meleeAtkPower": 5100,
+        "meleeDefPower": 2040,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 1020
+      }
+    },
+    "attacker": {
+      "id": 1,
+      "displayName": "attacker-1",
+      "level": 31,
+      "race": "HUMAN",
+      "class": "FIGHTER",
+      "gold": "286096334n",
+      "fortLevel": 1,
+      "fortHitpoints": 20,
+      "units": [
+        {
+          "id": 100,
+          "userId": 1,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 101,
+          "userId": 1,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 102,
+          "userId": 1,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 103,
+          "userId": 1,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [],
+      "battle_upgrades": [],
+      "bonus_points": []
+    },
+    "defender": {
+      "id": 2,
+      "displayName": "defender-2",
+      "level": 26,
+      "race": "UNDEAD",
+      "class": "FIGHTER",
+      "gold": "4395649466n",
+      "fortLevel": 1,
+      "fortHitpoints": 0,
+      "units": [
+        {
+          "id": 200,
+          "userId": 2,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 201,
+          "userId": 2,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 980,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 202,
+          "userId": 2,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 203,
+          "userId": 2,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [],
+      "battle_upgrades": [],
+      "bonus_points": []
+    }
+  },
+  "fort-full": {
+    "result": {
+      "attacker": {
+        "id": 1,
+        "displayName": "attacker-1",
+        "race": "GOBLIN",
+        "class": "FIGHTER",
+        "level": 39,
+        "fortLevel": 10,
+        "fortHitpoints": 1574,
+        "gold": "2647558398",
+        "units": [
+          {
+            "id": 100,
+            "userId": 1,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 101,
+            "userId": 1,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 102,
+            "userId": 1,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 103,
+            "userId": 1,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "defender": {
+        "id": 2,
+        "displayName": "defender-2",
+        "race": "HUMAN",
+        "class": "FIGHTER",
+        "level": 27,
+        "fortLevel": 1,
+        "fortHitpoints": 50,
+        "gold": "2308110446",
+        "units": [
+          {
+            "id": 200,
+            "userId": 2,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 201,
+            "userId": 2,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 202,
+            "userId": 2,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 203,
+            "userId": 2,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "fortHitpoints": 49,
+      "turnsTaken": 10,
+      "pillagedGold": "0n",
+      "experienceGained": {
+        "attacker": 177,
+        "defender": 604
+      },
+      "finalFortHP": 49,
+      "fortDamaged": true,
+      "result": "LOSS",
+      "casualtySummary": {
+        "attacker": [
+          {
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 56,
+            "description": "OFFENSE Level 1"
+          }
+        ],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 28,
+            "description": "DEFENSE Level 1"
+          }
+        ],
+        "attackerTotal": 56,
+        "defenderTotal": 28,
+        "fortDamage": 1,
+        "mitigation": {
+          "averageMultiplier": 0.96,
+          "minMultiplier": 0.96,
+          "maxMultiplier": 0.96,
+          "samples": 5
+        },
+        "fortBreached": false,
+        "battleStats": {
+          "attacker": {
+            "offenseRemaining": 921,
+            "meleeAtkPower": 3817.1000000000004,
+            "meleeDefPower": 1526.8400000000001,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 763.4200000000001
+          },
+          "defender": {
+            "defenseRemaining": 960,
+            "meleeAtkPower": 2938,
+            "meleeDefPower": 4896,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 0
+          }
+        },
+        "wounded": {
+          "attacker": [
+            {
+              "type": "OFFENSE",
+              "level": 1,
+              "quantity": 23,
+              "isMercenary": false
+            }
+          ],
+          "defender": [
+            {
+              "type": "DEFENSE",
+              "level": 1,
+              "quantity": 12,
+              "isMercenary": false
+            }
+          ]
+        },
+        "routedStacks": []
+      },
+      "mitigationLog": [
+        {
+          "turn": 1,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 253,
+          "mitigatedDamage": 124,
+          "fortSoakMultiplier": 0.51,
+          "mitigationMultiplier": 0.96,
+          "fortHpStart": 50,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "defenderFortLevel": 1,
+          "defenderFortMitigationPct": 0,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 4,
+          "totalMitigationPct": 4,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 2,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1234,
+          "mitigatedDamage": 1234,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 49,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 3,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 236,
+          "mitigatedDamage": 116,
+          "fortSoakMultiplier": 0.51,
+          "mitigationMultiplier": 0.96,
+          "fortHpStart": 49,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "defenderFortLevel": 1,
+          "defenderFortMitigationPct": 0,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 4,
+          "totalMitigationPct": 4,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 4,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1723,
+          "mitigatedDamage": 1723,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 49,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 5,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 241,
+          "mitigatedDamage": 118,
+          "fortSoakMultiplier": 0.51,
+          "mitigationMultiplier": 0.96,
+          "fortHpStart": 49,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "defenderFortLevel": 1,
+          "defenderFortMitigationPct": 0,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 4,
+          "totalMitigationPct": 4,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 6,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1555,
+          "mitigatedDamage": 1555,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 49,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 7,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 201,
+          "mitigatedDamage": 99,
+          "fortSoakMultiplier": 0.51,
+          "mitigationMultiplier": 0.96,
+          "fortHpStart": 49,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "defenderFortLevel": 1,
+          "defenderFortMitigationPct": 0,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 4,
+          "totalMitigationPct": 4,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 8,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1516,
+          "mitigatedDamage": 1516,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 49,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 9,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 207,
+          "mitigatedDamage": 102,
+          "fortSoakMultiplier": 0.51,
+          "mitigationMultiplier": 0.96,
+          "fortHpStart": 49,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "defenderFortLevel": 1,
+          "defenderFortMitigationPct": 0,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 4,
+          "totalMitigationPct": 4,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 10,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1719,
+          "mitigatedDamage": 1719,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 49,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        }
+      ],
+      "Losses": {
+        "Attacker": {
+          "total": 56,
+          "units": [
+            {
+              "id": 100,
+              "userId": 1,
+              "type": "OFFENSE",
+              "level": 1,
+              "isMercenary": false,
+              "quantity": 56
+            }
+          ]
+        },
+        "Defender": {
+          "total": 28,
+          "units": [
+            {
+              "id": 201,
+              "userId": 2,
+              "type": "DEFENSE",
+              "level": 1,
+              "isMercenary": false,
+              "quantity": 28
+            }
+          ]
+        }
+      },
+      "wounded": {
+        "attacker": [
+          {
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 23,
+            "isMercenary": false
+          }
+        ],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 12,
+            "isMercenary": false
+          }
+        ]
+      },
+      "damageAudit": {
+        "attacker": {
+          "rawIn": 7747,
+          "applied": 790,
+          "suppressed": 6957,
+          "caps": {
+            "singleAttackCap": 80,
+            "softCap": 79,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 10
+          },
+          "bindingCap": "soft",
+          "suppressedBy": {
+            "soft": 6957
+          }
+        },
+        "defender": {
+          "rawIn": 559,
+          "applied": 400,
+          "suppressed": 159,
+          "caps": {
+            "singleAttackCap": 320,
+            "softCap": 40,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 11
+          },
+          "bindingCap": "soft",
+          "suppressedBy": {
+            "soft": 159
+          }
+        }
+      },
+      "damageReceived": {
+        "attacker": 7747,
+        "defender": 559
+      },
+      "defenderFatiguePercent": 0,
+      "attackerFatiguePercent": 0,
+      "routedStacks": [],
+      "canonicalOutcome": {
+        "winner": "DEFENDER",
+        "reason": "DEFENDER_HELD",
+        "attackerValueLost": 118500,
+        "defenderValueLost": 60000,
+        "fortValueDamage": 5,
+        "pillagedGoldValue": 0,
+        "netGainValue": -118500,
+        "defenseUnitsBroken": 40,
+        "assaultSucceeded": false
+      },
+      "defenderStats": {
+        "defenseRemaining": 960,
+        "meleeAtkPower": 2938,
+        "meleeDefPower": 4896,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 0
+      },
+      "attackerStats": {
+        "offenseRemaining": 921,
+        "meleeAtkPower": 3817.1000000000004,
+        "meleeDefPower": 1526.8400000000001,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 763.4200000000001
+      }
+    },
+    "attacker": {
+      "id": 1,
+      "displayName": "attacker-1",
+      "level": 39,
+      "race": "GOBLIN",
+      "class": "FIGHTER",
+      "gold": "2647558398n",
+      "fortLevel": 10,
+      "fortHitpoints": 1574,
+      "units": [
+        {
+          "id": 100,
+          "userId": 1,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 921,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 101,
+          "userId": 1,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 102,
+          "userId": 1,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 103,
+          "userId": 1,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [],
+      "battle_upgrades": [],
+      "bonus_points": []
+    },
+    "defender": {
+      "id": 2,
+      "displayName": "defender-2",
+      "level": 27,
+      "race": "HUMAN",
+      "class": "FIGHTER",
+      "gold": "2308110446n",
+      "fortLevel": 1,
+      "fortHitpoints": 50,
+      "units": [
+        {
+          "id": 200,
+          "userId": 2,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 201,
+          "userId": 2,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 960,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 202,
+          "userId": 2,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 203,
+          "userId": 2,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [
+        {
+          "type": "ARMORY",
+          "level": 3
+        }
+      ],
+      "battle_upgrades": [],
+      "bonus_points": []
+    }
+  },
+  "undead": {
+    "result": {
+      "attacker": {
+        "id": 1,
+        "displayName": "attacker-1",
+        "race": "ELF",
+        "class": "FIGHTER",
+        "level": 21,
+        "fortLevel": 5,
+        "fortHitpoints": 223,
+        "gold": "3935493383",
+        "units": [
+          {
+            "id": 100,
+            "userId": 1,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 101,
+            "userId": 1,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 102,
+            "userId": 1,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 103,
+            "userId": 1,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "defender": {
+        "id": 2,
+        "displayName": "defender-2",
+        "race": "UNDEAD",
+        "class": "FIGHTER",
+        "level": 7,
+        "fortLevel": 1,
+        "fortHitpoints": 50,
+        "gold": "3255384901",
+        "units": [
+          {
+            "id": 200,
+            "userId": 2,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 201,
+            "userId": 2,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 202,
+            "userId": 2,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 203,
+            "userId": 2,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "fortHitpoints": 48,
+      "turnsTaken": 10,
+      "pillagedGold": "21006585n",
+      "experienceGained": {
+        "attacker": 204,
+        "defender": 697
+      },
+      "finalFortHP": 48,
+      "fortDamaged": true,
+      "result": "LOSS",
+      "casualtySummary": {
+        "attacker": [
+          {
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 56,
+            "description": "OFFENSE Level 1"
+          }
+        ],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 19,
+            "description": "DEFENSE Level 1"
+          }
+        ],
+        "attackerTotal": 56,
+        "defenderTotal": 19,
+        "fortDamage": 2,
+        "mitigation": {
+          "averageMultiplier": 1,
+          "minMultiplier": 1,
+          "maxMultiplier": 1,
+          "samples": 5
+        },
+        "fortBreached": false,
+        "battleStats": {
+          "attacker": {
+            "offenseRemaining": 921,
+            "meleeAtkPower": 3817.1000000000004,
+            "meleeDefPower": 1526.8400000000001,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 763.4200000000001
+          },
+          "defender": {
+            "defenseRemaining": 973,
+            "meleeAtkPower": 2919,
+            "meleeDefPower": 4865,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 0
+          }
+        },
+        "wounded": {
+          "attacker": [
+            {
+              "type": "OFFENSE",
+              "level": 1,
+              "quantity": 23,
+              "isMercenary": false
+            }
+          ],
+          "defender": [
+            {
+              "type": "DEFENSE",
+              "level": 1,
+              "quantity": 8,
+              "isMercenary": false
+            }
+          ]
+        },
+        "routedStacks": []
+      },
+      "mitigationLog": [
+        {
+          "turn": 1,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 266,
+          "mitigatedDamage": 68,
+          "fortSoakMultiplier": 0.51,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 50,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "defenderFortLevel": 1,
+          "defenderFortMitigationPct": 0,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 0,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 2,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 923,
+          "mitigatedDamage": 923,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 49,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 3,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 249,
+          "mitigatedDamage": 64,
+          "fortSoakMultiplier": 0.51,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 49,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "defenderFortLevel": 1,
+          "defenderFortMitigationPct": 0,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 0,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 4,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1030,
+          "mitigatedDamage": 1030,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 49,
+          "fortHpEnd": 49,
+          "fortHpRatio": 0.98,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 5,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 208,
+          "mitigatedDamage": 54,
+          "fortSoakMultiplier": 0.52,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 49,
+          "fortHpEnd": 48,
+          "fortHpRatio": 0.96,
+          "defenderFortLevel": 1,
+          "defenderFortMitigationPct": 0,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 0,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 6,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1738,
+          "mitigatedDamage": 1738,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 48,
+          "fortHpEnd": 48,
+          "fortHpRatio": 0.96,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 7,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 208,
+          "mitigatedDamage": 54,
+          "fortSoakMultiplier": 0.52,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 48,
+          "fortHpEnd": 48,
+          "fortHpRatio": 0.96,
+          "defenderFortLevel": 1,
+          "defenderFortMitigationPct": 0,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 0,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 8,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1501,
+          "mitigatedDamage": 1501,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 48,
+          "fortHpEnd": 48,
+          "fortHpRatio": 0.96,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 9,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 211,
+          "mitigatedDamage": 55,
+          "fortSoakMultiplier": 0.52,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 48,
+          "fortHpEnd": 48,
+          "fortHpRatio": 0.96,
+          "defenderFortLevel": 1,
+          "defenderFortMitigationPct": 0,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 0,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 10,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1632,
+          "mitigatedDamage": 1632,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 48,
+          "fortHpEnd": 48,
+          "fortHpRatio": 0.96,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        }
+      ],
+      "Losses": {
+        "Attacker": {
+          "total": 56,
+          "units": [
+            {
+              "id": 100,
+              "userId": 1,
+              "type": "OFFENSE",
+              "level": 1,
+              "isMercenary": false,
+              "quantity": 56
+            }
+          ]
+        },
+        "Defender": {
+          "total": 19,
+          "units": [
+            {
+              "id": 201,
+              "userId": 2,
+              "type": "DEFENSE",
+              "level": 1,
+              "isMercenary": false,
+              "quantity": 19
+            }
+          ]
+        }
+      },
+      "wounded": {
+        "attacker": [
+          {
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 23,
+            "isMercenary": false
+          }
+        ],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 8,
+            "isMercenary": false
+          }
+        ]
+      },
+      "damageAudit": {
+        "attacker": {
+          "rawIn": 6824,
+          "applied": 790,
+          "suppressed": 6034,
+          "caps": {
+            "singleAttackCap": 80,
+            "softCap": 79,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 10
+          },
+          "bindingCap": "soft",
+          "suppressedBy": {
+            "soft": 6034
+          }
+        },
+        "defender": {
+          "rawIn": 295,
+          "applied": 273,
+          "suppressed": 22,
+          "caps": {
+            "singleAttackCap": 320,
+            "softCap": 41,
+            "dailyRemaining": null,
+            "protectedCap": 39,
+            "usedCap": 20
+          },
+          "bindingCap": "soft",
+          "suppressedBy": {
+            "soft": 22
+          }
+        }
+      },
+      "damageReceived": {
+        "attacker": 6824,
+        "defender": 295
+      },
+      "defenderFatiguePercent": 0,
+      "attackerFatiguePercent": 0,
+      "routedStacks": [],
+      "canonicalOutcome": {
+        "winner": "DEFENDER",
+        "reason": "DEFENDER_HELD",
+        "attackerValueLost": 118500,
+        "defenderValueLost": 40500,
+        "fortValueDamage": 10,
+        "pillagedGoldValue": 21006585,
+        "netGainValue": 20888085,
+        "defenseUnitsBroken": 27,
+        "assaultSucceeded": true
+      },
+      "defenderStats": {
+        "defenseRemaining": 973,
+        "meleeAtkPower": 2919,
+        "meleeDefPower": 4865,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 0
+      },
+      "attackerStats": {
+        "offenseRemaining": 921,
+        "meleeAtkPower": 3817.1000000000004,
+        "meleeDefPower": 1526.8400000000001,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 763.4200000000001
+      }
+    },
+    "attacker": {
+      "id": 1,
+      "displayName": "attacker-1",
+      "level": 21,
+      "race": "ELF",
+      "class": "FIGHTER",
+      "gold": "3935493383n",
+      "fortLevel": 5,
+      "fortHitpoints": 223,
+      "units": [
+        {
+          "id": 100,
+          "userId": 1,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 921,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 101,
+          "userId": 1,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 102,
+          "userId": 1,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 103,
+          "userId": 1,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [
+        {
+          "type": "ARMORY",
+          "level": 3
+        }
+      ],
+      "battle_upgrades": [],
+      "bonus_points": []
+    },
+    "defender": {
+      "id": 2,
+      "displayName": "defender-2",
+      "level": 7,
+      "race": "UNDEAD",
+      "class": "FIGHTER",
+      "gold": "3234378316n",
+      "fortLevel": 1,
+      "fortHitpoints": 50,
+      "units": [
+        {
+          "id": 200,
+          "userId": 2,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 201,
+          "userId": 2,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 973,
+          "isMercenary": false,
+          "currentHP": 7
+        },
+        {
+          "id": 202,
+          "userId": 2,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 203,
+          "userId": 2,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [],
+      "battle_upgrades": [],
+      "bonus_points": []
+    }
+  },
+  "elf": {
+    "result": {
+      "attacker": {
+        "id": 1,
+        "displayName": "attacker-1",
+        "race": "ELF",
+        "class": "FIGHTER",
+        "level": 12,
+        "fortLevel": 9,
+        "fortHitpoints": 839,
+        "gold": "3568666828",
+        "units": [
+          {
+            "id": 100,
+            "userId": 1,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 101,
+            "userId": 1,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 102,
+            "userId": 1,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 103,
+            "userId": 1,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "defender": {
+        "id": 2,
+        "displayName": "defender-2",
+        "race": "UNDEAD",
+        "class": "FIGHTER",
+        "level": 7,
+        "fortLevel": 7,
+        "fortHitpoints": 337,
+        "gold": "0",
+        "units": [
+          {
+            "id": 200,
+            "userId": 2,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 201,
+            "userId": 2,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 202,
+            "userId": 2,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 203,
+            "userId": 2,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "fortHitpoints": 332,
+      "turnsTaken": 1,
+      "pillagedGold": "0n",
+      "experienceGained": {
+        "attacker": 15,
+        "defender": 51
+      },
+      "finalFortHP": 332,
+      "fortDamaged": true,
+      "result": "LOSS",
+      "casualtySummary": {
+        "attacker": [],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 7,
+            "description": "DEFENSE Level 1"
+          }
+        ],
+        "attackerTotal": 0,
+        "defenderTotal": 7,
+        "fortDamage": 5,
+        "mitigation": {
+          "averageMultiplier": 0.98008,
+          "minMultiplier": 0.98008,
+          "maxMultiplier": 0.98008,
+          "samples": 1
+        },
+        "fortBreached": false,
+        "battleStats": {
+          "attacker": {
+            "offenseRemaining": 1000,
+            "meleeAtkPower": 5000,
+            "meleeDefPower": 2000,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 1000
+          },
+          "defender": {
+            "defenseRemaining": 991,
+            "meleeAtkPower": 3000,
+            "meleeDefPower": 5000,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 0
+          }
+        },
+        "wounded": {
+          "attacker": [],
+          "defender": [
+            {
+              "type": "DEFENSE",
+              "level": 1,
+              "quantity": 2,
+              "isMercenary": false
+            }
+          ]
+        },
+        "routedStacks": []
+      },
+      "mitigationLog": [
+        {
+          "turn": 1,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 234,
+          "mitigatedDamage": 96,
+          "fortSoakMultiplier": 0.834,
+          "mitigationMultiplier": 0.98008,
+          "fortHpStart": 337,
+          "fortHpEnd": 332,
+          "fortHpRatio": 0.332,
+          "defenderFortLevel": 7,
+          "defenderFortMitigationPct": 6,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 1.992,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        }
+      ],
+      "Losses": {
+        "Attacker": {
+          "total": 0,
+          "units": []
+        },
+        "Defender": {
+          "total": 7,
+          "units": [
+            {
+              "id": 201,
+              "userId": 2,
+              "type": "DEFENSE",
+              "level": 1,
+              "isMercenary": false,
+              "quantity": 7
+            }
+          ]
+        }
+      },
+      "wounded": {
+        "attacker": [],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 2,
+            "isMercenary": false
+          }
+        ]
+      },
+      "damageAudit": {
+        "attacker": {
+          "rawIn": 0,
+          "applied": 0,
+          "suppressed": 0,
+          "caps": {
+            "singleAttackCap": null,
+            "softCap": null,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": null
+          },
+          "bindingCap": "none",
+          "suppressedBy": {}
+        },
+        "defender": {
+          "rawIn": 96,
+          "applied": 96,
+          "suppressed": 0,
+          "caps": {
+            "singleAttackCap": 320,
+            "softCap": 16,
+            "dailyRemaining": null,
+            "protectedCap": 60,
+            "usedCap": 16
+          },
+          "bindingCap": "none",
+          "suppressedBy": {}
+        }
+      },
+      "damageReceived": {
+        "attacker": 0,
+        "defender": 96
+      },
+      "defenderFatiguePercent": 0,
+      "attackerFatiguePercent": 0,
+      "routedStacks": [],
+      "canonicalOutcome": {
+        "winner": "DEFENDER",
+        "reason": "DEFENDER_HELD",
+        "attackerValueLost": 0,
+        "defenderValueLost": 13500,
+        "fortValueDamage": 1625,
+        "pillagedGoldValue": 0,
+        "netGainValue": 0,
+        "defenseUnitsBroken": 9,
+        "assaultSucceeded": false
+      },
+      "defenderStats": {
+        "defenseRemaining": 991,
+        "meleeAtkPower": 3000,
+        "meleeDefPower": 5000,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 0
+      },
+      "attackerStats": {
+        "offenseRemaining": 1000,
+        "meleeAtkPower": 5000,
+        "meleeDefPower": 2000,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 1000
+      }
+    },
+    "attacker": {
+      "id": 1,
+      "displayName": "attacker-1",
+      "level": 12,
+      "race": "ELF",
+      "class": "FIGHTER",
+      "gold": "3568666828n",
+      "fortLevel": 9,
+      "fortHitpoints": 839,
+      "units": [
+        {
+          "id": 100,
+          "userId": 1,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 101,
+          "userId": 1,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 102,
+          "userId": 1,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 103,
+          "userId": 1,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [
+        {
+          "type": "ARMORY",
+          "level": 3
+        }
+      ],
+      "battle_upgrades": [],
+      "bonus_points": []
+    },
+    "defender": {
+      "id": 2,
+      "displayName": "defender-2",
+      "level": 7,
+      "race": "UNDEAD",
+      "class": "FIGHTER",
+      "gold": "0n",
+      "fortLevel": 7,
+      "fortHitpoints": 337,
+      "units": [
+        {
+          "id": 200,
+          "userId": 2,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 201,
+          "userId": 2,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 991,
+          "isMercenary": false,
+          "currentHP": 4
+        },
+        {
+          "id": 202,
+          "userId": 2,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 203,
+          "userId": 2,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [],
+      "battle_upgrades": [],
+      "bonus_points": []
+    }
+  },
+  "low-stamina": {
+    "result": {
+      "attacker": {
+        "id": 1,
+        "displayName": "attacker-1",
+        "race": "ELF",
+        "class": "FIGHTER",
+        "level": 15,
+        "fortLevel": 8,
+        "fortHitpoints": 1054,
+        "gold": "3905479660",
+        "stamina": 5,
+        "units": [
+          {
+            "id": 100,
+            "userId": 1,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 101,
+            "userId": 1,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 102,
+            "userId": 1,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 103,
+            "userId": 1,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "defender": {
+        "id": 2,
+        "displayName": "defender-2",
+        "race": "HUMAN",
+        "class": "FIGHTER",
+        "level": 35,
+        "fortLevel": 3,
+        "fortHitpoints": 47,
+        "gold": "0",
+        "units": [
+          {
+            "id": 200,
+            "userId": 2,
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 201,
+            "userId": 2,
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 202,
+            "userId": 2,
+            "type": "CITIZEN",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          },
+          {
+            "id": 203,
+            "userId": 2,
+            "type": "WORKER",
+            "level": 1,
+            "quantity": 1000,
+            "isMercenary": false
+          }
+        ],
+        "mercenaries": []
+      },
+      "fortHitpoints": 41,
+      "turnsTaken": 10,
+      "pillagedGold": "0n",
+      "experienceGained": {
+        "attacker": 282,
+        "defender": 962
+      },
+      "finalFortHP": 41,
+      "fortDamaged": true,
+      "result": "LOSS",
+      "casualtySummary": {
+        "attacker": [
+          {
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 45,
+            "description": "OFFENSE Level 1"
+          }
+        ],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 56,
+            "description": "DEFENSE Level 1"
+          }
+        ],
+        "attackerTotal": 45,
+        "defenderTotal": 56,
+        "fortDamage": 6,
+        "mitigation": {
+          "averageMultiplier": 0.9956400000000001,
+          "minMultiplier": 0.9954,
+          "maxMultiplier": 0.9959,
+          "samples": 5
+        },
+        "fortBreached": false,
+        "battleStats": {
+          "attacker": {
+            "offenseRemaining": 937,
+            "meleeAtkPower": 3177.0900000000006,
+            "meleeDefPower": 1549.8000000000002,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 774.9000000000001
+          },
+          "defender": {
+            "defenseRemaining": 920,
+            "meleeAtkPower": 2816,
+            "meleeDefPower": 4692,
+            "rangedAtkPower": 0,
+            "rangedDefPower": 0
+          }
+        },
+        "wounded": {
+          "attacker": [
+            {
+              "type": "OFFENSE",
+              "level": 1,
+              "quantity": 18,
+              "isMercenary": false
+            }
+          ],
+          "defender": [
+            {
+              "type": "DEFENSE",
+              "level": 1,
+              "quantity": 24,
+              "isMercenary": false
+            }
+          ]
+        },
+        "routedStacks": []
+      },
+      "mitigationLog": [
+        {
+          "turn": 1,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 256,
+          "mitigatedDamage": 225,
+          "fortSoakMultiplier": 0.885,
+          "mitigationMultiplier": 0.9954,
+          "fortHpStart": 47,
+          "fortHpEnd": 46,
+          "fortHpRatio": 0.23,
+          "defenderFortLevel": 3,
+          "defenderFortMitigationPct": 2,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 0.45999999999999996,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 2,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1250,
+          "mitigatedDamage": 1250,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 46,
+          "fortHpEnd": 46,
+          "fortHpRatio": 0.23,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 3,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 223,
+          "mitigatedDamage": 197,
+          "fortSoakMultiplier": 0.8875,
+          "mitigationMultiplier": 0.9955,
+          "fortHpStart": 46,
+          "fortHpEnd": 45,
+          "fortHpRatio": 0.225,
+          "defenderFortLevel": 3,
+          "defenderFortMitigationPct": 2,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 0.45000000000000007,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 4,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1156,
+          "mitigatedDamage": 1156,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 45,
+          "fortHpEnd": 45,
+          "fortHpRatio": 0.225,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 5,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 222,
+          "mitigatedDamage": 197,
+          "fortSoakMultiplier": 0.89,
+          "mitigationMultiplier": 0.9956,
+          "fortHpStart": 45,
+          "fortHpEnd": 44,
+          "fortHpRatio": 0.22,
+          "defenderFortLevel": 3,
+          "defenderFortMitigationPct": 2,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 0.44,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 6,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1615,
+          "mitigatedDamage": 1615,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 44,
+          "fortHpEnd": 44,
+          "fortHpRatio": 0.22,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 7,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 221,
+          "mitigatedDamage": 197,
+          "fortSoakMultiplier": 0.895,
+          "mitigationMultiplier": 0.9958,
+          "fortHpStart": 44,
+          "fortHpEnd": 42,
+          "fortHpRatio": 0.21,
+          "defenderFortLevel": 3,
+          "defenderFortMitigationPct": 2,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 0.42,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 8,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1463,
+          "mitigatedDamage": 1463,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 42,
+          "fortHpEnd": 42,
+          "fortHpRatio": 0.21,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 9,
+          "source": "ATTACKER",
+          "attackType": "MELEE",
+          "rawDamage": 194,
+          "mitigatedDamage": 174,
+          "fortSoakMultiplier": 0.8975,
+          "mitigationMultiplier": 0.9959,
+          "fortHpStart": 42,
+          "fortHpEnd": 41,
+          "fortHpRatio": 0.205,
+          "defenderFortLevel": 3,
+          "defenderFortMitigationPct": 2,
+          "defenderCasualtyBonusPct": 0,
+          "defenderStructureMitigationPct": 0,
+          "totalMitigationPct": 0.4099999999999999,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        },
+        {
+          "turn": 10,
+          "source": "DEFENDER",
+          "attackType": "MELEE",
+          "rawDamage": 1522,
+          "mitigatedDamage": 1522,
+          "fortSoakMultiplier": 1,
+          "mitigationMultiplier": 1,
+          "fortHpStart": 41,
+          "fortHpEnd": 41,
+          "fortHpRatio": 0.205,
+          "fortBreached": false,
+          "includeCitz": false,
+          "includeOffense": false
+        }
+      ],
+      "Losses": {
+        "Attacker": {
+          "total": 45,
+          "units": [
+            {
+              "id": 100,
+              "userId": 1,
+              "type": "OFFENSE",
+              "level": 1,
+              "isMercenary": false,
+              "quantity": 45
+            }
+          ]
+        },
+        "Defender": {
+          "total": 56,
+          "units": [
+            {
+              "id": 201,
+              "userId": 2,
+              "type": "DEFENSE",
+              "level": 1,
+              "isMercenary": false,
+              "quantity": 56
+            }
+          ]
+        }
+      },
+      "wounded": {
+        "attacker": [
+          {
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 18,
+            "isMercenary": false
+          }
+        ],
+        "defender": [
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 24,
+            "isMercenary": false
+          }
+        ]
+      },
+      "damageAudit": {
+        "attacker": {
+          "rawIn": 7006,
+          "applied": 630,
+          "suppressed": 6376,
+          "caps": {
+            "singleAttackCap": 80,
+            "softCap": 63,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 8
+          },
+          "bindingCap": "soft",
+          "suppressedBy": {
+            "soft": 6376
+          }
+        },
+        "defender": {
+          "rawIn": 990,
+          "applied": 801,
+          "suppressed": 189,
+          "caps": {
+            "singleAttackCap": 320,
+            "softCap": 85,
+            "dailyRemaining": null,
+            "protectedCap": null,
+            "usedCap": 23
+          },
+          "bindingCap": "soft",
+          "suppressedBy": {
+            "soft": 189
+          }
+        }
+      },
+      "damageReceived": {
+        "attacker": 7006,
+        "defender": 990
+      },
+      "defenderFatiguePercent": 0,
+      "attackerFatiguePercent": 18,
+      "routedStacks": [],
+      "canonicalOutcome": {
+        "winner": "DEFENDER",
+        "reason": "DEFENDER_HELD",
+        "attackerValueLost": 94500,
+        "defenderValueLost": 120000,
+        "fortValueDamage": 210,
+        "pillagedGoldValue": 0,
+        "netGainValue": -94500,
+        "defenseUnitsBroken": 80,
+        "assaultSucceeded": false
+      },
+      "defenderStats": {
+        "defenseRemaining": 920,
+        "meleeAtkPower": 2816,
+        "meleeDefPower": 4692,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 0
+      },
+      "attackerStats": {
+        "offenseRemaining": 937,
+        "meleeAtkPower": 3177.0900000000006,
+        "meleeDefPower": 1549.8000000000002,
+        "rangedAtkPower": 0,
+        "rangedDefPower": 774.9000000000001
+      }
+    },
+    "attacker": {
+      "id": 1,
+      "displayName": "attacker-1",
+      "level": 15,
+      "race": "ELF",
+      "class": "FIGHTER",
+      "gold": "3905479660n",
+      "fortLevel": 8,
+      "fortHitpoints": 1054,
+      "units": [
+        {
+          "id": 100,
+          "userId": 1,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 937,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 101,
+          "userId": 1,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 102,
+          "userId": 1,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 103,
+          "userId": 1,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [],
+      "battle_upgrades": [],
+      "bonus_points": [],
+      "stamina": 5
+    },
+    "defender": {
+      "id": 2,
+      "displayName": "defender-2",
+      "level": 35,
+      "race": "HUMAN",
+      "class": "FIGHTER",
+      "gold": "0n",
+      "fortLevel": 3,
+      "fortHitpoints": 47,
+      "units": [
+        {
+          "id": 200,
+          "userId": 2,
+          "type": "OFFENSE",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 201,
+          "userId": 2,
+          "type": "DEFENSE",
+          "level": 1,
+          "quantity": 920,
+          "isMercenary": false,
+          "currentHP": 9
+        },
+        {
+          "id": 202,
+          "userId": 2,
+          "type": "CITIZEN",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 10
+        },
+        {
+          "id": 203,
+          "userId": 2,
+          "type": "WORKER",
+          "level": 1,
+          "quantity": 1000,
+          "isMercenary": false,
+          "currentHP": 20
+        }
+      ],
+      "mercenaries": [],
+      "items": [],
+      "structure_upgrades": [],
+      "battle_upgrades": [],
+      "bonus_points": []
+    }
+  }
+}

@@ -36,7 +36,54 @@
       "vacation-end": {
         "title": "Urlaubsmodus beenden?",
         "message": "Der Urlaubsmodus dieses Kontos wird sofort beendet."
+      },
+      "suspend": {
+        "title": "Dieses Konto sperren?",
+        "message": "Der Spieler kann sich bis zum Ende der Sperre nicht anmelden oder spielen. Seine E-Mail kann sich im selben Zeitraum nicht neu registrieren."
+      },
+      "ban": {
+        "title": "Dieses Konto bannen?",
+        "message": "Der Spieler kann sich nicht anmelden oder spielen, und seine E-Mail kann kein neues Konto registrieren. Supporter-Verlängerungen enden. Ein Einspruch ist möglich."
+      },
+      "reactivate": {
+        "title": "Dieses Konto reaktivieren?",
+        "message": "Beendet die aktuelle Sperre, den Bann oder die Schließung sofort und hebt die Registrierungssperre auf."
+      },
+      "close": {
+        "title": "Dieses Konto schließen?",
+        "message": "Das Konto wird geschlossen, Passwort und Staff-Zugriff werden entzogen und Supporter-Verlängerungen enden. Spieldaten bleiben erhalten; ein Administrator kann es reaktivieren."
+      },
+      "erase": {
+        "title": "Dieses Konto löschen?",
+        "message": "Das Konto wird sofort geschlossen und seine persönlichen Daten werden nach einer Frist von 14 Tagen endgültig gelöscht. Im Tab Datenschutz können Sie die Löschung abbrechen oder beschleunigen."
       }
+    },
+    "statusHeading": "Kontostatus",
+    "statusDescription": "Aktueller Status: {{status}}. Sperren blockieren die Anmeldung und werden im Statusverlauf festgehalten.",
+    "suspendAction": "Sperren (befristet)",
+    "banAction": "Bannen",
+    "reactivateAction": "Reaktivieren",
+    "closeAction": "Konto schließen",
+    "eraseAction": "Konto löschen",
+    "permanentLabel": "Dauerhafter Bann",
+    "durationLabel": "Dauer (Tage)",
+    "durationHelp": "Zwischen 1 und 3650 Tagen.",
+    "durationInvalid": "Geben Sie eine ganze Zahl von 1 bis 3650 Tagen ein.",
+    "reasonRequired": "Pflichtfeld; wird im Statusverlauf und im Staff-Protokoll gespeichert.",
+    "reasonMin": "Pflichtfeld, mindestens {{count}} Zeichen; wird im Staff-Protokoll gespeichert.",
+    "suspendResult_one": "Konto für {{count}} Tag gesperrt.",
+    "suspendResult_other": "Konto für {{count}} Tage gesperrt.",
+    "banResult_one": "Konto für {{count}} Tag gebannt.",
+    "banResult_other": "Konto für {{count}} Tage gebannt.",
+    "banPermanentResult": "Konto dauerhaft gebannt.",
+    "reactivateResult": "Konto reaktiviert.",
+    "closeResult": "Konto geschlossen.",
+    "eraseResult": "Konto geschlossen und zur Löschung vorgemerkt. Verfolgen oder beschleunigen Sie dies im Tab Datenschutz.",
+    "erasureErrors": {
+      "reason_required": "Ein Grund mit mindestens 10 Zeichen ist erforderlich.",
+      "staff_account": "Staff-Konten werden geschlossen, nicht gelöscht. Entfernen Sie zuerst die Staff-Rollen.",
+      "already_scheduled": "Für dieses Konto ist bereits eine Löschung geplant. Siehe Tab Datenschutz.",
+      "not_found": "Spieler nicht gefunden oder bereits gelöscht."
     }
   },
   "export": {

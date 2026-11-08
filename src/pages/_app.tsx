@@ -81,6 +81,11 @@ const namespaceMatchers: Array<{
     namespaces: ['community'],
   },
   {
+    matches: (path) => path.startsWith('/guides'),
+    namespaces: ['guides', 'structures'],
+  },
+  { matches: (path) => path === '/chronicles', namespaces: ['chronicles'] },
+  {
     matches: (path) => path.startsWith('/how-to-play'),
     namespaces: ['how-to-play'],
   },

@@ -3,6 +3,7 @@ import type { NextApiResponse } from 'next';
 
 import { withApiGuard } from '@/middleware/apiGuard';
 import { BotService } from '@/services';
+import { withCronRunLog } from '@/services/CronRun.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
 
@@ -40,16 +41,28 @@ const botsCron = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   try {
     const schedule =
       typeof req.query.schedule === 'string' ? req.query.schedule : 'default';
-    const result = await BotService.runDailyBotTick(schedule);
+    const result = await withCronRunLog('bots', async () => {
+      const tick = await BotService.runDailyBotTick(schedule);
+      return {
+        summary: {
+          schedule,
+          totalBots: tick.totalBots,
+          byAction: tick.byAction,
+          byStatus: tick.byStatus,
+          botDurationMs: tick.durationMs,
+        },
+        tick,
+      };
+    });
 
     return res.status(200).json({
       message: 'Bot daily tick processed',
-      totalBots: result.totalBots,
-      processedAt: result.processedAt,
-      byAction: result.byAction,
-      byStatus: result.byStatus,
-      durationMs: result.durationMs,
-      results: result.results,
+      totalBots: result.tick.totalBots,
+      processedAt: result.tick.processedAt,
+      byAction: result.tick.byAction,
+      byStatus: result.tick.byStatus,
+      durationMs: result.tick.durationMs,
+      results: result.tick.results,
     });
   } catch (error) {
     logError('Error executing bot cron job:', error);

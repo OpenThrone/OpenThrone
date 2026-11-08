@@ -81,6 +81,9 @@ const UNLOCKED_LIMITS: TransferLimits = {
   feePercent: 5,
   sentToday: '40000',
   receivedToday: '120000',
+  minLevel: 5,
+  senderLevelMet: true,
+  receiverLevelMet: true,
 };
 
 /** Mock daily transfer limits: gold transfers are still locked. */
@@ -91,6 +94,28 @@ const LOCKED_LIMITS: TransferLimits = {
   feePercent: 5,
   sentToday: '0',
   receivedToday: '0',
+  minLevel: 5,
+  senderLevelMet: true,
+  receiverLevelMet: true,
+};
+
+/** Mock limits: the player is under the minimum level. */
+const SENDER_LEVEL_LIMITS: TransferLimits = {
+  ...UNLOCKED_LIMITS,
+  senderLevelMet: false,
+};
+
+/** Mock limits: the friend is under the minimum level. */
+const RECEIVER_LEVEL_LIMITS: TransferLimits = {
+  ...UNLOCKED_LIMITS,
+  receiverLevelMet: false,
+};
+
+const TRANSFER_LIMITS_BY_STATE = {
+  unlocked: UNLOCKED_LIMITS,
+  locked: LOCKED_LIMITS,
+  senderLevel: SENDER_LEVEL_LIMITS,
+  receiverLevel: RECEIVER_LEVEL_LIMITS,
 };
 
 const MOCK_TRANSFER_GOLD = BigInt(750000);
@@ -111,7 +136,7 @@ export default function ModalsSection() {
   const [framingOpen, setFramingOpen] = useState(false);
   const [spyOpen, setSpyOpen] = useState(false);
   const [transferState, setTransferState] = useState<
-    'unlocked' | 'locked' | null
+    keyof typeof TRANSFER_LIMITS_BY_STATE | null
   >(null);
 
   // The spy dialog posts the mission from its send button; mock that one click.
@@ -227,7 +252,7 @@ export default function ModalsSection() {
         name="GoldTransferModal"
         usedOn={['/userprofile/[id]']}
         wide
-        note="Shows the daily allowance, the destroyed fee and the locked state. The limits are mock data (no request) and the send button is mocked."
+        note="Shows the daily allowance, the destroyed fee, the locked state and the minimum-level states (yours and your friend's). The limits are mock data (no request) and the send button is mocked."
       >
         <MockClicks labels={[tSocial('goldTransfer.submit')]}>
           <Group gap="xs">
@@ -245,6 +270,20 @@ export default function ModalsSection() {
             >
               Transfer gold (locked)
             </Button>
+            <Button
+              variant="default"
+              size="xs"
+              onClick={() => setTransferState('senderLevel')}
+            >
+              Transfer gold (you are under level 5)
+            </Button>
+            <Button
+              variant="default"
+              size="xs"
+              onClick={() => setTransferState('receiverLevel')}
+            >
+              Transfer gold (friend is under level 5)
+            </Button>
           </Group>
           <GoldTransferModal
             isOpen={transferState !== null}
@@ -254,7 +293,7 @@ export default function ModalsSection() {
             userGold={MOCK_TRANSFER_GOLD}
             onTransferComplete={() => mockAction('Transfer gold')()}
             limitsOverride={
-              transferState === 'locked' ? LOCKED_LIMITS : UNLOCKED_LIMITS
+              TRANSFER_LIMITS_BY_STATE[transferState ?? 'unlocked']
             }
           />
         </MockClicks>

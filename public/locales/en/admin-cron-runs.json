@@ -1,0 +1,28 @@
+{
+  "title": "Cron run log",
+  "intro": "Every scheduled job run is recorded here: when it started, how long it took, and a sanitized summary of what it did. Failures are highlighted. Runs older than 90 days are deleted by the daily job. Rejected (unauthorized) and disabled job invocations are not recorded. A run still marked Running after 2 hours is shown as Stale / unknown: its process died, or its start was recorded too late to be closed.",
+  "jobFilter": "Job",
+  "statusFilter": "Status",
+  "allJobs": "All jobs",
+  "allStatuses": "All statuses",
+  "lastSuccess": "Last successful run per job",
+  "loading": "Loading…",
+  "error": "The request failed. Check your filters or try again.",
+  "count": "{{count}} runs",
+  "status": {
+    "RUNNING": "Running",
+    "SUCCESS": "Success",
+    "FAILED": "Failed",
+    "STALE": "Stale / unknown"
+  },
+  "columns": {
+    "id": "ID",
+    "job": "Job",
+    "status": "Status",
+    "startedAt": "Started",
+    "finishedAt": "Finished",
+    "duration": "Duration",
+    "summary": "Summary",
+    "error": "Error"
+  }
+}

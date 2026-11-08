@@ -24,6 +24,7 @@ import { AppConfig } from '@/utils/AppConfig';
 import { APP_VERSION_LABEL } from '@/utils/appVersion';
 import { resolveArtworkSource } from '@/utils/artwork';
 import { logError } from '@/utils/logger';
+import { isServerRenderedPublicPath } from '@/utils/publicRoutes';
 
 import ConnectionStatusBanner from './ConnectionStatusBanner';
 import GameHeader from './GameHeader';
@@ -36,7 +37,9 @@ import SidebarSkeleton from './SidebarSkeleton';
 const publicFooterLinks = [
   { key: 'home', labelKey: 'loggedOut.home', url: '/' },
   { key: 'howToPlay', labelKey: 'loggedOut.howToPlay', url: '/how-to-play' },
+  { key: 'guides', labelKey: 'loggedOut.guides', url: '/guides' },
   { key: 'faq', labelKey: 'loggedOut.faq', url: '/faq' },
+  { key: 'chronicles', labelKey: 'loggedOut.chronicles', url: '/chronicles' },
   { key: 'news', labelKey: 'loggedOut.news', url: '/community/news' },
   { key: 'stats', labelKey: 'loggedOut.stats', url: '/community/stats' },
   { key: 'about', labelKey: 'loggedOut.about', url: '/about' },
@@ -139,7 +142,10 @@ const Layout = (props: IMainProps) => {
     }
   }, [isDevelopment]);
 
-  const structureReady = authorized || status !== 'loading';
+  // Guides and the Chronicles are readable by crawlers, so their text is part
+  // of the server-rendered page instead of waiting for the session.
+  const serverRendered = isServerRenderedPublicPath(nextRouter.asPath);
+  const structureReady = authorized || status !== 'loading' || serverRendered;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -204,7 +210,11 @@ const Layout = (props: IMainProps) => {
                     <ConnectionStatusBanner />
                     <EraResetNotice />
                     {authorized && !isShowcase && <SupporterNotice />}
-                    {layoutLoading ? <MainAreaSkeleton /> : props.children}
+                    {layoutLoading && !serverRendered ? (
+                      <MainAreaSkeleton />
+                    ) : (
+                      props.children
+                    )}
                   </div>
                 </>
               ) : (

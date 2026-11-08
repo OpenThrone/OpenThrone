@@ -25,6 +25,16 @@ describe('AllianceAdminActionSchema', () => {
     ).toBe(true);
   });
 
+  it('accepts the era lifecycle actions and audits them', () => {
+    for (const action of ['reserve', 'reactivate'] as const) {
+      expect(AllianceAdminActionSchema.parse({ action })).toEqual({ action });
+    }
+    expect(ALLIANCE_ADMIN_AUDIT_ACTIONS.reserve).toBe('ADMIN_ALLIANCE_RESERVE');
+    expect(ALLIANCE_ADMIN_AUDIT_ACTIONS.reactivate).toBe(
+      'ADMIN_ALLIANCE_REACTIVATE',
+    );
+  });
+
   it('rejects unknown actions, blank names and bad ids', () => {
     expect(
       AllianceAdminActionSchema.safeParse({ action: 'nuke' }).success,

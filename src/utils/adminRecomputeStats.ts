@@ -1,5 +1,6 @@
 import type { Prisma } from '@/lib/prisma-exports';
 import { contractRoster } from '@/services/Mercenary.service';
+import { CONTRACT_OWNER_ACTIVE } from '@/utils/forceContractFilters';
 import { calculateUserStats } from '@/utils/utilities';
 
 export type StoredStrength = {
@@ -35,7 +36,11 @@ export async function recomputeStoredStatsInTx(
       UserBattleUpgrade: true,
       UserBonusPoints: true,
       forceContracts: {
-        where: { status: 'ACTIVE', expiresAt: { gt: now } },
+        where: {
+          status: 'ACTIVE',
+          expiresAt: { gt: now },
+          ...CONTRACT_OWNER_ACTIVE,
+        },
       },
     },
   });

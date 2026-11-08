@@ -52,16 +52,12 @@ describe('runtime config snapshot', () => {
       { key: 'MAINTENANCE_MODE', value: { enabled: true, message: 'Planned' } },
       { key: 'DATABASE_URL', value: 'must not be projected' },
     ]);
-    mockPrisma.featureFlag.findMany = vi
-      .fn()
-      .mockResolvedValue([{ key: 'ENABLE_ATTACKING', enabled: true }]);
 
     const config = await getRuntimeConfig();
 
     expect(config.enableAttacking).toBe(false);
     expect(config.attackLevelRange).toBe(8);
     expect(config.disableLogin).toBe(true);
-    expect(mockPrisma.featureFlag.findMany).not.toHaveBeenCalled();
     expect(config.maintenance).toEqual({ enabled: true, message: 'Planned' });
     expect(config.recruitDailyCap).toBe(250);
     expect(config.externalRecruitDailyCap).toBe(25);
@@ -91,6 +87,7 @@ describe('runtime config snapshot', () => {
       { key: 'era.protectionLevelLimit', value: 12 },
       { key: 'bank.depositCapPercent', value: 50 },
       { key: 'friend.dailyReceivedCap', value: 500 },
+      { key: 'friend.transferMinLevel', value: 12 },
       { key: 'alliance.maxPendingGoldRequests', value: 4 },
     ]);
     const config = await getRuntimeConfig();
@@ -101,8 +98,9 @@ describe('runtime config snapshot', () => {
       config.protectionLevelLimit,
       config.depositCapPercent,
       config.friendDailyReceivedCap,
+      config.friendTransferMinLevel,
       config.maxPendingGoldRequests,
-    ]).toEqual([2, 0.1, 8, 12, 50, 500, 4]);
+    ]).toEqual([2, 0.1, 8, 12, 50, 500, 12, 4]);
   });
 
   it('caches for five seconds and reloads after explicit invalidation', async () => {

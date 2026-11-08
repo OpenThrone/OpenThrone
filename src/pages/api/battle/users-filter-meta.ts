@@ -36,6 +36,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     const logs = await prisma.attack_log.findMany({
       where: {
         timestamp: { gt: since },
+        voidedAt: null,
         OR: [{ attacker_id: userId }, { defender_id: userId }],
       },
       select: {

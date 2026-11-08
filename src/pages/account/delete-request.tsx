@@ -22,7 +22,7 @@ const DeleteRequestPage = () => {
   const authenticated = status === 'authenticated';
 
   const loginHref = `/account/login?callbackUrl=${encodeURIComponent(
-    '/home/settings#forget-account',
+    '/home/settings#privacy',
   )}`;
 
   return (
@@ -49,6 +49,7 @@ const DeleteRequestPage = () => {
               <List.Item>{t('deleteRequest.removedEmail')}</List.Item>
               <List.Item>{t('deleteRequest.removedPassword')}</List.Item>
               <List.Item>{t('deleteRequest.removedProfile')}</List.Item>
+              <List.Item>{t('deleteRequest.removedActivity')}</List.Item>
             </List>
           </Box>
 
@@ -61,12 +62,14 @@ const DeleteRequestPage = () => {
               <List.Item>{t('deleteRequest.keptNameReserved')}</List.Item>
               <List.Item>{t('deleteRequest.keptSanctionHash')}</List.Item>
               <List.Item>{t('deleteRequest.keptCooldownHash')}</List.Item>
+              <List.Item>{t('deleteRequest.keptPayments')}</List.Item>
+              <List.Item>{t('deleteRequest.keptModeration')}</List.Item>
             </List>
           </Box>
 
           <Group className={classes.actions}>
             {authenticated ? (
-              <Button component={Link} href="/home/settings#forget-account">
+              <Button component={Link} href="/home/settings#privacy">
                 {t('deleteRequest.openSettings')}
               </Button>
             ) : (

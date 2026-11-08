@@ -292,5 +292,31 @@
     "cancelCrop": "Cancel",
     "applyCrop": "Apply crop",
     "imageError": "The image could not be loaded. Close this editor and choose another image."
+  },
+  "reserved": {
+    "badge": "Reserved",
+    "notRecruiting": "Reserved: not recruiting",
+    "theLeader": "the leader",
+    "title": "{{name}} is reserved",
+    "visitor": "A new era began, so this alliance is on hold until its leader reactivates it.",
+    "member": "A new era began, so your alliance is on hold. Its name, roster, ranks and artwork are kept. Its treasury, loans, troop contracts and wars belonged to the old era and were closed.",
+    "stillOpen": "Still available: viewing the roster and ranks, managing ranks, removing members, transferring leadership, and leaving the alliance at any time without the leader.",
+    "closed": "Closed until reactivated: treasury and loans, troop contracts and dues, wars, diplomacy, target lists, shared intel, announcements, alliance chat, recruiting and premium perks.",
+    "requirementsTitle": "Reactivation (leader only)",
+    "requirementsIntro": "The leader reactivates the alliance in the new era by reaching level {{level}} and paying {{cost}} gold.",
+    "reqLevel": "Level {{level}} reached",
+    "reqLevelNow": "{{current}} of {{level}}",
+    "reqGold": "{{cost}} gold on hand",
+    "reqGoldNow": "{{current}} of {{cost}}",
+    "waitingForLeader": "Only {{leader}} can reactivate the alliance. You can wait, or leave.",
+    "reactivate": "Reactivate for {{cost}} gold",
+    "confirmTitle": "Reactivate {{name}}?",
+    "confirmBody": "This spends {{cost}} gold from your hand. Alliance features reopen for everyone.",
+    "confirm": "Pay and reactivate",
+    "success": "The alliance is active again.",
+    "alreadyActive": "The alliance was already active; nothing was charged.",
+    "error": "Could not reactivate the alliance.",
+    "leave": "Leave alliance",
+    "leaveHint": "You can leave at any time; the leader does not need to reactivate first."
   }
 }

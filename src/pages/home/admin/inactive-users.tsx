@@ -3,11 +3,13 @@ import {
   Button,
   Checkbox,
   Group,
+  NumberInput,
   Pagination,
   Select,
   Stack,
   Table,
   Text,
+  TextInput,
 } from '@mantine/core';
 import type { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
@@ -42,18 +44,38 @@ type Sweep = {
   remindersEnabled: boolean;
   autoAnonymizeEnabled: boolean;
 };
+type VeteranRecord = {
+  id: number;
+  title: string;
+  sourceUserId: number | null;
+  originalJoinedAt: string;
+  recordedAt: string;
+  expiresAt: string | null;
+  claimedByUserId: number | null;
+  claimedAt: string | null;
+};
+const TEMPLATES = ['STANDARD', 'ERA_RELAUNCH'] as const;
 const InactiveUsersPage = () => {
   const { t, i18n } = useTranslation('admin-content');
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<string | null>(null);
+  const [inactiveSince, setInactiveSince] = useState('');
+  const [noticeDays, setNoticeDays] = useState<number | ''>(180);
+  const [template, setTemplate] =
+    useState<(typeof TEMPLATES)[number]>('STANDARD');
+  const [newsPostId, setNewsPostId] = useState<number | ''>('');
   const [selected, setSelected] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState('');
   const [sweep, setSweep] = useState<Sweep | null>(null);
+  const [veterans, setVeterans] = useState<VeteranRecord[]>([]);
+  const [veteransTotal, setVeteransTotal] = useState(0);
+  const [veteransPage, setVeteransPage] = useState(1);
+  const [veteransLoading, setVeteransLoading] = useState(false);
   const [confirm, setConfirm] = useState<'selected' | 'all' | 'sweep' | null>(
     null,
   );
@@ -68,9 +90,14 @@ const InactiveUsersPage = () => {
     setLoading(true);
     setError('');
     try {
-      const data = await read(
-        `/api/admin/users/inactive?page=${page}${status ? `&status=${status}` : ''}`,
-      );
+      const params = new URLSearchParams({ page: String(page) });
+      if (status) params.set('status', status);
+      if (inactiveSince) {
+        const parsed = new Date(inactiveSince);
+        if (!Number.isNaN(parsed.getTime()))
+          params.set('inactiveSince', parsed.toISOString());
+      }
+      const data = await read(`/api/admin/users/inactive?${params}`);
       setUsers(data.users);
       setTotal(data.total);
       setSelected([]);
@@ -79,7 +106,20 @@ const InactiveUsersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, status, t]);
+  }, [page, status, inactiveSince, t]);
+  const loadVeterans = useCallback(async () => {
+    setVeteransLoading(true);
+    try {
+      const data = await read(`/api/admin/users/veterans?page=${veteransPage}`);
+      setVeterans(data.records);
+      setVeteransTotal(data.total);
+    } catch {
+      setVeterans([]);
+      setVeteransTotal(0);
+    } finally {
+      setVeteransLoading(false);
+    }
+  }, [veteransPage]);
   const dryRun = useCallback(async () => {
     try {
       setSweep(await read('/api/admin/users/inactive-sweep'));
@@ -93,6 +133,9 @@ const InactiveUsersPage = () => {
   useEffect(() => {
     dryRun();
   }, [dryRun]);
+  useEffect(() => {
+    loadVeterans();
+  }, [loadVeterans]);
   const act = async () => {
     setBusy(true);
     setError('');
@@ -108,6 +151,12 @@ const InactiveUsersPage = () => {
               : {
                   all: confirm === 'all',
                   userIds: confirm === 'selected' ? selected : undefined,
+                  ...(inactiveSince
+                    ? { inactiveSince: new Date(inactiveSince).toISOString() }
+                    : {}),
+                  noticeDays: noticeDays === '' ? 180 : noticeDays,
+                  template,
+                  ...(newsPostId === '' ? {} : { newsPostId }),
                 },
           ),
         },
@@ -143,6 +192,14 @@ const InactiveUsersPage = () => {
               date: date(n.warnedAt),
               deletion: date(n.scheduledDeletionAt),
             });
+  // The deadline the next notice batch will write, shown before sending.
+  const deadlineDate =
+    noticeDays === ''
+      ? '—'
+      : new Date(
+          Date.now() + (noticeDays as number) * 86_400_000,
+        ).toLocaleDateString(i18n.language);
+  const templateLabel = t(`emailAdmin.templates.${template}`);
   return (
     <AdminLayout
       title={t('emailAdmin.inactiveUsers')}
@@ -210,6 +267,60 @@ const InactiveUsersPage = () => {
                 (value) => ({ value, label: t(`emailAdmin.filters.${value}`) }),
               )}
             />
+            <Group grow align="flex-start">
+              <TextInput
+                label={t('emailAdmin.inactiveSince')}
+                description={t('emailAdmin.inactiveSinceHelp')}
+                placeholder="2026-10-01"
+                value={inactiveSince}
+                onChange={(event) => {
+                  setInactiveSince(event.currentTarget.value);
+                  setPage(1);
+                }}
+              />
+              <NumberInput
+                label={t('emailAdmin.noticeDays')}
+                description={t('emailAdmin.noticeDaysHelp')}
+                value={noticeDays}
+                min={14}
+                max={365}
+                step={1}
+                allowDecimal={false}
+                onChange={(value) =>
+                  setNoticeDays(value === '' ? '' : Number(value))
+                }
+              />
+              <Select
+                label={t('emailAdmin.template')}
+                value={template}
+                onChange={(v) =>
+                  setTemplate((v ?? 'STANDARD') as typeof template)
+                }
+                allowDeselect={false}
+                data={TEMPLATES.map((value) => ({
+                  value,
+                  label: t(`emailAdmin.templates.${value}`),
+                }))}
+              />
+              <NumberInput
+                label={t('emailAdmin.newsPostId')}
+                description={t('emailAdmin.newsPostIdHelp')}
+                value={newsPostId}
+                min={1}
+                allowDecimal={false}
+                hideControls
+                onChange={(value) =>
+                  setNewsPostId(value === '' ? '' : Number(value))
+                }
+              />
+            </Group>
+            <Text size="sm" c="dimmed">
+              {t('emailAdmin.audienceCount', {
+                count: total,
+                deadline: deadlineDate,
+                template: templateLabel,
+              })}
+            </Text>
             <Group>
               <Button
                 disabled={busy || loading || !selected.length}
@@ -300,6 +411,70 @@ const InactiveUsersPage = () => {
             />
           </Stack>
         </GameCard>
+        <GameCard title={t('emailAdmin.veteranRecords')}>
+          <Stack>
+            <Text size="sm" c="dimmed">
+              {t('emailAdmin.veteranIntro')}
+            </Text>
+            <AdminDataTable
+              ariaLabel={t('emailAdmin.veteranRecords')}
+              aria-busy={veteransLoading}
+            >
+              <Table.Thead>
+                <Table.Tr>
+                  {[
+                    'veteranId',
+                    'veteranTitle',
+                    'veteranJoined',
+                    'veteranRecorded',
+                    'veteranExpires',
+                    'veteranClaimed',
+                  ].map((key) => (
+                    <Table.Th key={key}>{t(`emailAdmin.${key}`)}</Table.Th>
+                  ))}
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {veterans.map((record) => (
+                  <Table.Tr key={record.id}>
+                    <Table.Td>{record.id}</Table.Td>
+                    <Table.Td>
+                      {t(`emailAdmin.veteranTitles.${record.title}`)}
+                    </Table.Td>
+                    <Table.Td>{date(record.originalJoinedAt)}</Table.Td>
+                    <Table.Td>{date(record.recordedAt)}</Table.Td>
+                    <Table.Td>{date(record.expiresAt ?? undefined)}</Table.Td>
+                    <Table.Td>
+                      {record.claimedByUserId
+                        ? t('emailAdmin.veteranClaimedBy', {
+                            id: record.claimedByUserId,
+                            date: date(record.claimedAt ?? undefined),
+                          })
+                        : t('emailAdmin.veteranUnclaimed')}
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+                {!veterans.length && (
+                  <Table.Tr>
+                    <Table.Td colSpan={6}>
+                      {t(
+                        veteransLoading
+                          ? 'emailAdmin.loading'
+                          : 'emailAdmin.empty',
+                      )}
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </Table.Tbody>
+            </AdminDataTable>
+            <Pagination
+              value={veteransPage}
+              onChange={setVeteransPage}
+              total={Math.max(1, Math.ceil(veteransTotal / 50))}
+              disabled={veteransLoading}
+            />
+          </Stack>
+        </GameCard>
         <ConfirmationModal
           isOpen={!!confirm}
           onClose={() => !busy && setConfirm(null)}
@@ -311,7 +486,11 @@ const InactiveUsersPage = () => {
               : confirm === 'all'
                 ? 'emailAdmin.confirmAllNotices'
                 : 'emailAdmin.confirmNotices',
-            { count: selected.length },
+            {
+              count: selected.length,
+              deadline: deadlineDate,
+              template: templateLabel,
+            },
           )}
           type={confirm === 'sweep' ? 'destructive' : 'primary'}
           confirmText={t('emailAdmin.confirm')}

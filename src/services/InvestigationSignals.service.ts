@@ -175,7 +175,7 @@ export async function getInvestigationSignals(
         'attackerLosses',SUM(a.attacker_losses_total),'defenderLosses',SUM(a.defender_losses_total)) AS metrics,
       (array_agg(jsonb_build_object('kind','attack','id',a.id,'at',a.timestamp,'from',a.attacker_id,'to',a.defender_id,'gold',a.pillaged_gold::text) ORDER BY a.timestamp DESC,a.id DESC))[1:10] AS evidence
       FROM attack_log a JOIN humans h ON h.id=a.attacker_id JOIN humans d ON d.id=a.defender_id
-      WHERE a.type='attack' AND a.timestamp>=${since} AND a.timestamp<=${until}
+      WHERE a.type='attack' AND a."voidedAt" IS NULL AND a.timestamp>=${since} AND a.timestamp<=${until}
       GROUP BY a.attacker_id,a.defender_id HAVING COUNT(*)>=8
         AND COUNT(*) FILTER (WHERE a.winner=a.attacker_id)*10>=COUNT(*)*9
         AND SUM(a.pillaged_gold)>0 AND COUNT(a.attacker_losses_total)=COUNT(*) AND COUNT(a.defender_losses_total)=COUNT(*)

@@ -7,6 +7,10 @@
   "reminderSubject": "Your OpenThrone account: 30 days left",
   "notice": "Hello {{display_name}},\n\nYour last activity was {{lastActiveDate}}. Your account is scheduled for deletion on {{deletionDate}} after a 180-day grace period. Logging in before that date keeps your account.\n\nLog in: {{loginLink}}\nRequest deletion: {{deleteLink}}",
   "reminder": "Hello {{display_name}},\n\nYour last activity was {{lastActiveDate}}. There are 30 days left before your account is scheduled for deletion on {{deletionDate}}. Log in to keep your account.\n\nLog in: {{loginLink}}\nRequest deletion: {{deleteLink}}",
+  "relaunchNoticeSubject": "A new era has begun — your OpenThrone account awaits",
+  "relaunchNotice": "Hello {{display_name}},\n\nA new era has begun at OpenThrone and development is active again. Read the news: {{newsLink}}\n\nWe would love to see you again. Log in before {{deletionDate}} to keep your account: {{loginLink}}\n\nIf you do not, we will erase your email address and your personal data. We keep only a one-way fingerprint of them so we can recognise you if you return: register again with the same email within two years, confirm the link we send to that address, and you will receive the Era 1 Tester title, get your original join date back, and may reclaim your old display name.\n\nPrefer a clean break? Erase your account now: {{deleteLink}}",
+  "relaunchReminderSubject": "Last chance: a new era has begun at OpenThrone",
+  "relaunchReminder": "Hello {{display_name}},\n\nA new era has begun at OpenThrone and development is active again. Read the news: {{newsLink}}\n\nTime is running out: log in before {{deletionDate}} to keep your account — {{loginLink}}\n\nAfter that we erase your email address and your personal data, keeping only a one-way fingerprint so we can recognise you. Register again with the same email within two years and confirm the link we send there for the Era 1 Tester title, your original join date and your old display name.\n\nErase your account now instead: {{deleteLink}}",
   "pageTitle": "Email preferences",
   "pageDescription": "Choose which OpenThrone emails you receive. Security and account emails always send.",
   "confirm": "Unsubscribe from this email category",
@@ -34,5 +38,7 @@
     "gift_3m": "Patron gift code (90 days)",
     "gift_12m": "Patron gift code (360 days)",
     "alliance_sponsorship": "alliance sponsorship"
-  }
+  },
+  "veteranClaimSubject": "Welcome back to OpenThrone — confirm your Era 1 legacy",
+  "veteranClaim": "Hello {{display_name}},\n\nThis address belonged to an OpenThrone account from Era 1. To restore the Era 1 Tester title and your original join date, and to take back your old display name, open this link while signed in to your new account within 30 days:\n\n{{claimLink}}\n\nIf you did not just create an OpenThrone account with this address, someone else did: reset its password from the login page and sign in to keep it. Nothing has been granted yet."
 }

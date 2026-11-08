@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
+import { reserveAlliancesForEraBoundary } from '@/services/allianceStatus';
 import { CaptiveService } from '@/services/Captives.service';
 import {
   ERA_TRANSACTION_OPTIONS,
@@ -151,6 +152,9 @@ export const startNewEra = async (
 
   return prisma.$transaction(async (tx) => {
     await lockEraLifecycle(tx);
+    // Alliance rows first, then players: the order every treasury, loan and
+    // force transaction uses, so a rollover cannot deadlock with them.
+    await tx.$queryRaw`SELECT id FROM alliances ORDER BY id FOR UPDATE`;
     // Battles lock their two players in id order; taking every player the
     // same way lets an in-flight battle finish before its players reset.
     await tx.$queryRaw`SELECT id FROM users WHERE id > 0 ORDER BY id FOR UPDATE`;
@@ -199,11 +203,11 @@ export const startNewEra = async (
     const [attackWinRows, defendWinRows] = await Promise.all([
       tx.$queryRaw<{ id: number; wins: number }[]>`
         SELECT attacker_id AS id, count(*)::int AS wins FROM attack_log
-        WHERE type = 'attack' AND winner = attacker_id ${window}
+        WHERE type = 'attack' AND "voidedAt" IS NULL AND winner = attacker_id ${window}
         GROUP BY attacker_id`,
       tx.$queryRaw<{ id: number; wins: number }[]>`
         SELECT defender_id AS id, count(*)::int AS wins FROM attack_log
-        WHERE type = 'attack' AND winner = defender_id ${window}
+        WHERE type = 'attack' AND "voidedAt" IS NULL AND winner = defender_id ${window}
         GROUP BY defender_id`,
     ]);
     const attackWins = new Map<number, number>(
@@ -304,6 +308,14 @@ export const startNewEra = async (
       data: { action: 'PILLAGE_CANCELLED' },
     });
     await tx.forceDuesRule.updateMany({ data: { nextIssueAt: new Date() } });
-    return newEra;
+    // Alliances survive the rollover: they become RESERVED (identity, roster,
+    // roles and artwork kept; treasury, loans and wars of the old era closed)
+    // until each leader reactivates for this new era (#13). Deletion of
+    // alliances happens only in the admin factory restore.
+    const allianceBoundary = await reserveAlliancesForEraBoundary(
+      tx,
+      validatedNewEraId,
+    );
+    return { ...newEra, alliancesReserved: allianceBoundary.reserved };
   }, ERA_TRANSACTION_OPTIONS);
 };

@@ -62,7 +62,11 @@ const baseUser = {
   race: 'ELF',
   colorScheme: 'ELF',
   password_hash: '$argon2id$synthetic',
+  created_at: new Date('2026-06-15T12:00:00.000Z'),
 };
+
+/** Start of the era still running when the tests act. */
+const ERA_START = new Date('2026-10-01T00:00:00.000Z');
 
 /**
  * Transaction double exposing every model anonymizeAccount touches. Each
@@ -92,6 +96,14 @@ const buildTx = (overrides: Record<string, Record<string, any>> = {}) => {
       update: vi.fn(async () => ({})),
       deleteMany: vi.fn(async () => ({ count: 0 })),
     },
+    era: {
+      findFirst: vi.fn(async () => ({ startDate: ERA_START })),
+    },
+    veteranRecord: {
+      findUnique: vi.fn(async () => null),
+      upsert: vi.fn(async () => ({ id: 1 })),
+      deleteMany: vi.fn(async () => ({ count: 0 })),
+    },
     passwordReset: { deleteMany: vi.fn(async () => ({ count: 2 })) },
     apiToken: { updateMany: vi.fn(async () => ({ count: 1 })) },
     apiClient: { updateMany: vi.fn(async () => ({ count: 1 })) },
@@ -105,11 +117,46 @@ const buildTx = (overrides: Record<string, Record<string, any>> = {}) => {
     accountInactivityNotice: {
       updateMany: vi.fn(async () => ({ count: 0 })),
     },
+    // Remaining personal data (eraseRemainingPersonalData).
+    ...Object.fromEntries(
+      [
+        'loginEvent',
+        'social',
+        'post_read_status',
+        'autoRecruitSession',
+        'chatRoomParticipant',
+        'chatMessageReaction',
+        'chatMessageReadStatus',
+        'chatMute',
+        'apiTokenAudit',
+        'accountDataExport',
+        'cheatSignal',
+        'moderatorNote',
+        'activityDay',
+        'alliance_bank_history',
+        'alliance_gold_requests',
+        'alliance_loans',
+        'alliance_list_entries',
+        'alliance_target_calls',
+        'alliance_intel_shares',
+      ].map((model) => [
+        model,
+        {
+          deleteMany: vi.fn(async () => ({ count: 0 })),
+          updateMany: vi.fn(async () => ({ count: 0 })),
+        },
+      ]),
+    ),
+    auditLog: { updateMany: vi.fn(async () => ({ count: 0 })) },
+    recruit_history: { updateMany: vi.fn(async () => ({ count: 0 })) },
+    banAppeal: { updateMany: vi.fn(async () => ({ count: 0 })) },
+    report: { updateMany: vi.fn(async () => ({ count: 0 })) },
     ...overrides,
   };
   return {
     ...models,
     $queryRaw: vi.fn(async () => [{ id: USER_ID }]),
+    $executeRaw: vi.fn(async () => 0),
   } as any;
 };
 
@@ -223,6 +270,113 @@ describe('AccountAnonymizationService.anonymizeAccount', () => {
       }),
     );
     expect(logActionStrict).toHaveBeenCalledTimes(1);
+  });
+
+  it('erases the personal data the core scrub used to leave behind', async () => {
+    await AccountAnonymizationService.anonymizeAccount(tx, USER_ID, {
+      reason: 'User requested deletion',
+      initiatedBy: 'SELF',
+    });
+
+    expect(tx.loginEvent.deleteMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID },
+    });
+    expect(tx.auditLog.updateMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID },
+      data: { ip: '', ipHash: null, requestId: null },
+    });
+    // Only the recruited player's own address; a recruiter's rows hold the recruit's.
+    expect(tx.recruit_history.updateMany).toHaveBeenCalledWith({
+      where: { to_user: USER_ID },
+      data: { ip_addr: '' },
+    });
+    expect(tx.social.deleteMany).toHaveBeenCalledWith({
+      where: { OR: [{ playerId: USER_ID }, { friendId: USER_ID }] },
+    });
+    expect(tx.emailOutbox.updateMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID },
+      data: { subject: '' },
+    });
+    expect(tx.accountDataExport.deleteMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID },
+    });
+    expect(tx.activityDay.deleteMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID },
+    });
+    // The player's own free text in alliance records, keyed by who wrote it.
+    for (const [model, column, field] of [
+      ['alliance_bank_history', 'performed_by_user_id', 'notes'],
+      ['alliance_gold_requests', 'requester_id', 'reason'],
+      ['alliance_loans', 'borrower_id', 'reason'],
+      ['alliance_list_entries', 'added_by', 'note'],
+      ['alliance_target_calls', 'created_by', 'note'],
+      ['alliance_intel_shares', 'shared_by', 'note'],
+    ]) {
+      expect(tx[model].updateMany).toHaveBeenCalledWith({
+        where: { [column]: USER_ID, NOT: { [field]: null } },
+        data: { [field]: null },
+      });
+    }
+    expect(tx.users.update.mock.calls[0][0].data.anonymizedAt).toBeInstanceOf(
+      Date,
+    );
+    // No sanction: the moderation file goes with the account.
+    expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(tx.cheatSignal.deleteMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID },
+    });
+    expect(tx.moderatorNote.deleteMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID },
+    });
+    expect(tx.banAppeal.updateMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID },
+      data: { subject: null, body: '' },
+    });
+  });
+
+  it('sees a ban through the CLOSED row an erasure grace period writes on top', async () => {
+    tx.accountStatusHistory.findFirst
+      .mockResolvedValueOnce({ status: 'CLOSED', end_date: null })
+      .mockResolvedValueOnce({ status: 'BANNED', end_date: null });
+
+    await AccountAnonymizationService.anonymizeAccount(tx, USER_ID, {
+      reason: 'User requested deletion',
+      initiatedBy: 'SELF',
+    });
+
+    // The ban's email block, not the 30-day cooldown, and the moderation file stays.
+    const blocks = createdBlocks(tx);
+    expect(findBlock(blocks, 'SANCTION')?.expiresAt).toBeNull();
+    expect(findBlock(blocks, 'DELETION_COOLDOWN')).toBeUndefined();
+    expect(tx.cheatSignal.deleteMany).not.toHaveBeenCalled();
+    expect(tx.accountStatusHistory.findFirst).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: { in: ['BANNED', 'SUSPENDED'] },
+        }),
+      }),
+    );
+  });
+
+  it('keeps the moderation file while a sanction runs, but still erases sign-in data', async () => {
+    tx.accountStatusHistory.findFirst.mockResolvedValue({
+      status: 'BANNED',
+      end_date: null,
+    });
+
+    await AccountAnonymizationService.anonymizeAccount(tx, USER_ID, {
+      reason: 'User requested deletion',
+      initiatedBy: 'SELF',
+    });
+
+    expect(tx.cheatSignal.deleteMany).not.toHaveBeenCalled();
+    expect(tx.$executeRaw).not.toHaveBeenCalled();
+    expect(tx.moderatorNote.deleteMany).not.toHaveBeenCalled();
+    expect(tx.banAppeal.updateMany).not.toHaveBeenCalled();
+    expect(tx.activityDay.deleteMany).toHaveBeenCalled();
+    expect(tx.loginEvent.deleteMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID },
+    });
   });
 
   it('permanent ban at deletion time: SANCTION email block with null expiry', async () => {
@@ -405,7 +559,7 @@ describe('AccountAnonymizationService.anonymizeAccount', () => {
   it('refuses an already anonymized account', async () => {
     tx.users.findUnique.mockResolvedValue({
       ...baseUser,
-      email: `${USER_ID}-deleted@deleted.local`,
+      anonymizedAt: new Date(),
     });
 
     await expect(
@@ -483,14 +637,26 @@ describe('AccountAnonymizationService.recordSanctionBlock / clearSanctionBlocks'
     });
   });
 
-  it('skips accounts whose email is already anonymized', async () => {
+  it('skips accounts that are already anonymized', async () => {
     tx.users.findUnique.mockResolvedValue({
       email: `${USER_ID}-deleted@deleted.local`,
+      anonymizedAt: new Date(),
     });
 
     await AccountAnonymizationService.recordSanctionBlock(tx, USER_ID, null);
 
     expect(tx.identityBlock.create).not.toHaveBeenCalled();
+  });
+
+  it('still blocks the address of a live account that is on the reserved domain', async () => {
+    tx.users.findUnique.mockResolvedValue({
+      email: 'old-player@deleted.local',
+      anonymizedAt: null,
+    });
+
+    await AccountAnonymizationService.recordSanctionBlock(tx, USER_ID, null);
+
+    expect(tx.identityBlock.create).toHaveBeenCalled();
   });
 
   it('never weakens: a timed ban cannot shorten a permanent sanction block', async () => {
@@ -587,6 +753,7 @@ describe('AccountAnonymizationService.purgeExpiredIdentityBlocks', () => {
   beforeEach(() => {
     resetMockPrisma();
     mockPrisma.identityBlock.deleteMany.mockResolvedValue({ count: 4 });
+    mockPrisma.veteranRecord.deleteMany.mockResolvedValue({ count: 0 });
   });
 
   it('deletes only blocks with a past expiry and returns the count', async () => {
@@ -598,69 +765,134 @@ describe('AccountAnonymizationService.purgeExpiredIdentityBlocks', () => {
     expect(where.expiresAt).toBeDefined();
     expect(where.expiresAt.lte).toBeInstanceOf(Date);
   });
+
+  it('also purges expired veteran records and sums both counts', async () => {
+    mockPrisma.veteranRecord.deleteMany.mockResolvedValue({ count: 3 });
+
+    const count =
+      await AccountAnonymizationService.purgeExpiredIdentityBlocks();
+
+    expect(count).toBe(7);
+    const { where } = mockPrisma.veteranRecord.deleteMany.mock.calls[0][0];
+    expect(where.expiresAt.lte).toBeInstanceOf(Date);
+  });
 });
 
-describe('AccountService.forgetAccount (delegation)', () => {
+describe('inactivity erasure veteran records', () => {
+  let tx: ReturnType<typeof buildTx>;
+
   beforeEach(() => {
-    resetMockPrisma();
-    passwordSpies.push(vi.spyOn(argon2, 'verify').mockResolvedValue(true));
-    passwordSpies.push(
-      vi.spyOn(argon2, 'hash').mockResolvedValue('random-scrambled-hash'),
-    );
-    mockPrisma.$transaction.mockImplementation(async (cb: any) =>
-      cb(mockPrisma),
-    );
-    mockPrisma.$queryRaw = vi.fn(async () => [{ id: USER_ID }]);
-    mockPrisma.users.findUnique.mockResolvedValue(baseUser);
-    mockPrisma.users.findFirst.mockResolvedValue(null);
-    mockPrisma.users.update.mockResolvedValue({});
-    mockPrisma.emailOutbox.updateMany = vi.fn(async () => ({ count: 1 }));
-    for (const model of ['discordOutbox', 'discordLinkCode', 'discordLink'])
-      mockPrisma[model] = { deleteMany: vi.fn(async () => ({ count: 0 })) };
-    // No membership, so the post-commit billing stop has nothing to cancel.
-    mockPrisma.supporterMembership = { findUnique: vi.fn(async () => null) };
-    mockPrisma.messages = { updateMany: vi.fn(async () => ({ count: 0 })) };
-    mockPrisma.chatMessage = { updateMany: vi.fn(async () => ({ count: 0 })) };
-    mockPrisma.staffRoleAssignment.findFirst.mockResolvedValue(null);
-    mockPrisma.accountStatusHistory.findFirst.mockResolvedValue(null);
-    mockPrisma.identityBlock.findUnique.mockResolvedValue(null);
-    mockPrisma.identityBlock.create.mockResolvedValue({ id: 1 });
-    mockPrisma.identityBlock.update.mockResolvedValue({});
+    tx = buildTx();
+    passwordSpies.push(vi.spyOn(argon2, 'hash').mockResolvedValue('x'));
   });
 
-  it('verifies the password before anonymizing', async () => {
-    passwordSpies.push(vi.spyOn(argon2, 'verify').mockResolvedValue(false));
-
-    await expect(
-      AccountService.forgetAccount(USER_ID, { password: 'wrong' }),
-    ).rejects.toThrow('Invalid password.');
-    expect(mockPrisma.users.update).not.toHaveBeenCalled();
-  });
-
-  it('anonymizes via the shared service and keeps the API contract', async () => {
-    const result = await AccountService.forgetAccount(USER_ID, {
-      password: 'correct',
-      reason: ' Leaving the game ',
+  it('writes a VeteranRecord and no email cooldown for a clean inactivity erasure', async () => {
+    await AccountAnonymizationService.anonymizeAccount(tx, USER_ID, {
+      reason: 'Inactive for over 18 months',
+      initiatedBy: 'INACTIVITY',
     });
 
-    expect(result.message).toBe('Account data removed successfully.');
-    const update = mockPrisma.users.update.mock.calls[0][0].data;
-    expect(update.email).toBe(`${USER_ID}-deleted@deleted.local`);
-    expect(update.display_name).not.toBe(DISPLAY_NAME);
-    expect(mockPrisma.accountStatusHistory.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ status: 'CLOSED' }),
-      }),
+    const blocks = createdBlocks(tx);
+    expect(findBlock(blocks, 'DELETION_COOLDOWN')).toBeUndefined();
+    // The display name stays reserved as before.
+    expect(findBlock(blocks, 'RESERVED_NAME')).toBeDefined();
+
+    expect(tx.veteranRecord.upsert).toHaveBeenCalledTimes(1);
+    const { where, create } = tx.veteranRecord.upsert.mock.calls[0][0];
+    expect(where.emailHash).toBe(hashIdentity('EMAIL', EMAIL));
+    expect(create).toEqual({
+      emailHash: hashIdentity('EMAIL', EMAIL),
+      displayNameHash: hashIdentity('DISPLAY_NAME', DISPLAY_NAME),
+      title: 'ERA1_TESTER',
+      sourceUserId: USER_ID,
+      originalJoinedAt: baseUser.created_at,
+      expiresAt: expect.any(Date),
+    });
+    expect(create.expiresAt.getTime()).toBeGreaterThan(
+      Date.now() + 729 * 86400_000,
     );
-    expect(logActionStrict).toHaveBeenCalledTimes(1);
+    expect(create.expiresAt.getTime()).toBeLessThan(
+      Date.now() + 731 * 86400_000,
+    );
   });
 
-  it('no longer writes AntiAbuseShadow deletion rows', async () => {
-    mockPrisma.antiAbuseShadow.upsert = vi.fn();
+  it('writes no record for a sanctioned account', async () => {
+    tx.accountStatusHistory.findFirst.mockResolvedValue({
+      status: 'BANNED',
+      end_date: null,
+    });
 
-    await AccountService.forgetAccount(USER_ID, { password: 'correct' });
+    await AccountAnonymizationService.anonymizeAccount(tx, USER_ID, {
+      reason: 'Inactive for over 18 months',
+      initiatedBy: 'INACTIVITY',
+    });
 
-    expect(mockPrisma.antiAbuseShadow.upsert).not.toHaveBeenCalled();
+    expect(tx.veteranRecord.upsert).not.toHaveBeenCalled();
+    // The sanction block still applies.
+    expect(findBlock(createdBlocks(tx), 'SANCTION')).toBeDefined();
+    expect(findBlock(createdBlocks(tx), 'DELETION_COOLDOWN')).toBeUndefined();
+  });
+
+  it('writes no record for an account that joined after the era start', async () => {
+    tx.users.findUnique.mockResolvedValue({
+      ...baseUser,
+      created_at: new Date('2026-10-15T12:00:00.000Z'),
+    });
+
+    await AccountAnonymizationService.anonymizeAccount(tx, USER_ID, {
+      reason: 'Inactive for over 18 months',
+      initiatedBy: 'INACTIVITY',
+    });
+
+    expect(tx.veteranRecord.upsert).not.toHaveBeenCalled();
+    // The inactivity email exemption still applies without a record.
+    expect(findBlock(createdBlocks(tx), 'DELETION_COOLDOWN')).toBeUndefined();
+  });
+
+  it('writes no record and keeps the cooldown for self-deletion', async () => {
+    await AccountAnonymizationService.anonymizeAccount(tx, USER_ID, {
+      reason: 'User requested deletion',
+      initiatedBy: 'SELF',
+    });
+
+    expect(tx.veteranRecord.upsert).not.toHaveBeenCalled();
+    expect(tx.era.findFirst).not.toHaveBeenCalled();
+    expect(findBlock(createdBlocks(tx), 'DELETION_COOLDOWN')).toBeDefined();
+  });
+
+  it('skips the record when no era is running', async () => {
+    tx.era.findFirst.mockResolvedValue(null);
+
+    await AccountAnonymizationService.anonymizeAccount(tx, USER_ID, {
+      reason: 'Inactive for over 18 months',
+      initiatedBy: 'INACTIVITY',
+    });
+
+    expect(tx.veteranRecord.upsert).not.toHaveBeenCalled();
+  });
+
+  it('leaves an already-claimed record untouched', async () => {
+    await AccountAnonymizationService.anonymizeAccount(tx, USER_ID, {
+      reason: 'Inactive for over 18 months',
+      initiatedBy: 'INACTIVITY',
+    });
+
+    const { update } = tx.veteranRecord.upsert.mock.calls[0][0];
+    expect(update).toEqual({});
+  });
+
+  it('erasing a returned veteran removes their claimed record and title', async () => {
+    await AccountAnonymizationService.anonymizeAccount(tx, USER_ID, {
+      reason: 'User requested deletion',
+      initiatedBy: 'SELF',
+    });
+
+    expect(tx.veteranRecord.deleteMany).toHaveBeenCalledWith({
+      where: { claimedByUserId: USER_ID },
+    });
+    const { data } = tx.users.update.mock.calls[0][0];
+    expect(data.veteranTitle).toBeNull();
+    expect(data.veteranSince).toBeNull();
   });
 });
 

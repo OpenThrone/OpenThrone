@@ -1,6 +1,7 @@
 import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
+import { DEFAULT_ABUSE_CONFIG } from '@/constants/abuseSignals';
 import {
   isRuntimeSettingKey,
   RUNTIME_SETTING_KEYS,
@@ -40,6 +41,7 @@ const guardedHandler = withApiGuard({
 });
 
 function runtimeValue(config: RuntimeConfig, key: string): unknown {
+  const abuse = config.abuse ?? DEFAULT_ABUSE_CONFIG;
   const values: Record<string, unknown> = {
     'account.inactivity.remindersEnabled':
       config.inactivityRemindersEnabled ?? false,
@@ -57,6 +59,7 @@ function runtimeValue(config: RuntimeConfig, key: string): unknown {
     'era.protectionLevelLimit': config.protectionLevelLimit,
     'bank.depositCapPercent': config.depositCapPercent,
     'friend.dailyReceivedCap': config.friendDailyReceivedCap,
+    'friend.transferMinLevel': config.friendTransferMinLevel,
     'alliance.maxPendingGoldRequests': config.maxPendingGoldRequests,
     'force.maxQuantity': config.forceMaxQuantity,
     'force.maxTermDays': config.forceMaxTermDays,
@@ -67,6 +70,25 @@ function runtimeValue(config: RuntimeConfig, key: string): unknown {
     'alliance.memberDailyCapMin': config.allianceMemberDailyCapMin,
     'alliance.memberDailyCapMax': config.allianceMemberDailyCapMax,
     'alliance.loanIncomeSharePercent': config.allianceLoanIncomeSharePercent,
+    'alliance.reactivationMinLevel': config.allianceReactivationMinLevel,
+    'alliance.reactivationCostGold': config.allianceReactivationCostGold,
+    'abuse.enabled': abuse.enabled,
+    'abuse.network.minAccounts': abuse.network.minAccounts,
+    'abuse.network.windowDays': abuse.network.windowDays,
+    'abuse.funnel.windowDays': abuse.funnel.windowDays,
+    'abuse.funnel.minSources': abuse.funnel.minSources,
+    'abuse.funnel.minSharePercent': abuse.funnel.minSharePercent,
+    'abuse.funnel.minGold': abuse.funnel.minGold,
+    'abuse.funnel.minActionsPerSource': abuse.funnel.minActionsPerSource,
+    'abuse.pingPong.minTransfersEachWay': abuse.pingPong.minTransfersEachWay,
+    'abuse.pingPong.minGoldEachWay': abuse.pingPong.minGoldEachWay,
+    'abuse.bot.minHoursPerDay': abuse.bot.minHoursPerDay,
+    'abuse.bot.minDays': abuse.bot.minDays,
+    'abuse.bot.minGapSamples': abuse.bot.minGapSamples,
+    'abuse.bot.maxVariationPercent': abuse.bot.maxVariationPercent,
+    'abuse.fresh.accountAgeDays': abuse.fresh.accountAgeDays,
+    'abuse.fresh.windowDays': abuse.fresh.windowDays,
+    'abuse.fresh.minAttacks': abuse.fresh.minAttacks,
     ENABLE_SUPPORTER: config.enableSupporter,
     'stamina.penaltyThreshold': (config.stamina ?? DEFAULT_STAMINA_RULES)
       .penaltyThreshold,

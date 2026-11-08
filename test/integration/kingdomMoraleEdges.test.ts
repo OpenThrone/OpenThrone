@@ -776,6 +776,55 @@ describe('defector recipient eligibility', () => {
     expect(await armyOf(loser.id)).toBe(9900);
   });
 
+  test('a RESERVED alliance does not block defectors; an ACTIVE one does (#13)', async () => {
+    const run = async (status: 'ACTIVE' | 'RESERVED') => {
+      await resetDatabase();
+      await setDesertion(true);
+      await seedEra();
+      const now = Date.now();
+      const loser = await createPlayer(`Reserve loser ${status}`);
+      const mate = await createPlayer(`Reserve mate ${status}`);
+      await prisma.users.update({
+        where: { id: loser.id },
+        data: {
+          experience: UNPROTECTED_XP,
+          last_active: new Date(now - 30 * HOUR_MS),
+          kingdom_morale: 15,
+        },
+      });
+      await setUnits(loser.id, 'DEFENSE', 10000);
+      await prisma.users.update({
+        where: { id: mate.id },
+        data: {
+          experience: UNPROTECTED_XP,
+          last_active: new Date(now - 1 * HOUR_MS),
+        },
+      });
+      await setUnits(mate.id, 'OFFENSE', 1000);
+      await setUnits(mate.id, 'DEFENSE', 1000);
+      await logAttack(mate.id, loser.id, new Date(now - 1 * HOUR_MS));
+      const alliance = await prisma.alliances.create({
+        data: { name: `Pact ${status}`, leader_id: loser.id, status },
+      });
+      const role = await prisma.alliance_roles.create({
+        data: { name: 'Member', alliance_id: alliance.id },
+      });
+      for (const memberId of [loser.id, mate.id]) {
+        await prisma.alliance_memberships.create({
+          data: {
+            alliance_id: alliance.id,
+            user_id: memberId,
+            role_id: role.id,
+          },
+        });
+      }
+      await CronJobService.processDailyUpdates();
+      return prisma.desertionEvent.count({ where: { kind: 'DEFECT' } });
+    };
+    expect(await run('ACTIVE')).toBe(0);
+    expect(await run('RESERVED')).toBe(1);
+  });
+
   test('the loser never receives its own defectors: everything abandons', async () => {
     const now = Date.now();
     const player = await createPlayer('Self defection');

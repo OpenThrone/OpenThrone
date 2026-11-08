@@ -13,6 +13,7 @@ import {
 } from '@/services/BattleProtection.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { simulateBattle } from '@/utils/attackFunctions';
+import { getCombatRuleset } from '@/utils/balance/combatRulesets';
 import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { getBattleUpgradeStructure } from '@/utils/battleUpgradeStructure';
 import {
@@ -49,6 +50,9 @@ import { AttackService } from './AttackService';
 
 // Type definitions for battle operations
 /** Describes the battle upgrade item data contract. */
+const woundedTotal = (losses?: { quantity: number }[]) =>
+  (losses ?? []).reduce((sum, loss) => sum + loss.quantity, 0);
+
 export interface BattleUpgradeItem {
   type?: string;
   level?: number;
@@ -743,10 +747,13 @@ export class BattleService {
 
       // Version/algorithm validation and seed authentication happen before execution.
       const random = replayCombatRandom(replay);
+      // The battle replays under the rules of its own formula version.
+      const ruleset = getCombatRuleset(replay.formulaVersion)!;
       if (replay.domain === 'spy') {
-        const attacker = restoreSpyUser(replay.attacker);
-        const defender = restoreSpyUser(replay.defender);
+        const attacker = restoreSpyUser(replay.attacker, ruleset);
+        const defender = restoreSpyUser(replay.defender, ruleset);
         const options = {
+          ruleset,
           random,
           turns: replay.turns,
           spyPressureToday: replay.spyPressureToday,
@@ -773,8 +780,8 @@ export class BattleService {
           result: results,
         });
       }
-      const attacker = restoreBattleUser(replay.attacker);
-      const defender = restoreBattleUser(replay.defender);
+      const attacker = restoreBattleUser(replay.attacker, ruleset);
+      const defender = restoreBattleUser(replay.defender, ruleset);
       const attackerOffense = attacker.offense;
       const defenderDefense = defender.defense;
       const results = await simulateBattle(
@@ -785,6 +792,7 @@ export class BattleService {
         false,
         replay.defenderProtected,
         {
+          ruleset,
           random,
           defenderDailyCasualtyRemaining: replay.defenderDailyCasualtyRemaining,
           defenderDailyGoldRemaining: BigInt(replay.defenderDailyGoldRemaining),
@@ -828,9 +836,14 @@ export class BattleService {
             ['DEFENSE', 'WORKER', 'CITIZEN'].includes(unit.type),
           )
           .reduce((total, unit) => total + unit.quantity, 0),
-        newSimulationAttackerLossesTotal: results.Losses.Attacker.total,
+        // Same basis as the stored attack log totals: killed plus wounded.
+        newSimulationAttackerLossesTotal:
+          results.Losses.Attacker.total +
+          woundedTotal(results.wounded?.attacker),
         newSimulationAttackerLossesBreakdown: results.Losses.Attacker,
-        newSimulationDefenderLossesTotal: results.Losses.Defender.total,
+        newSimulationDefenderLossesTotal:
+          results.Losses.Defender.total +
+          woundedTotal(results.wounded?.defender),
         newSimulationDefenderLossesBreakdown: results.Losses.Defender,
         fortHPAtEnd: results.finalFortHP,
         attackerWon: results.result === 'WIN',
@@ -1264,67 +1277,6 @@ export class BattleService {
         attackerId,
         error,
       });
-      throw error;
-    }
-  }
-
-  /**
-   * Gets comprehensive battle statistics for a user
-   */
-  static async getBattleStats(userId: number) {
-    try {
-      const [
-        totalAttacks,
-        successfulAttacks,
-        totalDefenses,
-        successfulDefenses,
-        totalPillageResult,
-      ] = await Promise.all([
-        prisma.attack_log.count({ where: { attacker_id: userId } }),
-        prisma.attack_log.count({
-          where: {
-            attacker_id: userId,
-            winner: userId,
-          },
-        }),
-        prisma.attack_log.count({ where: { defender_id: userId } }),
-        prisma.attack_log.count({
-          where: {
-            defender_id: userId,
-            winner: userId,
-          },
-        }),
-        prisma.attack_log.aggregate({
-          _sum: {
-            stats: true,
-          },
-          where: {
-            attacker_id: userId,
-            winner: userId,
-          },
-        }),
-      ]);
-
-      const attackWinRate =
-        totalAttacks > 0 ? (successfulAttacks / totalAttacks) * 100 : 0;
-      const defenseWinRate =
-        totalDefenses > 0 ? (successfulDefenses / totalDefenses) * 100 : 0;
-
-      return {
-        attacks: {
-          total: totalAttacks,
-          successful: successfulAttacks,
-          winRate: Math.round(attackWinRate * 100) / 100,
-        },
-        defenses: {
-          total: totalDefenses,
-          successful: successfulDefenses,
-          winRate: Math.round(defenseWinRate * 100) / 100,
-        },
-        totalPillage: totalPillageResult._sum.stats || 0,
-      };
-    } catch (error: any) {
-      logError('Error getting battle stats', { userId, error });
       throw error;
     }
   }

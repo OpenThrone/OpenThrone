@@ -129,7 +129,10 @@ describe('recommendation report visibility', () => {
     ]);
     expect((await getAttackRecommendation(1, 2)).evidence).toHaveLength(2);
     expect(mockPrisma.alliance_memberships.findFirst).not.toHaveBeenCalled();
-    const [, scope] = mockPrisma.attack_log.findMany.mock.calls[0][0].where.AND;
+    const [, voidedScope, scope] =
+      mockPrisma.attack_log.findMany.mock.calls[0][0].where.AND;
+    // A voided battle is never evidence (#229).
+    expect(voidedScope).toEqual({ voidedAt: null });
     expect(scope).toEqual({
       OR: [
         { type: 'attack', attacker_id: 1, defender_id: 2 },

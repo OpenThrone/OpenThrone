@@ -1,7 +1,8 @@
-import { UnitTypes } from '@/constants';
 import type { users as PrismaUser, UserUnit } from '@/lib/prisma-exports';
 import { UserStatsService } from '@/services/UserStatsService';
 import type { FortHealth } from '@/types/typings';
+import type { CombatRuleset } from '@/utils/balance/combatRuleset';
+import { CURRENT_COMBAT_RULESET } from '@/utils/balance/combatRulesets';
 import {
   getProtectionStatus,
   PROTECTION_LEVEL_LIMIT,
@@ -26,6 +27,8 @@ export class BattleUser extends BaseUser {
 
   public sentry: number;
 
+  private readonly ruleset: CombatRuleset;
+
   private readonly allUnits: UserUnit[];
 
   private readonly allMercenaries: UserUnit[];
@@ -42,8 +45,13 @@ export class BattleUser extends BaseUser {
     settings: ProtectionSettings;
   } | null = null;
 
-  constructor(userData?: PrismaUser | null, relations: BaseUserRelations = {}) {
+  constructor(
+    userData?: PrismaUser | null,
+    relations: BaseUserRelations = {},
+    ruleset: CombatRuleset = CURRENT_COMBAT_RULESET,
+  ) {
     super(userData, relations);
+    this.ruleset = ruleset;
 
     this.protectionFields = {
       eraJoinedAt: userData?.era_joined_at ?? null,
@@ -58,18 +66,21 @@ export class BattleUser extends BaseUser {
     this.units = this.filterUnlockedUnits(this.allUnits);
     this.mercenaries = this.filterUnlockedUnits(this.allMercenaries);
 
-    this.statsService = new UserStatsService({
-      experience: this.experience,
-      units: [...this.units, ...this.mercenaries],
-      items: this.items,
-      bonus_points: this.bonus_points,
-      structure_upgrades: this.structure_upgrades,
-      battle_upgrades: this.battle_upgrades,
-      fortLevel: this.fortLevel,
-      fortHitpoints: this.fortHitpoints,
-      race: this.race,
-      class: this.class,
-    });
+    this.statsService = new UserStatsService(
+      {
+        experience: this.experience,
+        units: [...this.units, ...this.mercenaries],
+        items: this.items,
+        bonus_points: this.bonus_points,
+        structure_upgrades: this.structure_upgrades,
+        battle_upgrades: this.battle_upgrades,
+        fortLevel: this.fortLevel,
+        fortHitpoints: this.fortHitpoints,
+        race: this.race,
+        class: this.class,
+      },
+      ruleset,
+    );
 
     this.offense = 0;
     this.defense = 0;
@@ -79,7 +90,7 @@ export class BattleUser extends BaseUser {
   }
 
   get level(): number {
-    return getLevelFromXP(this.experience);
+    return getLevelFromXP(this.experience, this.ruleset.levelXp);
   }
 
   /** Supplies the era and admin settings the shared protection rule needs (see BattleProtection.service). */
@@ -182,7 +193,7 @@ export class BattleUser extends BaseUser {
 
   private filterUnlockedUnits(units: UserUnit[]): UserUnit[] {
     return (Array.isArray(units) ? units : []).filter((unit) => {
-      const unitInfo = UnitTypes.find(
+      const unitInfo = this.ruleset.units.find(
         (info) => info.type === unit.type && info.level === (unit.level || 1),
       );
       if (!unitInfo) return true;

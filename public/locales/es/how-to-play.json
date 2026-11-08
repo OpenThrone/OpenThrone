@@ -84,6 +84,9 @@
       "title": "Fortificaciones",
       "text": "Fortalece tus defensas. Muros más altos significan menos bajas al ser atacado."
     },
+    "transfers": {
+      "title": "Transferencias de oro"
+    },
     "mines": {
       "title": "Minas",
       "text": "Aumenta la generación pasiva de oro. Esencial para el crecimiento a largo plazo."
@@ -104,16 +107,26 @@
       "title": "Operaciones de Espionaje",
       "text": "Envía espías para explorar las tropas enemigas antes de comprometerte en un ataque."
     },
+    "losses": {
+      "title": "Bajas",
+      "text": "Las bajas recaen en todos los niveles de tus unidades en proporción al número de tropas de cada nivel, así que las tropas baratas de nivel 1 ya no protegen a tus mejores unidades. Los mercenarios contratados siguen ocupando la primera línea dentro de su nivel."
+    },
     "stamina": {
       "title": "Resistencia"
     }
   },
   "alliances": {
     "title": "Alianzas",
-    "description": "Ningún comandante gobierna solo. Únete o crea una alianza para protección mutua, ataques coordinados y gloria compartida."
+    "description": "Ningún comandante gobierna solo. Únete o crea una alianza para protección mutua, ataques coordinados y gloria compartida.",
+    "eraReserve": "Las alianzas sobreviven a una nueva era. Cuando termina una era, cada alianza queda reservada: se conservan su nombre, miembros, rangos e imágenes, pero su tesorería, préstamos, contratos de tropas y guerras se cierran y sus funciones permanecen bloqueadas. Los miembros pueden abandonarla en cualquier momento. El líder reactiva la alianza en la nueva era al alcanzar el nivel 10 y pagar 10.000.000 de oro (los administradores pueden cambiar ambos valores)."
   },
   "cta": {
     "createCommander": "Crear un Comandante",
     "returnToBattle": "Volver a la Batalla"
+  },
+  "yourData": {
+    "title": "Tus datos",
+    "description": "Ajustes tiene una sección «Tus datos»: descarga una copia de los datos de tu cuenta y del juego, o pide que se borre tu cuenta. La eliminación se confirma por correo y luego espera 14 días, así que aún puedes cambiar de opinión.",
+    "link": "Abrir ajustes"
   }
 }

@@ -18,7 +18,7 @@ import type { Prisma } from '@/lib/prisma-exports';
 import { BattleUser } from '@/models/BattleUser';
 import UserModel from '@/models/Users';
 import {
-  divertIncomeToLoans,
+  divertIncomeToLoansDetailed,
   settleLoanTreasuryCredits,
 } from '@/services/AllianceLoan.service';
 import {
@@ -309,6 +309,7 @@ export const AttackService = {
                 attacker_id: attackerId,
                 defender_id: defenderId,
                 type: 'attack',
+                voidedAt: null,
                 timestamp: {
                   gte: new Date(Date.now() - 1000 * 60 * 60 * 24),
                 },
@@ -329,7 +330,11 @@ export const AttackService = {
               const sharedMembership = await tx.alliance_memberships.findFirst({
                 where: {
                   user_id: attackerId,
-                  alliance: { members: { some: { user_id: defenderId } } },
+                  // A RESERVED alliance is not an alliance in play (#13).
+                  alliance: {
+                    status: 'ACTIVE',
+                    members: { some: { user_id: defenderId } },
+                  },
                 },
                 orderBy: { alliance_id: 'asc' },
                 select: { alliance: { select: { id: true, name: true } } },
@@ -358,6 +363,8 @@ export const AttackService = {
               where: {
                 defender_id: defenderId,
                 type: { in: ['attack', 'ASSASSINATE'] },
+                // A voided battle's casualties and loot were compensated.
+                voidedAt: null,
                 timestamp: { gte: startOfToday },
               },
               _sum: { defender_losses_total: true, pillaged_gold: true },
@@ -530,6 +537,12 @@ export const AttackService = {
             // (SHOW_DUNGEON off) nothing is captured: those units simply die,
             // exactly as they do for the defender either way.
             let captivesTaken = 0;
+            let capturedRows: Array<{
+              id: number;
+              type: string;
+              level: number;
+              quantity: number;
+            }> = [];
             if (
               runtimeConfig.showDungeon &&
               isAttackerWinner &&
@@ -544,13 +557,18 @@ export const AttackService = {
                 'DUNGEON',
               )
             ) {
-              captivesTaken = await CaptiveService.captureFromBattle(tx, {
-                captorId: attackerId,
-                sourceId: defenderId,
-                eraId: attackerUser.currentEraId,
-                captorFortLevel: attackerUser.fort_level ?? 0,
-                killedUnits: resolvedBattle.Losses.Defender.units,
-              });
+              const captured = await CaptiveService.captureFromBattleDetailed(
+                tx,
+                {
+                  captorId: attackerId,
+                  sourceId: defenderId,
+                  eraId: attackerUser.currentEraId,
+                  captorFortLevel: attackerUser.fort_level ?? 0,
+                  killedUnits: resolvedBattle.Losses.Defender.units,
+                },
+              );
+              captivesTaken = captured.taken;
+              capturedRows = captured.rows;
             }
 
             // Undead reanimation (#211): every UNDEAD side with the feature
@@ -646,12 +664,36 @@ export const AttackService = {
               pillage,
               forcePillageKey,
             );
-            const loanRepayment = await divertIncomeToLoans(
+            const loanDiversion = await divertIncomeToLoansDetailed(
               tx,
               attackerId,
               pillage - forceContribution,
               'pillage',
             );
+            const loanRepayment = loanDiversion.diverted;
+
+            // Kingdom morale (#205) and garrison pressure the defender row gets
+            // below; computed here so the void ledger (#229) can record them.
+            const defenderMoraleBefore = Number(
+              defenderUser.kingdom_morale ?? KINGDOM_MORALE_DEFAULT,
+            );
+            const defenderMoraleAfter = Math.max(
+              disciplineMoraleFloor(
+                defenderUser.race === 'HUMAN'
+                  ? defenderUser.racial_perk_tier
+                  : 0,
+              ),
+              applyMoraleDelta(
+                defenderMoraleBefore,
+                isAttackerWinner ? MORALE_DEFENSE_LOST : MORALE_DEFENSE_WON,
+              ),
+            );
+            const defensePressureAfter = isAttackerWinner
+              ? currentDefensePressure + committedTurns
+              : repelledPressureRecovery(
+                  currentDefensePressure,
+                  committedTurns,
+                );
 
             // Logs, outcome economics and bank history share the engine's amount.
             const attackerLossesTotal =
@@ -824,6 +866,41 @@ export const AttackService = {
                   reanimated_units: {
                     attacker: reanimatedUnitsTotal(reanimation.attacker),
                     defender: reanimatedUnitsTotal(reanimation.defender),
+                  },
+                  // What the battle changed beyond the headline numbers, kept
+                  // so an admin void (#229) can reverse each effect exactly.
+                  // Never shown to players (report redaction is an allowlist).
+                  voidLedger: {
+                    version: 1,
+                    loanRepayments: loanDiversion.repayments.map((entry) => ({
+                      loanId: entry.loanId,
+                      allianceId: entry.allianceId,
+                      amount: entry.amount.toString(),
+                    })),
+                    reanimation: {
+                      day: getOTDayKey(),
+                      attacker: reanimation.attacker.map((grant) => ({
+                        ...grant,
+                      })),
+                      defender: reanimation.defender.map((grant) => ({
+                        ...grant,
+                      })),
+                    },
+                    sanctuary: {
+                      day: getOTDayKey(),
+                      grants: sanctuary.map((grant) => ({ ...grant })),
+                    },
+                    captives: capturedRows,
+                    morale: {
+                      applied: !defenderExemptFromMorale,
+                      before: defenderMoraleBefore,
+                      after: defenderMoraleAfter,
+                    },
+                    pressure: {
+                      day: todayKey,
+                      before: currentDefensePressure,
+                      after: defensePressureAfter,
+                    },
                   },
                 },
                 // Connect to users via relation fields
@@ -1045,18 +1122,6 @@ export const AttackService = {
             // defender row is locked above, so this write is authoritative
             // inside the same battle transaction. (defenderExemptFromMorale
             // was computed before the attack log was written, above.)
-            const defenderMoraleAfter = Math.max(
-              disciplineMoraleFloor(
-                defenderUser.race === 'HUMAN'
-                  ? defenderUser.racial_perk_tier
-                  : 0,
-              ),
-              applyMoraleDelta(
-                Number(defenderUser.kingdom_morale ?? KINGDOM_MORALE_DEFAULT),
-                isAttackerWinner ? MORALE_DEFENSE_LOST : MORALE_DEFENSE_WON,
-              ),
-            );
-
             await updateUser(
               defenderId,
               {
@@ -1076,12 +1141,7 @@ export const AttackService = {
                 // but a repelled attack refunds only half its turns (it nets
                 // +ceil(turns/2)), so it never erases the pressure earlier
                 // attackers built up today.
-                defense_pressure_today: isAttackerWinner
-                  ? currentDefensePressure + committedTurns
-                  : repelledPressureRecovery(
-                      currentDefensePressure,
-                      committedTurns,
-                    ),
+                defense_pressure_today: defensePressureAfter,
                 defense_pressure_date: new Date(),
               } satisfies Prisma.usersUpdateInput,
               tx,

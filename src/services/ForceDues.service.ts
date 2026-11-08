@@ -4,6 +4,10 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import type { ForceObligation, Prisma } from '@/lib/prisma-exports';
 import { lockAllianceThenUsers } from '@/services/AllianceBank.service';
+import {
+  assertAllianceActive,
+  assertAllianceIdActive,
+} from '@/services/allianceStatus';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { TemporaryForceLedgerService as Ledger } from '@/services/TemporaryForceLedger.service';
 import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
@@ -94,6 +98,7 @@ async function leader(
   const alliance = await tx.alliances.findUniqueOrThrow({
     where: { id: allianceId },
   });
+  assertAllianceActive(alliance);
   if (alliance.leader_id !== actorId)
     throw new Error('Alliance leadership is required');
 }
@@ -222,6 +227,7 @@ export async function payForceDuesInTx(
   if (obligation.eraId !== owner.currentEraId)
     throw new Error('Obligation belongs to an earlier era');
   if (obligation.cancelledAt) throw new Error('Obligation is cancelled');
+  await assertAllianceIdActive(tx, obligation.allianceId);
   if (
     !(await tx.alliance_memberships.findUnique({
       where: {

@@ -41,7 +41,10 @@ export default function PublicAuthLayout({
           {sceneChildren}
         </Box>
         <Box component="section" className={classes.authForm}>
-          <Title order={2} className={classes.sectionTitle}>
+          <Title
+            order={2}
+            className={`${classes.sectionTitle} ${classes.authSectionTitle}`}
+          >
             {formTitle}
           </Title>
           {children}

@@ -210,4 +210,15 @@ export class StripeProvider implements PaymentProvider {
       });
     return true;
   }
+
+  async resumeSubscription(subscriptionId: string) {
+    const subscription = await this.api.subscriptions.retrieve(subscriptionId);
+    if (['canceled', 'incomplete_expired'].includes(subscription.status))
+      return false;
+    if (!subscription.cancel_at_period_end) return false;
+    await this.api.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: false,
+    });
+    return true;
+  }
 }

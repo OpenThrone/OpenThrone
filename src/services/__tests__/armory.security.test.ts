@@ -106,18 +106,6 @@ beforeEach(() => {
   (prisma as any).$transaction = mock(async (cb: any) => cb(tx));
 });
 
-// The convert parser splits "USAGE_<ItemTypes id>" where the ItemTypes id is "OFFENSE_<NAME>"
-const convertArgs = (
-  fromId: string,
-  toId: string,
-  conversionAmount: number,
-) => ({
-  userId: 7,
-  fromItem: `OFFENSE_OFFENSE_${fromId}`,
-  toItem: `OFFENSE_OFFENSE_${toId}`,
-  conversionAmount,
-});
-
 describe('ArmoryService.equipItems armory level gate (F-08)', () => {
   const hatchet = {
     type: 'WEAPON',
@@ -180,109 +168,6 @@ describe('ArmoryService.equipItems race gate', () => {
       items: [{ type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 1 }],
     });
     expect(db.gold).toBe(1_000_000n - 12_500n);
-  });
-});
-
-describe('ArmoryService.convertItems rules (F-01)', () => {
-  beforeEach(() => {
-    db.structure = [{ type: 'ARMORY', level: 7 }];
-  });
-
-  it('rejects converting an item to the same level', async () => {
-    db.items = [{ type: 'WEAPON', usage: 'OFFENSE', level: 6, quantity: 5 }];
-    await expect(
-      ArmoryService.convertItems(convertArgs('SHORT-SWORD', 'GREAT-SWORD', 1)), // both WEAPON level 6
-    ).rejects.toThrow('Cannot convert items to the same level');
-    expect(db.gold).toBe(1_000_000n);
-  });
-
-  it('rejects converting between different equipment types', async () => {
-    db.items = [{ type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 10 }];
-    await expect(
-      ArmoryService.convertItems(convertArgs('DAGGER', 'LEATHER-HOOD', 4)),
-    ).rejects.toThrow('Cannot convert between different item types');
-    expect(db.gold).toBe(1_000_000n);
-    expect(db.items).toEqual([
-      { type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 10 },
-    ]);
-  });
-
-  it('rejects converting between different usages', async () => {
-    db.items = [{ type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 1 }];
-    await expect(
-      ArmoryService.convertItems({
-        userId: 7,
-        fromItem: 'OFFENSE_OFFENSE_DAGGER',
-        toItem: 'DEFENSE_DEFENSE_HATCHET',
-        conversionAmount: 1,
-      }),
-    ).rejects.toThrow('Cannot convert between different item types');
-  });
-
-  it('blocks the reported Dagger -> Hood -> Hatchet -> Dagger chain', async () => {
-    db.items = [{ type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 1 }];
-    await expect(
-      ArmoryService.convertItems(
-        convertArgs('DAGGER', 'STUDDED-LEATHER-HOOD', 1),
-      ),
-    ).rejects.toThrow('Cannot convert between different item types');
-    expect(db.gold).toBe(1_000_000n);
-  });
-
-  it('rejects a target above the armory level', async () => {
-    db.structure = [{ type: 'ARMORY', level: 1 }];
-    db.items = [{ type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 2 }];
-    await expect(
-      ArmoryService.convertItems(convertArgs('DAGGER', 'HATCHET', 1)),
-    ).rejects.toThrow('requires armory level 2');
-    expect(db.gold).toBe(1_000_000n);
-  });
-
-  it('rejects a target restricted to another race', async () => {
-    db.race = 'ELF';
-    db.items = [{ type: 'WEAPON', usage: 'OFFENSE', level: 6, quantity: 1 }];
-    await expect(
-      ArmoryService.convertItems(convertArgs('SHORT-SWORD', 'LONG-SWORD', 1)),
-    ).rejects.toThrow('not available to ELF');
-    expect(db.gold).toBe(1_000_000n);
-  });
-
-  it('values the source at the cheapest item sharing its inventory slot', async () => {
-    // GREAT-SWORD (600000) shares the WEAPON/OFFENSE/6 row with SHORT-SWORD (500000).
-    // Naming the pricier alias must not raise the refund: (500000 - 200000) * 0.75 = 225000
-    db.items = [{ type: 'WEAPON', usage: 'OFFENSE', level: 6, quantity: 1 }];
-    await ArmoryService.convertItems(
-      convertArgs('GREAT-SWORD', 'BATTLE-AXE', 1),
-    );
-    expect(db.gold).toBe(1_000_000n + 225_000n);
-  });
-
-  it('pays a refund only when the target is strictly cheaper', async () => {
-    // HATCHET (level 2, 25000) -> DAGGER (level 1, 12500): 4 * 12500 * 0.75 = 37500
-    db.items = [{ type: 'WEAPON', usage: 'OFFENSE', level: 2, quantity: 4 }];
-    await ArmoryService.convertItems(convertArgs('HATCHET', 'DAGGER', 4));
-    expect(db.gold).toBe(1_000_000n + 37_500n);
-  });
-
-  it('charges the difference when upgrading to a more expensive item', async () => {
-    // DAGGER (level 1, 12500) -> HATCHET (level 2, 25000): 2 * 12500 = 25000
-    db.items = [{ type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 2 }];
-    await ArmoryService.convertItems(convertArgs('DAGGER', 'HATCHET', 2));
-    expect(db.gold).toBe(1_000_000n - 25_000n);
-  });
-
-  it('a round trip up and back down loses gold', async () => {
-    db.items = [{ type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 2 }];
-    await ArmoryService.convertItems(convertArgs('DAGGER', 'HATCHET', 2));
-    await ArmoryService.convertItems(convertArgs('HATCHET', 'DAGGER', 2));
-    // -25000 + 18750
-    expect(db.gold).toBe(1_000_000n - 6_250n);
-  });
-
-  it('locks the user row before reading items and gold', async () => {
-    db.items = [{ type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 2 }];
-    await ArmoryService.convertItems(convertArgs('DAGGER', 'HATCHET', 1));
-    expect(calls[0]).toBe('lock');
   });
 });
 

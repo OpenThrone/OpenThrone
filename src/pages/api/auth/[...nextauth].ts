@@ -11,6 +11,7 @@ import {
 import prisma from '@/lib/prisma';
 import { isSessionAccountCurrent } from '@/lib/sessionAccount';
 import { AccountService } from '@/services/Account.service';
+import { cancelErasure } from '@/services/AccountErasure.service';
 import { cancelInactivityOnLogin } from '@/services/AccountInactivity.service';
 import { recordSuccessfulLogin } from '@/services/LoginTelemetry.service';
 import {
@@ -95,11 +96,13 @@ export const isImpersonationExpired = (user: unknown, now = Date.now()) => {
 };
 
 /** Account-state refusals the login form acts on (shown only after the password matched). */
-type LoginRefusalCode = 'closed' | 'vacation' | 'restricted';
+type LoginRefusalCode = 'closed' | 'vacation' | 'restricted' | 'erasure';
 
 type CredentialRefusal = {
   error: string;
   code?: LoginRefusalCode;
+  /** ISO date the scheduled erasure runs; only with code 'erasure'. */
+  erasureDate?: string;
 };
 
 const STATUS_REFUSALS: Record<string, CredentialRefusal> = {
@@ -133,7 +136,7 @@ const validateCredentials = async (
   email: string,
   password: string,
   totpToken: string | undefined,
-  options: { endVacation: boolean },
+  options: { endVacation: boolean; cancelErasure: boolean; ip?: string },
 ): Promise<{ failed: boolean; result: CredentialRefusal | any }> => {
   const user = await prisma.users.findUnique({
     where: {
@@ -167,6 +170,35 @@ const validateCredentials = async (
     return refuse({ error: 'Login is disabled' });
   }
 
+  // A scheduled erasure deactivates the account with a CLOSED row. The player
+  // who proves the password (and TOTP) may cancel it and carry on signing in.
+  // A TOTP code is single-use, so a code verified for the cancel is not asked again.
+  let totpVerified = false;
+  const scheduledErasure = await prisma.accountErasureRequest.findFirst({
+    where: { userId: user.id, status: 'PENDING' },
+    select: { scheduledFor: true },
+  });
+  if (scheduledErasure) {
+    if (!options.cancelErasure) {
+      return refuse({
+        error: 'This account is scheduled for deletion',
+        code: 'erasure',
+        erasureDate: scheduledErasure.scheduledFor?.toISOString(),
+      });
+    }
+    if (user.twoFactorSecret) {
+      if (!totpToken) return refuse({ error: '2FA token required' });
+      if (!(await verifyTotpOnce(user.id, user.twoFactorSecret, totpToken))) {
+        return { failed: true, result: { error: 'Invalid 2FA token' } };
+      }
+      totpVerified = true;
+    }
+    await cancelErasure(user.id, {
+      by: 'USER',
+      ip: options.ip ?? 'unknown',
+    });
+  }
+
   // Check the stored status before getUpdatedStatus, which can rewrite a
   // CLOSED record to INACTIVE once last_active is stale.
   const storedStatus = await getLoginBlockingStatus(user.id);
@@ -183,7 +215,7 @@ const validateCredentials = async (
     });
   }
 
-  if (user.twoFactorSecret) {
+  if (user.twoFactorSecret && !totpVerified) {
     // First step of a 2FA login: the password matched, so this is no failure.
     if (!totpToken) return refuse({ error: '2FA token required' });
     if (!(await verifyTotpOnce(user.id, user.twoFactorSecret, totpToken))) {
@@ -202,9 +234,9 @@ const validateCredentials = async (
   }
 
   if (storedHash.startsWith('$2b$')) {
-    await updatePasswordEncryption(email, password);
+    await updatePasswordEncryption(user.email, password);
   }
-  await updateLastActive(email);
+  await updateLastActive(user.email);
 
   return {
     failed: false,
@@ -228,6 +260,8 @@ const CredentialsSchema = z
     // Set by the login form after a vacation refusal; honoured only once the
     // password (and TOTP when enabled) verify.
     endVacation: z.enum(['true', 'false']).optional(),
+    // Set by the login form after an erasure refusal; same re-proof as above.
+    cancelErasure: z.enum(['true', 'false']).optional(),
   })
   .superRefine((data, ctx) => {
     const isImpersonation =
@@ -288,6 +322,7 @@ const buildCredentialsProvider = (clientIp?: string, userAgent?: string) =>
         impersonationTicket,
         returnToAdmin,
         endVacation,
+        cancelErasure: cancelErasureFlag,
       } = validatedCredentials.data;
       const isReturn = returnToAdmin === 'true';
 
@@ -406,6 +441,8 @@ const buildCredentialsProvider = (clientIp?: string, userAgent?: string) =>
         const checked = await withLoginFailureBudget(email, clientIp, () =>
           validateCredentials(email, password, totpToken, {
             endVacation: endVacation === 'true',
+            cancelErasure: cancelErasureFlag === 'true',
+            ip: clientIp,
           }),
         );
         if (checked === null) throw new Error(TOO_MANY_LOGIN_ATTEMPTS);
@@ -418,7 +455,13 @@ const buildCredentialsProvider = (clientIp?: string, userAgent?: string) =>
         if (result.code) {
           // The form reads `code` to offer ending vacation or filing an appeal.
           throw new Error(
-            JSON.stringify({ message: result.error, code: result.code }),
+            JSON.stringify({
+              message: result.error,
+              code: result.code,
+              ...(result.erasureDate
+                ? { erasureDate: result.erasureDate }
+                : {}),
+            }),
           );
         }
         throw new Error(result.error);

@@ -66,9 +66,12 @@
         "Sign-in fingerprints: 30 days.",
         "IP addresses in our administration audit log: 90 days. The record of the action itself is kept for security.",
         "Discord alert messages: 14 days after they are sent.",
-        "Payment records: as long as tax and accounting law requires.",
-        "Moderation records (reports, notes, sanctions): as long as needed to enforce the rules and handle appeals.",
+        "Payment records: as long as tax and accounting law requires, including after an account is deleted (they then appear under the random name).",
+        "Moderation records (reports, notes, sanctions): as long as needed to enforce the rules and handle appeals. If an account is deleted while a ban or suspension is running, its abuse signals and staff notes are kept until that sanction ends and then erased, together with the text of its appeals and of closed reports it filed. These stay under the random name: the sanction history and its reasons, reports other players filed about the account, and the decisions on its appeals.",
+        "Finished account-deletion requests: 365 days, as proof the request was handled (they hold no free text).",
+        "Data-download log (date and size only, no content): 90 days.",
         "Anti-abuse fingerprints after an account is deleted: a one-way fingerprint of the email address for 30 days (or until a ban ends), and of the display name permanently, so bans cannot be dodged and names cannot be reused.",
+        "Accounts erased for inactivity: a one-way fingerprint of the email address for two years (so a returning player can be recognised and honoured), and the display name stays reserved.",
         "Our servers also keep technical logs, which can include IP addresses, for a limited period for security and troubleshooting.",
         "Inactive accounts: if you have not signed in for 12 months, we may email you and delete the account 6 months later unless you sign in."
       ]
@@ -76,15 +79,16 @@
     "delete": {
       "title": "Deleting your account",
       "body": [
-        "You can delete your account from Settings. We then erase your email address, password, authenticator secret, bio, avatar files and Discord link, replace your display name with a random name, and erase the text of private and chat messages you wrote.",
-        "We keep: game history under the random name, so other players' battle records stay intact; payment records required by law; and moderation records.",
-        "To stop people dodging bans or reusing names, we keep a one-way fingerprint of your email address for 30 days (or until a ban ends) and of your display name permanently. These fingerprints cannot be turned back into the original values."
+        "You can ask to delete your account from Settings. You re-enter your password (and authenticator code if you use one), and we email a confirmation link to the address on the account. Once you open it and press Confirm on the page it leads to, the account is deactivated, and 14 days later we erase your email address, password, authenticator secret, bio, avatar files, Discord link, sign-in history, IP addresses held in your audit-log entries and recruiting records, friends and chat activity, replace your display name with a random name, and erase the text of private and chat messages you wrote. If you sign in during those 14 days you can cancel the deletion. The same process applies to every player, wherever you live.",
+        "We keep: game history under the random name, so other players' battle records stay intact; alliance records under the random name (the text you wrote in them, such as bank notes and loan or gold-request reasons, is erased, but notes other members wrote about you and announcements you wrote stay); payment records required by law; and moderation records.",
+        "To stop people dodging bans or reusing names, we keep a one-way fingerprint of your email address for 30 days (or until a ban ends) and of your display name permanently. These fingerprints cannot be turned back into the original values.",
+        "If you stop playing, we may email you a final warning and erase the account for inactivity after the stated deadline (see How long we keep it). When an account is erased this way we keep a one-way fingerprint of your email address for two years, so that if you come back and register again with the same address we can recognise you and, once you open the confirmation link we send to that address, give you the Era 1 Tester title and restore your original join date. The fingerprint cannot be turned back into your address and expires on its own."
       ]
     },
     "rights": {
       "title": "Your rights",
       "body": [
-        "You can ask to access, correct, delete or receive a portable copy of your personal data, and you can object to or ask us to restrict how we use it. Where we rely on your consent, such as battle alert emails, you can withdraw it at any time; this does not affect what we did before. Settings has a 'Download my data' button for a quick copy; email privacy@openthrone.dev for a complete copy or any other request.",
+        "You can ask to access, correct, delete or receive a portable copy of your personal data, and you can object to or ask us to restrict how we use it. Where we rely on your consent, such as battle alert emails, you can withdraw it at any time; this does not affect what we did before. Settings has a 'Download my data' button for a copy of your account and game data; it asks for your password and allows one download every 24 hours; email privacy@openthrone.dev for a complete copy or any other request.",
         "We answer within 30 days and may need to confirm the request comes from the account owner. We will not treat you differently for using these rights. If we decline a request, you can appeal by replying to our answer or by emailing privacy@openthrone.dev with 'Privacy appeal' in the subject; we answer appeals within 45 days.",
         "If you are in the EEA, the UK or Switzerland, you can also complain to your data protection authority. Residents of US states with privacy laws have the rights those laws give them, including to know, correct, delete and appeal, and we honor them through the same process."
       ]

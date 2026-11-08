@@ -63,7 +63,10 @@
     "notes": "Notas",
     "operations": "Operaciones",
     "upgrades": "Mejoras",
-    "forces": "Mercenarios y tropas"
+    "forces": "Mercenarios y tropas",
+    "signals": "Señales de abuso",
+    "signalsOpenFull": "Abrir la vista completa de señales de abuso",
+    "privacy": "Privacidad"
   },
   "editor": {
     "title": "{{username}}",
@@ -79,7 +82,7 @@
     "username": "Usuario",
     "email": "Correo",
     "status": "Estado de la cuenta",
-    "statusHelp": "El estado es de solo lectura aquí. Usa los controles de sanción para cambiarlo.",
+    "statusHelp": "El estado es de solo lectura aquí. Cámbialo en Operaciones > Estado de la cuenta.",
     "accountId": "ID de cuenta",
     "gold": "Oro disponible",
     "goldInBank": "Oro en el banco",
@@ -117,7 +120,12 @@
     "locale": "Idioma",
     "bio": "Biografía",
     "derivedHelp": "Se recalcula al guardar si cambian unidades, objetos, fortaleza, experiencia, raza o clase.",
-    "mercenaryLocked": "Gestionado por contrato de mercenario"
+    "mercenaryLocked": "Gestionado por contrato de mercenario",
+    "veteranTitle": "Título de veterano",
+    "veteranTitleNone": "Ninguno",
+    "veteranTitleERA1_TESTER": "Probador de la Era 1",
+    "veteranSince": "Veterano desde (fecha de registro original)",
+    "veteranSinceHelp": "Fecha ISO de creación de la cuenta original. Se borra al quitar el título."
   },
   "actions": {
     "edit": "Editar",
@@ -177,5 +185,75 @@
     "impersonation": "No se pudo iniciar la suplantación.",
     "stopImpersonation": "No se pudo finalizar la suplantación.",
     "stale": "Este jugador cambió desde que abriste el editor. Recarga para ver los valores actuales. Tus cambios no se guardaron."
+  },
+  "privacy": {
+    "title": "Solicitudes de privacidad",
+    "intro": "Las solicitudes de eliminación esperan 14 días tras la confirmación por correo del jugador. Cancelar o borrar antes exige un motivo escrito y queda auditado. Las descargas de datos se listan para supervisión; su contenido nunca se guarda.",
+    "tabs": {
+      "label": "Tipo de solicitud",
+      "erasure": "Solicitudes de eliminación",
+      "exports": "Descargas de datos"
+    },
+    "columns": {
+      "player": "Jugador",
+      "status": "Estado",
+      "requested": "Solicitada",
+      "scheduled": "Se borra / hecho",
+      "detail": "Detalle",
+      "actions": "Acciones",
+      "completed": "Completada",
+      "size": "Tamaño"
+    },
+    "status": {
+      "AWAITING_CONFIRMATION": "Sin confirmar",
+      "PENDING": "Plazo de gracia",
+      "COMPLETED": "Borrada",
+      "CANCELLED": "Cancelada",
+      "EXPIRED": "Caducada"
+    },
+    "by": {
+      "USER": "el jugador",
+      "ADMIN": "el personal",
+      "EXPIRED": "caducidad"
+    },
+    "failed": "Falló {{attempts}}x: {{error}}",
+    "expedited": "Borrada antes de tiempo por el personal (motivo en el registro de auditoría)",
+    "cancelledByNoReason": "Cancelada por {{by}} (motivo en el registro de auditoría)",
+    "loading": "Cargando…",
+    "emptyErasure": "No hay solicitudes de eliminación.",
+    "emptyExports": "Aún no hay descargas de datos.",
+    "reason": "Motivo",
+    "reasonHint": "Al menos {{min}} caracteres. Queda en el registro de auditoría.",
+    "dismiss": "Cerrar",
+    "actions": {
+      "cancel": "Cancelar",
+      "cancelTitle": "Cancelar la eliminación de {{name}}",
+      "cancelBody": "La cuenta se reactiva y la solicitud se cierra. Úsalo con una solicitud de soporte verificada.",
+      "cancelConfirm": "Cancelar eliminación",
+      "expedite": "Borrar ya",
+      "expediteTitle": "Borrar a {{name}} ahora",
+      "expediteBody": "Se salta el resto del plazo de gracia. No se puede deshacer.",
+      "expediteConfirm": "Borrar ya"
+    },
+    "open": {
+      "button": "Abrir solicitud para un jugador",
+      "title": "Abrir una solicitud de eliminación",
+      "body": "Para un jugador que no puede iniciar sesión, tras verificar su solicitud de soporte. Se aplica el plazo completo de 14 días.",
+      "userId": "ID del jugador",
+      "confirm": "Abrir solicitud"
+    },
+    "done": {
+      "cancel": "Eliminación cancelada.",
+      "expedite": "Cuenta borrada.",
+      "open": "Solicitud abierta; el plazo de gracia ha empezado."
+    },
+    "errors": {
+      "load": "No se pudo cargar o guardar. Inténtalo de nuevo.",
+      "not_pending": "Esa solicitud ya no está abierta.",
+      "reason_required": "Se necesita un motivo de al menos 10 caracteres.",
+      "staff_account": "Las cuentas del personal se cierran desde las acciones de cuenta.",
+      "already_scheduled": "Ese jugador ya tiene una eliminación programada.",
+      "not_found": "Jugador no encontrado o ya borrado."
+    }
   }
 }

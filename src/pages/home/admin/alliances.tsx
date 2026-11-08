@@ -133,6 +133,7 @@ const AllianceAdminPage = () => {
                     <Table.Th>Name</Table.Th>
                     <Table.Th>{t('leader')}</Table.Th>
                     <Table.Th>{t('members')}</Table.Th>
+                    <Table.Th>{tAlliance('colStatus')}</Table.Th>
                     <Table.Th>{t('created')}</Table.Th>
                     <Table.Th>{t('actions')}</Table.Th>
                   </Table.Tr>
@@ -146,6 +147,11 @@ const AllianceAdminPage = () => {
                         {a.leader?.display_name || '—'} (ID: {a.leader_id})
                       </Table.Td>
                       <Table.Td>{a._count?.members ?? '—'}</Table.Td>
+                      <Table.Td>
+                        {a.status === 'RESERVED'
+                          ? tAlliance('statusReserved')
+                          : tAlliance('statusActive')}
+                      </Table.Td>
                       <Table.Td>
                         {a.created_at
                           ? new Date(a.created_at).toLocaleDateString()

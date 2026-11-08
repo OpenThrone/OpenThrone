@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   ActionIcon,
   Alert,
+  Anchor,
   Badge,
   Button,
   Grid,
@@ -20,18 +21,22 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core';
+import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 
+import AbuseSignalsPanel from '@/components/admin/AbuseSignalsPanel';
 import PlayerForcesPanel from '@/components/admin/PlayerForcesPanel';
 import PlayerSupporterPanel from '@/components/admin/PlayerSupporterPanel';
 import PlayerUpgradesPanel from '@/components/admin/PlayerUpgradesPanel';
+import PrivacyRequestsPanelLive from '@/components/admin/PrivacyRequestsPanelLive';
 import UserOperations, {
   AdminUserExport,
 } from '@/components/admin/UserOperations';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { EconomyUpgrades, Fortifications, HouseUpgrades } from '@/constants';
+import { useUser } from '@/context/users';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import type { StaffRole } from '@/lib/prisma-exports';
 import { alertService } from '@/services/Alert.service';
@@ -99,6 +104,8 @@ interface UserGameplay {
   class: string;
   locale: string;
   bio: string;
+  veteranTitle: string | null;
+  veteranSince: string | null;
 }
 
 interface UserDerived {
@@ -175,8 +182,8 @@ export function buildUserPatch(loaded: UserData, edited: UserData) {
   const fields: Record<string, PatchValue> = {};
   const profile: Record<string, string> = {};
   const stats: Record<string, string | number> = {};
-  const gameplay: Record<string, string | number> = {};
-  const track = <T extends string | number>(
+  const gameplay: Record<string, string | number | null> = {};
+  const track = <T extends string | number | null>(
     target: Record<string, T>,
     key: string,
     before: T,
@@ -265,6 +272,7 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
   isAdministrator,
 }) => {
   const { t } = useTranslation('admin-users');
+  const { user: viewer } = useUser();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -323,6 +331,33 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
       setLoading(false);
     }
   }, [t, userId]);
+
+  // Status lives outside the editable record; refresh only it so unsaved
+  // edits on other tabs survive an account action.
+  const refreshStatus = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `/api/admin/users/${encodeURIComponent(userId)}`,
+      );
+      if (!response.ok) return;
+      const payload = (await response.json()) as UserData;
+      const merge = (current: UserData | null) =>
+        current
+          ? {
+              ...current,
+              profile: { ...current.profile, status: payload.profile.status },
+              record: {
+                ...current.record,
+                statusHistory: payload.record.statusHistory,
+              },
+            }
+          : current;
+      setUserData(merge);
+      setLoadedData(merge);
+    } catch (requestError) {
+      logError('Failed to refresh admin user status', requestError);
+    }
+  }, [userId]);
 
   useEffect(() => {
     loadUser();
@@ -502,6 +537,18 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
   if (!userData) return <Text>{t('states.unavailable')}</Text>;
 
   const isReadOnly = !isAdministrator;
+  const canViewAbuseSignals = Boolean(
+    viewer?.permissions?.some(
+      (permission) => permission.type === 'VIEW_CHEAT_SIGNALS',
+    ),
+  );
+  const canManageStatus =
+    isAdministrator ||
+    Boolean(
+      viewer?.permissions?.some(
+        (permission) => permission.type === 'MANAGE_ACCOUNT_STATUS',
+      ),
+    );
   const gp = userData.gameplay;
   const rec = userData.record;
   const fortMaxHp = (level: number) =>
@@ -514,9 +561,10 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
     'upgrades',
     'supporter',
     'forces',
+    ...(canViewAbuseSignals ? ['signals'] : []),
     'notes',
     'operations',
-    ...(isAdministrator ? ['staffRoles', 'permissions'] : []),
+    ...(isAdministrator ? ['staffRoles', 'permissions', 'privacy'] : []),
   ];
   const safeTab =
     activeTab && visibleTabs.includes(activeTab) ? activeTab : 'profile';
@@ -613,6 +661,58 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
                   {t('fields.accountId')}: {userData.profile.id}
                 </Text>
                 <Badge mt="sm">{userData.profile.status}</Badge>
+                <Select
+                  label={t('fields.veteranTitle', {
+                    defaultValue: 'Veteran title',
+                  })}
+                  data={[
+                    {
+                      value: '',
+                      label: t('fields.veteranTitleNone', {
+                        defaultValue: 'None',
+                      }),
+                    },
+                    {
+                      value: 'ERA1_TESTER',
+                      label: t('fields.veteranTitleERA1_TESTER', {
+                        defaultValue: 'Era 1 Tester',
+                      }),
+                    },
+                  ]}
+                  value={gp.veteranTitle ?? ''}
+                  readOnly={isReadOnly}
+                  onChange={(value) =>
+                    setUserData({
+                      ...userData,
+                      gameplay: {
+                        ...gp,
+                        veteranTitle: value || null,
+                        // Clearing the title clears its date too.
+                        veteranSince: value ? gp.veteranSince : null,
+                      },
+                    })
+                  }
+                  mt="sm"
+                />
+                <TextInput
+                  label={t('fields.veteranSince', {
+                    defaultValue: 'Veteran since (original join date)',
+                  })}
+                  description={t('fields.veteranSinceHelp', {
+                    defaultValue:
+                      'ISO date-time, not in the future; cleared when the title is None.',
+                  })}
+                  placeholder="2026-01-31T12:00:00.000Z"
+                  value={gp.veteranSince ?? ''}
+                  readOnly={isReadOnly}
+                  onChange={(event) =>
+                    updateGameplay(
+                      'veteranSince',
+                      event.currentTarget.value || null,
+                    )
+                  }
+                  mt="sm"
+                />
               </GameCard>
             </Grid.Col>
             <Grid.Col span={12}>
@@ -1191,6 +1291,25 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
         <Tabs.Panel value="forces" pt="md">
           <PlayerForcesPanel userId={Number(userId)} />
         </Tabs.Panel>
+        {canViewAbuseSignals && (
+          <Tabs.Panel value="signals" pt="md">
+            <Stack gap="sm">
+              <AbuseSignalsPanel userId={Number(userId)} compact />
+              <Anchor
+                component={Link}
+                href={`/home/admin/cheat-signals?userId=${userId}`}
+                size="sm"
+              >
+                {t('tabs.signalsOpenFull')}
+              </Anchor>
+            </Stack>
+          </Tabs.Panel>
+        )}
+        {isAdministrator && (
+          <Tabs.Panel value="privacy" pt="md">
+            <PrivacyRequestsPanelLive userId={Number(userId)} />
+          </Tabs.Panel>
+        )}
         <Tabs.Panel value="notes" pt="md">
           <GameCard title={t('sections.addNote')}>
             <Stack gap="sm">
@@ -1272,6 +1391,9 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
               userId={userId}
               onSaved={onSaved}
               isAdministrator={isAdministrator}
+              canManageStatus={canManageStatus}
+              currentStatus={userData.profile.status}
+              onStatusChanged={refreshStatus}
             />
             {isAdministrator && (
               <GameCard title={t('sections.export')}>

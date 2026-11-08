@@ -85,5 +85,15 @@
   "colKind": "Kind",
   "colUpgrade": "Upgrade",
   "colTier": "Tier",
-  "colPurchased": "Purchased"
+  "colPurchased": "Purchased",
+  "statusLabel": "Alliance status",
+  "statusActive": "Active",
+  "statusReserved": "Reserved",
+  "statusSince": "since {{date}}",
+  "reserve": "Reserve",
+  "reserveTitle": "Reserve alliance",
+  "reserveConfirm": "Reserve {{name}}? Its features close for every member until it is reactivated; members can still leave. Treasury, loans and wars are not touched.",
+  "reactivate": "Reactivate",
+  "reactivateTitle": "Reactivate alliance",
+  "reactivateConfirm": "Reactivate {{name}} without charging the leader?"
 }

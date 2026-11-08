@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { PermissionType } from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
-import { deriveAdminUserStatus } from '@/utils/adminStatus';
+import { currentStatus, deriveAdminUserStatus } from '@/utils/adminStatus';
 import { getRequestIp, logActionStrict } from '@/utils/auditLogger';
 import { logError } from '@/utils/logger';
 
@@ -90,11 +90,13 @@ async function handler(
       last_active: true,
       currentEraId: true,
       statusHistories: {
-        where: { end_date: null },
-        orderBy: { start_date: 'desc' as const },
+        where: { start_date: { lte: new Date() } },
+        orderBy: [{ start_date: 'desc' as const }, { id: 'desc' as const }],
         take: 1,
         select: {
           status: true,
+          start_date: true,
+          end_date: true,
         },
       },
       permissions: {
@@ -122,7 +124,7 @@ async function handler(
         username: user.display_name,
         email: user.email,
         status: deriveAdminUserStatus({
-          latestStatus: user.statusHistories?.[0]?.status,
+          latestStatus: currentStatus(user.statusHistories),
           lastActive: user.last_active,
           currentEraId: user.currentEraId,
           activeEraId,

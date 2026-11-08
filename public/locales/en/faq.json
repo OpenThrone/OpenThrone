@@ -13,7 +13,8 @@
     "news": "Read the news",
     "password": "Reset your password",
     "discord": "Get help on Discord",
-    "about": "About OpenThrone"
+    "about": "About OpenThrone",
+    "settings": "Open your settings"
   },
   "questions": {
     "game": {
@@ -40,6 +41,9 @@
       "title": "What should I check before attacking?",
       "answer": "Review the target, your offensive strength, and the attack turns you plan to commit. Spy information can help you assess a target, but combat carries a risk of losses. After the battle, inspect the report and War History to understand the result before committing more resources."
     },
+    "transfers": {
+      "title": "Can I send gold to a friend?"
+    },
     "stamina": {
       "title": "What is stamina?"
     },
@@ -51,9 +55,17 @@
       "title": "How do I recover a forgotten password?",
       "answer": "Use the password-reset page and follow its email instructions. Check your spam folder if the message does not arrive. Never post a reset link, password, or two-factor code in a public channel. If recovery still fails, describe the problem to support without including those secrets."
     },
+    "data": {
+      "title": "How do I get a copy of my data or delete my account?",
+      "answer": "In Settings, under Your data, you can download a copy of your data and ask for your account to be erased. Both ask for your password first. An erasure is confirmed by email, then waits 14 days so you can change your mind. The same options are open to every player, wherever you live."
+    },
     "report": {
       "title": "What information helps when reporting a bug?",
       "answer": "Include the page you were using, the action you took, what you expected, and what happened instead. Add the approximate time and a screenshot if it helps, after removing private messages, email addresses, and other sensitive details. The community Discord and the repository issue tracker are the support channels listed by the project."
+    },
+    "allianceEra": {
+      "title": "What happens to my alliance when a new era starts?",
+      "answer": "Your alliance is kept but reserved. Its name, roster, ranks and artwork stay, while its treasury, loans, troop contracts and wars end with the old era and its features stay locked. You can leave at any time, even before the leader acts. Only the leader can reactivate it, once they have reached level 10 in the new era and pay 10,000,000 gold."
     }
   }
 }

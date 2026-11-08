@@ -77,7 +77,8 @@
       "DECLINED": "Rechazado",
       "CANCELLED": "Anulado"
     },
-    "overCap": "Los préstamos están limitados a {{cap}} de oro."
+    "overCap": "Los préstamos están limitados a {{cap}} de oro.",
+    "reserved": "Los pagos están en pausa mientras esta alianza esté reservada. Tu préstamo se reanuda cuando se reactive."
   },
   "settings": {
     "title": "Reglas del tesoro",

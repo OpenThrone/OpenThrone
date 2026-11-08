@@ -25,6 +25,7 @@ type MyAlliance = {
   gold: string;
   isPremium?: boolean;
   premiumUntil?: string | null;
+  status?: string;
 };
 
 /** Loads the signed-in player's alliances; visitors are sent to Browse. */
@@ -64,6 +65,7 @@ export const getServerSideProps: GetServerSideProps<{
         premiumUntil?: string | null;
       },
     ),
+    status: m.alliance.status,
     roleName: m.role?.name ?? 'Member',
     isLeader: m.alliance.leader_id === userId,
     memberCount: m.alliance._count.members,
@@ -133,6 +135,7 @@ export default function AlliancesIndex({
                 id={alliance.id}
                 name={alliance.name}
                 isPremium={alliance.isPremium}
+                status={alliance.status}
                 premiumUntil={alliance.premiumUntil}
                 description={alliance.motto}
                 imgsrc={alliance.avatar}

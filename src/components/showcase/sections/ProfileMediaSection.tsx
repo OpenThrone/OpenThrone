@@ -15,9 +15,11 @@ import { FramedAvatar } from '@/components/FramedAvatar';
 import FriendCard from '@/components/friendCard';
 import OnlineIndicator from '@/components/player/OnlineIndicator';
 import PlayerIdentityLine from '@/components/player/PlayerIdentityLine';
+import VeteranBadge from '@/components/player/VeteranBadge';
 import YouBadge from '@/components/player/YouBadge';
 import { ProfileHero } from '@/components/profile/ProfileHero';
 import { ProfilePortrait } from '@/components/profile/ProfilePortrait';
+import GuideArticle, { GuideTable } from '@/components/public/GuideArticle';
 import PublicHero from '@/components/public/PublicHero';
 import {
   mockAction,
@@ -272,6 +274,52 @@ export default function ProfileMediaSection() {
       </Specimen>
 
       <Specimen
+        framed={false}
+        name="GuideArticle"
+        usedOn={['/guides/[slug]', '/chronicles']}
+        wide
+        note="Long-form public article: hero, section index, titled sections with paragraphs, points and tables. GuideTable scrolls sideways on narrow screens."
+      >
+        <GuideArticle
+          title="Your First Kingdom"
+          description="What you start with, what to buy first and how to keep your gold safe."
+          tocLabel="On this page"
+          imageSrc="/assets/images/ui/public/war-table.webp"
+          sections={[
+            {
+              id: 'sample-start',
+              title: 'What you start with',
+              paragraphs: [
+                'A new commander normally begins with 25,000 gold, 50 citizens and 50 attack turns.',
+              ],
+              items: [
+                'Workers grow your income.',
+                'Soldiers raise your attack; Guards raise your defense.',
+              ],
+              children: (
+                <GuideTable
+                  caption="Economy upgrades"
+                  columns={['Upgrade', 'Cost (gold)', 'Gold per Worker']}
+                  rows={[
+                    ['Farm', 'Free', '50'],
+                    ['Produce Market', '500,000', '55'],
+                    ['Livestock Market', '2,000,000', '60'],
+                  ]}
+                />
+              ),
+            },
+            {
+              id: 'sample-bank',
+              title: 'Keep your gold in the Bank',
+              paragraphs: [
+                'Gold in your hand can be plundered. Gold in the Bank is safe from raiders.',
+              ],
+            },
+          ]}
+        />
+      </Specimen>
+
+      <Specimen
         name="FriendCard"
         usedOn={['/userprofile/[id]']}
         note="Names link to the mock player's profile route."
@@ -321,6 +369,30 @@ export default function ProfileMediaSection() {
             Ser Aldric
           </Text>
         </Group>
+      </Specimen>
+
+      <Specimen
+        name="VeteranBadge"
+        usedOn={['/userprofile/[id]']}
+        note="Era 1 Tester title for a reclaimed account; tooltip shows the restored join date. Tinted with the active race accent. Renders nothing without a title."
+      >
+        <Stack gap={6}>
+          <Group gap={6}>
+            <Text fw={700} c="var(--ot-accent)">
+              Lady Morwen
+            </Text>
+            <VeteranBadge
+              title="ERA1_TESTER"
+              since="2026-01-31T12:00:00.000Z"
+            />
+          </Group>
+          <Group gap={6}>
+            <Text fw={700} c="var(--ot-accent)">
+              Grukk the Vile
+            </Text>
+            <VeteranBadge title={null} since={null} />
+          </Group>
+        </Stack>
       </Specimen>
 
       <Specimen

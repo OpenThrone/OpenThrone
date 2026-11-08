@@ -85,5 +85,15 @@
   "colKind": "Categoría",
   "colUpgrade": "Mejora",
   "colTier": "Nivel",
-  "colPurchased": "Comprado"
+  "colPurchased": "Comprado",
+  "statusLabel": "Estado de la alianza",
+  "statusActive": "Activa",
+  "statusReserved": "Reservada",
+  "statusSince": "desde {{date}}",
+  "reserve": "Reservar",
+  "reserveTitle": "Reservar alianza",
+  "reserveConfirm": "¿Reservar {{name}}? Sus funciones se cierran para todos los miembros hasta que se reactive; los miembros aún pueden abandonarla. La tesorería, los préstamos y las guerras no se tocan.",
+  "reactivate": "Reactivar",
+  "reactivateTitle": "Reactivar alianza",
+  "reactivateConfirm": "¿Reactivar {{name}} sin cobrar al líder?"
 }

@@ -108,7 +108,7 @@
     "openButton": "Reset current era now",
     "modalTitle": "Reset current era",
     "losses": "This permanently resets every player's current-era progress, including staff: gold, units, items, structures, XP, rank, testing data, alliance treasury, alliance XP and upgrades, and current-era histories.",
-    "retained": "Account identity, lifetime achievements, account moderation history, staff access, guild identity and rosters, social data, messages, and past eras are kept.",
+    "retained": "Account identity, lifetime achievements, account moderation history, staff access, social data, messages, and past eras are kept. Alliances are kept too, as reserved: name, roster, ranks and artwork stay, while the treasury, loans and wars are closed.",
     "baseline": "Every account is reset to these starting values, which are also saved as the era's starting settings.",
     "startSettingsTitle": "Starting values for every account",
     "startGold": "Starting gold",
@@ -197,5 +197,14 @@
       "running": "Running",
       "ended": "Ended"
     }
+  },
+  "factoryRestore": {
+    "title": "Complete factory restore",
+    "description": "The only reset that deletes alliances. Use it for a clean slate before launch, never between ordinary eras: new eras and the normal reset keep every alliance, reserved until its leader reactivates it.",
+    "openButton": "Factory restore…",
+    "modalTitle": "Complete factory restore",
+    "losses": "This does everything the current-era reset does and also permanently deletes EVERY alliance: rosters, ranks, artwork, chat rooms, treasuries (not paid out), loans, wars and force records. It cannot be undone.",
+    "confirmButton": "Delete alliances & reset era",
+    "requestError": "The factory restore could not be started. Please retry."
   }
 }

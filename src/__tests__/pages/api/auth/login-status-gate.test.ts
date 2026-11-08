@@ -6,6 +6,8 @@ import {
 } from 'test/utils/mockPrisma';
 import { installRateLimitStore } from 'test/utils/rateLimitStore';
 
+import * as credentialGuards from '@/utils/credentialGuards';
+
 installMockPrisma(vi);
 
 const statusRecord = (status: string, endDate: Date | null = null) => ({
@@ -71,6 +73,7 @@ describe('login status gate and malformed hash handling', () => {
     mockPrisma.staffRoleAssignment.findFirst = vi.fn(async () => null);
     mockPrisma.users.findUnique = vi.fn(async () => ({ ...account }));
     mockPrisma.users.update = vi.fn(async () => account);
+    mockPrisma.accountErasureRequest.findFirst = vi.fn(async () => null);
     setStatusHistory(statusRecord('ACTIVE'));
     verifySpy = vi.spyOn(argon2, 'verify');
   });
@@ -203,5 +206,164 @@ describe('login status gate and malformed hash handling', () => {
       '203.0.113.20',
       { method: 'credentials' },
     );
+  });
+});
+
+describe('login during an account-erasure grace period', () => {
+  const scheduledFor = new Date('2099-01-15T12:00:00Z');
+  const pendingRequest = {
+    id: 40,
+    userId: account.id,
+    status: 'PENDING',
+    closedStatusId: 7,
+    scheduledFor,
+  };
+  let verifySpy: ReturnType<typeof vi.spyOn>;
+  let restoreStore: () => void;
+
+  beforeEach(() => {
+    resetMockPrisma();
+    installRateLimitStore(mockPrisma, vi);
+    // The cancel path runs a locked transaction; put the shared store back after.
+    const { $queryRaw } = mockPrisma;
+    restoreStore = () =>
+      Object.assign(mockPrisma, { $transaction: vi.fn(), $queryRaw });
+    logAction.mockClear();
+    process.env.DISABLE_TURNSTILE = 'true';
+    process.env.OT_ENFORCE_PRIVILEGED_2FA = 'false';
+    mockPrisma.staffRoleAssignment.findFirst = vi.fn(async () => null);
+    mockPrisma.users.findUnique = vi.fn(async () => ({ ...account }));
+    mockPrisma.users.update = vi.fn(async () => account);
+    // The grace period writes a CLOSED row, so the stored status blocks login.
+    setStatusHistory(statusRecord('CLOSED'));
+    mockPrisma.accountErasureRequest.findFirst = vi.fn(async () => ({
+      ...pendingRequest,
+    }));
+    mockPrisma.$transaction.mockImplementation(async (callback: any) =>
+      callback(mockPrisma),
+    );
+    mockPrisma.$queryRaw = vi.fn(async () => [{ id: account.id }]);
+    verifySpy = vi.spyOn(argon2, 'verify');
+  });
+
+  afterEach(() => {
+    restoreStore();
+    mockPrisma.accountErasureRequest.findFirst = vi.fn(async () => null);
+    verifySpy.mockRestore();
+    delete process.env.DISABLE_TURNSTILE;
+    delete process.env.OT_ENFORCE_PRIVILEGED_2FA;
+  });
+
+  const refusal = async (extra: Record<string, string> = {}) => {
+    const error = await authorize(
+      { ...credentials(), ...extra },
+      { headers: {} },
+    ).then(
+      () => null,
+      (err: Error) => err,
+    );
+    return error;
+  };
+
+  it('offers the cancel path with the erasure date, only after the password matched', async () => {
+    verifySpy.mockResolvedValue(true);
+    const error = await refusal();
+    expect(JSON.parse(error!.message)).toEqual({
+      message: 'This account is scheduled for deletion',
+      code: 'erasure',
+      erasureDate: scheduledFor.toISOString(),
+    });
+    // Nothing is cancelled or written by a plain sign-in attempt.
+    expect(mockPrisma.accountErasureRequest.update).not.toHaveBeenCalled();
+    expect(mockPrisma.users.update).not.toHaveBeenCalled();
+  });
+
+  it('reveals nothing about the erasure for a wrong password', async () => {
+    verifySpy.mockResolvedValue(false);
+    const error = await refusal({ cancelErasure: 'true' });
+    expect(error?.message).toBe('Invalid username or password');
+    expect(mockPrisma.accountErasureRequest.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.accountErasureRequest.update).not.toHaveBeenCalled();
+  });
+
+  it('cancels the erasure and signs in when the password is re-proved', async () => {
+    verifySpy.mockResolvedValue(true);
+    mockPrisma.accountErasureRequest.findFirst
+      // login lookup, then the cancel's own open-request lookup
+      .mockResolvedValueOnce({ ...pendingRequest })
+      .mockResolvedValueOnce({ ...pendingRequest });
+    // The cancel removes the grace-period CLOSED row; the status then reads as before.
+    const removeClosedRow = vi.fn(async () => {
+      setStatusHistory(statusRecord('ACTIVE'));
+      mockPrisma.accountStatusHistory.deleteMany = removeClosedRow;
+      return { count: 1 };
+    });
+    mockPrisma.accountStatusHistory.deleteMany = removeClosedRow;
+
+    const user = await authorize(
+      { ...credentials(), cancelErasure: 'true' },
+      { headers: {} },
+    );
+
+    expect(user).toMatchObject({ id: account.id, email: account.email });
+    expect(mockPrisma.accountErasureRequest.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 40 },
+        data: expect.objectContaining({
+          status: 'CANCELLED',
+          cancelledBy: 'USER',
+          userReason: null,
+        }),
+      }),
+    );
+    expect(removeClosedRow).toHaveBeenCalledWith({ where: { id: 7 } });
+  });
+
+  it('verifies the single-use authenticator code once, then signs in', async () => {
+    verifySpy.mockResolvedValue(true);
+    mockPrisma.users.findUnique = vi.fn(async () => ({
+      ...account,
+      twoFactorSecret: 'synthetic-secret',
+    }));
+    const totp = vi.spyOn(credentialGuards, 'verifyTotpOnce');
+    // A second use of the same code would be refused, as the real ledger does.
+    let used = false;
+    totp.mockImplementation(async () => {
+      if (used) return false;
+      used = true;
+      return true;
+    });
+    mockPrisma.accountErasureRequest.findFirst
+      .mockResolvedValueOnce({ ...pendingRequest })
+      .mockResolvedValueOnce({ ...pendingRequest });
+    mockPrisma.accountStatusHistory.deleteMany = vi.fn(async () => {
+      setStatusHistory(statusRecord('ACTIVE'));
+      return { count: 1 };
+    });
+
+    const user = await authorize(
+      { ...credentials(), cancelErasure: 'true', totpToken: '123456' },
+      { headers: {} },
+    );
+
+    expect(user).toMatchObject({ id: account.id });
+    expect(totp).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.accountErasureRequest.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'CANCELLED' }),
+      }),
+    );
+    totp.mockRestore();
+  });
+
+  it('needs the authenticator code too before it cancels', async () => {
+    verifySpy.mockResolvedValue(true);
+    mockPrisma.users.findUnique = vi.fn(async () => ({
+      ...account,
+      twoFactorSecret: 'synthetic-secret',
+    }));
+    const error = await refusal({ cancelErasure: 'true' });
+    expect(error?.message).toBe('2FA token required');
+    expect(mockPrisma.accountErasureRequest.update).not.toHaveBeenCalled();
   });
 });

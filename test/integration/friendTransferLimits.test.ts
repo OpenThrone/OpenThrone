@@ -19,6 +19,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const LOCKED_ECONOMY_LEVEL = 2;
 /** EconomyUpgrades index 3 = Coal Mine: 150,000 send / 50,000 receive. */
 const UNLOCKED_ECONOMY_LEVEL = 3;
+/** Level 5 starts at 26,000 experience: the default minimum transfer level. */
+const LEVEL_5_XP = 26_000;
+const LEVEL_4_XP = 19_000;
 const DEFAULT_GOLD = 1_000_000n;
 const RECIPIENT_STARTING_GOLD = 5_000n;
 
@@ -33,6 +36,7 @@ interface PlayerOptions {
   createdAt?: Date;
   gold?: bigint;
   fortLevel?: number;
+  experience?: number;
 }
 
 /** Creates a player and sets the upgrade/gold/age fields the transfer rules read. */
@@ -43,6 +47,7 @@ const createPlayer = async (
     createdAt = new Date(Date.now() - 30 * DAY_MS),
     gold = DEFAULT_GOLD,
     fortLevel = 11,
+    experience = LEVEL_5_XP,
   }: PlayerOptions = {},
 ) => {
   const user = await createUser(
@@ -58,6 +63,7 @@ const createPlayer = async (
       economy_level: economyLevel,
       created_at: createdAt,
       fort_level: fortLevel,
+      experience,
       gold,
     },
   });
@@ -180,15 +186,71 @@ describe('friend gold-transfer limits against a real database', () => {
     );
   });
 
+  test('refuses a sender or recipient under the minimum level and follows the admin setting', async () => {
+    const lowSender = await createPlayer('Low Sender', {
+      experience: LEVEL_4_XP,
+    });
+    const recipient = await createPlayer('Level Recipient');
+    await befriend(lowSender, recipient);
+
+    const senderRefusal = await refusalMessage(
+      transferGoldToFriend({
+        fromUserId: lowSender,
+        toUserId: recipient,
+        amount: 1_000n,
+      }),
+    );
+    expect(senderRefusal).toContain(
+      'You must be level 5 to send gold transfers',
+    );
+
+    const sender = await createPlayer('Level Sender');
+    const lowRecipient = await createPlayer('Low Recipient', {
+      experience: LEVEL_4_XP,
+    });
+    await befriend(sender, lowRecipient);
+    const senderGoldBefore = await goldOf(sender);
+
+    const recipientRefusal = await refusalMessage(
+      transferGoldToFriend({
+        fromUserId: sender,
+        toUserId: lowRecipient,
+        amount: 1_000n,
+      }),
+    );
+    expect(recipientRefusal).toContain(
+      'This player must be level 5 to receive gold transfers',
+    );
+    expect(await goldOf(sender)).toBe(senderGoldBefore);
+    expect(await prisma.bank_history.count()).toBe(0);
+
+    // An administrator lowers the level: the same transfer now goes through.
+    await prisma.serverSetting.create({
+      data: {
+        key: 'friend.transferMinLevel',
+        label: 'Friend transfer minimum player level',
+        type: 'NUMBER',
+        value: 4,
+        isPublic: true,
+      },
+    });
+    expect(
+      await refusalMessage(
+        transferGoldToFriend({
+          fromUserId: sender,
+          toUserId: lowRecipient,
+          amount: 1_000n,
+        }),
+      ),
+    ).toBe('');
+    expect(await prisma.bank_history.count()).toBeGreaterThan(0);
+  });
+
   test('blocks a transfer when the pair fought within 24 hours', async () => {
     const sender = await createPlayer('Recent Fight Sender');
     const recipient = await createPlayer('Recent Fight Recipient');
     await befriend(sender, recipient);
-    await logAttack(
-      sender,
-      recipient,
-      new Date(Date.now() - 60 * 60 * 1000),
-    );
+    await logAttack(sender, recipient, new Date(Date.now() - 60 * 60 * 1000));
 
     const error = await refusalMessage(
       transferGoldToFriend({
@@ -244,9 +306,7 @@ describe('friend gold-transfer limits against a real database', () => {
     });
     expect(result.success).toBe(true);
 
-    expect(await goldOf(sender)).toBe(
-      senderGoldBefore - amount - expectedFee,
-    );
+    expect(await goldOf(sender)).toBe(senderGoldBefore - amount - expectedFee);
     expect(await goldOf(recipient)).toBe(recipientGoldBefore + amount);
 
     const history = await prisma.bank_history.findMany({
@@ -272,9 +332,7 @@ describe('friend gold-transfer limits against a real database', () => {
       (amount + expectedFee).toString(),
     );
 
-    const taxRow = history.find(
-      (row) => row.to_user_account_type === 'SYSTEM',
-    );
+    const taxRow = history.find((row) => row.to_user_account_type === 'SYSTEM');
     expect(taxRow).toBeDefined();
     expect(taxRow!.from_user_id).toBe(sender);
     expect(taxRow!.gold_amount).toBe(expectedFee);

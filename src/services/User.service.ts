@@ -17,7 +17,8 @@ import {
 } from './UserDefaults.service';
 
 const CreateUserSchema = z.object({
-  email: z.string().email(),
+  // Stored lowercased: login and lookups match the lowercased address.
+  email: z.string().trim().toLowerCase().email(),
   password_hash: z.string(),
   display_name: z.string(),
   race: z.string(),

@@ -5,10 +5,7 @@ import prisma from '@/lib/prisma';
 import { PermissionType } from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { AdminService } from '@/services';
-import {
-  AccountAnonymizationService,
-  DELETED_EMAIL_SUFFIX,
-} from '@/services/AccountAnonymization.service';
+import { AccountAnonymizationService } from '@/services/AccountAnonymization.service';
 import { endSupporterBillingSoon } from '@/services/supporter/AccountBilling.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp, logAction, logActionStrict } from '@/utils/auditLogger';
@@ -25,7 +22,7 @@ const AccountActionSchema = z
   })
   .strict();
 
-class AnonymizedAccountConflict extends Error {}
+class AccountStatusConflict extends Error {}
 
 const guardedHandler = withApiGuard({
   methods: ['POST'],
@@ -84,15 +81,25 @@ export const handler = async (
       if (currentDenial) throw new Error(currentDenial.error);
       const target = await tx.users.findUnique({
         where: { id: userId },
-        select: { email: true },
+        select: { anonymizedAt: true },
       });
-      if (
-        action !== 'CLOSED' &&
-        target?.email?.toLowerCase().endsWith(DELETED_EMAIL_SUFFIX)
-      ) {
-        throw new AnonymizedAccountConflict(
+      if (action !== 'CLOSED' && target?.anonymizedAt) {
+        throw new AccountStatusConflict(
           'Anonymized accounts cannot be reopened or assigned a non-CLOSED status',
         );
+      }
+      // A scheduled erasure keeps the account CLOSED; reopening it here would
+      // leave the erasure queued. Cancelling the erasure reopens it.
+      if (action !== 'CLOSED') {
+        const pendingErasure = await tx.accountErasureRequest.findFirst({
+          where: { userId, status: 'PENDING' },
+          select: { id: true },
+        });
+        if (pendingErasure) {
+          throw new AccountStatusConflict(
+            'This account is scheduled for deletion. Cancel the deletion in the Privacy tab first.',
+          );
+        }
       }
       // End current statuses if necessary
       await tx.accountStatusHistory.updateMany({
@@ -157,7 +164,7 @@ export const handler = async (
       await endSupporterBillingSoon(userId, 'period_end');
     res.status(200).json({ message: `User has been ${action.toLowerCase()}` });
   } catch (error) {
-    if (error instanceof AnonymizedAccountConflict)
+    if (error instanceof AccountStatusConflict)
       return res.status(409).json({ error: publicErrorMessage(error) });
     logError(`Error performing ${action} on user:`, error);
     res.status(500).json({ error: `Failed to perform action ${action}` });

@@ -258,18 +258,22 @@ export function defectorRecipientDailyCap(
 /** Defender power multiplier from today's defense pressure (#204): max(0.85, 1 - 0.0025 * pressure). */
 export function defenderFatigueMultiplier(
   defensePressureToday: number,
+  tuning: { perPressure: number; minMultiplier: number } = {
+    perPressure: DEFENDER_FATIGUE_PER_PRESSURE,
+    minMultiplier: DEFENDER_FATIGUE_MIN_MULTIPLIER,
+  },
 ): number {
   const pressure = Math.max(0, Number(defensePressureToday) || 0);
-  return Math.max(
-    DEFENDER_FATIGUE_MIN_MULTIPLIER,
-    1 - DEFENDER_FATIGUE_PER_PRESSURE * pressure,
-  );
+  return Math.max(tuning.minMultiplier, 1 - tuning.perPressure * pressure);
 }
 
 /** The same fatigue expressed as a whole percent power loss, for battle reports. */
-export function defenderFatiguePercent(defensePressureToday: number): number {
+export function defenderFatiguePercent(
+  defensePressureToday: number,
+  tuning?: { perPressure: number; minMultiplier: number },
+): number {
   return Math.round(
-    (1 - defenderFatigueMultiplier(defensePressureToday)) * 100,
+    (1 - defenderFatigueMultiplier(defensePressureToday, tuning)) * 100,
   );
 }
 

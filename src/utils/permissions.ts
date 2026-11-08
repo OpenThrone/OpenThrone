@@ -129,7 +129,6 @@ const PERMISSION_LABELS: Record<PermissionType, string> = {
   [PermissionType.VIEW_ANALYTICS]: 'View Analytics',
   [PermissionType.VIEW_MULTI_ACCOUNTS]: 'View Multi-Account Data',
   [PermissionType.VIEW_CHEAT_SIGNALS]: 'View Cheat Signals',
-  [PermissionType.MANAGE_FEATURE_FLAGS]: 'Manage Feature Flags',
   [PermissionType.MANAGE_SERVER_SETTINGS]: 'Manage Server Settings',
   [PermissionType.MANAGE_API_TOKENS]: 'Manage API Tokens',
   [PermissionType.USE_IMPERSONATION]: 'Use Impersonation',

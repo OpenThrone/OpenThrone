@@ -441,6 +441,7 @@ export const getServerSideProps = async (context: { locale?: string }) => ({
       'admin-content',
       'admin-supporters',
       'admin-users',
+      'admin-abuse',
       'admin-forces',
       'admin-upgrades',
       'admin-operations',

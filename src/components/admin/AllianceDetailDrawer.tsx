@@ -297,6 +297,43 @@ export const AllianceDetailDrawer = ({
                   joinMode: a.join_mode,
                 })}
               </Text>
+              <Group gap="xs" aria-label={t('statusLabel')}>
+                <Badge
+                  color={a.status === 'RESERVED' ? 'orange' : 'green'}
+                  variant="light"
+                >
+                  {a.status === 'RESERVED'
+                    ? t('statusReserved')
+                    : t('statusActive')}
+                </Badge>
+                {a.status_changed_at && (
+                  <Text size="xs" c="dimmed">
+                    {t('statusSince', {
+                      date: new Date(a.status_changed_at).toLocaleString(),
+                    })}
+                  </Text>
+                )}
+                <Button
+                  size="xs"
+                  variant="default"
+                  onClick={() =>
+                    a.status === 'RESERVED'
+                      ? ask(
+                          { action: 'reactivate' },
+                          t('reactivateTitle'),
+                          t('reactivateConfirm', { name: a.name }),
+                          false,
+                        )
+                      : ask(
+                          { action: 'reserve' },
+                          t('reserveTitle'),
+                          t('reserveConfirm', { name: a.name }),
+                        )
+                  }
+                >
+                  {a.status === 'RESERVED' ? t('reactivate') : t('reserve')}
+                </Button>
+              </Group>
               <SimpleTable
                 label={t('membersHeading')}
                 emptyText={none}

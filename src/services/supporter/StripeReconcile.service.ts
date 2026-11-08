@@ -25,6 +25,8 @@ export interface ReconcileReport {
   /** Internal event ids applied (or that would be, in a dry run). */
   applied: string[];
   failed: string[];
+  /** Why each entry in `failed` failed (the stored event error). */
+  failures: { id: string; error: string }[];
 }
 
 /**
@@ -49,6 +51,7 @@ export async function reconcileStripe({
     },
     applied: [],
     failed: [],
+    failures: [],
   };
   const run = async (input: EventInput | null) => {
     if (!input) return;
@@ -64,11 +67,19 @@ export async function reconcileStripe({
       const result = existing
         ? await replay(existing.id)
         : await processPaymentEvent(input);
-      (result.event.status === 'FAILED' ? report.failed : report.applied).push(
-        input.providerEventId,
-      );
-    } catch {
+      if (result.event.status === 'FAILED') {
+        report.failed.push(input.providerEventId);
+        report.failures.push({
+          id: input.providerEventId,
+          error: result.event.error ?? 'Event failed',
+        });
+      } else report.applied.push(input.providerEventId);
+    } catch (error) {
       report.failed.push(input.providerEventId);
+      report.failures.push({
+        id: input.providerEventId,
+        error: error instanceof Error ? error.message : 'Event failed',
+      });
     }
   };
 

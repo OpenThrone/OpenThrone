@@ -13,7 +13,7 @@ const handler = async (req, res) => {
       userId,
       cancelledAt: null,
       dueAt: { lte: new Date(Date.now() + 86400000) },
-      alliance: { members: { some: { user_id: userId } } },
+      alliance: { status: 'ACTIVE', members: { some: { user_id: userId } } },
     },
     orderBy: { dueAt: 'asc' },
   });

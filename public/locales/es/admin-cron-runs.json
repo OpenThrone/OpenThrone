@@ -1,0 +1,28 @@
+{
+  "title": "Registro de tareas",
+  "intro": "Cada ejecución de una tarea programada se registra aquí: cuándo empezó, cuánto duró y un resumen depurado de lo que hizo. Las ejecuciones fallidas se resaltan. Las ejecuciones de más de 90 días las borra la tarea diaria. Las invocaciones rechazadas (sin autorización) y las desactivadas no se registran. Una ejecución que sigue en curso tras 2 horas se muestra como Obsoleto / desconocido: su proceso murió o su inicio se registró demasiado tarde para cerrarla.",
+  "jobFilter": "Tarea",
+  "statusFilter": "Estado",
+  "allJobs": "Todas las tareas",
+  "allStatuses": "Todos los estados",
+  "lastSuccess": "Última ejecución correcta por tarea",
+  "loading": "Cargando…",
+  "error": "La solicitud falló. Comprueba los filtros o inténtalo de nuevo.",
+  "count": "{{count}} ejecuciones",
+  "status": {
+    "RUNNING": "En curso",
+    "SUCCESS": "Correcta",
+    "FAILED": "Fallida",
+    "STALE": "Obsoleto / desconocido"
+  },
+  "columns": {
+    "id": "ID",
+    "job": "Tarea",
+    "status": "Estado",
+    "startedAt": "Inicio",
+    "finishedAt": "Fin",
+    "duration": "Duración",
+    "summary": "Resumen",
+    "error": "Error"
+  }
+}

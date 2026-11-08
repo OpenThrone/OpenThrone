@@ -26,6 +26,10 @@ import {
   settleLoanCreditsInTx,
   settleLoansOnExit,
 } from '@/services/AllianceLoan.service';
+import {
+  AllianceReactivationError,
+  setAllianceStatusAsAdmin,
+} from '@/services/AllianceReactivation.service';
 import { lockAllianceChatRooms } from '@/services/chatRoomGuards';
 import { returnMemberForcesInTx } from '@/services/ForceLifecycle.service';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -194,6 +198,7 @@ const runAction = async (
   tx: Prisma.TransactionClient,
   allianceId: number,
   input: AllianceAdminAction,
+  adminUserId: number,
 ): Promise<ActionResult> => {
   const loadAlliance = async () => {
     const alliance = await tx.alliances.findUnique({
@@ -374,6 +379,31 @@ const runAction = async (
       };
     }
 
+    case 'reserve':
+    case 'reactivate': {
+      // Staff override of the era lifecycle (#13).
+      const target = input.action === 'reserve' ? 'RESERVED' : 'ACTIVE';
+      try {
+        const result = await setAllianceStatusAsAdmin(
+          tx,
+          allianceId,
+          target,
+          adminUserId,
+        );
+        return {
+          message:
+            target === 'RESERVED'
+              ? 'Alliance reserved'
+              : 'Alliance reactivated',
+          details: result,
+        };
+      } catch (error) {
+        if (error instanceof AllianceReactivationError)
+          throw new AdminActionError(error.message);
+        throw error;
+      }
+    }
+
     case 'end_war': {
       // AllianceWarService.endWar, without the declare_war permission check.
       await tx.$queryRaw`SELECT id FROM alliance_wars WHERE id = ${input.warId} FOR UPDATE`;
@@ -427,7 +457,12 @@ async function handler(
     try {
       const result = await prisma.$transaction(async (tx) => {
         await lockEraLifecycleShared(tx);
-        const outcome = await runAction(tx, allianceId, input);
+        const outcome = await runAction(
+          tx,
+          allianceId,
+          input,
+          Number(req.session?.user?.id),
+        );
         // Commits with the change; a failed write rolls it back.
         await logActionStrict(
           {

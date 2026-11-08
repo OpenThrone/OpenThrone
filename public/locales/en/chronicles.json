@@ -1,0 +1,70 @@
+{
+  "metaTitle": "Chronicles of the Shattered Realms - OpenThrone",
+  "metaDescription": "The story of OpenThrone: how the Old World fell, how the Shattered Realms were founded, the four peoples who rule them and the Great Turning that renews every age.",
+  "title": "Chronicles",
+  "intro": "How the Old World fell, how the Shattered Realms were founded, and why every age begins again.",
+  "tocLabel": "In these Chronicles",
+  "sections": {
+    "oldWorld": {
+      "title": "The Old World",
+      "paragraphs": [
+        "Before the Sundering, one empire held every realm from the northern passes to the southern coast. Its rulers sat on the Old Thrones, great seats of stone and iron that were said to hold the land together.",
+        "The empire lasted for centuries. Its wars lasted longer. Each border dispute fed the next, and the Thrones were asked to bear more than any seat of power can."
+      ]
+    },
+    "sundering": {
+      "title": "The Sundering",
+      "paragraphs": [
+        "The Thrones broke one by one. With them went the roads, the granaries and the oaths that bound the lords to the crown. The ground itself split along old battle lines, and rifts opened where armies had fought longest.",
+        "Cities emptied. People walked away from the ruins in long columns, carrying seed grain, tools and whatever else they could defend."
+      ]
+    },
+    "realms": {
+      "title": "The Shattered Realms",
+      "paragraphs": [
+        "The survivors found that the rifts could be crossed. Beyond them lay open, broken country. They claimed it in small groups, each raising a manor, sowing fields and drilling a few guards.",
+        "These holdings are the Shattered Realms, and you rule one. You start with a manor, a handful of citizens and a little gold. You decide who works, who fights and who watches the walls.",
+        "No crown rules the realms now. Commanders raid one another for gold and glory, and the strongest bind together in alliances. No one has yet raised a throne that stays standing."
+      ]
+    },
+    "peoples": {
+      "title": "Four Peoples",
+      "paragraphs": [
+        "Four peoples crossed the rifts. Each carried something of the Old World with it, and each still fights in its own way."
+      ],
+      "races": {
+        "ELF": {
+          "name": "Elves",
+          "text": "Elves kept the watchers' craft. Their spies and sentries see further, and their archers hold a wall well. When Elves are struck, their Sanctuary saves some of the fallen."
+        },
+        "HUMAN": {
+          "name": "Humans",
+          "text": "Humans kept the muster rolls. They fight well on the offense, and their Discipline keeps the ranks together when morale is low, so fewer soldiers desert."
+        },
+        "GOBLIN": {
+          "name": "Goblins",
+          "text": "Goblins kept the raiding parties. They guard their holdings fiercely and profit from plunder. With Raiders they take captives in battle, hold them in a dungeon and sell them back for ransom."
+        },
+        "UNDEAD": {
+          "name": "Undead",
+          "text": "The Undead kept what the Sundering would not let rest. They hit hard, and with Necropolis they raise fallen soldiers from the battlefield to fight again."
+        }
+      },
+      "closing": "The other peoples have an answer to the dead. Hallowed Ground wards a kingdom so that Undead attackers cannot raise its fallen."
+    },
+    "greatTurning": {
+      "title": "The Great Turning",
+      "paragraphs": [
+        "Every age of the Shattered Realms ends in a Great Turning. The rifts surge, the borders blur and the land is renewed. Each kingdom begins again with a manor, new citizens and a fresh treasury.",
+        "The deeds of an age are not lost. Its rankings and results stay on the World Stats page, under Past Eras.",
+        "When the next age opens, the old question returns: who will build a kingdom that holds?"
+      ],
+      "statsLink": "See the Past Eras"
+    }
+  },
+  "cta": {
+    "createCommander": "Create a Commander",
+    "howToPlay": "How to Play",
+    "guides": "Strategy Guides"
+  }
+}

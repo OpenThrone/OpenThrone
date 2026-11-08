@@ -26,6 +26,7 @@ export const canAttack = async (
         { attacker_id: validatedAttacker.id },
         { defender_id: validatedDefender.id },
         { type: 'attack' },
+        { voidedAt: null },
         {
           timestamp: {
             gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24),

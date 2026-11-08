@@ -44,6 +44,8 @@ export async function getAttackRecommendation(
     where: {
       AND: [
         readableAttackLogWhere(viewerId, alliances),
+        // A voided battle is no evidence of what an attack achieves (#229).
+        { voidedAt: null },
         // Only rows that can become evidence, so unrelated shares cannot fill `take`.
         {
           OR: [

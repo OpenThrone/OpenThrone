@@ -4,6 +4,10 @@ import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { postToAllianceRoom } from '@/services/AllianceRoom.service';
+import {
+  AllianceReservedError,
+  isAllianceActive,
+} from '@/services/allianceStatus';
 import { logError } from '@/utils/logger';
 
 export const ANNOUNCEMENT_TITLE_MAX = 120;
@@ -59,6 +63,8 @@ const parse = <T extends z.ZodTypeAny>(
 interface MemberContext {
   alliance: { id: number; name: string; leader_id: number };
   canPost: boolean;
+  /** False for a RESERVED alliance (#13): members may read, nobody may post. */
+  active: boolean;
 }
 
 export class AllianceAnnouncementsService {
@@ -90,6 +96,7 @@ export class AllianceAnnouncementsService {
         membership.role,
         'post_announcements',
       ),
+      active: isAllianceActive(alliance),
     };
   }
 
@@ -105,11 +112,12 @@ export class AllianceAnnouncementsService {
 
     try {
       return await prisma.$transaction(async (tx) => {
-        const { alliance, canPost } = await this.requireMember(
+        const { alliance, canPost, active } = await this.requireMember(
           tx,
           data.allianceId,
           userId,
         );
+        if (!active) throw new AllianceReservedError();
         if (!canPost) {
           throw new Error('You do not have permission to post announcements');
         }
@@ -172,11 +180,12 @@ export class AllianceAnnouncementsService {
   /** Pins or unpins an announcement (post_announcements). */
   static async setPinned(userId: number, input: unknown) {
     const data = parse(PinSchema, input);
-    const { canPost } = await this.requireMember(
+    const { canPost, active } = await this.requireMember(
       prisma as unknown as Prisma.TransactionClient,
       data.allianceId,
       userId,
     );
+    if (!active) throw new AllianceReservedError();
     if (!canPost) {
       throw new Error('You do not have permission to pin announcements');
     }

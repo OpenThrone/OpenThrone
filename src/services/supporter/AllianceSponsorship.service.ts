@@ -25,6 +25,13 @@ export async function convertPool(allianceId: number, db?: Db) {
       where: { allianceId },
     });
     if (!row) return null;
+    // Premium time does not run down while the alliance is RESERVED (#13);
+    // the pool keeps accumulating and converts after reactivation.
+    const owner = await tx.alliances.findUnique({
+      where: { id: allianceId },
+      select: { status: true },
+    });
+    if (owner?.status === 'RESERVED') return row;
     const months = Math.floor(row.poolCents / 499);
     if (!months) return row;
     return tx.allianceSponsorship.update({

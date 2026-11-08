@@ -90,7 +90,7 @@ describe('API stats', () => {
       },
     });
     expect(mockPrisma.attack_log.count).toHaveBeenCalledWith({
-      where: { timestamp: { gte: mockStartDate } },
+      where: { voidedAt: null, timestamp: { gte: mockStartDate } },
     });
   });
 

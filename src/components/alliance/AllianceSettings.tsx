@@ -40,6 +40,8 @@ interface AllianceSettingsProps {
   canManageRequests?: boolean;
   /** Rank may edit the public profile (edit_profile). */
   canEditProfile?: boolean;
+  /** Reserved alliance (#13): only leaving, disbanding and succession stay. */
+  reserved?: boolean;
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -51,9 +53,10 @@ export const AllianceSettings = ({
   isLeader = false,
   canManageRequests = false,
   canEditProfile = false,
+  reserved = false,
 }: AllianceSettingsProps) => {
-  const canManage = isLeader || canManageRequests;
-  const canEdit = isLeader || canEditProfile;
+  const canManage = !reserved && (isLeader || canManageRequests);
+  const canEdit = !reserved && (isLeader || canEditProfile);
   const { t } = useTranslation('alliances');
   const { user } = useUser();
   const router = useRouter();
@@ -333,7 +336,7 @@ export const AllianceSettings = ({
         </GameCard>
       )}
 
-      {isLeader && (
+      {isLeader && !reserved && (
         <TreasurySettingsCard alliance={alliance} onUpdate={onUpdate} />
       )}
 

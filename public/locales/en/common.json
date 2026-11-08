@@ -521,7 +521,9 @@
     "accept": "Accept",
     "decline": "Decline",
     "loadFailed": "Failed to load requests",
-    "responseFailed": "Response failed"
+    "responseFailed": "Response failed",
+    "minLevelSend": "You must be level {{level}} to send this gold.",
+    "minLevelReceive": "The requester must be level {{level}} to receive gold."
   },
   "walkthrough": {
     "offer": {
@@ -876,5 +878,12 @@
       "recovery": "It refills {{amount}} every {{minutes}} minutes, so an empty army is fully rested in {{fullTime}}.",
       "penalty": "Attacks always go through, but below {{threshold}} stamina your army fights weaker, down to {{floor}}% offense at zero."
     }
+  },
+  "friendTransfer": {
+    "guide": "Friends can send each other gold once both have unlocked the Coal Mine. Both players must be at least level {{level}} and have accounts at least {{days}} days old, and you cannot send gold to a player you have fought in the last {{hours}} hours. Every transfer pays a fee that is destroyed."
+  },
+  "veteran": {
+    "badge": "Era 1 Tester",
+    "since": "Playing since {{date}}"
   }
 }

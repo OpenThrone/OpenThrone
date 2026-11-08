@@ -60,7 +60,8 @@
         "depositCapPercent": "Einzahlungslimit der Bank (%)"
       },
       "friend": {
-        "dailyReceivedCap": "Tägliches Empfangslimit für Freundesüberweisungen"
+        "dailyReceivedCap": "Tägliches Empfangslimit für Freundesüberweisungen",
+        "transferMinLevel": "Mindeststufe für Freundesüberweisungen (1-100; Sender und Empfänger)"
       },
       "alliance": {
         "maxPendingGoldRequests": "Maximale ausstehende Goldanfragen",
@@ -69,7 +70,9 @@
         "loanInterestMaxPercent": "Maximaler Zinssatz für Allianzschatz-Kredite (%)",
         "memberDailyCapMin": "Minimales tägliches Mitgliederlimit",
         "memberDailyCapMax": "Maximales tägliches Mitgliederlimit",
-        "loanIncomeSharePercent": "Einnahmenanteil aus Schatzkammerkrediten (%)"
+        "loanIncomeSharePercent": "Einnahmenanteil aus Schatzkammerkrediten (%)",
+        "reactivationMinLevel": "Allianz-Reaktivierung: Mindeststufe des Anführers",
+        "reactivationCostGold": "Allianz-Reaktivierung: Goldkosten"
       },
       "mercenary": {
         "hireMultiplier": "Söldner-Anheuerungsmultiplikator",
@@ -93,6 +96,7 @@
       "era.protectionLevelLimit": "Stufengrenze des Schutzes",
       "bank.depositCapPercent": "Einzahlungsgrenze der Bank (%)",
       "friend.dailyReceivedCap": "Tägliches Empfangslimit für Freundesüberweisungen",
+      "friend.transferMinLevel": "Mindeststufe für Freundesüberweisungen (1-100; Sender und Empfänger)",
       "alliance.maxPendingGoldRequests": "Maximal offene Goldanfragen",
       "mercenary.hireMultiplier": "Anwerbefaktor für Söldner",
       "mercenary.dailyPriceRate": "Täglicher Preissatz für Söldner",
@@ -104,7 +108,26 @@
       "alliance.loanInterestMaxPercent": "Höchstzins für Schatzkammerkredite (%)",
       "alliance.memberDailyCapMin": "Minimales Tageslimit für Mitglieder",
       "alliance.memberDailyCapMax": "Maximales Tageslimit für Mitglieder",
-      "alliance.loanIncomeSharePercent": "Einkommensanteil für Schatzkammerkredite (%)"
+      "alliance.loanIncomeSharePercent": "Einkommensanteil für Schatzkammerkredite (%)",
+      "alliance.reactivationMinLevel": "Allianz-Reaktivierung: Mindeststufe des Anführers",
+      "alliance.reactivationCostGold": "Allianz-Reaktivierung: Goldkosten",
+      "abuse.enabled": "Missbrauchserkennung (nur für Admins sichtbar)",
+      "abuse.network.minAccounts": "Gemeinsames Netzwerk: nötige Konten",
+      "abuse.network.windowDays": "Gemeinsames Netzwerk: Zeitraum (Tage, max. 30)",
+      "abuse.funnel.windowDays": "Goldströme: Zeitraum (Tage, max. 20)",
+      "abuse.funnel.minSources": "Goldströme: nötige Quellkonten",
+      "abuse.funnel.minSharePercent": "Goldströme: Anteil der Ausgaben einer Quelle (%)",
+      "abuse.funnel.minGold": "Goldströme: nötiges Goldvolumen",
+      "abuse.funnel.minActionsPerSource": "Goldströme: nötige Aktionen je Quelle",
+      "abuse.pingPong.minTransfersEachWay": "Gold-Hin-und-Her: Überweisungen je Richtung",
+      "abuse.pingPong.minGoldEachWay": "Gold-Hin-und-Her: Gold je Richtung",
+      "abuse.bot.minHoursPerDay": "Bot-Timing: aktive Stunden pro Tag",
+      "abuse.bot.minDays": "Bot-Timing: Tage auf diesem Niveau",
+      "abuse.bot.minGapSamples": "Bot-Timing: nötige Aktionsabstände",
+      "abuse.bot.maxVariationPercent": "Bot-Timing: Schwankung der Abstände höchstens (%)",
+      "abuse.fresh.accountAgeDays": "Neue Konten: zählt, solange jünger als (Tage)",
+      "abuse.fresh.windowDays": "Neue Konten: Zeitraum (Tage)",
+      "abuse.fresh.minAttacks": "Neue Konten: nötige Angriffe eines Spielers"
     },
     "resetBeforeLogin": "Aktuelle Ära vor Freigabe der Anmeldung zurücksetzen",
     "groups": {
@@ -116,7 +139,8 @@
       "economy": "Wirtschaft & Bank",
       "mercenaries": "Söldner & Streitkräfte",
       "alliances": "Allianzen",
-      "accounts": "Konten & E-Mail"
+      "accounts": "Konten & E-Mail",
+      "abuse": "Missbrauchserkennung"
     },
     "staminaTitle": "Ausdauerregeln",
     "staminaHelp": "Ausdauer bestimmt Aktionskosten, Erholung und den Angriffsabzug unter dem Schwellenwert. Spionage kostet keine Ausdauer.",

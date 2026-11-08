@@ -6,6 +6,7 @@ import {
   FRIEND_TRANSFER_FEE_PERCENT_BY_ECONOMY_LEVEL,
   FRIEND_TRANSFER_MIN_ACCOUNT_AGE_DAYS,
   getFriendTransferLimits,
+  parseFriendTransferLevelError,
 } from '@/constants/FriendTransfer';
 
 describe('getFriendTransferLimits', () => {
@@ -80,5 +81,32 @@ describe('friend transfer anti-abuse constants', () => {
       5: 5,
       6: 3,
     });
+  });
+});
+
+describe('parseFriendTransferLevelError', () => {
+  it('reads a level refusal from an error body', () => {
+    expect(
+      parseFriendTransferLevelError({
+        error: 'x',
+        code: 'FRIEND_TRANSFER_MIN_LEVEL',
+        role: 'receive',
+        minLevel: 7,
+      }),
+    ).toEqual({ role: 'receive', minLevel: 7 });
+  });
+
+  it('ignores any other error body', () => {
+    expect(parseFriendTransferLevelError({ error: 'Insufficient gold' })).toBe(
+      null,
+    );
+    expect(parseFriendTransferLevelError(null)).toBe(null);
+    expect(
+      parseFriendTransferLevelError({
+        code: 'FRIEND_TRANSFER_MIN_LEVEL',
+        role: 'other',
+        minLevel: 5,
+      }),
+    ).toBe(null);
   });
 });

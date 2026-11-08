@@ -105,7 +105,14 @@
     "overDailyLimit": "Mehr als Ihr verbleibender Tagesbetrag von {{amount}} Gold.",
     "lockedTitle": "Goldübertragungen gesperrt",
     "locked": "Goldübertragungen werden mit dem {{upgrade}} freigeschaltet.",
-    "limitsFailed": "Konnte Ihre Übertragungsgrenzen nicht laden."
+    "limitsFailed": "Konnte Ihre Übertragungsgrenzen nicht laden.",
+    "levelLockedTitle": "Stufe zu niedrig",
+    "levelLockedSelf": "Erfordert Stufe {{level}}. Erreiche Stufe {{level}}, um Gold zu überweisen.",
+    "levelLockedFriend": "Erfordert Stufe {{level}}. {{player}} muss Stufe {{level}} erreichen, um Gold zu empfangen.",
+    "minLevelSend": "Du musst Stufe {{level}} sein, um Gold zu überweisen.",
+    "minLevelReceive": "Dieser Spieler muss Stufe {{level}} sein, um Gold zu empfangen.",
+    "requestLevelSelf": "Du musst Stufe {{level}} sein, um Gold anzufordern.",
+    "requestLevelFriend": "Dieser Spieler muss Stufe {{level}} sein, um Gold zu überweisen."
   },
   "notifications": {
     "newFriendRequest": "{{player}} möchte Ihr Freund sein!",

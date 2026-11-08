@@ -3,6 +3,8 @@ import type { users as PrismaUser, UserUnit } from '@/lib/prisma-exports';
 import { UserStatsService } from '@/services/UserStatsService';
 import { UserUnitsService } from '@/services/UserUnitsService';
 import type { UnitTotalsType } from '@/types/typings';
+import type { CombatRuleset } from '@/utils/balance/combatRuleset';
+import { CURRENT_COMBAT_RULESET } from '@/utils/balance/combatRulesets';
 import { getLevelFromXP } from '@/utils/utilities';
 
 import { BaseUser, type BaseUserRelations } from './BaseUser';
@@ -19,22 +21,32 @@ export class SpyUser extends BaseUser {
 
   public goldInBank: bigint;
 
-  constructor(userData?: PrismaUser | null, relations: BaseUserRelations = {}) {
+  private readonly ruleset: CombatRuleset;
+
+  constructor(
+    userData?: PrismaUser | null,
+    relations: BaseUserRelations = {},
+    ruleset: CombatRuleset = CURRENT_COMBAT_RULESET,
+  ) {
     super(userData, relations);
+    this.ruleset = ruleset;
     this.goldInBank = BigInt(userData?.gold_in_bank ?? 0);
 
-    this.statsService = new UserStatsService({
-      experience: this.experience,
-      units: [...this.units, ...this.mercenaries],
-      items: this.items,
-      bonus_points: this.bonus_points,
-      structure_upgrades: this.structure_upgrades,
-      battle_upgrades: this.battle_upgrades,
-      fortLevel: this.fortLevel,
-      fortHitpoints: this.fortHitpoints,
-      race: this.race,
-      class: this.class,
-    });
+    this.statsService = new UserStatsService(
+      {
+        experience: this.experience,
+        units: [...this.units, ...this.mercenaries],
+        items: this.items,
+        bonus_points: this.bonus_points,
+        structure_upgrades: this.structure_upgrades,
+        battle_upgrades: this.battle_upgrades,
+        fortLevel: this.fortLevel,
+        fortHitpoints: this.fortHitpoints,
+        race: this.race,
+        class: this.class,
+      },
+      ruleset,
+    );
 
     this.unitsService = new UserUnitsService({
       units: this.units,
@@ -53,7 +65,7 @@ export class SpyUser extends BaseUser {
   }
 
   get level(): number {
-    return getLevelFromXP(this.experience);
+    return getLevelFromXP(this.experience, this.ruleset.levelXp);
   }
 
   get playerBonuses() {

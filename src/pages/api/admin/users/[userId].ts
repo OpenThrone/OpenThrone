@@ -13,7 +13,7 @@ import { withApiGuard } from '@/middleware/apiGuard';
 import { AdminService } from '@/services/Admin.service';
 import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
 import { recomputeStoredStatsInTx } from '@/utils/adminRecomputeStats';
-import { deriveAdminUserStatus } from '@/utils/adminStatus';
+import { currentStatus, deriveAdminUserStatus } from '@/utils/adminStatus';
 import { AppConfig } from '@/utils/AppConfig';
 import { getRequestIp, logAction, logActionStrict } from '@/utils/auditLogger';
 import { countOtherAdministrators } from '@/utils/authorization';
@@ -46,6 +46,7 @@ export const PLAYER_CLASSES = [
   'ASSASSIN',
   'THIEF',
 ] as const;
+export const VETERAN_TITLES = ['ERA1_TESTER'] as const;
 export const BIO_MAX_LENGTH = 2000;
 
 export const fortMaxHitpoints = (level: number) =>
@@ -64,6 +65,9 @@ const GameplayFieldsSchema = z.object({
   class: z.enum(PLAYER_CLASSES),
   locale: z.enum(AppConfig.locales),
   bio: z.string().max(BIO_MAX_LENGTH),
+  // Veteran badge; edits send only changed fields (patch schema below).
+  veteranTitle: z.enum(VETERAN_TITLES).nullable().optional(),
+  veteranSince: z.string().datetime().nullable().optional(),
 });
 /** Full gameplay block; stamina may not exceed max stamina. */
 export const GameplaySchema = GameplayFieldsSchema.refine(
@@ -194,6 +198,43 @@ export function resolveFortHitpoints(
   );
 }
 
+export interface VeteranFields {
+  veteranTitle: (typeof VETERAN_TITLES)[number] | null;
+  veteranSince: string | null;
+}
+
+/**
+ * Merges a veteran-title patch onto the loaded row and validates the result:
+ * the since date is an ISO datetime not in the future, and clearing the title
+ * clears the date with it. Undefined patch fields mean "not edited".
+ */
+export function resolveVeteranFields(
+  current: VeteranFields,
+  patch: Partial<VeteranFields>,
+  now = new Date(),
+): VeteranFields {
+  const veteranTitle =
+    patch.veteranTitle !== undefined
+      ? patch.veteranTitle
+      : (current.veteranTitle ?? null);
+  let veteranSince =
+    patch.veteranSince !== undefined
+      ? patch.veteranSince
+      : (current.veteranSince ?? null);
+  if (!veteranTitle) veteranSince = null;
+  if (veteranSince) {
+    const since = new Date(veteranSince);
+    if (Number.isNaN(since.getTime()))
+      throw new AdminUpdateError(422, 'Veteran since date is invalid');
+    if (since.getTime() > now.getTime())
+      throw new AdminUpdateError(
+        422,
+        'Veteran since date cannot be in the future',
+      );
+  }
+  return { veteranTitle, veteranSince };
+}
+
 type DiffValue = string | number | boolean | null;
 export type FieldDiff = Record<string, { before: DiffValue; after: DiffValue }>;
 
@@ -322,7 +363,7 @@ async function handler(
           UserUnit: true,
           UserItem: true,
           statusHistories: {
-            orderBy: { start_date: 'desc' },
+            orderBy: [{ start_date: 'desc' }, { id: 'desc' }],
             take: 200,
             select: {
               id: true,
@@ -367,9 +408,7 @@ async function handler(
           username: user.display_name,
           email: user.email,
           status: deriveAdminUserStatus({
-            latestStatus: user.statusHistories?.find(
-              (entry) => entry.end_date === null,
-            )?.status,
+            latestStatus: currentStatus(user.statusHistories),
             lastActive: user.last_active,
             currentEraId: user.currentEraId,
             activeEraId: activeEra?.id ?? null,
@@ -395,6 +434,8 @@ async function handler(
           class: user.class,
           locale: user.locale,
           bio: user.bio,
+          veteranTitle: user.veteranTitle ?? null,
+          veteranSince: user.veteranSince?.toISOString() ?? null,
         },
         derived: {
           offense: user.offense ?? 0,
@@ -607,6 +648,8 @@ async function handler(
             class: user.class,
             locale: user.locale,
             bio: user.bio,
+            veteranTitle: user.veteranTitle ?? null,
+            veteranSince: user.veteranSince?.toISOString() ?? null,
           };
 
           // Optimistic concurrency: the edit must be based on current values.
@@ -698,6 +741,18 @@ async function handler(
               'Stamina cannot exceed max stamina',
             );
 
+          // Veteran badge: cross-field rules run on the merged row.
+          const veteranTouched =
+            gameplay.veteranTitle !== undefined ||
+            gameplay.veteranSince !== undefined;
+          const veteran = resolveVeteranFields(
+            {
+              veteranTitle: user.veteranTitle ?? null,
+              veteranSince: user.veteranSince?.toISOString() ?? null,
+            },
+            gameplay,
+          );
+
           // Before/after record of changed fields (email only as a flag).
           const unitDiff: FieldDiff = {};
           for (const unit of updateData.army.units) {
@@ -736,6 +791,7 @@ async function handler(
             experience: updateData.stats.experience,
             ...gameplay,
             fortHitpoints,
+            ...(veteranTouched ? veteran : {}),
           });
           const permissionDiff = updateData.permissions
             ? setDiff(
@@ -783,6 +839,14 @@ async function handler(
             class: gameplay.class,
             locale: gameplay.locale,
             bio: gameplay.bio,
+            ...(veteranTouched
+              ? {
+                  veteranTitle: veteran.veteranTitle,
+                  veteranSince: veteran.veteranSince
+                    ? new Date(veteran.veteranSince)
+                    : null,
+                }
+              : {}),
           });
           if (Object.keys(gameplayData).length > 0)
             await tx.users.update({

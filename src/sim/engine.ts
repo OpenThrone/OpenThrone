@@ -17,11 +17,9 @@ import {
   simulateIntel,
 } from '@/utils/spyFunctions';
 
-import {
-  getBattleConstants,
-  setBattleConstants,
-  simulateBattle,
-} from '../utils/attackFunctions';
+import { simulateBattle } from '../utils/attackFunctions';
+import { deriveCombatRuleset } from '../utils/balance/combatRuleset';
+import { CURRENT_COMBAT_RULESET } from '../utils/balance/combatRulesets';
 import { assertGoldQuantity } from './invariants';
 import { computeArmyCost, createSimPlayer } from './presets';
 import { createDefaultRandom, createValidatedRandom } from './random';
@@ -315,17 +313,6 @@ function battleResultToMetrics(
   };
 }
 
-/**
- * Process-global lock that forbids overlapping same-process battle
- * overrides. When true, a `runSingleBattle` call has installed overrides
- * via `setBattleConstants` and not yet restored them; any concurrent
- * `runSingleBattle` invocation would observe corrupted constants.
- *
- * Matrix concurrency MUST use child-process isolation (one Bun process
- * per scenario) so this lock never needs to be cross-process aware.
- */
-let battleOverrideActive = false;
-
 /** Run single battle. */
 export async function runSingleBattle(
   attacker: SimPlayer,
@@ -343,48 +330,32 @@ export async function runSingleBattle(
     ruleset,
   );
   const random = createValidatedRandom(config?.random ?? createDefaultRandom());
-  const originalConstants = getBattleConstants();
+  // Simulator tuning rides on a ruleset derived for this one battle, so the
+  // frozen registry rulesets (and replays) are never touched.
   const overrides = battleConfigToOverrides(config);
-  const hasOverrides = Object.keys(overrides).length > 0;
+  const combatRuleset = Object.keys(overrides).length
+    ? deriveCombatRuleset(CURRENT_COMBAT_RULESET, 'combat-sim', {
+        battle: overrides,
+      })
+    : CURRENT_COMBAT_RULESET;
 
-  if (hasOverrides && battleOverrideActive) {
-    throw new Error(
-      'runSingleBattle cannot install battle-constant overrides while another override is active in this process. ' +
-        'Run scenarios in isolated child processes for matrix concurrency.',
-    );
-  }
-
-  if (hasOverrides) {
-    battleOverrideActive = true;
-    setBattleConstants(overrides as any);
-  }
-
-  let result: Awaited<ReturnType<typeof simulateBattle>>;
-  try {
-    result = await simulateBattle(
-      attackerUser,
-      defenderUser,
-      defender.fortHp,
-      maxTurns,
-      false,
-      isDefenderProtected,
-      {
-        random,
-        defenderDailyCasualtyRemaining: config?.defenderDailyCasualtyRemaining,
-        defenderDailyGoldRemaining:
-          config?.defenderDailyGoldRemaining === undefined
-            ? undefined
-            : BigInt(
-                Math.max(0, Math.floor(config.defenderDailyGoldRemaining)),
-              ),
-      },
-    );
-  } finally {
-    if (hasOverrides) {
-      setBattleConstants(originalConstants as any);
-      battleOverrideActive = false;
-    }
-  }
+  const result = await simulateBattle(
+    attackerUser,
+    defenderUser,
+    defender.fortHp,
+    maxTurns,
+    false,
+    isDefenderProtected,
+    {
+      random,
+      ruleset: combatRuleset,
+      defenderDailyCasualtyRemaining: config?.defenderDailyCasualtyRemaining,
+      defenderDailyGoldRemaining:
+        config?.defenderDailyGoldRemaining === undefined
+          ? undefined
+          : BigInt(Math.max(0, Math.floor(config.defenderDailyGoldRemaining))),
+    },
+  );
 
   const armyCost = computeArmyCost(attacker);
   const metrics = battleResultToMetrics(result, attacker, defender, armyCost);

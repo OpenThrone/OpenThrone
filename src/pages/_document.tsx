@@ -28,14 +28,7 @@ export default function Document(props) {
         {/* Display fonts are self-hosted (src/styles/global.css). */}
         <ColorSchemeScript defaultColorScheme="dark" />
         <meta name="google-adsense-account" content="ca-pub-5510515377090188" />
-        {/* hreflang tags for SEO */}
-        <link
-          rel="alternate"
-          hrefLang="x-default"
-          href="https://openthrone.dev/en"
-        />
-        <link rel="alternate" hrefLang="es" href="https://openthrone.dev/es" />
-        <link rel="alternate" hrefLang="de" href="https://openthrone.dev/de" />
+        {/* hreflang and canonical links are emitted per page by SeoHead. */}
       </Head>
       <body>
         <Main />

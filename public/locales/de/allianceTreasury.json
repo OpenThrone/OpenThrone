@@ -77,7 +77,8 @@
       "DECLINED": "Abgelehnt",
       "CANCELLED": "Zurückgezogen"
     },
-    "overCap": "Kredite sind auf {{cap}} Gold begrenzt."
+    "overCap": "Kredite sind auf {{cap}} Gold begrenzt.",
+    "reserved": "Rückzahlungen ruhen, solange diese Allianz reserviert ist. Dein Kredit läuft weiter, sobald sie reaktiviert wird."
   },
   "settings": {
     "title": "Regeln der Schatzkammer",

@@ -85,6 +85,114 @@ describe('localized email templates', () => {
       }),
     ).toThrow('scheduled deletion');
   });
+  it('renders the relaunch notice with a news link anchor in every locale', () => {
+    const twoYearPhrase: Record<string, string> = {
+      en: 'two years',
+      de: 'zwei Jahren',
+      es: 'dos años',
+    };
+    for (const locale of ['en', 'de-DE', 'es-ES']) {
+      const rendered = renderEmail({
+        kind: 'INACTIVITY_NOTICE',
+        locale,
+        vars: {
+          userId: 1,
+          display_name: 'Player',
+          relaunch: true,
+          newsId: 7,
+          deletionDate: '2027-01-31',
+        },
+      });
+      expect(rendered.text).toContain('https://example.test/community/news/7');
+      expect(rendered.html).toContain(
+        'href="https://example.test/community/news/7"',
+      );
+      expect(rendered.text).toContain('https://example.test/account/login');
+      expect(rendered.text).toContain(
+        'https://example.test/account/delete-request',
+      );
+      // The promise that makes the fingerprint worth keeping.
+      expect(rendered.text).toContain(twoYearPhrase[locale.split('-')[0]]);
+    }
+  });
+  it('renders the veteran claim link as a transactional email in every locale', () => {
+    const token = 'b'.repeat(64);
+    for (const locale of ['en', 'de-DE', 'es-ES']) {
+      const rendered = renderEmail({
+        kind: 'VETERAN_CLAIM',
+        locale,
+        vars: { userId: 1, display_name: 'Player', claimToken: token },
+      });
+      const link = `https://example.test/account/veteran-claim?token=${token}`;
+      expect(rendered.text).toContain(link);
+      expect(rendered.html).toContain(`href="${link}"`);
+      // A security mail: no unsubscribe footer.
+      expect(rendered.text).not.toContain('unsubscribe?token=');
+    }
+    expect(() =>
+      renderEmail({ kind: 'VETERAN_CLAIM', locale: 'en', vars: { userId: 1 } }),
+    ).toThrow('token');
+  });
+  it('renders the relaunch reminder with the news link in every locale', () => {
+    for (const locale of ['en', 'de-DE', 'es-ES']) {
+      const rendered = renderEmail({
+        kind: 'INACTIVITY_REMINDER',
+        locale,
+        vars: {
+          userId: 1,
+          display_name: 'Player',
+          relaunch: true,
+          newsId: 7,
+          deletionDate: '2027-01-31',
+        },
+      });
+      expect(rendered.text).toContain('https://example.test/community/news/7');
+      expect(rendered.html).toContain(
+        'href="https://example.test/community/news/7"',
+      );
+    }
+    // The deadline date is localized per recipient.
+    expect(
+      renderEmail({
+        kind: 'INACTIVITY_REMINDER',
+        locale: 'en',
+        vars: {
+          userId: 1,
+          relaunch: true,
+          newsId: 7,
+          deletionDate: '2027-01-31',
+        },
+      }).text,
+    ).toContain('January 31, 2027');
+  });
+  it('keeps the standard notice and reminder unchanged without the relaunch flag', () => {
+    const notice = renderEmail({
+      kind: 'INACTIVITY_NOTICE',
+      locale: 'en',
+      vars: {
+        userId: 1,
+        display_name: 'Player',
+        deletionDate: '2027-04-09',
+        lastActiveDate: '2025-01-01',
+      },
+    });
+    expect(notice.text).not.toContain('/community/news');
+    expect(notice.html).not.toContain('/community/news');
+    expect(notice.text).toContain('180-day');
+    const reminder = renderEmail({
+      kind: 'INACTIVITY_REMINDER',
+      locale: 'en',
+      vars: {
+        userId: 1,
+        display_name: 'Player',
+        deletionDate: '2027-04-09',
+        lastActiveDate: '2025-01-01',
+      },
+    });
+    expect(reminder.text).not.toContain('/community/news');
+    expect(reminder.html).not.toContain('/community/news');
+    expect(reminder.text).toContain('30 days left');
+  });
 });
 
 it('renders safe localized optional battle alerts with report and unsubscribe links', () => {

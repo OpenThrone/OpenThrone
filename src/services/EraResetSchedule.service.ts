@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
+import { evictUserFromChatRoom } from '@/lib/socket';
 import {
   CurrentEraResetError,
   type CurrentEraResetInput,
@@ -14,6 +15,7 @@ import {
   ERA_TRANSACTION_OPTIONS,
   lockEraLifecycle,
 } from '@/utils/eraLifecycleLock';
+import { eraResetPhrase } from '@/utils/eraResetPhrase';
 import {
   type EraStartSettings,
   eraStartSettingsSchema,
@@ -27,6 +29,8 @@ const scheduleSchema = z.object({
   resetAt: z.string().datetime(),
   enableLogins: z.boolean(),
   startSettings: eraStartSettingsSchema.optional(),
+  /** Complete factory restore (#13): also dissolves every alliance. */
+  factoryRestore: z.boolean().optional(),
   adminUserId: z.number().int().positive(),
   state: z.enum(['pending', 'closing', 'completed', 'cancelled']),
   closedAt: z.string().datetime().nullable(),
@@ -237,7 +241,10 @@ async function closeEraReset(
       action: 'ADMIN_ERA_RESET_STARTED',
       entityType: 'Era',
       entityId: schedule.eraId,
-      details: { scheduleId: schedule.id },
+      details: {
+        scheduleId: schedule.id,
+        factoryRestore: schedule.factoryRestore === true,
+      },
     },
     tx,
   );
@@ -245,7 +252,7 @@ async function closeEraReset(
 
 /** Start the same durable reset pipeline now, with no manual login-setting prerequisite. */
 export async function startImmediateEraReset(input: CurrentEraResetInput) {
-  if (input.confirmation !== `RESET ERA ${input.eraId}`)
+  if (input.confirmation !== eraResetPhrase(input.eraId, input.factoryRestore))
     throw new EraResetScheduleConflict('Explicit confirmation is required');
   const result = await prisma.$transaction(async (tx) => {
     await lockEraLifecycle(tx);
@@ -268,6 +275,7 @@ export async function startImmediateEraReset(input: CurrentEraResetInput) {
       resetAt: new Date().toISOString(),
       enableLogins: input.enableLogins ?? false,
       startSettings: input.startSettings,
+      factoryRestore: input.factoryRestore === true ? true : undefined,
       adminUserId: input.adminUserId,
       state: 'pending',
       closedAt: null,
@@ -288,6 +296,7 @@ export async function processScheduledEraReset() {
     Date.parse(candidate.resetAt) > Date.now()
   )
     return;
+  let evictions: { userId: number; roomId: number }[] = [];
   await prisma.$transaction(async (tx) => {
     await lockEraLifecycle(tx);
     const schedule = await readSchedule(tx);
@@ -323,16 +332,22 @@ export async function processScheduledEraReset() {
       Date.now() - Date.parse(schedule.closedAt) < 35_000
     )
       return;
-    await resetCurrentEraInTransaction(tx, {
+    const reset = await resetCurrentEraInTransaction(tx, {
       eraId: schedule.eraId,
       expectedEraStartDate: new Date(schedule.expectedEraStartDate),
-      confirmation: `RESET ERA ${schedule.eraId}`,
+      confirmation: eraResetPhrase(schedule.eraId, schedule.factoryRestore),
+      factoryRestore: schedule.factoryRestore,
       enableLogins: schedule.enableLogins,
       startSettings: schedule.startSettings,
       adminUserId: schedule.adminUserId,
       ip: 'scheduler',
     });
     await writeSchedule(tx, { ...schedule, state: 'completed' });
+    evictions = reset?.chatEvictions ?? [];
   }, ERA_TRANSACTION_OPTIONS);
   invalidateRuntimeConfigCache();
+  // Socket pushes only after the dissolution committed.
+  evictions.forEach(({ userId, roomId }) =>
+    evictUserFromChatRoom(userId, roomId),
+  );
 }

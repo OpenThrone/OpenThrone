@@ -3,8 +3,14 @@ import { z } from 'zod';
 import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import prisma from '@/lib/prisma';
 import { WarStatus } from '@/lib/prisma-exports';
+import { ALLIANCE_BANK_TX_OPTIONS } from '@/services/AllianceBank.service';
+import {
+  assertAllianceActive,
+  isAllianceActive,
+} from '@/services/allianceStatus';
 import { enqueueDiscordAlert } from '@/services/discord/DiscordAlerts.service';
 import { discordBotConfigured, siteUrl } from '@/services/discord/DiscordApi';
+import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
 import { logError } from '@/utils/logger';
 
 /** Queues a Discord DM for every linked member on both sides. */
@@ -86,91 +92,111 @@ export class AllianceWarService {
     const validatedData = DeclareWarSchema.parse(data);
 
     try {
-      // 1. Verify Declarer Permissions
-      const declarerMembership = await prisma.alliance_memberships.findFirst({
-        where: {
-          alliance_id: validatedData.allianceId,
-          user_id: validatedData.declarerUserId,
-        },
-        include: { role: true, alliance: true },
-      });
-
-      if (!declarerMembership) {
-        throw new Error('You are not a member of the declaring alliance');
-      }
-
-      const canDeclare = hasAlliancePermission(
-        declarerMembership.alliance.leader_id,
-        validatedData.declarerUserId,
-        declarerMembership.role,
-        'declare_war',
-      );
-
-      if (!canDeclare) {
-        throw new Error('You do not have permission to declare war');
-      }
-
-      // 2. Validate Targets
-      if (validatedData.defenderAllianceId) {
-        if (validatedData.defenderAllianceId === validatedData.allianceId) {
-          throw new Error('Cannot declare war on your own alliance');
+      // One transaction under the era lifecycle (shared, like every alliance
+      // write) and both alliance rows in ascending id order: a declaration
+      // cannot interleave with a rollover that reserves the alliances (#13).
+      const war = await prisma.$transaction(async (tx) => {
+        await lockEraLifecycleShared(tx);
+        const lockIds = [
+          ...new Set(
+            [validatedData.allianceId, validatedData.defenderAllianceId].filter(
+              (id): id is number => typeof id === 'number',
+            ),
+          ),
+        ].sort((x, y) => x - y);
+        for (const id of lockIds) {
+          await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${id} FOR UPDATE`;
         }
-        const targetAlliance = await prisma.alliances.findUnique({
-          where: { id: validatedData.defenderAllianceId },
-        });
-        if (!targetAlliance) throw new Error('Target alliance not found');
 
-        // Check for existing active war
-        const existingWar = await prisma.alliance_wars.findFirst({
-          where: {
-            attacker_alliance_id: validatedData.allianceId,
-            defender_alliance_id: validatedData.defenderAllianceId,
-            status: { in: [WarStatus.WARMUP, WarStatus.ACTIVE] },
-          },
-        });
-        if (existingWar)
-          throw new Error('War already declared against this alliance');
-      } else if (validatedData.defenderUserId) {
-        const targetUser = await prisma.users.findUnique({
-          where: { id: validatedData.defenderUserId },
-        });
-        if (!targetUser) throw new Error('Target user not found');
-
-        // Check if user is in declarer's alliance
-        // (We can skip this if we want to allow civil wars, but usually not)
-        const usersMembership = await prisma.alliance_memberships.count({
+        // 1. Verify Declarer Permissions
+        const declarerMembership = await tx.alliance_memberships.findFirst({
           where: {
             alliance_id: validatedData.allianceId,
-            user_id: validatedData.defenderUserId,
+            user_id: validatedData.declarerUserId,
           },
+          include: { role: true, alliance: true },
         });
-        if (usersMembership > 0)
-          throw new Error(
-            'Cannot declare war on a member of your own alliance',
-          );
-        const existingUserWar = await prisma.alliance_wars.findFirst({
-          where: {
-            attacker_alliance_id: validatedData.allianceId,
-            defender_user_id: validatedData.defenderUserId,
-            status: { in: [WarStatus.WARMUP, WarStatus.ACTIVE] },
-          },
-          select: { id: true },
-        });
-        if (existingUserWar)
-          throw new Error('War already declared against this player');
-      }
 
-      // 3. Create War Record
-      const war = await prisma.alliance_wars.create({
-        data: {
-          attacker_alliance_id: validatedData.allianceId,
-          defender_alliance_id: validatedData.defenderAllianceId,
-          defender_user_id: validatedData.defenderUserId,
-          declared_by_user_id: validatedData.declarerUserId,
-          status: WarStatus.WARMUP,
-          start_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // Start in 24 hours (WARMUP)
-        },
-      });
+        if (!declarerMembership) {
+          throw new Error('You are not a member of the declaring alliance');
+        }
+        assertAllianceActive(declarerMembership.alliance);
+
+        const canDeclare = hasAlliancePermission(
+          declarerMembership.alliance.leader_id,
+          validatedData.declarerUserId,
+          declarerMembership.role,
+          'declare_war',
+        );
+
+        if (!canDeclare) {
+          throw new Error('You do not have permission to declare war');
+        }
+
+        // 2. Validate Targets
+        if (validatedData.defenderAllianceId) {
+          if (validatedData.defenderAllianceId === validatedData.allianceId) {
+            throw new Error('Cannot declare war on your own alliance');
+          }
+          const targetAlliance = await tx.alliances.findUnique({
+            where: { id: validatedData.defenderAllianceId },
+          });
+          if (!targetAlliance) throw new Error('Target alliance not found');
+          if (!isAllianceActive(targetAlliance))
+            throw new Error('That alliance is reserved and cannot be targeted');
+
+          // Check for existing active war
+          const existingWar = await tx.alliance_wars.findFirst({
+            where: {
+              attacker_alliance_id: validatedData.allianceId,
+              defender_alliance_id: validatedData.defenderAllianceId,
+              status: { in: [WarStatus.WARMUP, WarStatus.ACTIVE] },
+            },
+          });
+          if (existingWar)
+            throw new Error('War already declared against this alliance');
+        } else if (validatedData.defenderUserId) {
+          const targetUser = await tx.users.findUnique({
+            where: { id: validatedData.defenderUserId },
+          });
+          if (!targetUser) throw new Error('Target user not found');
+
+          // Check if user is in declarer's alliance
+          // (We can skip this if we want to allow civil wars, but usually not)
+          const usersMembership = await tx.alliance_memberships.count({
+            where: {
+              alliance_id: validatedData.allianceId,
+              user_id: validatedData.defenderUserId,
+            },
+          });
+          if (usersMembership > 0)
+            throw new Error(
+              'Cannot declare war on a member of your own alliance',
+            );
+          const existingUserWar = await tx.alliance_wars.findFirst({
+            where: {
+              attacker_alliance_id: validatedData.allianceId,
+              defender_user_id: validatedData.defenderUserId,
+              status: { in: [WarStatus.WARMUP, WarStatus.ACTIVE] },
+            },
+            select: { id: true },
+          });
+          if (existingUserWar)
+            throw new Error('War already declared against this player');
+        }
+
+        // 3. Create War Record
+        return tx.alliance_wars.create({
+          data: {
+            attacker_alliance_id: validatedData.allianceId,
+            defender_alliance_id: validatedData.defenderAllianceId,
+            defender_user_id: validatedData.defenderUserId,
+            declared_by_user_id: validatedData.declarerUserId,
+            status: WarStatus.WARMUP,
+            start_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // Start in 24 hours (WARMUP)
+          },
+        });
+      }, ALLIANCE_BANK_TX_OPTIONS);
 
       await notifyWarDeclared(war).catch(() =>
         logError('Discord war alert failed', { warId: war.id }),

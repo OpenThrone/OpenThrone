@@ -362,35 +362,31 @@ describe('mercenary front line keeps the won-assault hit', () => {
 });
 
 describe('troop-only chip spares assaults that break through', () => {
-  const { V5_COMBAT_CONSTANTS } = require('./balance/v5Combat');
+  const { deriveCombatRuleset } = require('./balance/combatRuleset');
+  const { CURRENT_COMBAT_RULESET } = require('./balance/combatRulesets');
   const SLOTS = ['WEAPON', 'HELM', 'ARMOR', 'BOOTS', 'BRACERS', 'SHIELD'];
   const kit = (usage: string, quantity: number) =>
     SLOTS.map((type) => ({ usage, type, level: 1, quantity }));
   const firstAssault = async (pressure: number, troopChip: boolean) => {
-    const original = V5_COMBAT_CONSTANTS.CHIP_FROM_TROOPS_ONLY;
-    V5_COMBAT_CONSTANTS.CHIP_FROM_TROOPS_ONLY = troopChip;
-    try {
-      const attacker = makeUser(
-        [{ type: 'OFFENSE', quantity: 100, level: 1 }],
-        {
-          items: kit('OFFENSE', 100),
-        },
-      );
-      const defender = makeUser(
-        [
-          { type: 'DEFENSE', quantity: 110, level: 1 },
-          { type: 'CITIZEN', quantity: 400, level: 1 },
-        ],
-        { items: kit('DEFENSE', 110), defensePressureToday: pressure },
-      );
-      const r = await simulateBattle(attacker, defender, 500, 1, false, false, {
-        random: seeded(7),
-      });
-      const hit = r.mitigationLog.find((m: any) => m.source === 'ATTACKER');
-      return { result: r.result, damage: hit.mitigatedDamage };
-    } finally {
-      V5_COMBAT_CONSTANTS.CHIP_FROM_TROOPS_ONLY = original;
-    }
+    const ruleset = deriveCombatRuleset(CURRENT_COMBAT_RULESET, 'combat-test', {
+      constants: { CHIP_FROM_TROOPS_ONLY: troopChip },
+    });
+    const attacker = makeUser([{ type: 'OFFENSE', quantity: 100, level: 1 }], {
+      items: kit('OFFENSE', 100),
+    });
+    const defender = makeUser(
+      [
+        { type: 'DEFENSE', quantity: 110, level: 1 },
+        { type: 'CITIZEN', quantity: 400, level: 1 },
+      ],
+      { items: kit('DEFENSE', 110), defensePressureToday: pressure },
+    );
+    const r = await simulateBattle(attacker, defender, 500, 1, false, false, {
+      random: seeded(7),
+      ruleset,
+    });
+    const hit = r.mitigationLog.find((m: any) => m.source === 'ATTACKER');
+    return { result: r.result, damage: hit.mitigatedDamage };
   };
 
   it('keeps full damage on a breach only a tired garrison allows', async () => {

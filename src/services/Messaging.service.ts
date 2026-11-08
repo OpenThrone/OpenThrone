@@ -9,6 +9,7 @@ import {
 } from '@/services/AttackLogAccess.service';
 import {
   assertAllianceChatMembership,
+  assertAllianceChatOpen,
   withLockedChatRoom,
 } from '@/services/chatRoomGuards';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
@@ -903,6 +904,7 @@ export class MessagingService {
     try {
       return await withLockedChatRoom(roomId, async (tx) => {
         await assertAllianceChatMembership(tx, userId, roomId);
+        await assertAllianceChatOpen(tx, roomId);
         // Verify user is a participant and has write permission
         const roomParticipant = await tx.chatRoomParticipant.findUnique({
           where: { roomId_userId: { roomId, userId } },
@@ -1033,6 +1035,7 @@ export class MessagingService {
     try {
       return await withLockedChatRoom(roomId, async (tx) => {
         await assertAllianceChatMembership(tx, userId, roomId);
+        await assertAllianceChatOpen(tx, roomId);
         const participant = await tx.chatRoomParticipant.findUnique({
           where: { roomId_userId: { roomId, userId } },
           include: { room: { select: { allianceId: true } } },

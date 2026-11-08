@@ -23,7 +23,7 @@ export default async function handler(
         where: await getEraParticipantWhere(currentEra),
       }),
       prisma.attack_log.count({
-        where: { timestamp: { gte: currentEra.startDate } },
+        where: { voidedAt: null, timestamp: { gte: currentEra.startDate } },
       }),
       prisma.alliances.count(),
     ]);

@@ -80,6 +80,8 @@ export async function exportEraCalibration(
   const [attacks, bankEvents, recruitmentEvents] = await Promise.all([
     prisma.attack_log.findMany({
       where: {
+        // Voided battles (bug exploits) would poison calibration data.
+        voidedAt: null,
         timestamp: dateRange,
         OR: [
           { attacker_id: { in: userIds } },

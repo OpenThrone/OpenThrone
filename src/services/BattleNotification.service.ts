@@ -1,6 +1,7 @@
 import type { Prisma } from '@/lib/prisma-exports';
 import { enqueueEmails } from '@/services/Email.service';
 import { renderEmail } from '@/services/emailTemplates';
+import { getActiveAccountStatus } from '@/services/User.service';
 
 interface BattleAlert {
   defenderId: number;
@@ -18,6 +19,9 @@ export async function enqueueBattleAlert(
     where: { userId: alert.defenderId },
   });
   if (!preference?.attackNotificationEmails || preference.unsubscribedAllAt)
+    return;
+  // No alerts for a closed account (including an erasure grace period).
+  if ((await getActiveAccountStatus(alert.defenderId, tx))?.status === 'CLOSED')
     return;
   const user = await tx.users.findUnique({
     where: { id: alert.defenderId },

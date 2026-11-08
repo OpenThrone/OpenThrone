@@ -3,6 +3,7 @@ import type { NextApiResponse } from 'next';
 
 import { withApiGuard } from '@/middleware/apiGuard';
 import { CronJobService } from '@/services';
+import { withCronRunLog } from '@/services/CronRun.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
 
@@ -38,13 +39,23 @@ const turnCron = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   }
 
   try {
-    const result = await CronJobService.processTurnUpdates();
+    const outcome = await withCronRunLog('turns', async () => {
+      const result = await CronJobService.processTurnUpdates();
+      return {
+        failed: !result.success,
+        summary: {
+          processed: result.processed ?? 0,
+          failed: result.failed ?? 0,
+        },
+        result,
+      };
+    });
 
-    if (result.success) {
+    if (outcome.result.success) {
       return res.status(200).json({
-        message: result.message,
-        processed: result.processed,
-        failed: result.failed,
+        message: outcome.result.message,
+        processed: outcome.result.processed,
+        failed: outcome.result.failed,
       });
     }
     return res.status(500).json({ message: 'Turn cron job failed.' });

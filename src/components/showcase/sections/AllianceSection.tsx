@@ -8,6 +8,10 @@ import { transactionTypeLabel } from '@/components/alliance/allianceLabels';
 import { AllianceMembers } from '@/components/alliance/AllianceMembers';
 import { AllianceOverview } from '@/components/alliance/AllianceOverview';
 import { AllianceRanks } from '@/components/alliance/AllianceRanks';
+import {
+  type ReactivationProgressView,
+  ReservedAllianceNotice,
+} from '@/components/alliance/ReservedAllianceNotice';
 import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
 import {
@@ -28,6 +32,35 @@ const LEADER_ID = 101;
 const PAGE = '/alliances/[id]';
 const FOUNDED = new Date('2026-08-02T12:00:00.000Z');
 const NOW = new Date('2026-10-20T12:00:00.000Z');
+
+const REQUIREMENTS = { minLevel: 10, costGold: 10_000_000 };
+const SHORT_OF_GOLD: ReactivationProgressView = {
+  requirements: REQUIREMENTS,
+  leader: {
+    level: 12,
+    gold: '3400000',
+    inCurrentEra: true,
+    meetsLevel: true,
+    meetsGold: false,
+  },
+  canReactivate: false,
+};
+const READY: ReactivationProgressView = {
+  requirements: REQUIREMENTS,
+  leader: {
+    level: 12,
+    gold: '14200000',
+    inCurrentEra: true,
+    meetsLevel: true,
+    meetsGold: true,
+  },
+  canReactivate: true,
+};
+const MEMBER_VIEW: ReactivationProgressView = {
+  requirements: REQUIREMENTS,
+  leader: null,
+  canReactivate: false,
+};
 
 const allPermissions = Object.fromEntries(
   ALLIANCE_PERMISSION_KEYS.map((key) => [key, true]),
@@ -244,6 +277,83 @@ export default function AllianceSection() {
           isLeader
           userMembership
           onJoin={async () => {}}
+        />
+      </Specimen>
+      <Specimen
+        framed={false}
+        name="Alliance directory card: reserved"
+        usedOn={['/alliances', '/alliances/browse']}
+        note="A reserved alliance (#13) keeps its identity but wears the badge and takes no new members: Join is disabled."
+      >
+        <AllianceCard
+          id={ALLIANCE_ID}
+          name="The Silver Court"
+          members={5}
+          description="Strength through unity"
+          imgsrc={getPureCrest('ELF')}
+          bannerimgsrc={resolveArtworkSource(
+            '/assets/images/ui/public/war-table.webp',
+          )}
+          status="RESERVED"
+          joinMode="OPEN"
+          onJoin={async () => {}}
+        />
+      </Specimen>
+      <Specimen
+        framed={false}
+        name="Reserved alliance: leader, short of gold"
+        usedOn={[PAGE]}
+        wide
+        note="Why the alliance is on hold, what stays open, and the leader's progress. Reactivate stays disabled until both requirements are met."
+      >
+        <ReservedAllianceNotice
+          allianceName="The Silver Court"
+          leaderName="Lady Morwen"
+          viewer="leader"
+          progress={SHORT_OF_GOLD}
+          onReactivate={mockAction('Reactivate alliance')}
+        />
+      </Specimen>
+      <Specimen
+        framed={false}
+        name="Reserved alliance: leader, ready"
+        usedOn={[PAGE]}
+        wide
+        note="Both requirements met: the button opens the pay-and-reactivate confirmation (mocked here)."
+      >
+        <ReservedAllianceNotice
+          allianceName="The Silver Court"
+          leaderName="Lady Morwen"
+          viewer="leader"
+          progress={READY}
+          onReactivate={mockAction('Reactivate alliance')}
+        />
+      </Specimen>
+      <Specimen
+        framed={false}
+        name="Reserved alliance: member"
+        usedOn={[PAGE]}
+        wide
+        note="Members see the same facts and can leave at any time without the leader."
+      >
+        <ReservedAllianceNotice
+          allianceName="The Silver Court"
+          leaderName="Lady Morwen"
+          viewer="member"
+          progress={MEMBER_VIEW}
+          onLeave={mockAction('Leave alliance')}
+        />
+      </Specimen>
+      <Specimen
+        framed={false}
+        name="Reserved alliance: visitor"
+        usedOn={[PAGE]}
+        note="Public view: the status and the requirements, no actions."
+      >
+        <ReservedAllianceNotice
+          allianceName="The Silver Court"
+          viewer="visitor"
+          progress={MEMBER_VIEW}
         />
       </Specimen>
       <Specimen

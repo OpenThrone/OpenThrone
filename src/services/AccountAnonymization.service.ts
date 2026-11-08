@@ -8,7 +8,10 @@ import type {
 } from '@/lib/prisma-exports';
 import { Prisma } from '@/lib/prisma-exports';
 import { AdminService } from '@/services/Admin.service';
-import { eraseAuthoredMessages } from '@/services/PrivacyRetention.service';
+import {
+  eraseAuthoredMessages,
+  eraseRemainingPersonalData,
+} from '@/services/PrivacyRetention.service';
 import { getActiveAccountStatus } from '@/services/User.service';
 import { resolveColorScheme } from '@/services/UserDefaults.service';
 import { logActionStrict } from '@/utils/auditLogger';
@@ -18,8 +21,17 @@ import { generateUniquePseudonym } from '@/utils/pseudonym';
 /** Days a clean (unsanctioned) deletion keeps its email hash before purge. */
 export const DELETION_COOLDOWN_DAYS = 30;
 
-/** Suffix of anonymized addresses; identifies already-erased accounts. */
-export const DELETED_EMAIL_SUFFIX = '@deleted.local';
+/** How long an erased account's veteran fingerprint stays claimable. */
+export const VETERAN_RECORD_DAYS = 730;
+
+/**
+ * True for an erased account. `anonymizedAt` is the only marker: players can
+ * choose their own email address (even one ending `@deleted.local`), but not
+ * this. Accounts erased before the column existed were backfilled by the
+ * migration that added it.
+ */
+export const isAnonymizedUser = (user: { anonymizedAt?: Date | null }) =>
+  Boolean(user.anonymizedAt);
 
 /** Which flow triggered an erasure. */
 export type AnonymizationInitiator = 'SELF' | 'ADMIN' | 'INACTIVITY';
@@ -31,6 +43,8 @@ export interface AnonymizeAccountOptions {
   initiatedBy: AnonymizationInitiator;
   /** Acting staff user for ADMIN flows; also the audit actor. */
   actorUserId?: number;
+  /** Extra facts recorded on the audit row (for example the request it came from). */
+  auditDetails?: Record<string, unknown>;
 }
 
 export interface AnonymizeAccountResult {
@@ -132,7 +146,7 @@ async function upsertIdentityBlock(
 }
 
 /**
- * Shared erasure path for forget-me, inactivity expiry and (future) admin
+ * Shared erasure path for the privacy erasure job, inactivity expiry and admin
  * erase: scrubs PII, renames to a random pseudonym, writes IdentityBlocks per
  * the retention policy and closes the account. The users row and all game
  * history remain so foreign keys never break. Must run inside the caller's
@@ -164,15 +178,14 @@ export class AccountAnonymizationService {
         display_name: true,
         race: true,
         colorScheme: true,
+        anonymizedAt: true,
+        created_at: true,
       },
     });
     if (!user) {
       throw new Error('User not found');
     }
-    if (
-      (user.email ?? '').endsWith(DELETED_EMAIL_SUFFIX) ||
-      user.display_name.startsWith('deleted-user-')
-    ) {
+    if (isAnonymizedUser(user)) {
       throw new Error('Account is already anonymized');
     }
 
@@ -192,11 +205,35 @@ export class AccountAnonymizationService {
 
     // Current sanction, if any, decides the email-hash retention window.
     const activeStatus = await getActiveAccountStatus(userId, tx);
-    const sanction =
+    let sanction =
       activeStatus &&
       (activeStatus.status === 'BANNED' || activeStatus.status === 'SUSPENDED')
         ? activeStatus
         : null;
+    if (!sanction && activeStatus?.status === 'CLOSED') {
+      // The grace period of an erasure request writes a CLOSED row on top of
+      // the history, which must not hide a ban or suspension still running
+      // underneath it. The longest-running sanction wins (no end = permanent).
+      const underneath = await tx.accountStatusHistory.findFirst({
+        where: {
+          user_id: userId,
+          status: { in: ['BANNED', 'SUSPENDED'] },
+          start_date: { lte: now },
+          OR: [{ end_date: null }, { end_date: { gt: now } }],
+        },
+        orderBy: [
+          { end_date: { sort: 'desc', nulls: 'first' } },
+          { id: 'desc' },
+        ],
+        select: { status: true, end_date: true },
+      });
+      if (underneath) {
+        sanction = {
+          status: underneath.status as 'BANNED' | 'SUSPENDED',
+          endDate: underneath.end_date,
+        };
+      }
+    }
 
     if (user.email) {
       if (sanction) {
@@ -209,8 +246,11 @@ export class AccountAnonymizationService {
           sourceUserId: userId,
           expiresAt: sanction.endDate,
         });
-      } else {
-        // Clean deletion: 30-day anti-churn cooldown.
+      } else if (options.initiatedBy !== 'INACTIVITY') {
+        // Clean deletion: 30-day anti-churn cooldown. Inactivity erasure
+        // writes no email block: the email was already warned for months and
+        // the returning player must be able to re-register to claim their
+        // veteran record.
         await upsertIdentityBlock(tx, {
           kind: 'EMAIL',
           hash: hashIdentity('EMAIL', user.email),
@@ -219,6 +259,44 @@ export class AccountAnonymizationService {
           expiresAt: new Date(
             now.getTime() + DELETION_COOLDOWN_DAYS * 24 * 60 * 60 * 1000,
           ),
+        });
+      }
+    }
+
+    // A returned veteran being erased again takes their claimed record (email
+    // fingerprint and the link to the earlier account) with them.
+    await tx.veteranRecord.deleteMany({ where: { claimedByUserId: userId } });
+
+    // Veterans of a finished era: before the scrub, keep a keyed fingerprint
+    // of the identity so a returning registration can restore the title and
+    // original join date. Only for unsanctioned inactivity erasure of
+    // accounts that joined before the current era started.
+    if (
+      options.initiatedBy === 'INACTIVITY' &&
+      !sanction &&
+      user.email &&
+      user.created_at
+    ) {
+      const era = await tx.era.findFirst({
+        where: { endDate: null },
+        orderBy: { startDate: 'desc' },
+        select: { startDate: true },
+      });
+      if (era && user.created_at < era.startDate) {
+        await tx.veteranRecord.upsert({
+          where: { emailHash: hashIdentity('EMAIL', user.email) },
+          create: {
+            emailHash: hashIdentity('EMAIL', user.email),
+            displayNameHash: hashIdentity('DISPLAY_NAME', user.display_name),
+            title: 'ERA1_TESTER',
+            sourceUserId: userId,
+            originalJoinedAt: user.created_at,
+            expiresAt: new Date(
+              now.getTime() + VETERAN_RECORD_DAYS * 24 * 60 * 60 * 1000,
+            ),
+          },
+          // A record already claimed by a returning player keeps its claim.
+          update: {},
         });
       }
     }
@@ -260,6 +338,7 @@ export class AccountAnonymizationService {
       where: { id: userId },
       data: {
         email: `${userId}-deleted@deleted.local`,
+        anonymizedAt: now,
         display_name: pseudonym,
         password_hash: await argon2.hash(randomBytes(24).toString('hex')),
         twoFactorSecret: null,
@@ -267,6 +346,8 @@ export class AccountAnonymizationService {
         bio: '',
         recruit_link: randomBytes(16).toString('hex'),
         colorScheme: resolveColorScheme(user.colorScheme, user.race),
+        veteranTitle: null,
+        veteranSince: null,
       },
     });
 
@@ -311,6 +392,11 @@ export class AccountAnonymizationService {
     // Words the player wrote to others go too; avatar files are deleted
     // after commit by the caller (deleteUserAvatarFiles).
     await eraseAuthoredMessages(tx, userId);
+    // Sign-in history, raw addresses, social links, chat participation and
+    // (unless a sanction still runs) the moderation file.
+    await eraseRemainingPersonalData(tx, userId, {
+      sanctionInEffect: Boolean(sanction),
+    });
     await tx.accountInactivityNotice.updateMany({
       where: { userId, completedAt: null },
       data: { completedAt: now },
@@ -346,6 +432,7 @@ export class AccountAnonymizationService {
           initiatedBy: options.initiatedBy,
           reason: options.reason,
           sanctionStatus: sanction?.status ?? null,
+          ...(options.auditDetails ?? {}),
         },
       },
       tx,
@@ -420,9 +507,9 @@ export class AccountAnonymizationService {
   ): Promise<void> {
     const user = await tx.users.findUnique({
       where: { id: userId },
-      select: { email: true },
+      select: { email: true, anonymizedAt: true },
     });
-    if (!user?.email || user.email.endsWith(DELETED_EMAIL_SUFFIX)) return;
+    if (!user?.email || user.anonymizedAt) return;
 
     await upsertIdentityBlock(tx, {
       kind: 'EMAIL',
@@ -443,9 +530,9 @@ export class AccountAnonymizationService {
   ): Promise<void> {
     const user = await tx.users.findUnique({
       where: { id: userId },
-      select: { email: true },
+      select: { email: true, anonymizedAt: true },
     });
-    if (!user?.email || user.email.endsWith(DELETED_EMAIL_SUFFIX)) return;
+    if (!user?.email || user.anonymizedAt) return;
     await tx.identityBlock.deleteMany({
       where: {
         kind: 'EMAIL',
@@ -456,11 +543,13 @@ export class AccountAnonymizationService {
     });
   }
 
-  /** Deletes IdentityBlocks whose retention window has elapsed. */
+  /** Deletes expired IdentityBlocks and VeteranRecords (both retention windows). */
   static async purgeExpiredIdentityBlocks(): Promise<number> {
-    const result = await prisma.identityBlock.deleteMany({
-      where: { expiresAt: { lte: new Date() } },
-    });
-    return result.count;
+    const now = new Date();
+    const [blocks, veterans] = await Promise.all([
+      prisma.identityBlock.deleteMany({ where: { expiresAt: { lte: now } } }),
+      prisma.veteranRecord.deleteMany({ where: { expiresAt: { lte: now } } }),
+    ]);
+    return blocks.count + veterans.count;
   }
 }

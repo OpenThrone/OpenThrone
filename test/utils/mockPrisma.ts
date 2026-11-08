@@ -68,7 +68,11 @@ export function installMockPrisma(vi: any) {
     findMany: vi.fn(async () => []),
     updateMany: vi.fn(async () => ({ count: 0 })),
   };
-  mockPrisma.featureFlag = { findMany: vi.fn(async () => []) };
+  mockPrisma.cronRun = {
+    create: vi.fn(async () => ({ id: 1 })),
+    update: vi.fn(async () => ({})),
+    deleteMany: vi.fn(async () => ({ count: 0 })),
+  };
   mockPrisma.gameEvent = { findMany: vi.fn(async () => []) };
 
   mockPrisma.social = {
@@ -106,6 +110,16 @@ export function installMockPrisma(vi: any) {
   };
   mockPrisma.apiToken = {
     updateMany: vi.fn(async () => ({ count: 0 })),
+  };
+  // Privacy erasure requests (login refusal, AccountErasure.service).
+  mockPrisma.accountErasureRequest = {
+    findFirst: vi.fn(async () => null),
+    findUnique: vi.fn(async () => null),
+    findMany: vi.fn(async () => []),
+    create: vi.fn(),
+    update: vi.fn(),
+    updateMany: vi.fn(async () => ({ count: 0 })),
+    deleteMany: vi.fn(async () => ({ count: 0 })),
   };
   mockPrisma.accountStatusHistory = {
     findFirst: vi.fn(),
@@ -155,6 +169,18 @@ export function installMockPrisma(vi: any) {
     findFirst: vi.fn(),
     deleteMany: vi.fn(async () => ({ count: 0 })),
   };
+  // Veteran fingerprints of erased accounts (Auth claim, anonymization).
+  mockPrisma.veteranRecord = {
+    findFirst: vi.fn(async () => null),
+    findUnique: vi.fn(async () => null),
+    findMany: vi.fn(async () => []),
+    count: vi.fn(async () => 0),
+    create: vi.fn(),
+    upsert: vi.fn(),
+    update: vi.fn(),
+    updateMany: vi.fn(async () => ({ count: 0 })),
+    deleteMany: vi.fn(async () => ({ count: 0 })),
+  };
   mockPrisma.era = {
     findFirst: vi.fn().mockResolvedValue({
       id: 1,
@@ -187,6 +213,7 @@ export function resetMockPrisma() {
     Object.values(mockPrisma.apiClient || {}).forEach(clearFn);
     Object.values(mockPrisma.apiToken || {}).forEach(clearFn);
     Object.values(mockPrisma.accountStatusHistory || {}).forEach(clearFn);
+    Object.values(mockPrisma.accountErasureRequest || {}).forEach(clearFn);
     Object.values(mockPrisma.passwordReset || {}).forEach(clearFn);
     Object.values(mockPrisma.bank_history || {}).forEach(clearFn);
     Object.values(mockPrisma.attack_log || {}).forEach(clearFn);
@@ -194,6 +221,7 @@ export function resetMockPrisma() {
     Object.values(mockPrisma.permissionGrant || {}).forEach(clearFn);
     Object.values(mockPrisma.staffRoleAssignment || {}).forEach(clearFn);
     Object.values(mockPrisma.antiAbuseShadow || {}).forEach(clearFn);
+    Object.values(mockPrisma.veteranRecord || {}).forEach(clearFn);
     Object.values(mockPrisma.era || {}).forEach(clearFn);
     Object.values(mockPrisma.desertionEvent || {}).forEach(clearFn);
     Object.values(mockPrisma.alliance_memberships || {}).forEach(clearFn);

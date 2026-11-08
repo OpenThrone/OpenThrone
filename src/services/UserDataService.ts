@@ -9,6 +9,7 @@ import { getUpdatedStatus } from '@/services/User.service';
 import type { Locales, PlayerClass, PlayerRace } from '@/types/typings';
 import { safeToISOString } from '@/utils/dateHelpers';
 import { resolveEraStartSettings } from '@/utils/eraStartSettings';
+import { CONTRACT_OWNER_ACTIVE } from '@/utils/forceContractFilters';
 import { logDebug } from '@/utils/logger';
 import { canAccessGame } from '@/utils/loginPolicy';
 
@@ -226,7 +227,12 @@ export class UserDataService {
         : 0;
 
     const contracts = await prisma.forceContract.findMany({
-      where: { userId, status: 'ACTIVE', expiresAt: { gt: new Date() } },
+      where: {
+        userId,
+        status: 'ACTIVE',
+        expiresAt: { gt: new Date() },
+        ...CONTRACT_OWNER_ACTIVE,
+      },
     });
     user.UserUnit = [
       ...user.UserUnit,
@@ -356,6 +362,7 @@ export class UserDataService {
     const attacksSinceLastActive = await prisma.attack_log.findMany({
       where: {
         defender_id: userId,
+        voidedAt: null,
         timestamp: { gte: ts },
       },
       select: {
@@ -373,7 +380,11 @@ export class UserDataService {
 
     // Battle records cover the current era's attacks only, not spy missions.
     const era = await ensureActiveEra();
-    const eraAttacks = { type: 'attack', timestamp: { gte: era.startDate } };
+    const eraAttacks = {
+      type: 'attack',
+      voidedAt: null,
+      timestamp: { gte: era.startDate },
+    };
     const [wonAttacks, wonDefends, totalAttacks, totalDefends] =
       await Promise.all([
         prisma.attack_log.count({

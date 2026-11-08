@@ -7,18 +7,27 @@ import MainArea from '@/components/MainArea';
 import PublicHero from '@/components/public/PublicHero';
 import classes from '@/components/public/PublicPages.module.css';
 import SeoHead from '@/components/SeoHead';
+import { useFriendTransferGuide } from '@/hooks/useFriendTransferGuide';
 import { useStaminaGuide } from '@/hooks/useStaminaGuide';
 import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const QUESTIONS = {
   starting: ['game', 'race', 'firstSteps'],
-  strategy: ['training', 'bank', 'combat', 'stamina'],
-  help: ['access', 'password', 'report'],
+  strategy: [
+    'training',
+    'bank',
+    'transfers',
+    'combat',
+    'stamina',
+    'allianceEra',
+  ],
+  help: ['access', 'password', 'data', 'report'],
 } as const;
 
 export default function Faq() {
   const { t } = useTranslation('faq');
   const staminaGuide = useStaminaGuide();
+  const transferGuide = useFriendTransferGuide();
 
   return (
     <>
@@ -64,7 +73,9 @@ export default function Faq() {
                         <Text className={classes.prose}>
                           {question === 'stamina'
                             ? staminaGuide
-                            : t(`questions.${question}.answer`)}
+                            : question === 'transfers'
+                              ? transferGuide
+                              : t(`questions.${question}.answer`)}
                         </Text>
                         {question === 'password' && (
                           <Group className={classes.actions}>
@@ -74,6 +85,17 @@ export default function Faq() {
                               variant="outline"
                             >
                               {t('links.password')}
+                            </Button>
+                          </Group>
+                        )}
+                        {question === 'data' && (
+                          <Group className={classes.actions}>
+                            <Button
+                              component={Link}
+                              href="/home/settings#privacy"
+                              variant="outline"
+                            >
+                              {t('links.settings')}
                             </Button>
                           </Group>
                         )}

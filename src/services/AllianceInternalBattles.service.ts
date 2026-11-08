@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import { assertAllianceIdActive } from '@/services/allianceStatus';
 
 export const INTERNAL_BATTLES_PAGE_SIZE = 20;
 
@@ -32,6 +33,7 @@ export class AllianceInternalBattlesService {
     }
     const { allianceId, page } = parsed.data;
 
+    await assertAllianceIdActive(prisma, allianceId);
     const members = await prisma.alliance_memberships.findMany({
       where: { alliance_id: allianceId },
       select: { user_id: true },

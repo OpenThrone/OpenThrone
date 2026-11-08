@@ -21,7 +21,6 @@ import {
   Stack,
   Switch,
   Text,
-  Textarea,
   TextInput,
   Tooltip,
 } from '@mantine/core';
@@ -38,6 +37,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
+import { PrivacyControlsCard } from '@/components/settings/PrivacyControls';
 import { DiscordLinkCard } from '@/components/supporter/DiscordLinkCard';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
 import { useLayout } from '@/context/LayoutContext';
@@ -91,7 +91,6 @@ const Settings = () => {
   const [emailError, setEmailError] = useState('');
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
-  const [isForgetModalOpen, setIsForgetModalOpen] = useState(false);
   const [isVacationModalOpen, setIsVacationModalOpen] = useState(false);
   const [accountActionBusy, setAccountActionBusy] = useState(false);
   const [vacationAvailability, setVacationAvailability] = useState<{
@@ -102,12 +101,13 @@ const Settings = () => {
     useState(false);
   const [resetPassword, setResetPassword] = useState('');
   const [disablePassword, setDisablePassword] = useState('');
-  const [forgetPassword, setForgetPassword] = useState('');
-  const [forgetReason, setForgetReason] = useState('');
-  const [opened, { toggle, open: openAccountActions }] = useDisclosure(false);
+  const [opened, { toggle }] = useDisclosure(false);
   useEffect(() => {
-    if (router.asPath.includes('#forget-account')) openAccountActions();
-  }, [router.asPath, openAccountActions]);
+    // Older links point at #forget-account; erasure now lives in the privacy card.
+    if (router.asPath.includes('#forget-account')) {
+      document.getElementById('privacy')?.scrollIntoView();
+    }
+  }, [router.asPath]);
   const [debouncedNewPassword] = useDebouncedValue(newPassword, 300);
   const [debouncedConfirmPassword] = useDebouncedValue(confirmPassword, 300);
   const [newEmail, setNewEmail] = useState('');
@@ -124,8 +124,6 @@ const Settings = () => {
   } | null>(null);
   const [emailPreferencesError, setEmailPreferencesError] = useState(false);
   const [emailPreferencesBusy, setEmailPreferencesBusy] = useState(false);
-  const [exportBusy, setExportBusy] = useState(false);
-  const [exportError, setExportError] = useState(false);
   const [preferencesReload, setPreferencesReload] = useState(0);
   useEffect(() => {
     if (!user?.id) return;
@@ -180,28 +178,6 @@ const Settings = () => {
       setEmailPreferencesBusy(false);
     }
   };
-  const downloadData = async () => {
-    if (exportBusy) return;
-    setExportBusy(true);
-    setExportError(false);
-    try {
-      const response = await fetch('/api/account/export');
-      if (!response.ok) throw new Error('Failed to export data');
-      const url = URL.createObjectURL(await response.blob());
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = 'openthrone-data.json';
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch {
-      setExportError(true);
-    } finally {
-      setExportBusy(false);
-    }
-  };
-
   const previewNumber = 1234567.89;
 
   useEffect(() => {
@@ -466,29 +442,6 @@ const Settings = () => {
     setDisablePassword('');
   };
 
-  const handleForgetAccount = async () => {
-    const response = await fetch('/api/account/forget', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        password: forgetPassword,
-        reason: forgetReason,
-      }),
-    });
-    const data = await response.json();
-    if (response.ok) {
-      alertService.success(t('settings.accountDataRemovedSuccessfully'));
-      forceUpdate();
-    } else {
-      alertService.error(data.error);
-    }
-    setIsForgetModalOpen(false);
-    setForgetPassword('');
-    setForgetReason('');
-  };
-
   // Show loading state while user is loading
   if (!user) {
     return (
@@ -597,20 +550,6 @@ const Settings = () => {
                     </Group>
                   </>
                 )}
-                <Group>
-                  <Button
-                    variant="outline"
-                    loading={exportBusy}
-                    onClick={downloadData}
-                  >
-                    {t('settings.emailNotifications.export')}
-                  </Button>
-                </Group>
-                {exportError && (
-                  <Text role="alert">
-                    {t('settings.emailNotifications.exportError')}
-                  </Text>
-                )}
               </Stack>
             </GameCard>
           </section>
@@ -676,8 +615,8 @@ const Settings = () => {
                 },
               ]}
             />
-            <Text>{t('settings.localeFormatting')}</Text>
             <Select
+              label={t('settings.localeFormatting')}
               value={locale}
               onChange={handleLocaleChange}
               data={locales.map((locale) => ({
@@ -691,8 +630,8 @@ const Settings = () => {
                 value: toLocale(previewNumber, locale),
               })}
             </Text>
-            <Text>{t('settings.colorScheme')}</Text>
             <Select
+              label={t('settings.colorScheme')}
               value={colorScheme}
               onChange={handleColorSchemeChange}
               data={colorSchemes.map((color) => ({
@@ -841,7 +780,7 @@ const Settings = () => {
             />
           </GameCard>
         </Grid.Col>
-        <Grid.Col id="forget-account" span={{ base: 12, sm: 6 }}>
+        <Grid.Col id="account-actions" span={{ base: 12, sm: 6 }}>
           <GameCard
             title={t('settings.accountActions')}
             icon={faUserGear}
@@ -873,18 +812,12 @@ const Settings = () => {
                     {t('settings.disableAccount')}
                   </Button>
                 </Tooltip>
-                <Tooltip label={t('settings.forgetMeTooltip')} withArrow>
-                  <Button
-                    color="red"
-                    className="rounded px-4 py-2 font-bold"
-                    onClick={() => setIsForgetModalOpen(true)}
-                  >
-                    {t('settings.forgetMe')}
-                  </Button>
-                </Tooltip>
               </Group>
             </Collapse>
           </GameCard>
+        </Grid.Col>
+        <Grid.Col id="privacy" span={12}>
+          <PrivacyControlsCard requiresTotp={Boolean(user.twoFactorEnabled)} />
         </Grid.Col>
       </Grid>
 
@@ -946,37 +879,6 @@ const Settings = () => {
         />
       </ConfirmationModal>
 
-      <ConfirmationModal
-        isOpen={isForgetModalOpen}
-        onClose={() => !accountActionBusy && setIsForgetModalOpen(false)}
-        onConfirm={runAccountAction(handleForgetAccount)}
-        title={t('settings.confirmAccountDeletion')}
-        message={t('settings.removeDataWarning')}
-        type="destructive"
-        confirmText={t('settings.confirmDelete')}
-        cancelText={t('settings.cancel')}
-        isLoading={accountActionBusy}
-        confirmDisabled={!forgetPassword}
-      >
-        <PasswordInput
-          value={forgetPassword}
-          onChange={(e) => setForgetPassword(e.currentTarget.value)}
-          placeholder={t('settings.enterPasswordConfirm')}
-          aria-label={t('settings.enterPasswordConfirm')}
-          autoComplete="current-password"
-          disabled={accountActionBusy}
-          data-autofocus
-        />
-        <Textarea
-          value={forgetReason}
-          onChange={(e) => setForgetReason(e.currentTarget.value)}
-          placeholder={t('settings.optionalReason')}
-          aria-label={t('settings.optionalReason')}
-          disabled={accountActionBusy}
-          minRows={3}
-          autosize
-        />
-      </ConfirmationModal>
       <DiscordLinkCard />
     </MainArea>
   );

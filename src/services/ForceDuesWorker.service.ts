@@ -6,6 +6,7 @@ import { evictUserFromAllianceChatRooms } from '@/lib/socket';
 import { lockAllianceThenUsers } from '@/services/AllianceBank.service';
 import { cancelPendingGoldRequests } from '@/services/AllianceGoldRequest.service';
 import { settleLoansOnExit } from '@/services/AllianceLoan.service';
+import { isAllianceActive } from '@/services/allianceStatus';
 import { lockAllianceChatRooms } from '@/services/chatRoomGuards';
 import {
   obligationOutstanding,
@@ -56,7 +57,8 @@ export async function processForceDuesDay(now = new Date()) {
         const alliance = await tx.alliances.findUnique({
           where: { id: allianceId },
         });
-        if (!alliance) return [] as number[];
+        // Reserved alliances issue no levies and kick no one for dues (#13).
+        if (!alliance || !isAllianceActive(alliance)) return [] as number[];
         const operationKey = `dues-day:${allianceId}:${dayKey}`;
         if (await tx.forceEvent.findUnique({ where: { operationKey } }))
           return [] as number[];

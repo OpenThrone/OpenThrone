@@ -156,7 +156,7 @@
     "loadError": "Could not load data. Refresh to retry.",
     "empty": "No matching records.",
     "inactiveUsers": "Inactive users",
-    "inactiveIntro": "Accounts inactive for over 365 days, excluding staff, anonymized and sanctioned accounts. Notices give a 180-day grace period; logging in cancels deletion.",
+    "inactiveIntro": "Accounts inactive for over 365 days, or since the cutoff date below, excluding staff, anonymized and sanctioned accounts. Notices give the notice period set below (180 days by default); logging in cancels deletion.",
     "dryRun": "Next sweep: dry run",
     "dryCounts": "{{reminders}} accounts due for a reminder; {{anonymized}} due for anonymization; {{cancelled}} returned. These counts show eligibility before settings gates.",
     "gates": "Reminders: {{reminders}}. Automatic anonymization: {{anonymize}}.",
@@ -185,8 +185,8 @@
     "noticeResult": "{{noticed}} notices recorded; {{queued}} emails queued; {{undeliverable}} without deliverable email (grace period still applies).",
     "sweepResult": "{{cancelled}} cancelled; {{reminders}} reminders queued; {{anonymized}} anonymized; {{failed}} failed.",
     "confirmSweep": "Run the sweep now using the current reminder and anonymization settings?",
-    "confirmAllNotices": "Send notices to every eligible account without a prior notice? Each gets 180 days to return, including accounts without deliverable email.",
-    "confirmNotices": "Send notices to {{count}} selected accounts? Open notices are skipped; cancelled notices restart the 180-day grace period.",
+    "confirmAllNotices": "Send every un-noticed matching account ({{count}}) the {{template}} notice? Deadline {{deadline}}: accounts are erased if the player has not logged in by then.",
+    "confirmNotices": "Send {{count}} selected accounts the {{template}} notice? Deadline {{deadline}}: accounts are erased if the player has not logged in by then.",
     "loading": "Loading…",
     "alsoEmail": "Also send by email (news subscribers)",
     "alreadySent": "This news post already has an email campaign. No additional email was queued.",
@@ -210,7 +210,32 @@
     },
     "noDeliverableEmail": "No deliverable email — no deadline set",
     "confirmNewsEmail": "Publish this news post and queue email for {{count}} eligible recipients?",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "inactiveSince": "Inactive since (cutoff date)",
+    "inactiveSinceHelp": "Empty = the standard 365-day rule. A date selects players whose last gameplay, login or creation is before it.",
+    "noticeDays": "Notice period (days)",
+    "noticeDaysHelp": "Days before the account is erased (14–365).",
+    "template": "Template",
+    "templates": {
+      "STANDARD": "Standard",
+      "ERA_RELAUNCH": "Era relaunch"
+    },
+    "newsPostId": "News post ID",
+    "newsPostIdHelp": "Linked by the era-relaunch template.",
+    "audienceCount": "{{count}} matching accounts. Next notices use the {{template}} template with deadline {{deadline}}.",
+    "veteranRecords": "Veteran records",
+    "veteranIntro": "Fingerprints of accounts erased after the era relaunch. An unclaimed, unexpired record grants the Era 1 Tester title and the original join date when the same email registers again.",
+    "veteranId": "ID",
+    "veteranTitle": "Title",
+    "veteranJoined": "Original join",
+    "veteranRecorded": "Recorded",
+    "veteranExpires": "Expires",
+    "veteranClaimed": "Claim",
+    "veteranClaimedBy": "Claimed by #{{id}} on {{date}}",
+    "veteranUnclaimed": "Unclaimed",
+    "veteranTitles": {
+      "ERA1_TESTER": "Era 1 Tester"
+    }
   },
   "announcements": {
     "pageTitle": "Content: Announcements",

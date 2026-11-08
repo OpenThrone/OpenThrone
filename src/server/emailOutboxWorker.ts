@@ -10,7 +10,8 @@ import { logError } from '@/utils/logger';
 /** Cross-process reservations enforce the configured rate across custom/standalone workers. */
 async function reserveDelivery(ratePerMinute: number): Promise<boolean> {
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(741032, 2)`;
+    // Cast the void result: Prisma 7 cannot deserialize a void column.
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(741032, 2)::text`;
     const row = await tx.serverSetting.findUnique({
       where: { key: 'email.outbox.nextSlotAt' },
     });

@@ -1,9 +1,7 @@
 import { z } from 'zod';
 
 import { hasAlliancePermission } from '@/constants/alliancePermissions';
-import {
-  ALLIANCE_NOTE_MAX_LENGTH,
-} from '@/constants/allianceTreasury';
+import { ALLIANCE_NOTE_MAX_LENGTH } from '@/constants/allianceTreasury';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { AllianceGoldRequestStatus } from '@/lib/prisma-exports';
@@ -12,6 +10,7 @@ import {
   lockAllianceThenUsers,
   transferInTx,
 } from '@/services/AllianceBank.service';
+import { assertAllianceIdActive } from '@/services/allianceStatus';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { logError } from '@/utils/logger';
 
@@ -115,6 +114,7 @@ export class AllianceGoldRequestService {
       return await prisma.$transaction(async (tx) => {
         // Alliance lock serializes the pending-count check for this alliance.
         await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${v.allianceId} FOR UPDATE`;
+        await assertAllianceIdActive(tx, v.allianceId);
         const standing = await this.getStanding(tx, v.allianceId, v.userId);
         if (
           !hasAlliancePermission(
@@ -222,6 +222,7 @@ export class AllianceGoldRequestService {
           throw new Error('Request not found');
         }
         await lockAllianceThenUsers(tx, v.allianceId, [peek.requester_id]);
+        await assertAllianceIdActive(tx, v.allianceId);
 
         const standing = await this.getStanding(tx, v.allianceId, v.actorId);
         if (!standing.canManageBank) {

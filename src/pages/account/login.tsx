@@ -64,6 +64,10 @@ const Login = () => {
                   component={Link}
                   href="/account/register"
                   variant="outline"
+                  classNames={{
+                    root: classes.authActionButton,
+                    label: classes.authActionButtonLabel,
+                  }}
                 >
                   {t('login.createCommander')}
                 </Button>
@@ -71,6 +75,10 @@ const Login = () => {
                   component={Link}
                   href="/community/news"
                   variant="outline"
+                  classNames={{
+                    root: classes.authActionButton,
+                    label: classes.authActionButtonLabel,
+                  }}
                 >
                   {t('login.latestNews')}
                 </Button>
@@ -126,6 +134,10 @@ const Login = () => {
               variant="outline"
               size="xs"
               color="gray"
+              classNames={{
+                root: classes.authActionButton,
+                label: classes.authActionButtonLabel,
+              }}
             >
               {t('login.recoverLostAccount')}
             </Button>

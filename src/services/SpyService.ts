@@ -427,6 +427,8 @@ export const SpyService = {
                 where: {
                   defender_id: validatedData.defenderId,
                   type: { in: ['attack', 'ASSASSINATE'] },
+                  // A voided battle's casualties were compensated (#229).
+                  voidedAt: null,
                   timestamp: { gte: startOfToday },
                 },
                 _sum: { defender_losses_total: true },

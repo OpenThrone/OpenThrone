@@ -11,6 +11,8 @@ const PUBLIC_PATH_PATTERNS = [
   /^\/community\/stats$/,
   /^\/how-to-play$/,
   /^\/faq$/,
+  /^\/chronicles$/,
+  /^\/guides(\/[a-z-]+)?$/,
   /^\/$/,
   /^\/userprofile\/[a-z0-9]+$/i,
   /^\/recruit\/[a-z0-9]+$/i,
@@ -25,7 +27,38 @@ const PUBLIC_PATH_PATTERNS = [
   /^\/legal\/privacy$/,
   // Linked from emails; the token on the link is the authorization.
   /^\/email\/unsubscribe$/,
+  /^\/account\/confirm-erasure$/,
+  // Signed-out visitors get a sign-in link that keeps the claim token.
+  /^\/account\/veteran-claim$/,
 ] as const;
+
+/**
+ * Public reading pages whose text must be in the server-rendered HTML for
+ * crawlers. The shell normally holds page content back until the session has
+ * loaded; these pages show it straight away (visitors who turn out to be
+ * signed in gain the sidebar once their session resolves).
+ */
+const SERVER_RENDERED_PATH_PATTERNS = [
+  /^\/chronicles$/,
+  /^\/guides(\/[a-z-]+)?$/,
+  /^\/how-to-play$/,
+  /^\/faq$/,
+  /^\/about$/,
+  /^\/legal\/(terms|refunds|privacy)$/,
+] as const;
+
+const normalizePath = (path: string) => {
+  const pathname = path.split(/[?#]/)[0] ?? '';
+  return (
+    pathname.replace(/^\/(en|es|de)(?=\/|$)/, '').replace(/\/+$/, '') || '/'
+  );
+};
+
+export const isServerRenderedPublicPath = (path: string | null) =>
+  !!path &&
+  SERVER_RENDERED_PATH_PATTERNS.some((regex) =>
+    regex.test(normalizePath(path)),
+  );
 
 export const isPublicPath = (path: string | null) => {
   if (!path) return false;

@@ -1,0 +1,70 @@
+{
+  "metaTitle": "Crónicas de los Reinos Quebrados - OpenThrone",
+  "metaDescription": "La historia de OpenThrone: cómo cayó el Viejo Mundo, cómo se fundaron los Reinos Quebrados, los cuatro pueblos que los gobiernan y el Gran Giro que renueva cada era.",
+  "title": "Crónicas",
+  "intro": "Cómo cayó el Viejo Mundo, cómo se fundaron los Reinos Quebrados y por qué cada era vuelve a empezar.",
+  "tocLabel": "En estas Crónicas",
+  "sections": {
+    "oldWorld": {
+      "title": "El Viejo Mundo",
+      "paragraphs": [
+        "Antes de la Escisión, un solo imperio dominaba todos los reinos, desde los pasos del norte hasta la costa del sur. Sus gobernantes se sentaban en los Tronos Antiguos, grandes asientos de piedra y hierro de los que se decía que mantenían unida la tierra.",
+        "El imperio duró siglos. Sus guerras duraron más. Cada disputa fronteriza alimentó la siguiente, y se exigió a los Tronos cargar con más de lo que puede soportar cualquier asiento de poder."
+      ]
+    },
+    "sundering": {
+      "title": "La Escisión",
+      "paragraphs": [
+        "Los Tronos se quebraron uno tras otro. Con ellos se perdieron los caminos, los graneros y los juramentos que ataban a los señores a la corona. El suelo mismo se partió por las viejas líneas de batalla, y se abrieron grietas allí donde los ejércitos habían luchado más tiempo.",
+        "Las ciudades se vaciaron. La gente se marchó de las ruinas en largas columnas, llevando grano de siembra, herramientas y todo lo que pudiera defender."
+      ]
+    },
+    "realms": {
+      "title": "Los Reinos Quebrados",
+      "paragraphs": [
+        "Los supervivientes descubrieron que las grietas se podían cruzar. Al otro lado había una tierra abierta y rota. La reclamaron en grupos pequeños: cada uno levantó una mansión, sembró campos y adiestró a unos pocos guardias.",
+        "Esas propiedades son los Reinos Quebrados, y tú gobiernas uno. Empiezas con una mansión, un puñado de ciudadanos y algo de oro. Tú decides quién trabaja, quién lucha y quién vigila las murallas.",
+        "Hoy ninguna corona gobierna los reinos. Los comandantes se saquean unos a otros por oro y gloria, y los más fuertes se unen en alianzas. Nadie ha levantado todavía un trono que siga en pie."
+      ]
+    },
+    "peoples": {
+      "title": "Cuatro Pueblos",
+      "paragraphs": [
+        "Cuatro pueblos cruzaron las grietas. Cada uno trajo algo del Viejo Mundo y cada uno sigue luchando a su manera."
+      ],
+      "races": {
+        "ELF": {
+          "name": "Elfos",
+          "text": "Los elfos conservaron el arte de los vigías. Sus espías y centinelas ven más lejos, y sus arqueros defienden bien una muralla. Cuando golpean a los elfos, su Santuario salva a parte de los caídos."
+        },
+        "HUMAN": {
+          "name": "Humanos",
+          "text": "Los humanos conservaron las listas de reclutas. Luchan bien en el ataque, y su Disciplina mantiene unidas las filas cuando la moral cae, así que desertan menos soldados."
+        },
+        "GOBLIN": {
+          "name": "Goblins",
+          "text": "Los goblins conservaron las partidas de saqueo. Defienden sus tierras con fiereza y viven del botín. Con los Saqueadores toman prisioneros en combate, los retienen en una mazmorra y los devuelven a cambio de rescate."
+        },
+        "UNDEAD": {
+          "name": "No muertos",
+          "text": "Los no muertos conservaron lo que la Escisión no dejó descansar. Golpean con fuerza y, con la Necrópolis, levantan a los soldados caídos del campo de batalla para que luchen de nuevo."
+        }
+      },
+      "closing": "Los demás pueblos tienen una respuesta a los muertos. La Tierra sagrada protege un reino para que los atacantes no muertos no puedan levantar a sus caídos."
+    },
+    "greatTurning": {
+      "title": "El Gran Giro",
+      "paragraphs": [
+        "Cada era de los Reinos Quebrados termina en un Gran Giro. Las grietas se agitan, las fronteras se difuminan y la tierra se renueva. Cada reino vuelve a empezar con una mansión, ciudadanos nuevos y un tesoro limpio.",
+        "Las hazañas de una era no se pierden. Sus clasificaciones y resultados permanecen en la página Estadísticas del Mundo, en Eras pasadas.",
+        "Cuando se abra la siguiente era, volverá la vieja pregunta: ¿quién levantará un reino que resista?"
+      ],
+      "statsLink": "Ver las eras pasadas"
+    }
+  },
+  "cta": {
+    "createCommander": "Crear un comandante",
+    "howToPlay": "Cómo Jugar",
+    "guides": "Guías de estrategia"
+  }
+}

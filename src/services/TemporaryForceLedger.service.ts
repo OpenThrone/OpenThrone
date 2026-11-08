@@ -8,6 +8,7 @@ import {
   ALLIANCE_BANK_TX_OPTIONS,
   lockAllianceThenUsers,
 } from '@/services/AllianceBank.service';
+import { assertAllianceIdActive } from '@/services/allianceStatus';
 import {
   assertForceBorrowingAllowed,
   returnForceInTx,
@@ -164,6 +165,7 @@ export class TemporaryForceLedgerService {
     return prisma.$transaction(async (tx) => {
       await lockEraLifecycleShared(tx);
       await lockAllianceThenUsers(tx, allianceId, [actorId]);
+      await assertAllianceIdActive(tx, allianceId);
       await leader(tx, allianceId, actorId);
       const roles = await tx.alliance_roles.findMany({
         where: { alliance_id: allianceId },
@@ -216,6 +218,7 @@ export class TemporaryForceLedgerService {
       equipment: canonicalEquipment(params.equipment),
     };
     const { allianceId, userId, unitId, quantity, operationId } = params;
+    await assertAllianceIdActive(tx, allianceId);
     await member(tx, allianceId, userId);
     const prior = await replay(tx, operationId, 'CONTRIBUTE', command);
     if (prior) return prior;
@@ -365,6 +368,7 @@ export class TemporaryForceLedgerService {
       const { allianceId, userId, reserveId, quantity, termDays, operationId } =
         params;
       await lockAllianceThenUsers(tx, allianceId, [userId]);
+      await assertAllianceIdActive(tx, allianceId);
       const membership = await member(tx, allianceId, userId);
       const prior = await replay(tx, operationId, 'REQUEST', params);
       if (prior)
@@ -519,6 +523,7 @@ export class TemporaryForceLedgerService {
         owner.userId,
         params.actorId,
       ]);
+      await assertAllianceIdActive(tx, allianceId);
       await leader(tx, allianceId, params.actorId);
       const membership = await member(tx, allianceId, owner.userId);
       const prior = await replay(tx, params.operationId, 'APPROVE', params);
