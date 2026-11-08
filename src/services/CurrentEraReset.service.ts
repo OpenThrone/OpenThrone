@@ -217,6 +217,7 @@ export async function resetCurrentEraInTransaction(
   await tx.alliance_cooldowns.deleteMany({ where: {} });
   await tx.autoRecruitSession.deleteMany({ where: {} });
   await tx.userEra.deleteMany({ where: { eraId: currentEra.id } });
+  await tx.userEraActivity.deleteMany({ where: { eraId: currentEra.id } });
   // Dungeon captives (#210) are all freed without returning; the reset wipes
   // every army anyway. The captive event ledger stays as history.
   await CaptiveService.clearCaptivesForEra(tx);
@@ -252,6 +253,7 @@ export async function resetCurrentEraInTransaction(
     data: {
       startDate: resetAt,
       startSettings: startSettings as Prisma.InputJsonValue,
+      topBattles: [],
     },
   });
 

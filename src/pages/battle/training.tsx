@@ -28,6 +28,8 @@ import { useUser } from '@/context/users';
 import { useActiveGameEvents } from '@/hooks/useActiveGameEvents';
 import { alertService } from '@/services/Alert.service';
 import type { Locales, PlayerUnit, UnitType, User } from '@/types/typings'; // Assuming User type is defined elsewhere or use specific type from context
+import { CURRENT_COMBAT_RULESET } from '@/utils/balance/combatRulesets';
+import { headlineStatValue } from '@/utils/combatStrength';
 import { logDebug, logError, logWarn } from '@/utils/logger'; // Added logError
 import { formatGold, toLocale } from '@/utils/numberFormatting';
 import {
@@ -35,6 +37,7 @@ import {
   isTrainingPresetId,
   TRAINING_PRESET_EVENT,
   TRAINING_TRAIN_EVENT,
+  type TrainingPresetDetail,
   type TrainingTrainDetail,
 } from '@/utils/trainingPresets';
 
@@ -180,7 +183,7 @@ const Training: React.FC = () => {
       const bonus =
         unit.name === 'Worker'
           ? EconomyUpgrades?.[user.economyLevel]?.goldPerWorker // Specific bonus for workers
-          : unit.bonus;
+          : headlineStatValue(unit, unit.type);
       const unitId = `${idPrefix}_${unit.level}`;
       const ownedUnit = user.units?.find(
         (u: PlayerUnit) => u.type === unit.type && u.level === unit.level,
@@ -447,9 +450,12 @@ const Training: React.FC = () => {
   // player still reviews it and presses Train, so nothing is spent on a click.
   useEffect(() => {
     const onPreset = (event: Event) => {
-      const preset = (event as CustomEvent<{ preset?: unknown }>).detail
-        ?.preset;
-      if (!user || !isTrainingPresetId(preset)) return;
+      const { detail } = event as CustomEvent<TrainingPresetDetail>;
+      const preset = detail?.preset;
+      if (!user || !isTrainingPresetId(preset)) {
+        detail?.done?.(false);
+        return;
+      }
       const citizens =
         user.units?.find((unit) => unit.type === 'CITIZEN')?.quantity ?? 0;
       const starter = unitTypesIndex
@@ -468,6 +474,7 @@ const Training: React.FC = () => {
       });
       if (Object.keys(order).length === 0) {
         alertService.warn(t('training.presetNothingAffordable'));
+        detail.done?.(false);
         return;
       }
       setUnitCosts(order);
@@ -488,6 +495,7 @@ const Training: React.FC = () => {
           0,
         ),
       );
+      detail.done?.(true);
     };
     window.addEventListener(TRAINING_PRESET_EVENT, onPreset);
     return () => window.removeEventListener(TRAINING_PRESET_EVENT, onPreset);
@@ -521,6 +529,8 @@ const Training: React.FC = () => {
   const defenseTotal = user.unitTotals?.defense ?? 0;
   const population = user.population ?? 0; // Use pre-calculated population if available
   const defenseRatio = population > 0 ? defenseTotal / population : 0;
+  const coverageThreshold =
+    CURRENT_COMBAT_RULESET.constants.DEFENSE_COVERAGE_THRESHOLD;
 
   return (
     <MainArea title={t('training.title')}>
@@ -548,6 +558,10 @@ const Training: React.FC = () => {
             label: t('training.defenseRatio'),
             value: `${toLocale(defenseRatio * 100, locale)} %`,
             icon: faShield,
+            isPositive: defenseRatio >= coverageThreshold,
+            tooltip: t('training.defenseRatioHint', {
+              threshold: Math.round(coverageThreshold * 100),
+            }),
           },
         ]}
       />

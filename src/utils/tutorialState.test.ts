@@ -5,6 +5,7 @@ import {
   FIRST_STRUCTURE_UPGRADE_LEVEL,
   getTutorialPhase,
   parseTutorialState,
+  shouldShowChapter,
   TUTORIAL_CHAPTERS,
   TUTORIAL_SNOOZE_MS,
 } from './tutorialState';
@@ -95,5 +96,21 @@ describe('tutorial state', () => {
       parseTutorialState({ status: 'active', chapters: ['overview', 'x'] })
         ?.chapters,
     ).toEqual(['overview']);
+  });
+
+  it('keeps a saved last step on screen until the player closes it (#273)', () => {
+    const started = applyTutorialAction(null, { type: 'start' });
+    expect(shouldShowChapter(started, 'training', null)).toBe(true);
+    // The last step is saved the moment it shows, so a reload or address-bar
+    // visit afterwards no longer loses the lesson.
+    const saved = applyTutorialAction(started, {
+      type: 'complete-chapter',
+      chapter: 'training',
+    });
+    expect(saved.chapters).toContain('training');
+    expect(shouldShowChapter(saved, 'training', 'training')).toBe(true);
+    // Once closed (or on the next visit) it stays done.
+    expect(shouldShowChapter(saved, 'training', null)).toBe(false);
+    expect(shouldShowChapter(saved, 'bank', 'training')).toBe(true);
   });
 });

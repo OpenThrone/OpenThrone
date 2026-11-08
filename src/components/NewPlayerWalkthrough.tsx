@@ -20,15 +20,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useUser } from '@/context/users';
 import { useImpersonation } from '@/hooks/useImpersonation';
 import { useTutorialState } from '@/hooks/useTutorialState';
+import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { toLocale } from '@/utils/numberFormatting';
 import {
-  TRAINING_PRESET_EVENT,
+  requestTrainingPreset,
   TRAINING_PRESET_IDS,
   TRAINING_TRAIN_EVENT,
   type TrainingPresetId,
   type TrainingTrainDetail,
 } from '@/utils/trainingPresets';
-import { getTutorialPhase } from '@/utils/tutorialState';
+import { getTutorialPhase, shouldShowChapter } from '@/utils/tutorialState';
 
 import {
   findChapterForRoute,
@@ -90,13 +91,17 @@ export default function NewPlayerWalkthrough() {
   const { user, loading } = useUser();
   const { isImpersonating } = useImpersonation();
   const { state, ready, dispatch } = useTutorialState();
-  const [stepIndex, setStepIndex] = useState(0);
+  const [position, setPosition] = useState<{
+    chapter: TutorialChapter['id'] | undefined;
+    index: number;
+  }>({ chapter: undefined, index: 0 });
+  const [heldChapter, setHeldChapter] = useState<TutorialChapter['id'] | null>(
+    null,
+  );
   const [targetRect, setTargetRect] = useState<HighlightRect | null>(null);
   const [preset, setPreset] = useState<TrainingPresetId | null>(null);
   const [training, setTraining] = useState(false);
   const primaryRef = useRef<HTMLButtonElement>(null);
-  const pendingComplete = useRef<TutorialChapter['id'] | null>(null);
-  const shownChapter = useRef<TutorialChapter['id'] | undefined>(undefined);
 
   const isStaffArea = router.pathname.startsWith('/home/admin');
   const canShow =
@@ -109,9 +114,20 @@ export default function NewPlayerWalkthrough() {
   const chapter =
     phase === 'run' &&
     routeChapter &&
-    !state?.chapters.includes(routeChapter.id)
+    shouldShowChapter(state, routeChapter.id, heldChapter)
       ? routeChapter
       : undefined;
+  // A step index only applies to the chapter it was set in, so a new chapter
+  // never inherits the last page's position for even one render.
+  const stepIndex = position.chapter === chapter?.id ? position.index : 0;
+  const setStepIndex = useCallback(
+    (update: (current: number) => number) =>
+      setPosition((current) => ({
+        chapter: chapter?.id,
+        index: update(current.chapter === chapter?.id ? current.index : 0),
+      })),
+    [chapter?.id],
+  );
   const isProtected = Boolean(user?.protection?.protected);
   const steps = (chapter?.steps ?? []).filter(
     (candidate) => candidate.requires !== 'protected' || isProtected,
@@ -119,23 +135,22 @@ export default function NewPlayerWalkthrough() {
   const step = steps[Math.min(stepIndex, steps.length - 1)];
   const isLastStep = Boolean(chapter && stepIndex >= steps.length - 1);
 
-  // Restart from the first step whenever a different chapter takes over, and
-  // save the chapter the player just left if they saw it through.
+  // A different chapter starts clean, and stops holding the one before it.
   useEffect(() => {
-    const previous = shownChapter.current;
-    if (previous === chapter?.id) return;
-    if (previous && pendingComplete.current === previous) {
-      pendingComplete.current = null;
-      dispatch({ type: 'complete-chapter', chapter: previous });
-    }
-    shownChapter.current = chapter?.id;
-    setStepIndex(0);
+    setHeldChapter((held) => (held === chapter?.id ? held : null));
     setPreset(null);
-  }, [chapter?.id, dispatch]);
+  }, [chapter?.id]);
 
+  // Reaching the last step finishes the lesson, however the player leaves.
+  const chapterId = chapter?.id;
+  const alreadySaved = Boolean(
+    chapterId && state?.chapters.includes(chapterId),
+  );
   useEffect(() => {
-    if (chapter && isLastStep) pendingComplete.current = chapter.id;
-  }, [chapter, isLastStep]);
+    if (!chapterId || !isLastStep || alreadySaved) return;
+    setHeldChapter(chapterId);
+    dispatch({ type: 'complete-chapter', chapter: chapterId });
+  }, [alreadySaved, chapterId, dispatch, isLastStep]);
 
   useEffect(() => {
     if (!step?.targets) {
@@ -181,9 +196,11 @@ export default function NewPlayerWalkthrough() {
 
   const completeChapter = useCallback(() => {
     if (!chapter) return;
-    pendingComplete.current = null;
-    dispatch({ type: 'complete-chapter', chapter: chapter.id });
-  }, [chapter, dispatch]);
+    setHeldChapter(null);
+    if (!state?.chapters.includes(chapter.id)) {
+      dispatch({ type: 'complete-chapter', chapter: chapter.id });
+    }
+  }, [chapter, dispatch, state?.chapters]);
 
   const next = useCallback(() => {
     if (!chapter) return;
@@ -192,11 +209,11 @@ export default function NewPlayerWalkthrough() {
       return;
     }
     setStepIndex((current) => current + 1);
-  }, [chapter, completeChapter, isLastStep]);
+  }, [chapter, completeChapter, isLastStep, setStepIndex]);
 
   const back = useCallback(() => {
     setStepIndex((current) => Math.max(0, current - 1));
-  }, []);
+  }, [setStepIndex]);
 
   const follow = useCallback(
     (action: StepAction) => {
@@ -206,11 +223,9 @@ export default function NewPlayerWalkthrough() {
     [completeChapter, router],
   );
 
+  // Only marks the plan chosen once the Training page has filled its order.
   const choosePreset = useCallback((id: TrainingPresetId) => {
-    setPreset(id);
-    window.dispatchEvent(
-      new CustomEvent(TRAINING_PRESET_EVENT, { detail: { preset: id } }),
-    );
+    requestTrainingPreset(id, (filled) => setPreset(filled ? id : null));
   }, []);
 
   // Trains the order the chosen plan filled in, and only moves on once the
@@ -257,6 +272,10 @@ export default function NewPlayerWalkthrough() {
   // Fills the protection step with this player's own limits.
   const protection = user?.protection;
   const textParams = {
+    allowance: toLocale(
+      V5_COMBAT_CONSTANTS.PROTECTED_GOLD_ALLOWANCE,
+      user?.locale ?? 'en-US',
+    ),
     days: Math.max(
       1,
       Math.ceil(protection?.daysLeft ?? protection?.durationDays ?? 1),

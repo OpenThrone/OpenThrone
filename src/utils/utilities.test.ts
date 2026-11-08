@@ -68,6 +68,7 @@ const saleLabels = [
   ['ARMORY_UPGRADE', 'Armory Upgrade'],
   ['ARMORY_CONVERSION', 'Armory Conversion'],
   ['HIRE_MERCENARY', 'Mercenary Hire'],
+  ['RENEW_MERCENARY', 'Mercenary Renewal'],
   ['TRAINING_TRAIN', 'Train Units'],
   ['TRAINING_UNTRAIN', 'Untrain Units'],
   ['TRAINING_CONVERSION', 'Convert Units'],
@@ -184,5 +185,27 @@ describe('getLevelChange', () => {
   it('ignores reports without a starting XP and tolerates missing earned XP', () => {
     expect(getLevelChange(undefined, 5000)).toBeNull();
     expect(getLevelChange(7999, undefined)).toBeNull();
+  });
+});
+
+describe('structure purchase ledger rows (#346)', () => {
+  const row = (type: string) => ({
+    from_user_id: 5,
+    to_user_id: 0,
+    from_user_account_type: 'HAND',
+    to_user_account_type: 'BANK',
+    history_type: 'SALE',
+    stats: { type, new_level: 2, cost: '100000' },
+  });
+  it('labels fort, spy and economy purchases as structure upgrades', () => {
+    for (const type of [
+      'FORTIFICATIONS_UPGRADE',
+      'SPY_UPGRADE',
+      'ECONOMY_UPGRADE',
+    ]) {
+      expect(getTransactionType(row(type))).toBe('Structure Upgrade');
+      expect(getGoldTxSymbol(row(type), { id: 5 })).toBe('-');
+    }
+    expect(getTransactionType(row('ARMORY_UPGRADE'))).toBe('Armory Upgrade');
   });
 });

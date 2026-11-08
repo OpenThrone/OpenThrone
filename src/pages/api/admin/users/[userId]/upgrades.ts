@@ -12,6 +12,8 @@ import type {
 } from '@/lib/prisma-exports';
 import { PermissionType } from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
+import type { ItemDelta } from '@/services/ItemLedger.service';
+import { recordItemLedger } from '@/services/ItemLedger.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { recomputeStoredStatsInTx } from '@/utils/adminRecomputeStats';
 import {
@@ -23,6 +25,7 @@ import {
   diffByKey,
   findMissingExpectations,
   findStaleUpgrades,
+  grantedItemDeltas,
   ITEM_CATALOG,
   itemKey,
   missingItems,
@@ -266,6 +269,15 @@ async function handlePut(
             update: {},
           });
         }
+        await recordItemLedger(
+          tx,
+          userId,
+          'ADMIN_GRANT',
+          grantedItemDeltas(
+            update.addItems as (ItemDelta & { quantity: number })[],
+            before.UserItem,
+          ) as ItemDelta[],
+        );
 
         const after = await tx.users.findUnique({
           where: { id: userId },

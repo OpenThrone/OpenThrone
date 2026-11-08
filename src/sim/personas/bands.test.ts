@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
+import { STAMINA_FATIGUE_MIN_MULTIPLIER } from '@/constants/ArmyStamina';
+
 import { PERSONAS } from '../scenarioTypes';
 import {
   getAllocationBand,
@@ -80,5 +82,36 @@ describe('persona allocation bands', () => {
     expect(underClamped).toEqual(at0);
     expect(greedy).toEqual(greedySnapshot);
     expect(cautious).toEqual(cautiousSnapshot);
+  });
+
+  it('only the balanced band waits out deep fatigue; every other band attacks through it', () => {
+    expect(PERSONA_ALLOCATION_BANDS.balanced.minOffenseMultiplier).toBe(0.9);
+    for (const persona of PERSONAS.filter((p) => p !== 'balanced')) {
+      expect(
+        PERSONA_ALLOCATION_BANDS[persona].minOffenseMultiplier,
+      ).toBeUndefined();
+    }
+  });
+
+  it('interpolateBand lerps minOffenseMultiplier and keeps it undefined when neither band sets one', () => {
+    const greedy = getAllocationBand('farmer');
+    const withoutThreshold: PersonaAllocationBand = {
+      ...greedy,
+      attackAggression: 0.5,
+    };
+    expect(
+      interpolateBand(greedy, withoutThreshold, 0.5).minOffenseMultiplier,
+    ).toBeUndefined();
+
+    const withThreshold: PersonaAllocationBand = {
+      ...greedy,
+      minOffenseMultiplier: 1,
+    };
+    expect(
+      interpolateBand(greedy, withThreshold, 0).minOffenseMultiplier,
+    ).toBeCloseTo(STAMINA_FATIGUE_MIN_MULTIPLIER, 10);
+    expect(
+      interpolateBand(greedy, withThreshold, 1).minOffenseMultiplier,
+    ).toBeCloseTo(1, 10);
   });
 });

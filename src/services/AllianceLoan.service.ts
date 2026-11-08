@@ -277,17 +277,20 @@ export const assertNoDefaultedLoan = async (
 };
 
 /**
- * Loan handling when a member leaves or is kicked. Call inside the locked
- * leave/kick transaction (alliance row already locked). Pending requests are
- * cancelled; unpaid balances are collected from gold on hand then bank. When
- * that is not enough a voluntary leave throws (rolling everything back) and a
- * kick writes the remainder off.
+ * Loan handling when a member leaves, is kicked or is erased. Call inside the
+ * locked leave/kick transaction (alliance row already locked). Pending
+ * requests are cancelled; unpaid balances are collected from gold on hand
+ * then bank. When that is not enough a voluntary leave throws (rolling
+ * everything back), a kick writes the remainder off, and an erasure keeps
+ * the remainder owed by the pseudonymous borrower: leaving never forgives
+ * (#13 reserve rules — income diversion and the overdue sweep are keyed by
+ * loan and borrower, never by membership).
  */
 export const settleLoansOnExit = async (
   tx: Prisma.TransactionClient,
   allianceId: number,
   userId: number,
-  mode: 'leave' | 'kick',
+  mode: 'leave' | 'kick' | 'erasure',
 ): Promise<void> => {
   if (!tx.alliance_loans) return;
   await tx.alliance_loans.updateMany({
@@ -319,7 +322,8 @@ export const settleLoansOnExit = async (
   if (lender?.status === 'RESERVED') return;
   await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
   for (const loan of open) {
-    const noteVerb = mode === 'leave' ? 'leaving' : 'removal';
+    const noteVerb =
+      mode === 'leave' ? 'leaving' : mode === 'kick' ? 'removal' : 'erasure';
     let current: LoanRow = loan;
     const collected = await collectFromBorrower(
       tx,
@@ -335,6 +339,10 @@ export const settleLoansOnExit = async (
     if (mode === 'leave') {
       throw new Error('Repay your loan before leaving');
     }
+    // Erasure must neither be blocked by nor forgive a debt: whatever
+    // collection could not recover stays owed by the pseudonymous account,
+    // like a reserved lender's paused debt on a normal leave (#13).
+    if (mode === 'erasure') continue;
     await tx.alliance_loans.updateMany({
       where: { id: loan.id, status: { in: OPEN_STATUSES } },
       data: {

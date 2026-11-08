@@ -6,6 +6,7 @@ import {
   createQueuedCampaign,
   enqueueCampaignBatch,
 } from '@/services/AdminEmail.service';
+import { AllianceService } from '@/services/Alliance.service';
 import { resolveEligibleRecipients } from '@/services/Email.service';
 import { deleteUserAvatarFiles } from '@/services/PrivacyRetention.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
@@ -344,7 +345,23 @@ export async function runInactivitySweep({
     for (const notice of notices) {
       try {
         let outcome: 'cancelled' | 'reminders' | 'anonymized' | undefined;
+        // #318: an inactivity erasure also leaves every alliance. The exit
+        // must run before the user-row lock below so the transaction keeps
+        // the canonical alliance→user lock order; the decision is rechecked
+        // under the lock, and with the same `now` it can only flip away
+        // from anonymize, in which case the exit rolls back with the branch.
+        const willAnonymize =
+          !dryRun &&
+          !!config.inactivityAutoAnonymizeEnabled &&
+          inactivityDecision(
+            notice,
+            notice.user.last_active,
+            now,
+            !!config.inactivityRemindersEnabled,
+          ) === 'anonymize';
         const apply = async (tx: Prisma.TransactionClient) => {
+          if (willAnonymize)
+            await AllianceService.leaveAllAlliancesOnErasure(tx, notice.userId);
           if (!dryRun)
             await tx.$queryRaw`SELECT id FROM users WHERE id = ${notice.userId} FOR UPDATE`;
           const current = dryRun

@@ -29,7 +29,8 @@ tokens, moderation file, fair-play signals, staff notes and assignments,
 reports against the player, messages other players wrote, other players'
 private data, card data (never stored), email delivery queue, rate-limit
 counters. Battle logs are only kept for 20 days by the daily cleanup, so the
-export only contains what still exists.
+export only contains what still exists. The per-era totals kept from those logs
+are included as `eraActivity`.
 
 ## Erasure (`/api/account/erasure`, `/account/confirm-erasure`)
 
@@ -66,7 +67,8 @@ audited. Finished request rows keep no free text (reasons live in the audit log)
 | Report against the player | retained (the reporter's filing) |
 | attack_log and ACL | retained, shown under the pseudonym |
 | AccountStatusHistory, AccountResetHistory | retained (no free text from the player is copied in) |
-| alliance memberships, announcements, bank history, loans, gold requests, list/target/intel entries | retained under the pseudonym (roster and ledger integrity); the player's OWN free text is blanked (bank `notes`, gold-request and loan `reason`, list/target-call/intel-share `note`); notes other members wrote about the player stay; announcements stay (owner decision) |
+| alliance memberships | removed at erasure (#318): the account leaves every alliance — a leader is succeeded by the highest-ranked, longest-standing member and a last remaining leader dissolves the alliance through the regular disband path; borrowed forces return to the reserve; outstanding loans are collected from gold/bank but never forgiven, so the debt record stays with the pseudonymous account |
+| alliance announcements, bank history, loans, gold requests, list/target/intel entries | retained under the pseudonym (roster and ledger integrity); the player's OWN free text is blanked (bank `notes`, gold-request and loan `reason`, list/target-call/intel-share `note`); notes other members wrote about the player stay; announcements stay (owner decision) |
 | captives, desertions, forces, units, items, upgrades, eras | retained, game data |
 | Payment, PaymentRefund, PurchaseConsent, GiftCode, SupporterMembership | retained (accounting/legal); billing cancelled |
 | IdentityBlock | retained as hashes, 30-day cooldown or sanction length; display name reserved |

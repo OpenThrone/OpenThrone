@@ -190,12 +190,62 @@ function successfulEntryLosses(
   return losses;
 }
 
+/**
+ * Picks whole unit groups in a random order weighted by headcount, until the
+ * picked troops reach `percentage` of the total. Intel quality then means
+ * "about this share of the troops", however the kingdom is split into groups
+ * (playtest #286: one big worker group made 82% intel show 31%).
+ */
+function sampleByHeadcount<T extends { quantity: number }>(
+  units: T[],
+  percentage: number,
+  random: RandomFn,
+): T[] {
+  const total = units.reduce(
+    (sum, unit) => sum + Math.max(0, unit.quantity),
+    0,
+  );
+  if (units.length === 0) return [];
+  if (total <= 0) return shuffleWithRandom(units, random).slice(0, 1);
+  // Weighted order without replacement (Efraimidis-Spirakis keys).
+  const ordered = units
+    .map((unit) => ({
+      unit,
+      key:
+        unit.quantity > 0
+          ? Math.max(random(), Number.MIN_VALUE) ** (1 / unit.quantity)
+          : 0,
+    }))
+    .sort((a, b) => b.key - a.key)
+    .map(({ unit }) => ({ ...unit }));
+  const target = (total * percentage) / 100;
+  const picked: T[] = [];
+  let seen = 0;
+  for (const unit of ordered) {
+    if (picked.length > 0 && seen >= target) break;
+    // Stop short rather than overshoot when skipping lands closer to target.
+    if (
+      picked.length > 0 &&
+      Math.abs(seen - target) < Math.abs(seen + unit.quantity - target)
+    )
+      continue;
+    picked.push(unit);
+    seen += Math.max(0, unit.quantity);
+  }
+  return picked;
+}
+
 function snapshotIntel(
   defender: SpyMissionUser,
   percentage: number,
   random: RandomFn,
   ruleset: CombatRuleset,
 ): SpyIntelligence {
+  // Public since the attack list shows it (#286): the exact total population
+  // is always part of the snapshot, never sampled by intel quality.
+  const exactPopulation = [...defender.units, ...(defender.mercenaries ?? [])]
+    .map((unit) => Math.max(0, quantity(unit.quantity)))
+    .reduce((sum, count) => sum + count, 0);
   const source: SpyIntelligence = {
     offense: calculateCombatStrength(defender, 'OFFENSE', { ruleset })
       .totalStats.MeleeAtkPower,
@@ -205,6 +255,7 @@ function snapshotIntel(
       .MeleeAtkPower,
     spyDefense: calculateCombatStrength(defender, 'SENTRY', { ruleset })
       .totalStats.MeleeDefPower,
+    population: exactPopulation,
     units: defender.units.map((unit) => ({ ...unit })),
     mercenaries: (defender.mercenaries ?? []).map((unit) => ({ ...unit })),
     items: defender.items.map((item) => ({ ...item })),
@@ -225,6 +276,7 @@ function snapshotIntel(
     defense: null,
     spyOffense: null,
     spyDefense: null,
+    population: null,
     units: null,
     mercenaries: null,
     items: null,
@@ -236,30 +288,31 @@ function snapshotIntel(
     spyLevel: null,
     sentryLevel: null,
   };
-  const keys = Object.keys(source) as (keyof SpyIntelligence)[];
-  const selected = shuffleWithRandom(keys, random).slice(
-    0,
-    Math.floor((keys.length * percentage) / 100),
+  // Population is public (#286): it is always reported exactly and does not
+  // take one of the intel-quality key slots.
+  const keys = (Object.keys(source) as (keyof SpyIntelligence)[]).filter(
+    (key) => key !== 'population',
   );
+  // Round, not floor: near-full intel must not drop a whole field or unit
+  // group (98% of two groups is two groups, not one).
+  const share = (total: number) =>
+    Math.max(1, Math.round((total * percentage) / 100));
+  const keyCount = share(keys.length);
+  const selected = shuffleWithRandom(keys, random).slice(0, keyCount);
   for (const key of selected) {
     if (key === 'units' || key === 'mercenaries') {
-      const units = source[key] ?? [];
-      gathered[key] = shuffleWithRandom(units, random).slice(
-        0,
-        Math.floor((units.length * percentage) / 100),
-      );
+      gathered[key] = sampleByHeadcount(source[key] ?? [], percentage, random);
     } else if (key === 'items') {
       const items = source.items ?? [];
-      gathered.items = shuffleWithRandom(items, random).slice(
-        0,
-        Math.floor((items.length * percentage) / 100),
-      );
+      const count = items.length > 0 ? share(items.length) : 0;
+      gathered.items = shuffleWithRandom(items, random).slice(0, count);
     } else if (key === 'gold' || key === 'goldInBank') {
       gathered[key] = source[key];
     } else {
       gathered[key] = source[key];
     }
   }
+  gathered.population = source.population;
   return gathered;
 }
 

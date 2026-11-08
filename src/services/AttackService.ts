@@ -75,15 +75,35 @@ import {
   sealCombatReplay,
 } from '@/utils/combatReplay';
 import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
+import { gameDaysAtLevel, levelReachedAtUpdate } from '@/utils/levelReachedAt';
 import { logDebug, logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { formatPairCapWait } from '@/utils/pairCapMessage';
 import { createCombatRandom } from '@/utils/serverRandom';
 import {
   DEFAULT_STAMINA_RULES,
   projectStamina,
   staminaCost,
 } from '@/utils/stamina';
-import { getOTDayKey, getOTStartDate } from '@/utils/timefunctions';
+import {
+  getGameDayKey,
+  getGameDayMs,
+  getGameDayStart,
+} from '@/utils/timefunctions';
+
+/**
+ * Pair-cap refusal text. The cap is a rolling game-day window, so the message
+ * says when the next attack on this kingdom opens (#359).
+ */
+export function formatPairCapMessage(
+  limit: number,
+  opensAt: Date | null,
+  now: Date = new Date(),
+): string {
+  const base = `You have reached the limit of ${limit} attacks on this player per rolling game day.`;
+  if (!opensAt) return base;
+  return `${base} You can attack them again in ${formatPairCapWait(opensAt, now)}.`;
+}
 
 /** Same per-pair cap as AttackValidationService.canAttack (5 per 24 hours). */
 /** Interactive transaction budget; attacks queue on the row locks inside it. */
@@ -304,23 +324,45 @@ export const AttackService = {
             }
 
             // Pair cap, counted on the locked connection (see canAttack).
-            const pairAttacks = await tx.attack_log.count({
-              where: {
-                attacker_id: attackerId,
-                defender_id: defenderId,
-                type: 'attack',
-                voidedAt: null,
-                timestamp: {
-                  gte: new Date(Date.now() - 1000 * 60 * 60 * 24),
-                },
+            const pairWindow = {
+              attacker_id: attackerId,
+              defender_id: defenderId,
+              type: 'attack',
+              voidedAt: null,
+              timestamp: {
+                gte: new Date(Date.now() - getGameDayMs()),
               },
+            };
+            const pairAttacks = await tx.attack_log.count({
+              where: pairWindow,
             });
-            if (pairAttacks >= (runtimeConfig.pairDailyLimit ?? 5)) {
+            const pairLimit = runtimeConfig.pairDailyLimit ?? 5;
+            if (pairAttacks >= pairLimit) {
+              // The window is rolling: a slot opens when the attack that put
+              // the pair over the cap ages out, not at a day boundary (#359).
+              const freeing = await tx.attack_log.findFirst({
+                where: pairWindow,
+                orderBy: { timestamp: 'asc' },
+                skip: pairAttacks - pairLimit,
+                select: { timestamp: true },
+              });
+              const opensAt = freeing?.timestamp
+                ? new Date(
+                    new Date(freeing.timestamp).getTime() + getGameDayMs(),
+                  )
+                : null;
               return {
                 status: 'failed',
-                message:
-                  'You have attacked this player too many times in the last 24 hours.',
+                message: formatPairCapMessage(pairLimit, opensAt),
                 code: 'TOO_MANY_ATTACKS',
+                ...(opensAt
+                  ? {
+                      extra_variables: {
+                        limit: pairLimit,
+                        nextAttackAt: opensAt.toISOString(),
+                      },
+                    }
+                  : {}),
               };
             }
 
@@ -357,7 +399,7 @@ export const AttackService = {
             // days of rebuild throughput across ALL attackers today. Reduce that
             // allowance by what earlier attackers already took.
             // Daily rules follow the OT calendar day, not UTC.
-            const startOfToday = getOTStartDate();
+            const startOfToday = getGameDayStart();
             // Assassinations draw from the same pool as battle losses.
             const todayLossesAgg = await tx.attack_log.aggregate({
               where: {
@@ -390,9 +432,9 @@ export const AttackService = {
                 dailyThroughput: defenderDailyThroughput,
                 casualtiesToday: todayDefenderLosses,
               });
-            const todayKey = getOTDayKey();
+            const todayKey = getGameDayKey();
             const pressureDateKey = DefensePlayer.defensePressureDate
-              ? getOTDayKey(new Date(DefensePlayer.defensePressureDate))
+              ? getGameDayKey(new Date(DefensePlayer.defensePressureDate))
               : todayKey;
             const currentDefensePressure =
               pressureDateKey === todayKey
@@ -405,7 +447,7 @@ export const AttackService = {
               runtimeConfig.enableGarrisonFatigue ? currentDefensePressure : 0;
             if (
               AttackPlayer.defensePressureDate &&
-              getOTDayKey(new Date(AttackPlayer.defensePressureDate)) !==
+              getGameDayKey(new Date(AttackPlayer.defensePressureDate)) !==
                 todayKey
             ) {
               AttackPlayer.defensePressureToday = 0;
@@ -443,6 +485,13 @@ export const AttackService = {
                 }
               : null;
             const combatRandom = createCombatRandom('attack');
+            // Anti-camping XP ramp (combat-v11, #334): game days the defender
+            // has held their level, fixed now and sealed into the replay.
+            const battleTime = new Date();
+            const defenderGameDaysAtLevel = gameDaysAtLevel(
+              defenderUser.level_reached_at,
+              battleTime,
+            );
             const startOfAttack = {
               Attacker: captureCombatUser(AttackPlayer),
               Defender: captureCombatUser(DefensePlayer),
@@ -458,6 +507,7 @@ export const AttackService = {
               defenderDailyGoldRemaining: defenderDailyGoldRemaining.toString(),
               staminaPenaltyThreshold: rules.penaltyThreshold,
               staminaMinMultiplier: rules.minOffensePercent / 100,
+              defenderGameDaysAtLevel,
             };
             const sealedReplay = sealCombatReplay(replay);
 
@@ -473,6 +523,7 @@ export const AttackService = {
                 defenderDailyGoldRemaining,
                 staminaPenaltyThreshold: rules.penaltyThreshold,
                 staminaMinMultiplier: rules.minOffensePercent / 100,
+                defenderGameDaysAtLevel,
               },
             );
 
@@ -646,6 +697,8 @@ export const AttackService = {
               defenderName: DefensePlayer.displayName,
             });
 
+            const attackerExperienceBefore = AttackPlayer.experience;
+            const defenderExperienceBefore = DefensePlayer.experience;
             AttackPlayer.experience += resolvedBattle.experienceGained.attacker;
             DefensePlayer.experience +=
               resolvedBattle.experienceGained.defender;
@@ -878,7 +931,7 @@ export const AttackService = {
                       amount: entry.amount.toString(),
                     })),
                     reanimation: {
-                      day: getOTDayKey(),
+                      day: getGameDayKey(),
                       attacker: reanimation.attacker.map((grant) => ({
                         ...grant,
                       })),
@@ -887,7 +940,7 @@ export const AttackService = {
                       })),
                     },
                     sanctuary: {
-                      day: getOTDayKey(),
+                      day: getGameDayKey(),
                       grants: sanctuary.map((grant) => ({ ...grant })),
                     },
                     captives: capturedRows,
@@ -1107,6 +1160,11 @@ export const AttackService = {
                 stamina: projected.stamina - cost,
                 staminaUpdatedAt: projected.staminaUpdatedAt,
                 experience: Math.ceil(AttackPlayer.experience),
+                ...levelReachedAtUpdate(
+                  attackerExperienceBefore,
+                  Math.ceil(AttackPlayer.experience),
+                  battleTime,
+                ),
                 offense: newAttOffense.totalStats.MeleeAtkPower,
                 defense: newAttDefense.totalStats.MeleeDefPower,
                 spy: newAttSpying.totalStats.MeleeAtkPower,
@@ -1128,6 +1186,11 @@ export const AttackService = {
                 gold: { decrement: pillage },
                 fort_hitpoints: Math.max(DefensePlayer.fortHitpoints, 0),
                 experience: Math.ceil(DefensePlayer.experience),
+                ...levelReachedAtUpdate(
+                  defenderExperienceBefore,
+                  Math.ceil(DefensePlayer.experience),
+                  battleTime,
+                ),
                 offense: newDefOffense.totalStats.MeleeAtkPower,
                 defense: newDefDefense.totalStats.MeleeDefPower,
                 spy: newDefSpying.totalStats.MeleeAtkPower,

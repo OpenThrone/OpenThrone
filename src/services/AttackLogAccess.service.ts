@@ -384,6 +384,7 @@ const pickIntelligence = (value: unknown) => {
     defense: toOptionalNumber(value.defense),
     spyOffense: toOptionalNumber(value.spyOffense),
     spyDefense: toOptionalNumber(value.spyDefense),
+    population: toOptionalNumber(value.population),
     units: value.units == null ? null : pickUnits(value.units),
     mercenaries:
       value.mercenaries == null ? null : pickUnits(value.mercenaries),
@@ -633,6 +634,18 @@ export interface RedactedAttackLog {
 }
 
 /** Builds the attack log a reader in the given role may see. */
+/** Mission types a player sends with spies (everything but a battle). */
+export const SPY_MISSION_TYPES = ['INTEL', 'ASSASSINATE', 'INFILTRATE'];
+
+/** The viewer's own spy missions this era, for the War History spy log. */
+export function ownSpyMissionsWhere(userId: number, since: Date) {
+  return {
+    attacker_id: userId,
+    type: { in: SPY_MISSION_TYPES },
+    timestamp: { gte: since },
+  };
+}
+
 export function redactAttackLogForViewer(
   log: {
     id: number;

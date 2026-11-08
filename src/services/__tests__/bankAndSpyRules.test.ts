@@ -1,10 +1,13 @@
-import { beforeEach, describe, expect, test, vi } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test';
 import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 
 installMockPrisma(vi);
 // Dynamic imports deliberately install the Prisma test boundary before service loading.
 const { AllianceBankService } = await import('../AllianceBank.service');
 const { depositGold, withdrawGold } = await import('../Bank.service');
+const { invalidateRuntimeConfigCache } =
+  await import('../RuntimeConfig.service');
+const { EconomyUpgrades } = await import('@/constants');
 
 // The mock transaction client is the same object as the root client, so call order
 // across tx.* and root methods is observable.
@@ -171,5 +174,126 @@ describe('bank withdraw is a conditional debit', () => {
       'Not enough gold for withdrawal',
     );
     expect(mockPrisma.users.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('hand-to-bank bank capacity', () => {
+  // A level 0 economy (Farm) banks up to 10,000,000 gold.
+  const FARM_CAP = 10_000_000n;
+
+  const setUser = (user: Record<string, unknown>) => {
+    mockPrisma.users.findUnique = vi.fn(async () => ({
+      id: 1,
+      gold: 100_000_000n,
+      ...user,
+    }));
+  };
+
+  test('allows a deposit that exactly fills the bank', async () => {
+    setUser({ gold_in_bank: FARM_CAP - 1000n });
+    await depositGold(1, 1000);
+    expect(mockPrisma.users.updateMany).toHaveBeenCalled();
+  });
+
+  test('refuses a deposit past the capacity, before moving any gold', async () => {
+    setUser({ gold_in_bank: FARM_CAP - 1000n });
+    await expect(depositGold(1, 1001)).rejects.toThrow(
+      'has room for 1,000 more',
+    );
+    expect(mockPrisma.users.updateMany).not.toHaveBeenCalled();
+  });
+
+  test('a balance already over capacity stays, but cannot grow', async () => {
+    setUser({ gold_in_bank: FARM_CAP + 5000n });
+    await expect(depositGold(1, 1)).rejects.toThrow('has room for 0 more');
+    expect(mockPrisma.users.updateMany).not.toHaveBeenCalled();
+  });
+
+  test('economy upgrades raise the capacity', async () => {
+    setUser({ gold_in_bank: FARM_CAP, economy_level: 1 });
+    await depositGold(1, 1000);
+    expect(mockPrisma.users.updateMany).toHaveBeenCalled();
+  });
+
+  test('over-capacity gold can still be withdrawn', async () => {
+    setUser({ gold_in_bank: FARM_CAP + 5000n });
+    await withdrawGold(1, 1000);
+    expect(mockPrisma.users.updateMany).toHaveBeenCalled();
+  });
+});
+
+describe('hand-to-bank deposit cap percent and rolling window', () => {
+  // Hand holds 1000 gold (see beforeEach), so each percent maps to an exact limit.
+  const setCapPercent = (value: number | null) => {
+    mockPrisma.serverSetting.findMany = vi.fn(async () =>
+      value === null ? [] : [{ key: 'bank.depositCapPercent', value }],
+    );
+    invalidateRuntimeConfigCache();
+  };
+
+  afterEach(() => {
+    setCapPercent(null);
+  });
+
+  test('without an override the cap is 80% of gold on hand', async () => {
+    setCapPercent(null);
+    await expect(depositGold(1, 801)).rejects.toThrow(
+      'exceeds the maximum allowed (80% of gold on hand)',
+    );
+    expect(mockPrisma.users.updateMany).not.toHaveBeenCalled();
+    await depositGold(1, 800);
+    expect(mockPrisma.users.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  test('the cap is read from bank.depositCapPercent at deposit time', async () => {
+    setCapPercent(50);
+    await expect(depositGold(1, 501)).rejects.toThrow(
+      'exceeds the maximum allowed (50% of gold on hand)',
+    );
+    await depositGold(1, 500);
+    expect(mockPrisma.users.updateMany).toHaveBeenCalledTimes(1);
+
+    // The same amount that was refused passes once the setting is raised.
+    setCapPercent(90);
+    await depositGold(1, 501);
+    expect(mockPrisma.users.updateMany).toHaveBeenCalledTimes(2);
+  });
+
+  test('a deposit beyond gold on hand is refused before the percent cap', async () => {
+    setCapPercent(100);
+    await expect(depositGold(1, 1001)).rejects.toThrow(
+      'Not enough gold for deposit',
+    );
+  });
+
+  test('only deposits inside the last 24 hours count toward the daily limit', async () => {
+    const now = new Date('2026-06-15T12:00:00Z').getTime();
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(now);
+    try {
+      const limit = EconomyUpgrades[0].depositsPerDay;
+      const hours = (h: number) => new Date(now - h * 3_600_000);
+      // The mocked table honours the query's lower bound like the database.
+      const rows = [
+        ...Array.from({ length: limit - 1 }, () => ({ date_time: hours(2) })),
+        // Older than the window: must not be counted against the user.
+        ...Array.from({ length: 5 }, () => ({ date_time: hours(25) })),
+      ];
+      mockPrisma.bank_history.findMany = vi.fn(
+        async ({ where }: { where: { date_time: { gte: Date } } }) =>
+          rows.filter((row) => row.date_time >= where.date_time.gte),
+      );
+
+      await depositGold(1, 100);
+      const { where } = mockPrisma.bank_history.findMany.mock.calls[0][0];
+      expect(where.date_time.gte.getTime()).toBe(now - 24 * 3_600_000);
+
+      // One more deposit inside the window fills it; the next is refused.
+      rows.push({ date_time: hours(1) });
+      await expect(depositGold(1, 100)).rejects.toThrow(
+        'Maximum deposits reached',
+      );
+    } finally {
+      nowSpy.mockRestore();
+    }
   });
 });

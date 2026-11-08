@@ -8,11 +8,11 @@
   },
   "coreLoop": {
     "title": "The Core Loop",
-    "description": "OpenThrone runs on a persistent cycle. Every 30 minutes you earn attack turns. Spend turns to raid other players for gold and experience. Use gold to grow your army and fortify your kingdom. Rise through the ranks until your name is whispered across the realm.",
+    "description": "OpenThrone runs on a persistent cycle. Every {{minutes}} minutes you earn attack turns. Spend turns to raid other players for gold and experience. Use gold to grow your army and fortify your kingdom. Rise through the ranks until your name is whispered across the realm.",
     "steps": {
       "earn": {
         "title": "Earn Turns",
-        "text": "Attack turns regenerate every 30 minutes, even while offline."
+        "text": "Attack turns regenerate every {{minutes}} minutes, even while offline."
       },
       "attack": {
         "title": "Attack & Plunder",
@@ -47,7 +47,9 @@
       "name": "Undead",
       "description": "+5% offense bonus."
     },
-    "matchups": "Race bonuses shape your army; no race automatically defeats another. Melee attacks meet melee defense, and ranged attacks meet ranged defense. Scout the enemy and equip troops for the pressure you expect."
+    "matchups": "Race bonuses shape your army; no race automatically defeats another. Melee attacks meet melee defense, and ranged attacks meet ranged defense. Scout the enemy and equip troops for the pressure you expect.",
+    "classesTitle": "Choose Your Class",
+    "classesDescription": "Your class is the second choice at signup, and it's permanent. Each gives one lasting bonus:"
   },
   "army": {
     "title": "Build Your Army",
@@ -74,22 +76,30 @@
     "description": "Gold is the lifeblood of your empire. Manage it wisely — what you don't protect, someone will take.",
     "bank": {
       "title": "Bank",
-      "text": "Safely store gold away from raiders. Upgrade for higher capacity."
+      "text": "Deposit gold so raiders cannot take it. Economy upgrades raise how much you can deposit each day and how much the bank holds."
     },
     "armory": {
       "title": "Armory",
-      "text": "Purchase weapons and armor for your troops. Upgrade to unlock better equipment."
+      "text": "Buy weapons and armor for your troops. Armory upgrades unlock better gear."
+    },
+    "housing": {
+      "title": "Housing",
+      "text": "Brings new citizens to your kingdom every day. Upgrade it for more citizens; higher levels need a stronger fortification."
+    },
+    "repair": {
+      "title": "Repair",
+      "text": "Attacks damage your fort. Spend gold here to restore its hit points."
     },
     "fortifications": {
       "title": "Fortifications",
-      "text": "Strengthen your defenses. Higher walls mean fewer casualties when attacked."
+      "text": "Your fort starts as a Manor. Upgrade it under Structures > Upgrades, which opens at level 5 with the Village, for more defense, gold per turn and fort hit points."
+    },
+    "economyUpgrades": {
+      "title": "Economy Upgrades",
+      "text": "Also under Upgrades. Farms, markets and mines raise the gold each worker earns and how much your bank can take."
     },
     "transfers": {
       "title": "Gold transfers"
-    },
-    "mines": {
-      "title": "Mines",
-      "text": "Increase passive gold generation. Essential for long-term growth."
     }
   },
   "combat": {
@@ -109,11 +119,19 @@
     },
     "losses": {
       "title": "Losses",
-      "text": "Casualties fall on all of your unit levels in proportion to how many troops you field at each level, so cheap level 1 troops no longer shield your best units. Hired mercenaries still take the front line within their level."
+      "text": "Casualties fall on all of your unit levels in proportion to how many troops you field at each level, so cheap level 1 troops no longer shield your best units. Mercenaries unlock from level {{mercenaryLevel}}: once your fort is a {{mercenaryFort}}, Battle → Mercenaries opens; once hired, they take the front line within their level."
+    },
+    "protection": {
+      "title": "New-Player Protection",
+      "text": "New-player protection is a gold shield, not immunity: attacks still kill units and damage your fort. Your first {{allowance}} gold on hand is shielded — raiders take at most {{share}}% of the normal cap from it at level 1, rising to 100% at level {{taperLevel}} — and gold above that is raided at the normal rate, so bank it. Protection ends after a set number of game days, at a population threshold or at level 10, whichever comes first."
     },
     "stamina": {
       "title": "Stamina"
-    }
+    },
+      "experience": {
+        "title": "Experience and Levels",
+        "text": "Experience (XP) comes from battle. Winning an attack pays the most, scaled by the turns you commit, the level gap and how close the fight was. A lost attack pays a smaller share, and only for a real fight: nothing below {{effortFloor}}% of the defender's strength, the full share from {{effortFull}}%. Defenders earn XP whenever they are attacked, more for holding than for falling, scaled by the size of the threat (at least {{threatFloor}}%). Stay on one level for more than {{graceDays}} game days and the XP you get from being attacked grows by {{stallStep}}% each further game day, up to {{stallMax}}×, so nobody can hide at a low level. Spy missions give no XP. The Overview shows how much XP your next level needs; each level gives a proficiency point and, at milestones, opens new structures."
+      }
   },
   "alliances": {
     "title": "Alliances",

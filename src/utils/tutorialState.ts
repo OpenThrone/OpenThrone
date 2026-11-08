@@ -185,3 +185,14 @@ export const getTutorialPhase = (
       return 'off';
   }
 };
+
+/**
+ * Whether a page's chapter plays. A chapter is saved as soon as its last step
+ * shows, so leaving by any route (menu, address bar, reload) still counts;
+ * `heldChapter` keeps that last step on screen until the player closes it.
+ */
+export const shouldShowChapter = (
+  state: TutorialState | null,
+  chapter: TutorialChapterId,
+  heldChapter: TutorialChapterId | null,
+): boolean => heldChapter === chapter || !state?.chapters.includes(chapter);

@@ -1,21 +1,36 @@
 # Temporary forces (#10)
 
+Last verified against code: 2026-11-06 (alpha 43c5fff7)
+
 ## Player gameplay
 
 **Battle → Mercenaries** (`/battle/mercenaries`) hires ready-equipped offense,
 defense, spy and sentry troops at native tier unlocks. Choose 1, 3 or 7 days,
 review the price and hire up to 100 surviving mercenaries per role (wounded
-survivors count). The contract list shows survivors, recovering troops, expiry,
+survivors count). Surviving mercenaries across all roles also cannot exceed 50%
+of your own trained army (offense, defense, spy and sentry, rounded down). The contract list shows survivors, recovering troops, expiry,
 extension prices and dismissal. Extensions charge for survivors only, keep the
-accepted daily price and cannot exceed 30 days from now. Dismissal has no refund.
+accepted daily price and cannot push expiry past `force.maxTermDays` (default
+30) from now. Dismissal has no refund.
 Expiry removes mercenaries; it never creates citizens, permanent units or items.
 
-Per-unit mobilization is `ceil(native training × 1.25)`. Each paid day is
-`ceil((native training + bundled kit) × 0.05)`. Bundled items are server-curated,
+Per-unit mobilization is `ceil(native training × 1.25)`
+(`mercenary.hireMultiplier`). Each paid day is
+`ceil((native training + bundled kit) × 0.05)` (`mercenary.dailyPriceRate`). Bundled items are server-curated,
 use one item in each supported slot (five for spies, six for other roles), and
 never enter personal inventory. Mercenaries gain 25% primary strength, lose 20%
 off-role strength and have 20% less health. Personal equipment and battle-upgrade
-capacity cannot be assigned to these contracts.
+capacity cannot be assigned to these contracts. The 25% and 20% strength changes
+and the 20% health cut are fixed in code, not settings.
+
+Hiring and renewing need the Mercenary Hall (Village fort, fort level 2) for
+tier 1, the Outpost (fort level 4) for tier 2 and the Stronghold (fort level 7)
+for tier 3, plus the fort level of the unit tier itself, so Spy and Sentry tiers
+open with their later forts. Dismissal stays open when a tier locks again. Each hire and each paid renewal writes one `SALE` bank-history row (`HIRE_MERCENARY` or `RENEW_MERCENARY`) with the contract, term and quantity. Dismissal and expiry move no gold, so they write none. Mercenaries refuse to sign or renew when kingdom morale is
+below 20. A broke kingdom with active contracts loses 3 extra morale a day.
+While the `ENABLE_DESERTION` feature is on and morale is below 20, 10% of all
+surviving mercenaries walk out each day (at least one when 10 or more remain).
+`force.maxQuantity` (default 1,000,000) and `force.maxTermDays` also bound hires.
 
 **Alliance → Alliance troops** (`/alliances/[id]/forces`) exposes the shared
 reserve, permanent equipped contributions, loan requests, active loans,
@@ -27,16 +42,20 @@ Leaders choose manual approval or automatic role allowances. Automatic lending
 denies roles without an allowance. Requests reserve no stock and expire after
 24 hours; borrowers or leadership can cancel them. Approvals recheck current
 membership, tier/kit eligibility, accepted limits and current role caps. Loan
-extensions follow the configured approval policy, retain the accepted
-contribution rate and have a 30-day maximum horizon. Leadership can recall early.
+extensions follow the configured approval policy (under automatic lending they
+apply at once, under manual lending they wait for the leader), retain the
+accepted contribution rate, and cannot push expiry past the smaller of
+`force.maxTermDays` (default 30) and the role's term allowance, counted from
+now. The leader can recall early, and a borrower can
+return troops early.
 
 Alliance troops use normal health and stats with their bundled kit. Surviving
 healthy troops return to the source reserve; recovering troops return to its
-wounded stock and heal at the normal daily rate. Recall cannot heal wounds
+wounded stock, where 35% (at least one) heal once per OT day. Recall cannot heal wounds
 instantly. Combat deaths impose no fine, replacement debt or equipment bill.
 Membership exit or expulsion returns surviving loans immediately. Donations
 remain alliance property. An army holding alliance troops cannot attack or run a
-spy mission against any current member of their source alliance, including when
+spy mission against any current member of their source alliance (while that alliance is active), including when
 the ordinary friendly-fire confirmation would otherwise allow the action.
 
 ## Dues, taxes and enforcement
@@ -131,3 +150,49 @@ idempotency, expulsion, recurring rules, era separation and contribution credit
 settlement. `/test` includes mock-only mercenary, alliance troop and dues
 specimens, plus the battle-report deduction state. Live browser checks use a
 separate disposable database and authenticated synthetic players.
+
+## Admin and settings
+
+Runtime settings (admin Runtime Settings, group Mercenaries): `mercenary.hireMultiplier`,
+`mercenary.dailyPriceRate`, `force.maxQuantity`, `force.maxTermDays` and
+`force.maxPillageBps` (default 2500, the pillage cap and the ceiling for role
+rates). The admin Forces page lists contracts, reserves, dues and wounded troops.
+Staff can expire or terminate a contract, return an alliance deployment, cancel
+an obligation and heal all wounded. Player-scoped actions need
+`MANAGE_USERS`, alliance-scoped ones `MANAGE_ALLIANCES`, and every action is
+audited.
+
+## Source
+
+- [Mercenary.service.ts](../../src/services/Mercenary.service.ts): offers, hire, renew, dismiss, expiry.
+- [TemporaryForceLedger.service.ts](../../src/services/TemporaryForceLedger.service.ts): policy, contribution, loan request and approval, close, casualties.
+- [AllianceForceExtension.service.ts](../../src/services/AllianceForceExtension.service.ts): extensions and request cancellation.
+- [ForceLifecycle.service.ts](../../src/services/ForceLifecycle.service.ts): return, member exit, forbidden targets, suspension.
+- [ForcePillage.service.ts](../../src/services/ForcePillage.service.ts): pillage contributions.
+- [ForceDues.service.ts](../../src/services/ForceDues.service.ts) and [ForceDuesWorker.service.ts](../../src/services/ForceDuesWorker.service.ts): levies, rules, payments, daily enforcement.
+- [ForceWorker.service.ts](../../src/services/ForceWorker.service.ts) and [temporaryForceWorker.ts](../../src/server/temporaryForceWorker.ts): the minute worker.
+- [AdminForces.service.ts](../../src/services/AdminForces.service.ts): staff actions.
+- [temporaryForces.ts](../../src/utils/temporaryForces.ts): constants, policy schema, helpers.
+- Routes: [mercenaries](../../src/pages/api/mercenaries/index.ts), [alliance troops](../../src/pages/api/alliances/[id]/forces.ts), [dues](../../src/pages/api/alliances/[id]/dues.ts), [dues summary](../../src/pages/api/forces/dues-summary.ts).
+
+## Tests
+
+- [ForceDues.waive.test.ts](../../src/services/__tests__/ForceDues.waive.test.ts): the leader-only dues waiver.
+- [mercenaries.test.ts](../../test/integration/mercenaries.test.ts): hire and cost, races, unlock tiers, army share, renewal, dismissal, combat persistence (real database).
+- [temporaryForces.test.ts](../../test/integration/temporaryForces.test.ts): contribution, requests, approvals, recall, expiry, automatic lending, policy versions.
+- [temporaryForcesSafety.test.ts](../../test/integration/temporaryForcesSafety.test.ts): pillage cap, role caps, cancel races, era separation, spy replay.
+- [allianceForceGameplay.test.ts](../../test/integration/allianceForceGameplay.test.ts): automatic loans, forbidden targets, extensions, dues, fines, expulsion, recurring rules, pillage.
+- [temporaryForces.test.ts](../../src/utils/temporaryForces.test.ts): pure helpers for expiry, renewal, tiers, share cap, pillage split and enforcement planning.
+- [Mercenary.price.test.ts](../../src/services/Mercenary.price.test.ts): price quote check.
+- [AllianceForceExtension.cap.test.ts](../../src/services/AllianceForceExtension.cap.test.ts): extension quantity cap.
+- [Force.strengthRefresh.test.ts](../../src/services/Force.strengthRefresh.test.ts): stored strength after expiry and return.
+- [ForceDues.schema.test.ts](../../src/services/ForceDues.schema.test.ts): dues payment quantity.
+- [adminForces.test.ts](../../src/utils/adminForces.test.ts): staff action rules.
+
+## Known gaps
+
+- `planForceEnforcement`, `extendForceContract` and `splitForcePillage` in `temporaryForces.ts` are exercised by unit tests but not called by the server. The daily worker and pillage code implement their own logic. In particular the helper requires a prior final warning before expulsion, while the worker expels from the snapshotted overdue threshold alone, so the unit test for that rule does not cover production.
+- Reserve wound healing uses a literal 35% in `ForceWorker.service.ts` instead of the shared wounded-heal constant that player healing uses. They match today.
+- Collection designation is covered only through the automatic-collection integration test. No test covers the admin Forces routes.
+- Contracts paid before these bank-history rows were added stay out of bank history. `ForceEvent` still holds their gold.
+- Not independently verified for this pass: battle-report deduction display for the attacker versus defender, and the account-reset and migration details above.

@@ -18,7 +18,7 @@ import type { MinimalBot } from '@/botUsers/BotExecutor';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { logError } from '@/utils/logger';
-import { getOTStartDate } from '@/utils/timefunctions';
+import { getGameDayStart } from '@/utils/timefunctions';
 
 interface BotStatusEntry {
   id: number;
@@ -176,7 +176,7 @@ function assignSlots<T extends { persona: BotPersona }>(
 
 function hasRunToday(bot: { botLastRunAt: Date | null }): boolean {
   if (!bot.botLastRunAt) return false;
-  const todayStart = getOTStartDate();
+  const todayStart = getGameDayStart();
   return bot.botLastRunAt >= todayStart;
 }
 

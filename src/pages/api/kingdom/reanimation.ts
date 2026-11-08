@@ -10,7 +10,7 @@ import {
 import prisma from '@/lib/prisma';
 import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api';
-import { getOTDayKey } from '@/utils/timefunctions';
+import { getGameDayKey } from '@/utils/timefunctions';
 
 const guardedHandler = withApiGuard({
   methods: ['GET'],
@@ -65,7 +65,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       'REANIMATION',
     );
 
-  const isToday = user.reanimation_day === getOTDayKey();
+  const isToday = user.reanimation_day === getGameDayKey();
   let dailyCap: number;
   if (isToday) {
     dailyCap = user.reanimation_cap ?? 0;

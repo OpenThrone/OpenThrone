@@ -54,10 +54,89 @@ const pick = (row: object, keys: string[]) =>
   );
 
 describe('combat ruleset registry', () => {
-  it('holds combat-v9 and combat-v10, which is the current ruleset', () => {
-    expect(Object.keys(COMBAT_RULESETS)).toEqual(['combat-v9', 'combat-v10']);
-    expect(CURRENT_COMBAT_RULESET).toBe(COMBAT_RULESETS['combat-v10']!);
-    expect(CURRENT_COMBAT_RULESET.version).toBe('combat-v10');
+  it('holds combat-v9 to combat-v14, which is the current ruleset', () => {
+    expect(Object.keys(COMBAT_RULESETS)).toEqual([
+      'combat-v9',
+      'combat-v10',
+      'combat-v11',
+      'combat-v12',
+      'combat-v13',
+      'combat-v14',
+    ]);
+    expect(CURRENT_COMBAT_RULESET).toBe(COMBAT_RULESETS['combat-v14']!);
+    expect(CURRENT_COMBAT_RULESET.version).toBe('combat-v14');
+  });
+
+  it('lets the Long Sword be used from combat-v14 only', () => {
+    const longSword = (version: string) =>
+      COMBAT_RULESETS[version]!.items.find(
+        (item) => item.id === 'OFFENSE_LONG-SWORD',
+      );
+    expect(longSword('combat-v13')?.armoryLevel).toBe(7);
+    expect(longSword('combat-v14')?.armoryLevel).toBe(6);
+    const {
+      version: _v13,
+      items: v13Items,
+      ...v13
+    } = COMBAT_RULESETS['combat-v13']!;
+    const {
+      version: _v14,
+      items: v14Items,
+      ...v14
+    } = COMBAT_RULESETS['combat-v14']!;
+    expect(v14).toEqual(v13);
+    expect(
+      v14Items.filter((item, index) => item !== v13Items[index]).length,
+    ).toBe(1);
+  });
+
+  it('rounds casualty caps by chance from combat-v12 only', () => {
+    for (const version of ['combat-v9', 'combat-v10', 'combat-v11'])
+      expect(COMBAT_RULESETS[version]!.casualtyRounding).toBeUndefined();
+    expect(COMBAT_RULESETS['combat-v12']!.casualtyRounding).toBe('stochastic');
+    expect(COMBAT_RULESETS['combat-v13']!.casualtyRounding).toBe('stochastic');
+    // v12 changes nothing else: every table and constant is v11's.
+    const {
+      casualtyRounding: _r,
+      version: _v,
+      ...v12
+    } = COMBAT_RULESETS['combat-v12']!;
+    const { version: _v11, ...v11 } = COMBAT_RULESETS['combat-v11']!;
+    expect(JSON.stringify(v12)).toBe(JSON.stringify(v11));
+  });
+
+  it('budgets defender casualties on engaged military from combat-v13 only', () => {
+    for (const version of [
+      'combat-v9',
+      'combat-v10',
+      'combat-v11',
+      'combat-v12',
+    ]) {
+      expect(
+        COMBAT_RULESETS[version]!.defenderBudgetPopulation,
+      ).toBeUndefined();
+      expect(COMBAT_RULESETS[version]!.civiliansEngageOn).toBeUndefined();
+    }
+    expect(COMBAT_RULESETS['combat-v13']!.defenderBudgetPopulation).toBe(
+      'engaged',
+    );
+    expect(COMBAT_RULESETS['combat-v13']!.civiliansEngageOn).toBe('fortBreach');
+    // v13 changes nothing else: every table and constant is v12's.
+    const {
+      defenderBudgetPopulation: _b,
+      civiliansEngageOn: _c,
+      version: _v,
+      ...v13
+    } = COMBAT_RULESETS['combat-v13']!;
+    const { version: _v12, ...v12 } = COMBAT_RULESETS['combat-v12']!;
+    expect(JSON.stringify(v13)).toBe(JSON.stringify(v12));
+  });
+
+  it('adds battle XP fairness in combat-v11 and none before it', () => {
+    expect(COMBAT_RULESETS['combat-v9']!.battleXp).toBeUndefined();
+    expect(COMBAT_RULESETS['combat-v10']!.battleXp).toBeUndefined();
+    expect(COMBAT_RULESETS['combat-v11']!.battleXp).toBeDefined();
+    expect(COMBAT_RULESETS['combat-v11']!.casualtySpread).toBe(true);
   });
 
   it('spreads casualties from combat-v10 on and leaves v9 lowest-first', () => {
@@ -78,7 +157,10 @@ describe('combat ruleset registry', () => {
   });
 
   it('picks a ruleset by the stored formula version', () => {
-    expect(getCombatRuleset('combat-v10')).toBe(CURRENT_COMBAT_RULESET);
+    expect(getCombatRuleset('combat-v14')).toBe(CURRENT_COMBAT_RULESET);
+    expect(getCombatRuleset('combat-v12')).toBe(COMBAT_RULESETS['combat-v12']);
+    expect(getCombatRuleset('combat-v11')).toBe(COMBAT_RULESETS['combat-v11']);
+    expect(getCombatRuleset('combat-v10')).toBe(COMBAT_RULESETS['combat-v10']);
     expect(getCombatRuleset('combat-v9')).toBe(COMBAT_RULESETS['combat-v9']);
     // v7 and v8 were fought under rules a ruleset cannot rebuild.
     expect(getCombatRuleset('combat-v8')).toBeUndefined();

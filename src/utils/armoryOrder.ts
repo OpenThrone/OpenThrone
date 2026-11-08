@@ -27,6 +27,29 @@ export const armoryOrderCost = (
     0,
   );
 
+export interface ArmoryPurchaseLine {
+  name: string;
+  quantity: number;
+  /** Lower-case unit role the item is for: offense, defense, spy or sentry. */
+  role: string;
+}
+
+/**
+ * Describes a completed purchase per item and the units it is for. Several
+ * tabs sell items with the same name, so the role keeps the toast honest
+ * about which armory the gold went to (#361).
+ */
+export const armoryPurchaseLines = (
+  items: Array<Pick<Item, 'name' | 'usage'> & { quantity: number }>,
+): ArmoryPurchaseLine[] =>
+  items
+    .filter((item) => item.quantity > 0)
+    .map((item) => ({
+      name: item.name,
+      quantity: item.quantity,
+      role: String(item.usage || '').toLowerCase(),
+    }));
+
 /** Inventory is stored by tier, even when several named items share that tier. */
 export const ownedSlotCoverage = (item: ArmoryItem, items: ArmoryItem[]) => {
   const tiers = new Map<number, number>();

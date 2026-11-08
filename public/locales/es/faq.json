@@ -41,6 +41,10 @@
       "title": "¿Qué debo revisar antes de atacar?",
       "answer": "Revisa el objetivo, tu fuerza ofensiva y los turnos de ataque que vas a usar. La información de espionaje puede ayudarte a evaluar al objetivo, pero el combate puede causar pérdidas. Después, consulta el informe y el Historial de Guerra antes de comprometer más recursos."
     },
+    "protection": {
+      "title": "¿Qué cubre la protección de novato?",
+      "answer": "Un escudo de oro, no inmunidad. Los ataques siguen costando unidades y PS del fuerte. Solo tus primeras {{allowance}} monedas de oro en mano están protegidas: los saqueadores toman como máximo el {{share}} % del tope normal en el nivel 1, y el 100 % en el nivel {{taperLevel}}. Guarda en el banco lo que no puedas defender; los jugadores protegidos pueden atacarse entre sí."
+    },
     "transfers": {
       "title": "¿Puedo enviar oro a un amigo?"
     },

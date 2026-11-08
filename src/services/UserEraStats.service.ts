@@ -1,6 +1,12 @@
 import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
 
+import {
+  type EraTopBattle,
+  mergeTopBattles,
+  parseTopBattles,
+} from './EraActivityTypes';
+
 type StatsTableRow = {
   id?: number;
   display_name: string;
@@ -18,6 +24,17 @@ export type EraTabOption = {
 type EraDateRange = {
   startDate: Date;
   endDate: Date;
+};
+
+type EraRollup = {
+  players: {
+    userId: number;
+    attacksWon: number;
+    attackerCasualties: bigint;
+    defenderCasualties: bigint;
+    recruits: number;
+  }[];
+  topBattles: EraTopBattle[];
 };
 
 export type HistoricalEraStatsPayload = {
@@ -326,95 +343,92 @@ async function getTopHistoricalSentry(eraId: number): Promise<StatsTableRow[]> {
   }
 }
 
+/** Top 10 of `totals`, named, ties broken by name. */
+async function toNamedRows(
+  totals: Map<number, number>,
+): Promise<StatsTableRow[]> {
+  const top = [...totals.entries()]
+    .filter(([, stat]) => stat > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+  const names = await getDisplayNames(top.map(([id]) => id));
+  return top
+    .flatMap(([id, stat]): StatsTableRow[] => {
+      const display_name = names.get(id);
+      return display_name ? [{ id, display_name, stat }] : [];
+    })
+    .sort(
+      (a, b) =>
+        Number(b.stat) - Number(a.stat) ||
+        a.display_name.localeCompare(b.display_name),
+    );
+}
+
+async function getDisplayNames(ids: number[]): Promise<Map<number, string>> {
+  const users = await prisma.users.findMany({
+    where: { id: { in: [...new Set(ids)] } },
+    select: { id: true, display_name: true },
+  });
+  return new Map(users.map(({ id, display_name }) => [id, display_name]));
+}
+
+const addTo = (totals: Map<number, number>, id: number, amount: number) => {
+  totals.set(id, (totals.get(id) ?? 0) + amount);
+};
+
+const eraWindow = (era: EraDateRange) => ({
+  gte: era.startDate,
+  lt: era.endDate,
+});
+
 async function getHistoricalTopSuccessfulAttackers(
   era: EraDateRange,
+  rollup: EraRollup,
 ): Promise<StatsTableRow[]> {
   try {
     const attacks = await prisma.attack_log.findMany({
-      where: {
-        voidedAt: null,
-        timestamp: { gte: era.startDate, lt: era.endDate },
-        type: 'attack',
-      },
-      select: {
-        attacker_id: true,
-        winner: true,
-      },
+      where: { voidedAt: null, timestamp: eraWindow(era), type: 'attack' },
+      select: { attacker_id: true, winner: true },
     });
-
-    const counts: { [key: number]: number } = {};
-    attacks.forEach((attack) => {
-      if (attack.winner === attack.attacker_id) {
-        counts[attack.attacker_id] = (counts[attack.attacker_id] || 0) + 1;
-      }
-    });
-
-    const sorted = Object.entries(counts)
-      .map(([attackerId, stat]) => ({
-        attacker_id: parseInt(attackerId, 10),
-        stat,
-      }))
-      .sort((a, b) => b.stat - a.stat)
-      .slice(0, 10);
-
-    const detailed: (StatsTableRow | null)[] = await Promise.all(
-      sorted.map(async ({ attacker_id, stat }) => {
-        const user = await prisma.users.findUnique({
-          where: { id: attacker_id },
-          select: { id: true, display_name: true },
-        });
-        if (!user) return null;
-        return {
-          id: user.id,
-          display_name: user.display_name,
-          stat,
-        };
-      }),
-    );
-
-    return detailed.filter((row): row is StatsTableRow => row !== null);
+    const totals = new Map<number, number>();
+    for (const { attacker_id, winner } of attacks) {
+      if (winner === attacker_id) addTo(totals, attacker_id, 1);
+    }
+    for (const { userId, attacksWon } of rollup.players) {
+      addTo(totals, userId, attacksWon);
+    }
+    return await toNamedRows(totals);
   } catch (err) {
     logError('UserEraStats.getHistoricalTopSuccessfulAttackers failed', err);
     return [];
   }
 }
 
+const LOSS_FIELDS = {
+  attacker_id: true,
+  defender_id: true,
+  attacker_losses_total: true,
+  defender_losses_total: true,
+  stats: true,
+} as const;
+
 async function getHistoricalTopAttackerCasualties(
   era: EraDateRange,
+  rollup: EraRollup,
 ): Promise<StatsTableRow[]> {
   try {
     const attacks = await prisma.attack_log.findMany({
-      where: {
-        voidedAt: null,
-        timestamp: { gte: era.startDate, lt: era.endDate },
-      },
-      include: {
-        attackerPlayer: { select: { display_name: true } },
-      },
+      where: { voidedAt: null, timestamp: eraWindow(era) },
+      select: LOSS_FIELDS,
     });
-
-    const totals: { [key: number]: { display_name: string; stat: number } } =
-      {};
-
-    attacks.forEach((attack) => {
-      const losses = resolveAttackerLosses(attack);
-      if (!totals[attack.attacker_id]) {
-        totals[attack.attacker_id] = {
-          display_name: attack.attackerPlayer?.display_name ?? 'Unknown',
-          stat: 0,
-        };
-      }
-      totals[attack.attacker_id].stat += losses;
-    });
-
-    return Object.entries(totals)
-      .map(([attackerId, value]) => ({
-        id: parseInt(attackerId, 10),
-        display_name: value.display_name,
-        stat: value.stat,
-      }))
-      .sort((a, b) => Number(b.stat) - Number(a.stat))
-      .slice(0, 10);
+    const totals = new Map<number, number>();
+    for (const attack of attacks) {
+      addTo(totals, attack.attacker_id, resolveAttackerLosses(attack));
+    }
+    for (const { userId, attackerCasualties } of rollup.players) {
+      addTo(totals, userId, Number(attackerCasualties));
+    }
+    return await toNamedRows(totals);
   } catch (err) {
     logError('UserEraStats.getHistoricalTopAttackerCasualties failed', err);
     return [];
@@ -423,40 +437,21 @@ async function getHistoricalTopAttackerCasualties(
 
 async function getHistoricalTopDefenderCasualties(
   era: EraDateRange,
+  rollup: EraRollup,
 ): Promise<StatsTableRow[]> {
   try {
     const attacks = await prisma.attack_log.findMany({
-      where: {
-        voidedAt: null,
-        timestamp: { gte: era.startDate, lt: era.endDate },
-      },
-      include: {
-        defenderPlayer: { select: { display_name: true } },
-      },
+      where: { voidedAt: null, timestamp: eraWindow(era) },
+      select: LOSS_FIELDS,
     });
-
-    const totals: { [key: number]: { display_name: string; stat: number } } =
-      {};
-
-    attacks.forEach((attack) => {
-      const losses = resolveDefenderLosses(attack);
-      if (!totals[attack.defender_id]) {
-        totals[attack.defender_id] = {
-          display_name: attack.defenderPlayer?.display_name ?? 'Unknown',
-          stat: 0,
-        };
-      }
-      totals[attack.defender_id].stat += losses;
-    });
-
-    return Object.entries(totals)
-      .map(([defenderId, value]) => ({
-        id: parseInt(defenderId, 10),
-        display_name: value.display_name,
-        stat: value.stat,
-      }))
-      .sort((a, b) => Number(b.stat) - Number(a.stat))
-      .slice(0, 10);
+    const totals = new Map<number, number>();
+    for (const attack of attacks) {
+      addTo(totals, attack.defender_id, resolveDefenderLosses(attack));
+    }
+    for (const { userId, defenderCasualties } of rollup.players) {
+      addTo(totals, userId, Number(defenderCasualties));
+    }
+    return await toNamedRows(totals);
   } catch (err) {
     logError('UserEraStats.getHistoricalTopDefenderCasualties failed', err);
     return [];
@@ -465,30 +460,29 @@ async function getHistoricalTopDefenderCasualties(
 
 async function getHistoricalTopAttacksByTotalCasualties(
   era: EraDateRange,
+  rollup: EraRollup,
 ): Promise<StatsTableRow[]> {
   try {
     const attacks = await prisma.attack_log.findMany({
-      where: {
-        voidedAt: null,
-        timestamp: { gte: era.startDate, lt: era.endDate },
-      },
-      include: {
-        attackerPlayer: { select: { display_name: true } },
-        defenderPlayer: { select: { display_name: true } },
-      },
+      where: { voidedAt: null, timestamp: eraWindow(era) },
+      select: LOSS_FIELDS,
     });
-
-    return attacks
-      .map((attack) => {
-        const total =
-          resolveAttackerLosses(attack) + resolveDefenderLosses(attack);
-        return {
-          display_name: `${attack.attackerPlayer?.display_name ?? 'Unknown'} vs ${attack.defenderPlayer?.display_name ?? 'Unknown'}`,
-          stat: total,
-        };
-      })
-      .sort((a, b) => b.stat - a.stat)
-      .slice(0, 10);
+    const battles = mergeTopBattles(
+      rollup.topBattles,
+      attacks.map((attack) => ({
+        attackerId: attack.attacker_id,
+        defenderId: attack.defender_id,
+        casualties:
+          resolveAttackerLosses(attack) + resolveDefenderLosses(attack),
+      })),
+    );
+    const names = await getDisplayNames(
+      battles.flatMap(({ attackerId, defenderId }) => [attackerId, defenderId]),
+    );
+    return battles.map(({ attackerId, defenderId, casualties }) => ({
+      display_name: `${names.get(attackerId) ?? 'Unknown'} vs ${names.get(defenderId) ?? 'Unknown'}`,
+      stat: casualties,
+    }));
   } catch (err) {
     logError(
       'UserEraStats.getHistoricalTopAttacksByTotalCasualties failed',
@@ -500,69 +494,38 @@ async function getHistoricalTopAttacksByTotalCasualties(
 
 async function getHistoricalTopRecruiters(
   era: EraDateRange,
+  rollup: EraRollup,
 ): Promise<StatsTableRow[]> {
   try {
-    const grouped = await prisma.recruit_history.groupBy({
-      by: ['to_user'],
-      _count: { to_user: true },
+    const records = await prisma.recruit_history.findMany({
       where: {
-        timestamp: { gte: era.startDate, lt: era.endDate },
+        timestamp: eraWindow(era),
         from_user: { not: 0 },
         to_user: { not: 0 },
       },
-      orderBy: { _count: { to_user: 'desc' } },
-      take: 10,
+      select: { from_user: true, to_user: true },
     });
-
-    // groupBy cannot express `from_user !== to_user`, so re-count each
-    // candidate from the raw rows before resolving display names.
-    const withValidCounts = await Promise.all(
-      grouped.map(async (entry) => {
-        const validRecords = await prisma.recruit_history.findMany({
-          where: {
-            timestamp: { gte: era.startDate, lt: era.endDate },
-            to_user: entry.to_user,
-            from_user: { not: entry.to_user },
-          },
-          select: { from_user: true, to_user: true, timestamp: true },
-        });
-        return {
-          to_user: entry.to_user,
-          stat: validRecords.length,
-        };
-      }),
-    );
-
-    const withNames: (StatsTableRow | null)[] = await Promise.all(
-      withValidCounts
-        .filter((entry) => entry.stat > 0)
-        .map(async (entry) => {
-          const user = await prisma.users.findFirst({
-            where: { AND: [{ id: entry.to_user }, { id: { not: 0 } }] },
-            select: { id: true, display_name: true },
-          });
-          if (!user) return null;
-          return {
-            id: user.id,
-            display_name: user.display_name,
-            stat: entry.stat,
-          };
-        }),
-    );
-
-    return withNames
-      .filter((row): row is StatsTableRow => row !== null)
-      .sort((a, b) => {
-        if (Number(b.stat) !== Number(a.stat)) {
-          return Number(b.stat) - Number(a.stat);
-        }
-        return a.display_name.localeCompare(b.display_name);
-      })
-      .slice(0, 10);
+    const totals = new Map<number, number>();
+    for (const { from_user, to_user } of records) {
+      if (from_user !== to_user) addTo(totals, to_user, 1);
+    }
+    for (const { userId, recruits } of rollup.players) {
+      addTo(totals, userId, recruits);
+    }
+    return await toNamedRows(totals);
   } catch (err) {
     logError('UserEraStats.getHistoricalTopRecruiters failed', err);
     return [];
   }
+}
+
+/** Totals for logs that have already expired from this era. */
+async function loadEraRollup(
+  eraId: number,
+  storedBattles: unknown,
+): Promise<EraRollup> {
+  const players = await prisma.userEraActivity.findMany({ where: { eraId } });
+  return { players, topBattles: parseTopBattles(storedBattles) };
 }
 
 /**
@@ -594,19 +557,21 @@ export async function getHistoricalEraStats(
       isCurrent: false,
     };
 
+    const rollup = await loadEraRollup(eraId, era.topBattles);
+
     const results = await Promise.allSettled([
       getTopHistoricalStandings(eraId),
-      getHistoricalTopRecruiters(eraRange),
-      getHistoricalTopSuccessfulAttackers(eraRange),
+      getHistoricalTopRecruiters(eraRange, rollup),
+      getHistoricalTopSuccessfulAttackers(eraRange, rollup),
       getTopHistoricalGoldOnHand(eraId),
       getTopHistoricalGoldInBank(eraId),
       getTopHistoricalOffense(eraId),
       getTopHistoricalDefense(eraId),
       getTopHistoricalSpy(eraId),
       getTopHistoricalSentry(eraId),
-      getHistoricalTopAttackerCasualties(eraRange),
-      getHistoricalTopDefenderCasualties(eraRange),
-      getHistoricalTopAttacksByTotalCasualties(eraRange),
+      getHistoricalTopAttackerCasualties(eraRange, rollup),
+      getHistoricalTopDefenderCasualties(eraRange, rollup),
+      getHistoricalTopAttacksByTotalCasualties(eraRange, rollup),
     ]);
 
     const settled = <T>(r: PromiseSettledResult<T>, fallback: T): T => {

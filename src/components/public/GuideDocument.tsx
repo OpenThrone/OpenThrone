@@ -10,7 +10,7 @@ import SeoHead from '@/components/SeoHead';
 import { useGuideFacts } from '@/hooks/useGuideFacts';
 import { useStaminaGuide } from '@/hooks/useStaminaGuide';
 import type { GuideFacts } from '@/utils/guideFacts';
-import { structureName } from '@/utils/structureNames';
+import { fortificationName, structureName } from '@/utils/structureNames';
 
 export const GUIDE_SLUGS = [
   'first-kingdom',
@@ -98,7 +98,12 @@ export default function GuideDocument({ slug }: { slug: GuideSlug }) {
       ...(formatFacts(facts, (n) => number.format(n)) as FormattedValues),
       unlockNames: {
         goldTransfer: economyName(facts.unlocks.goldTransferEconomy),
-        mercenaryHall: economyName(facts.unlocks.mercenaryHallEconomy),
+        mercenaryFort:
+          fortificationName(
+            tStructures,
+            facts.unlocks.mercenaryHallFortLevel,
+          ) ?? '',
+        mercenaryLevel: number.format(facts.unlocks.mercenaryHallLevel),
       },
     };
   }, [facts, locale, tStructures]);

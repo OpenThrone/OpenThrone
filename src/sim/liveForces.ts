@@ -95,12 +95,18 @@ export function mercenaryTier(
 ): number {
   for (let level = 3; level >= 1; level--) {
     // Feature unlocks use the live 0-based economy index; sim levels are 1-based.
-    const economy =
-      FEATURE_REQUIREMENTS[mercenaryTierFeatureKey(level)].economyLevel ?? 0;
+    const unlocked = [
+      FEATURE_REQUIREMENTS.MERCENARY_HALL,
+      FEATURE_REQUIREMENTS[mercenaryTierFeatureKey(level)],
+    ].every(
+      (req) =>
+        player.economyLevel - 1 >= (req.economyLevel ?? 0) &&
+        player.fortLevel >= (req.fortLevel ?? 0),
+    );
     const fort =
       UnitTypes.find((unit) => unit.type === role && unit.level === level)
         ?.fortLevel ?? 99;
-    if (player.economyLevel - 1 >= economy && player.fortLevel >= fort) {
+    if (unlocked && player.fortLevel >= fort) {
       return level;
     }
   }

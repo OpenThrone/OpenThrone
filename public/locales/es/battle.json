@@ -17,6 +17,7 @@
     "attack": "Atacar",
     "attackConfirm": "¿Estás seguro de que quieres atacar a {{player}}?",
     "attackSuccess": "¡Ataque exitoso!",
+    "pairCapReached": "Has alcanzado el límite de {{limit}} ataques a este jugador por día de juego móvil. Podrás atacarlo de nuevo en {{wait}}.",
     "attackFailed": "¡Ataque fallido!",
     "noTarget": "Por favor, selecciona un objetivo antes de atacar.",
     "insufficientTurns": "No tienes suficientes turnos para atacar.",
@@ -121,8 +122,8 @@
     "loadingUserData": "Cargando datos de usuario...",
     "you": "Tú",
     "attackRangeSentence": "Puedes atacar a jugadores de los niveles <strong>{{min}}</strong> a <strong>{{max}}</strong>.",
-    "protected": "Protegido",
-    "protectedHint": "Protección de novato: los ataques solo se llevan una pequeña parte de su oro."
+    "protected": "Oro protegido",
+    "protectedHint": "Escudo de oro de novato: los ataques siguen costando unidades y PS del fuerte. Solo sus primeras {{allowance}} monedas de oro en mano están protegidas: los saqueadores toman como máximo el {{share}} % del tope normal en el nivel 1, y el 100 % en el nivel {{taperLevel}}."
   },
   "warHistory": {
     "title": "Historial de Guerra",
@@ -140,6 +141,8 @@
     "timestamp": "Hora",
     "attackLog": "Registro de Ataque",
     "defenseLog": "Registro de Defensa",
+    "spyLog": "Misiones de espionaje",
+    "noSpyMissions": "Aún no has enviado misiones de espionaje.",
     "outcome": "Resultado",
     "player": "Jugador",
     "pillageAndExp": "Botín y EXP",
@@ -151,7 +154,7 @@
     "showDetails": "Mostrar detalles de la batalla",
     "hideDetails": "Ocultar detalles de la batalla",
     "goldBadge": "Oro: {{gold}}",
-    "xpBadge": "EXP: {{xp}}",
+    "xpBadge": "Tu EXP: {{xp}}",
     "turnsBadge": "Turnos: {{turns}}",
     "unknownPlayer": "Desconocido",
     "missionType": {
@@ -159,7 +162,8 @@
       "INTEL": "Inteligencia",
       "ASSASSINATE": "Asesinato",
       "INFILTRATE": "Infiltración"
-    }
+    },
+    "fortHpChange": "{{start}} → {{end}} PV"
   },
   "battleSimulator": {
     "title": "Simulador de Batalla",
@@ -293,6 +297,7 @@
     "goldOnHand": "Oro Disponible",
     "bankedGold": "Oro en Banco",
     "defenseRatio": "Relación de Defensa",
+    "defenseRatioHint": "Unidades de defensa como parte de toda tu población. Por debajo del {{threshold}} %, los atacantes causan más daño a tu fuerte y se llevan más oro.",
     "trainingProgress": "Progreso de entrenamiento: listo",
     "economy": "Economía",
     "offense": "Ofensiva",
@@ -420,7 +425,7 @@
     "defenderLost": "Bajas del defensor",
     "attackLine": "Fuerza atacante: {{soldiers}} soldados.",
     "counterLine": "El contraataque de {{player}} mató a {{dead}} atacantes.",
-    "lossLine": "{{player}} perdió {{dead}} soldados.",
+    "lossLine": "{{player}} perdió {{dead}} unidades.",
     "victory": "Victoria",
     "defeat": "Derrota",
     "attackerVictory": "Victoria del atacante",
@@ -514,10 +519,12 @@
     "playerEarnedXp": "{{player}} ganó {{xp}} EXP.",
     "goldPillaged": "Oro saqueado: {{gold}}",
     "fortDamage": "Daño al fuerte causado por el atacante: {{damage}}",
-    "youLostSoldiers_one": "Perdiste {{dead}} soldado.",
-    "youLostSoldiers_other": "Perdiste {{dead}} soldados.",
-    "playerLostSoldiers_one": "{{player}} perdió {{dead}} soldado.",
-    "playerLostSoldiers_other": "{{player}} perdió {{dead}} soldados.",
+    "youLostUnits_one": "Perdiste {{dead}} unidad.",
+    "youLostUnits_other": "Perdiste {{dead}} unidades.",
+    "youLostUnitType": "Perdiste 1 unidad de {{unit}}.",
+    "playerLostUnits_one": "{{player}} perdió {{dead}} unidad.",
+    "playerLostUnits_other": "{{player}} perdió {{dead}} unidades.",
+    "playerLostUnitType": "{{player}} perdió 1 unidad de {{unit}}.",
     "captivesTaken_one": "Cautivos tomados: {{taken}}.",
     "captivesTaken_other": "Cautivos tomados: {{taken}}.",
     "troopsTakenCaptive_one": "{{taken}} de tus tropas fue tomado cautivo.",
@@ -607,7 +614,8 @@
       "dailyLimit_one": "Solo puedes enviar {{count}} intento de infiltración cada 24 horas. ¡Mejora tu estructura de espionaje para aumentar los intentos diarios!",
       "dailyLimit_other": "Solo puedes enviar {{count}} intentos de infiltración cada 24 horas. ¡Mejora tu estructura de espionaje para aumentar los intentos diarios!",
       "turnsInfo": "Las infiltraciones usan de 2 a 10 turnos de ataque. Más turnos aumentan la profundidad del sabotaje y la exposición."
-    }
+    },
+    "upgradeWithFort": "{{upgrade}} — mejoras clandestinas, requiere {{fort}}"
   },
   "battleUpgradeNames": {
     "steeds": "Corceles",

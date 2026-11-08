@@ -3,7 +3,7 @@ import type { Prisma } from '@/lib/prisma-exports';
 import { performRecruitment } from '@/services/Recruitment.service';
 import { trainUnits } from '@/services/Training.service';
 import { logError } from '@/utils/logger';
-import { getOTStartDate } from '@/utils/timefunctions';
+import { getGameDayStart } from '@/utils/timefunctions';
 
 import { BOT_IP_ADDRESS, RECRUIT_DAILY_CAP_PER_BOT } from './constants';
 import type {
@@ -119,7 +119,7 @@ export class BotExecutor {
         where: {
           from_user: bot.id,
           to_user: bot.id,
-          timestamp: { gte: getOTStartDate() },
+          timestamp: { gte: getGameDayStart() },
         },
       });
 

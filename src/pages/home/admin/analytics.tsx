@@ -260,6 +260,7 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
       'navigation',
       'admin-game',
       'admin-activity',
+      'battle',
     ])),
   },
 });

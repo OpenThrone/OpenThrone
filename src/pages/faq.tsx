@@ -9,6 +9,7 @@ import classes from '@/components/public/PublicPages.module.css';
 import SeoHead from '@/components/SeoHead';
 import { useFriendTransferGuide } from '@/hooks/useFriendTransferGuide';
 import { useStaminaGuide } from '@/hooks/useStaminaGuide';
+import { getProtectionShieldFacts } from '@/utils/battleProtection';
 import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const QUESTIONS = {
@@ -18,6 +19,7 @@ const QUESTIONS = {
     'bank',
     'transfers',
     'combat',
+    'protection',
     'stamina',
     'allianceEra',
   ],
@@ -25,9 +27,16 @@ const QUESTIONS = {
 } as const;
 
 export default function Faq() {
-  const { t } = useTranslation('faq');
+  const { t, i18n } = useTranslation('faq');
   const staminaGuide = useStaminaGuide();
   const transferGuide = useFriendTransferGuide();
+  // Gold-shield rule numbers quoted in the protection answer (#284).
+  const { allowance, ...shieldFacts } = getProtectionShieldFacts();
+  const protectionAnswer = t('questions.protection.answer', {
+    allowance: allowance.toLocaleString(i18n.language),
+    share: shieldFacts.share,
+    taperLevel: shieldFacts.taperLevel,
+  });
 
   return (
     <>
@@ -75,7 +84,9 @@ export default function Faq() {
                             ? staminaGuide
                             : question === 'transfers'
                               ? transferGuide
-                              : t(`questions.${question}.answer`)}
+                              : question === 'protection'
+                                ? protectionAnswer
+                                : t(`questions.${question}.answer`)}
                         </Text>
                         {question === 'password' && (
                           <Group className={classes.actions}>

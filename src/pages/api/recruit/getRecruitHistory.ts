@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
 import { getRecruitmentRecords } from '@/services/Recruitment.service';
-import { getOTStartDate } from '@/utils/timefunctions';
+import { getGameDayStart } from '@/utils/timefunctions';
 
 const GetRecruitHistorySchema = z.object({
   id: z.coerce.number().int().optional(),
@@ -26,8 +26,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { id } = validatedQuery.data;
   const recruiterID =
     id || (session ? parseInt(session.user?.id.toLocaleString()) : 0);
-  const startDate = getOTStartDate(); // new Date(Number(getOTStartDate()) - 1 * 24 * 60 * 60 * 1000); // The start of the day 1 day ago
-  const endDate = getOTStartDate(1); // The start of current day
+  const startDate = getGameDayStart(); // new Date(Number(getGameDayStart()) - 1 * 24 * 60 * 60 * 1000); // The start of the day 1 day ago
+  const endDate = getGameDayStart(1); // The start of current day
   const usersWithRecruitCount = await getRecruitmentRecords(
     recruiterID,
     startDate,
@@ -37,13 +37,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (!usersWithRecruitCount.length) {
     return res.status(404).json({
       error: 'No recruitment history found in the last 24 hours.',
-      '24hoursago': getOTStartDate(),
+      '24hoursago': getGameDayStart(),
     });
   }
 
   return res
     .status(200)
-    .json({ usersWithRecruitCount, '24hoursago': getOTStartDate() });
+    .json({ usersWithRecruitCount, '24hoursago': getGameDayStart() });
 };
 
 export default withAuth(handler);

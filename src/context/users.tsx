@@ -1,5 +1,6 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
 import {
   createContext,
@@ -20,6 +21,7 @@ import type { UserApiResponse } from '@/types/typings';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import { logDebug, logError, logInfo, logWarn } from '@/utils/logger';
 import { isPublicPath } from '@/utils/publicRoutes';
+import { fetchUserDataWithRetry } from '@/utils/userDataFetch';
 
 // Define UnreadMessages interface locally or import if moved to typings.d.ts
 interface UnreadMessages {
@@ -74,6 +76,10 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState<UnreadMessages[]>([]);
   const signingOut = useRef(false);
+  const latestUserFetch = useRef(0);
+  const { t } = useTranslation('common');
+  const translate = useRef(t);
+  translate.current = t;
   const { config } = useRuntimeConfig();
   const staminaRulesKey = config?.stamina
     ? JSON.stringify(config.stamina)
@@ -177,22 +183,27 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     async (_uID: number, showLoading = false) => {
       if (signingOut.current) return;
       if (showLoading) setLoading(true);
-      try {
-        const response = await fetch('/api/general/getUser');
-        if (response.status === 401) {
-          await clearInvalidSession();
-          return;
-        }
-        if (!response.ok) throw new Error('Failed to fetch user data');
-        const data: UserApiResponse | PrismaUser = await response.json();
-        if (signingOut.current) return;
-        processAndSetUserData(data);
-      } catch (error) {
-        logError('Error fetching user data:', error);
-        alertService.error('Failed to fetch user data.');
-        setUser(null);
-        setLoading(false);
+      latestUserFetch.current += 1;
+      const fetchId = latestUserFetch.current;
+      const result = await fetchUserDataWithRetry<UserApiResponse | PrismaUser>(
+        () => fetch('/api/general/getUser'),
+      );
+      // Retries can outlast a newer request; only the newest one decides.
+      if (fetchId !== latestUserFetch.current) return;
+      if (result.kind === 'unauthorized') {
+        await clearInvalidSession();
+        return;
       }
+      if (signingOut.current) return;
+      if (result.kind === 'ok') {
+        processAndSetUserData(result.data);
+        return;
+      }
+      // A network or server hiccup is not a sign-out: keep the player's
+      // last known state (and the signed-in shell) instead of clearing it.
+      logError('Error fetching user data:', result.error);
+      alertService.error(translate.current('errors.stillSignedIn'));
+      setLoading(false);
     },
     [clearInvalidSession, processAndSetUserData],
   );

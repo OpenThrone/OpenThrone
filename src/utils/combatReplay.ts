@@ -150,6 +150,8 @@ export type AttackReplay = CombatRandomReplay & {
   defenderDailyGoldRemaining: string;
   staminaPenaltyThreshold?: number;
   staminaMinMultiplier?: number;
+  /** Game days the defender had held their level (combat-v11 XP ramp, #334); absent on older replays. */
+  defenderGameDaysAtLevel?: number;
 };
 
 export type SpyReplay = CombatRandomReplay & {
@@ -303,6 +305,7 @@ const combatReplaySchema = z.discriminatedUnion('domain', [
     defenderDailyGoldRemaining: decimalGold,
     staminaPenaltyThreshold: z.number().min(0).max(100).optional(),
     staminaMinMultiplier: z.number().min(0.5).max(1).optional(),
+    defenderGameDaysAtLevel: z.number().finite().nonnegative().optional(),
   }),
   z.object({
     ...replayBase,

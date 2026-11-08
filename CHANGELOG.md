@@ -4,6 +4,136 @@ OpenThrone follows [Semantic Versioning](https://semver.org/) on the 0.x line:
 each production release raises the minor version and hotfixes raise the patch
 version. Alpha builds carry the next version with an `-alpha` suffix.
 
+## v0.12.0 (2026-11-08)
+
+### Added
+- **Daily item check (#370):** every armory purchase, sale and upgrade, admin
+  edit, force contribution and account reset now records its item change.
+  Each day a report-only check confirms every player's item counts follow
+  from those records, and lists anything unexplained for staff under
+  Administration → Ledgers → Item drift. It never changes a player's items.
+
+### Changed
+- **Battle XP follows real fights:** a lost attack now pays experience by how
+  hard you pushed: nothing when your offense is a quarter of the defender's
+  defense or less, rising to the full amount at three quarters. Defenders
+  earn by the size of the threat too, at least 15% of the old amount, so
+  trading deliberate losses no longer levels anyone. Wins pay as before.
+  Defenders who stay at one level for more than three game days earn a
+  quarter more defender experience for each further game day, up to three
+  times as much, so nobody can camp at a low level forever. Earlier battles
+  still replay under the rules they were fought with.
+- **Small armies can take losses:** the per-battle casualty limit (8% of
+  the army) used to round down, so an army of 12 or fewer never lost a unit.
+  It now rounds up by chance in proportion to the fraction, so a 10-soldier
+  army that is beaten loses about one soldier in every battle or so, the same
+  rate as a large army. Earlier battles replay under their own rules.
+- **Guard losses no longer grow with your civilians:** a defender's casualty
+  allowance in a won assault used to be budgeted against the whole
+  population, so idle workers and citizens made your guards lose more (or
+  fewer) troops even though only guards can fall. The allowance is now
+  anchored to the units that actually fight and can die, matching how an
+  attacker's losses are budgeted on the attacking army alone. Civilians now
+  join the fight, become targets and count toward that allowance at the same
+  moment, when the fort's HP reaches 0; before then they neither help nor
+  count. Earlier battles replay under their own rules.
+- **Mercenaries open early (#335):** you can now hire mercenaries from level
+  5, once your fort is a Village, instead of waiting for the Tavern at level
+  70. Higher tiers no longer wait for the Copper Mine and the Meat Market:
+  tier 2 opens with the Outpost at level 15 and tier 3 with the Stronghold at
+  level 30, the same forts that train those units. Spy and Sentry mercenaries
+  follow the later forts those units train at.
+- **Bank capacity:** the bank now enforces the limit Economy upgrades have
+  always listed, from 10,000,000 gold on the Farm up to 500,000,000. Gold
+  already banked above the limit stays yours and can be withdrawn, but you
+  can't deposit more until you are back under it. The Bank page shows your
+  limit.
+
+### Fixed
+- **Intel reports show the exact population:** the attack list shows every
+  kingdom's true population for free, but an intel report showed only the
+  sampled share, so a report could say "Observed: 43" next to a list saying
+  48. The report now shows the exact total ("Population: 48") while the
+  per-unit troop breakdown stays sampled and is labeled as such ("Troops
+  observed: 43 of 48 (intel quality 83%)"). Reports stored before the change
+  keep the old sampled label.
+- **New-player protection is called what it is (#284):** the sidebar badge and
+  the attack list now say "Gold shielded" instead of "Protected", and their
+  tooltips, the FAQ, How to Play and the first-kingdom guide explain that
+  protection shields part of your gold on hand while attacks still take units
+  and fort HP. The rule itself is unchanged.
+- **Sidebar era (#360, #274):** the Era cell shows just the era number, not
+  the full era name or an internal id.
+- **Playtest fixes (#273–#348):**
+  - Intel samples troops by headcount, shows its quality, reports every unit
+    group when intel is near full and lists the kingdom stats your spies
+    gathered. Spy reports show when the mission ran, not when you opened it.
+  - Defense Log rows show fort damage and fort HP before and after.
+  - Bank history lists structure purchases, and the training charge matches
+    the training card.
+  - Armory and training cards show what each unit or item adds.
+  - The bank names the deposit window next to its countdown.
+  - How to Play explains experience and levels, the classes, the structures,
+    the turn interval and where mercenaries come from. Signup describes the
+    classes.
+  - The Levels page names its proficiency buttons, fort income includes the
+    real proficiency bonus, Defense Ratio is explained, and income rows add
+    up in whole gold.
+  - The Overview shows your own fort, Spy Guild and Sentry Post levels.
+  - The Attack list shows one rank per player and no longer formats gold
+    twice.
+  - Recruit again recruits again instead of only resetting the dialog.
+  - War History outcomes read Won or Lost, the spy table is named Spy
+    Missions, and the battle timeline counts lost units, not soldiers.
+  - Page notices close when you leave the page, and a Learn lesson counts as
+    done once its last step shows.
+  - Alliance browse has an empty state, requirements show fort levels, and
+    mercenary and gold transfer locks say where to build what they need.
+  - World Stats says what its wealthiest list counts.
+- **Mercenary costs in your bank history:** hiring and renewing mercenaries now
+  appear in your bank history, so the gold they cost is no longer missing from
+  your records. This applies from now on; earlier contracts aren't added.
+- **Admin activity timeline:** Details now shows recorded unit and equipment
+  quantities, conversions, bank transfer direction, upgrade levels and fort
+  repairs. Older actions without recorded details are marked as such. Fort,
+  housing and racial upgrades now show readable names, the armory building is
+  listed under Upgrades, and action names are translated in German and Spanish.
+- **Era leaderboards:** attack, casualty and recruiter leaderboards for ended
+  eras no longer shrink or empty over time, and attacks and defends won at the
+  end of an era now count the whole era. This applies from now on; eras that
+  already ended keep what was left.
+- **Friend requests:** a declined or ended friendship no longer blocks a
+  pair forever, and limits stop anyone from repeating an unwanted request.
+  After a decline you wait 7 days, and after three declines only the other
+  player can reach out. After a friendship ends, both players wait 7 days.
+  Cancelling a request means a 24-hour wait, and you can send 20 requests a
+  day.
+- **Fort repair:** asking to repair more than your fort is missing no longer
+  fails with "Not enough gold" when you can afford the real repair.
+- **Long Sword:** Humans can now buy it, at the top Armory level.
+- **How to Play:** no longer says each level widens who you can attack. The
+  attack range is a set number of levels either way.
+- **Erasure leaves alliances cleanly (#318):** erasing an account now removes
+  it from every alliance inside the erasure transaction. An erased leader is
+  succeeded by the highest-ranked remaining member (ties go to the
+  longest-standing one), and an erased last member dissolves the alliance
+  through the regular disband path, treasury split and all. Borrowed alliance
+  forces are returned to the reserve; outstanding loans are collected from
+  gold on hand but never forgiven — the debt stays on the pseudonymous
+  account, and each succession or dissolution is recorded in the audit log.
+- **Clearer bank errors (#352):** if a deposit or withdrawal can't reach the
+  server, the bank says so in your language and asks you to check your balance
+  instead of showing a raw error.
+- **Attack limit countdown (#359):** the refusal when you've hit the per-player
+  attack limit now tells you when your next attack opens.
+- **Staying signed in (#362):** a brief server or network failure no longer
+  drops you to the logged-out view. The game retries and keeps your kingdom on
+  screen.
+- **Armory purchases (#361):** the confirmation names the quantity, the item
+  and the units it's for, so items that share a name can't be confused.
+- **Spy reports (#368):** every intel field now always appears, and anything
+  your spies missed reads "Not Observed" instead of vanishing from the report.
+
 ## v0.11.0 (2026-10-31)
 
 ### Added

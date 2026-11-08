@@ -52,8 +52,6 @@ const change = (
     >[0],
     now,
   );
-const setEconomy = (economy_level: number) =>
-  prisma.users.update({ where: { id: userId }, data: { economy_level } });
 const setTrainedUnits = (quantity: number) =>
   prisma.userUnit.updateMany({
     where: { userId, isMercenary: false },
@@ -72,8 +70,7 @@ beforeEach(async () => {
         locale: 'en',
         recruit_link: 'merc',
         gold: 1000000000n,
-        fort_level: 12,
-        economy_level: 6, // Meat Market: every mercenary tier unlocked
+        fort_level: 12, // Every mercenary tier unlocked
       },
     })
   ).id;
@@ -162,6 +159,76 @@ describe('playable mercenaries', () => {
     await expect(hire(1)).rejects.toThrow('Insufficient gold');
     expect(await prisma.forceContract.count()).toBe(1);
   });
+  test('hires and renewals each leave one gold record; replays, failures, free renewals and dismissals leave none', async () => {
+    const records = () =>
+      prisma.bank_history.findMany({
+        where: { from_user_id: userId, history_type: 'SALE' },
+        orderBy: { id: 'asc' },
+      });
+    const offer = mercenaryOffer('OFFENSE', 1);
+    const operationId = randomUUID();
+    const contract = await hire(10, operationId);
+    await hire(10, operationId);
+    expect(await records()).toMatchObject([
+      {
+        gold_amount: 10n * (offer.mobilization + 3n * offer.dailyPrice),
+        to_user_id: 0,
+        from_user_account_type: 'HAND',
+        to_user_account_type: 'BANK',
+        stats: {
+          type: 'HIRE_MERCENARY',
+          contractId: contract.id,
+          termDays: 3,
+          items: [{ type: 'OFFENSE', level: 1, quantity: 10 }],
+        },
+      },
+    ]);
+
+    const renewalId = randomUUID();
+    const renew = () =>
+      MercenaryService.change(
+        {
+          userId,
+          contractId: contract.id,
+          termDays: 1,
+          operationId: renewalId,
+        },
+        now,
+      );
+    await renew();
+    await renew();
+    const afterRenewal = await records();
+    expect(afterRenewal).toHaveLength(2);
+    expect(afterRenewal[1]).toMatchObject({
+      gold_amount: 10n * offer.dailyPrice,
+      stats: {
+        type: 'RENEW_MERCENARY',
+        contractId: contract.id,
+        termDays: 1,
+        items: [{ type: 'OFFENSE', level: 1, quantity: 10 }],
+      },
+    });
+
+    await prisma.forceContract.update({
+      where: { id: contract.id },
+      data: { unitPriceGold: 0n },
+    });
+    await change({ contractId: contract.id, termDays: 1 });
+    expect(await records()).toHaveLength(2);
+
+    await change({ contractId: contract.id });
+    expect(
+      await prisma.forceEvent.count({
+        where: { contractId: contract.id, action: 'DISMISS' },
+      }),
+    ).toBe(1);
+    expect(await records()).toHaveLength(2);
+
+    await prisma.users.update({ where: { id: userId }, data: { gold: 0n } });
+    await expect(hire(1)).rejects.toThrow('Insufficient gold');
+    expect(await records()).toHaveLength(2);
+  });
+
   test('casualties and wounds preserve separate contract IDs, renewal bills survivors only, dismissal never refunds', async () => {
     const a = await hire(10);
     const b = await hire(10);
@@ -231,9 +298,10 @@ describe('playable mercenaries', () => {
     ).toBe(0);
   });
   test('tier eligibility, ownership, expiry and reset cannot turn contracts permanent', async () => {
+    // Village: the hall is open, but level 3 units need a stronger fort.
     await prisma.users.update({
       where: { id: userId },
-      data: { fort_level: 1 },
+      data: { fort_level: 2 },
     });
     await expect(
       hireQuoted(
@@ -300,7 +368,7 @@ describe('playable mercenaries', () => {
     );
     await prisma.users.update({
       where: { id: attacker.id },
-      data: { gold: 100000000n, economy_level: 6 },
+      data: { gold: 100000000n, economy_level: 6, fort_level: 2 },
     });
     // Trained DEFENSE backs the share cap without joining the attack;
     // createUser already seeded a zero-quantity row.
@@ -369,21 +437,24 @@ describe('playable mercenaries', () => {
     ).toBe(0);
     expect([first.id, second.id]).toHaveLength(2);
   });
-  test('hiring and renewal name the economy upgrade each tier needs', async () => {
-    await setEconomy(3);
-    await expect(hire(1)).rejects.toThrow('Mercenaries unlock with the Tavern');
+  test('the hall needs the Village fort; higher tiers name their fort', async () => {
+    const setFort = (fort_level: number) =>
+      prisma.users.update({ where: { id: userId }, data: { fort_level } });
+    await setFort(1);
+    await expect(hire(1)).rejects.toThrow('Mercenaries unlock at level 5');
+    await setFort(2);
     await expect(
       hireAs({ type: 'OFFENSE', level: 2, quantity: 1, termDays: 1 }),
-    ).rejects.toThrow('Mercenary tier 2 unlocks with the Copper Mine');
+    ).rejects.toThrow('Mercenary tier 2 unlocks with the Outpost');
     await expect(
       hireAs({ type: 'OFFENSE', level: 3, quantity: 1, termDays: 1 }),
-    ).rejects.toThrow('Mercenary tier 3 unlocks with the Meat Market');
-    await setEconomy(4); // Tavern open: tier 1 hireable again.
+    ).rejects.toThrow('Mercenary tier 3 unlocks with the Stronghold');
+    // Village or better: tier 1 is hireable without any economy upgrade.
     const contract = await hire(10);
-    await setEconomy(3);
+    await setFort(1);
     await expect(
       change({ contractId: contract.id, termDays: 1 }),
-    ).rejects.toThrow('Mercenaries unlock with the Tavern');
+    ).rejects.toThrow('Mercenaries unlock at level 5');
     // Dismissal stays available for contracts held before the lock.
     await expect(change({ contractId: contract.id })).resolves.toMatchObject({
       id: contract.id,
@@ -391,8 +462,10 @@ describe('playable mercenaries', () => {
     });
     expect(await prisma.forceContract.count()).toBe(1);
   });
-  test('tier 2 and 3 renewals keep requiring their own upgrade', async () => {
-    await setEconomy(5); // Copper Mine: tier 2 open, tier 3 still locked.
+  test('tier 2 and 3 renewals keep requiring their own fort', async () => {
+    const setFort = (fort_level: number) =>
+      prisma.users.update({ where: { id: userId }, data: { fort_level } });
+    await setFort(4); // Outpost: tier 2 open, tier 3 still locked.
     const contract = await hireAs({
       type: 'DEFENSE',
       level: 2,
@@ -402,10 +475,10 @@ describe('playable mercenaries', () => {
     await expect(
       change({ contractId: contract.id, termDays: 1 }),
     ).resolves.toMatchObject({ id: contract.id });
-    await setEconomy(4); // Below the Copper Mine again.
+    await setFort(3); // Below the Outpost again.
     await expect(
       change({ contractId: contract.id, termDays: 1 }),
-    ).rejects.toThrow('Mercenary tier 2 unlocks with the Copper Mine');
+    ).rejects.toThrow('Mercenary tier 2 unlocks with the Outpost');
   });
   test('the army-share cap counts every role and floors at half the trained army', async () => {
     await setTrainedUnits(0);

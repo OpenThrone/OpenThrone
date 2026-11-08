@@ -30,18 +30,16 @@ export const calculateTotalCost = (
         `Invalid unit definition: ${unitData.type}_${unitData.level}`,
       );
     }
-    if (eventDiscountPercent > 0) {
-      // Same per-unit price the Training page shows during a discount event.
-      totalCost +=
-        applyEventDiscount(
-          getDiscountedUnitPrice(unitType.cost, uModel.priceBonus || 0),
-          eventDiscountPercent,
-        ) * unitData.quantity;
-      return;
-    }
+    // Same per-unit price the Training page shows, so the charge matches
+    // the Order Summary total (#347).
+    const unitPrice = getDiscountedUnitPrice(
+      unitType.cost,
+      uModel.priceBonus || 0,
+    );
     totalCost +=
-      (unitType.cost - ((uModel.priceBonus || 0) / 100) * unitType.cost) *
-      unitData.quantity;
+      (eventDiscountPercent > 0
+        ? applyEventDiscount(unitPrice, eventDiscountPercent)
+        : unitPrice) * unitData.quantity;
   });
   return Math.ceil(totalCost); // Always return an integer
 };

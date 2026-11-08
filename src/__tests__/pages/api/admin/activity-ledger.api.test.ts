@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { PGlite } from '@electric-sql/pglite';
 import {
   afterAll,
@@ -10,6 +13,8 @@ import {
 } from 'bun:test';
 import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 import { silenceLogger } from 'test/utils/silenceLogger';
+
+import { recordsActivityDetails } from '@/utils/adminActivityDetails';
 
 installMockPrisma(vi);
 // Staff reads of attacks and investigations now write a required audit row.
@@ -78,6 +83,9 @@ beforeAll(async () => {
     INSERT INTO "ChatMessage" VALUES (1, 2, now(), 'PRIVATE_CHAT');
     INSERT INTO alliance_bank_history VALUES (1, 1, now(), 'TAX', 30), (2, 2, now(), 'DEPOSIT', 40);
   `);
+  await db.exec(
+    `ALTER TABLE bank_history ADD COLUMN from_user_account_type text DEFAULT 'HAND', ADD COLUMN to_user_account_type text DEFAULT 'BANK'`,
+  );
   mockPrisma.$queryRaw = vi.fn(
     async (sql: any) => (await db.query(sql.text, sql.values)).rows,
   );
@@ -320,5 +328,129 @@ test('player breakdown pages across all matching players instead of a top-50 cap
     await db.exec(
       'DELETE FROM messages WHERE id >= 2000; DELETE FROM users WHERE id >= 1000',
     );
+  }
+});
+
+test('timeline returns safe recorded quantities, conversions, bank direction and upgrade facts', async () => {
+  await db.exec(`INSERT INTO bank_history
+    (id, from_user_id, to_user_id, date_time, stats, gold_amount, history_type, from_user_account_type, to_user_account_type) VALUES
+    (901,1,0,now(),' {"type":"TRAINING_TRAIN","items":[{"type":"OFFENSE","level":1,"quantity":1234,"note":"PRIVATE_ITEM_NOTE"},{"type":"DEFENSE","level":1,"quantity":25}]}',500,'SALE','HAND','BANK'),
+    (902,0,1,now(),' {"type":"TRAINING_UNTRAIN","items":[{"type":"OFFENSE","level":1,"quantity":9}]}',50,'SALE','BANK','HAND'),
+    (903,1,0,now(),' {"type":"ARMORY_EQUIP","items":[{"type":"WEAPON","usage":"OFFENSE","level":1,"quantity":17}]}',50,'SALE','HAND','BANK'),
+    (904,0,1,now(),' {"type":"ARMORY_UNEQUIP","items":[{"type":"WEAPON","usage":"OFFENSE","level":1,"quantity":3}]}',50,'SALE','BANK','HAND'),
+    (905,1,1,now(),null,50,'PLAYER_TRANSFER','BANK','HAND'),
+    (906,1,0,now(),' {"type":"TRAINING_CONVERSION","fromItem":"OFFENSE_1","toItem":"OFFENSE_2","amount":12}',50,'SALE','HAND','BANK'),
+    (907,1,0,now(),' {"type":"FORTIFICATIONS_UPGRADE","new_level":5,"private":"PRIVATE_LEVEL_NOTE"}',50,'SALE','HAND','BANK'),
+    (908,1,0,now(),' {"actualRepairAmount":90}',50,'FORT_REPAIR','HAND','BANK'),
+    (909,1,1,now(),' {"type":"ARMORY_UPGRADE","conversions":[{"fromItem":"OFFENSE_OFFENSE_DAGGER","toItem":"OFFENSE_OFFENSE_HATCHET","conversionAmount":7}]}',50,'SALE','HAND','BANK'),
+    (910,1,0,now(),' {"type":"TRAINING_TRAIN","items":[null,{"type":"PRIVATE_INVALID_TYPE","level":1,"quantity":12},{"type":"OFFENSE","level":1,"quantity":-1}]}',50,'SALE','HAND','BANK'),
+    (911,1,0,now(),' {"type":"BATTLE_UPGRADES_BUY","items":[{"type":"OFFENSE","level":1,"quantity":4}]}',50,'SALE','HAND','BANK'),
+    (912,1,0,now(),' {"type":"ARMORY_UPGRADE","new_level":3,"cost":"900"}',50,'SALE','HAND','BANK'),
+    (913,1,0,now(),' {"type":"HIRE_MERCENARY","contractId":4,"termDays":3,"items":[{"type":"OFFENSE","level":1,"quantity":10}]}',50,'SALE','HAND','BANK'),
+    (914,1,0,now(),' {"type":"RENEW_MERCENARY","contractId":4,"termDays":1,"items":[{"type":"OFFENSE","level":1,"quantity":6}]}',50,'SALE','HAND','BANK');`);
+  try {
+    const res = response();
+    await activity({ query: { days: '7', pageSize: '50' } }, res);
+    expect(res.code).toBe(200);
+    const row = (id: number) =>
+      res.body.recent.find((entry: any) => entry.key === `bank:${id}`);
+    expect(row(901).details.items).toMatchObject([
+      { name: 'Soldier', quantity: 1234 },
+      { quantity: 25 },
+    ]);
+    expect(row(902)).toMatchObject({
+      actor: 1,
+      details: { items: [{ name: 'Soldier', quantity: 9 }] },
+    });
+    expect(row(903).details.items).toMatchObject([
+      { name: 'Dagger', usage: 'OFFENSE', quantity: 17 },
+    ]);
+    expect(row(904).details.items[0].quantity).toBe(3);
+    expect(row(905).details).toMatchObject({
+      fromAccount: 'BANK',
+      toAccount: 'HAND',
+    });
+    expect(row(4).details).toMatchObject({
+      fromAccount: 'HAND',
+      toAccount: 'BANK',
+    });
+    expect(row(906).details.conversions).toMatchObject([
+      { from: { name: 'Soldier' }, to: { name: 'Knight' }, quantity: 12 },
+    ]);
+    expect(row(907).details.newLevel).toBe(5);
+    expect(row(908).details.repairedHP).toBe(90);
+    expect(row(909).details.conversions).toMatchObject([
+      { from: { name: 'Dagger' }, to: { name: 'Hatchet' }, quantity: 7 },
+    ]);
+    expect(row(912)).toMatchObject({
+      action: 'ARMORY_STRUCTURE_UPGRADE',
+      category: 'upgrades',
+      details: { newLevel: 3, conversions: [] },
+    });
+    expect(row(909)).toMatchObject({
+      action: 'ARMORY_UPGRADE',
+      category: 'equipment',
+    });
+    expect(row(913)).toMatchObject({
+      category: 'training',
+      details: { items: [{ name: 'Soldier', quantity: 10 }] },
+    });
+    expect(row(914)).toMatchObject({
+      category: 'training',
+      details: { items: [{ name: 'Soldier', quantity: 6 }] },
+    });
+    expect(row(1).details).toBeNull();
+    expect(row(910).details).toBeNull();
+    expect(row(911).details.items).toMatchObject([
+      { name: 'Steeds', quantity: 4, kind: 'battleUpgrade' },
+    ]);
+    expect(JSON.stringify(res.body)).not.toContain('PRIVATE');
+    expect(JSON.stringify(res.body)).not.toContain('detail_source');
+  } finally {
+    await db.exec('DELETE FROM bank_history WHERE id >= 900');
+  }
+});
+
+test.each(['en', 'de', 'es'])(
+  'every structure upgrade the game records has a %s timeline label',
+  (locale) => {
+    const { actions } = JSON.parse(
+      readFileSync(
+        join(process.cwd(), `public/locales/${locale}/admin-activity.json`),
+        'utf8',
+      ),
+    );
+    // Structure.service writes `${upgradeType.toUpperCase()}_UPGRADE`.
+    for (const upgradeType of [
+      'fortifications',
+      'houses',
+      'economy',
+      'offense',
+      'armory',
+      'spy',
+      'racial',
+    ]) {
+      expect(actions).toHaveProperty(`${upgradeType.toUpperCase()}_UPGRADE`);
+    }
+    expect(actions).toHaveProperty('ARMORY_STRUCTURE_UPGRADE');
+  },
+);
+
+test('only actions that record details can be missing them', () => {
+  for (const action of [
+    'TRAINING_TRAIN',
+    'ARMORY_EQUIP',
+    'ARMORY_STRUCTURE_UPGRADE',
+    'BATTLE_UPGRADES_BUY',
+    'FORTIFICATIONS_UPGRADE',
+    'FORT_REPAIR',
+    'PLAYER_TRANSFER',
+    'HIRE_MERCENARY',
+    'RENEW_MERCENARY',
+  ]) {
+    expect(recordsActivityDetails(action)).toBe(true);
+  }
+  for (const action of ['CHAT_SENT', 'RECRUIT', 'FRIEND_TRANSFER']) {
+    expect(recordsActivityDetails(action)).toBe(false);
   }
 });

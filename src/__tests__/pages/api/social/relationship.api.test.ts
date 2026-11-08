@@ -39,7 +39,7 @@ const call = async (query: Record<string, string>, withSession = true) => {
 
 beforeEach(() => {
   resetMockPrisma();
-  mockPrisma.social.findFirst = vi.fn(async () => null);
+  mockPrisma.social.findMany = vi.fn(async () => []);
 });
 
 describe('social relationship (SOC-02)', () => {
@@ -47,7 +47,7 @@ describe('social relationship (SOC-02)', () => {
     const res = await call({ targetUserId: String(OTHER_A) }, false);
 
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(mockPrisma.social.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.social.findMany).not.toHaveBeenCalled();
   });
 
   it('refuses to read a relationship between two other players', async () => {
@@ -57,14 +57,14 @@ describe('social relationship (SOC-02)', () => {
     });
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(mockPrisma.social.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.social.findMany).not.toHaveBeenCalled();
   });
 
   it('uses the session user as the subject', async () => {
     const res = await call({ targetUserId: String(OTHER_A) });
 
     expect(res.status).toHaveBeenCalledWith(200);
-    const { where } = mockPrisma.social.findFirst.mock.calls[0][0];
+    const { where } = mockPrisma.social.findMany.mock.calls[0][0];
     expect(where.OR).toEqual([
       { playerId: CALLER_ID, friendId: OTHER_A },
       { playerId: OTHER_A, friendId: CALLER_ID },
@@ -87,6 +87,6 @@ describe('social relationship (SOC-02)', () => {
     });
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(mockPrisma.social.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.social.findMany).not.toHaveBeenCalled();
   });
 });

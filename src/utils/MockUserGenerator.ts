@@ -106,6 +106,7 @@ export default class MockUserGenerator {
       sentry: 0, // From schema
       currentEraId: null, // From schema
       era_joined_at: null,
+      level_reached_at: null,
       protection_forfeited_era_id: null,
       event_citizens_received: 0,
       achievements: '{}', // From schema

@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 
 import RecruitmentFlowView from '@/components/RecruitmentFlowView';
 import { formatResetTime } from '@/utils/recruitmentStatus';
-import { getOTStartDate } from '@/utils/timefunctions';
+import { getGameDayStart } from '@/utils/timefunctions';
 
 import { mockAction, ShowcaseSection, Specimen } from '../Showcase';
 
@@ -306,7 +306,7 @@ export default function RecruitmentSection() {
                 used: 2,
                 limit: 5,
                 left: 3,
-                resetsAt: formatResetTime(getOTStartDate(1).toISOString()),
+                resetsAt: formatResetTime(getGameDayStart(1).toISOString()),
               }}
               formRef={{ current: null }}
               captchaSlot={null}

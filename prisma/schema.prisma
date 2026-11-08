@@ -366,9 +366,12 @@ model users {
   readMessages                          ChatMessageReadStatus[] // Added for read receipts
   auditLogs                             AuditLog[]               @relation("AuditLogs")
   userEras                              UserEra[]                @relation("UserEraUsers")
+  userEraActivity                        UserEraActivity[]        @relation("UserEraActivityUsers")
   currentEraId                          Int?
   /// When the player entered (or last reset into) their current era; starts the new-player protection clock. Null on legacy rows.
   era_joined_at                         DateTime?                @db.Timestamptz(3)
+  /// When the player reached their current level (#334); the anti-camping battle XP ramp counts game days from it. Null reads as "just reached".
+  level_reached_at                      DateTime?                @default(now()) @db.Timestamptz(3)
   /// Era in which the player forfeited protection by attacking a non-protected player.
   /// Citizens this era from timed citizen events and citizen multipliers (#89); added to the protection population limit.
   event_citizens_received               Int                      @default(0)
@@ -469,6 +472,9 @@ model users {
   captivesLost          Captive[]       @relation("CaptivesLost")
   captiveEventsAsCaptor CaptiveEvent[]  @relation("CaptorCaptiveEvents")
   captiveEventsAsSource CaptiveEvent[]  @relation("SourceCaptiveEvents")
+  itemLedgerEntries ItemLedgerEntry[]
+  itemBalanceCheckpoints ItemBalanceCheckpoint[]
+  itemLedgerMismatches ItemLedgerMismatch[]
 
   // Bot user system fields (see .sisyphus/plans/bot-users-system.md)
   // isBot is non-null with default false so scheduler queries can use WHERE isBot = true efficiently.
@@ -1031,11 +1037,31 @@ model Era {
   startDate     DateTime    @default(now()) @db.Timestamptz(3)
   endDate       DateTime?   @db.Timestamptz(3)
   startSettings Json?
+  /// The era's biggest battles, kept after their logs are deleted.
+  topBattles    Json        @default("[]")
   users         users[]     @relation("CurrentUserEra")
   userEras      UserEra[]   @relation("UserEraEras")
+  userActivity  UserEraActivity[] @relation("UserEraActivityEras")
   gameEvents    GameEvent[]
 
   @@index([startDate])
+}
+
+/// Per-player totals for an era, folded in as battle and recruit logs expire.
+model UserEraActivity {
+  id                 Int    @id @default(autoincrement())
+  userId             Int
+  eraId              Int
+  attacksWon         Int    @default(0)
+  defendsWon         Int    @default(0)
+  attackerCasualties BigInt @default(0) @db.BigInt
+  defenderCasualties BigInt @default(0) @db.BigInt
+  recruits           Int    @default(0)
+  user               users  @relation("UserEraActivityUsers", fields: [userId], references: [id], onDelete: Cascade)
+  era                Era    @relation("UserEraActivityEras", fields: [eraId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eraId])
+  @@index([eraId])
 }
 
 model UserEra {
@@ -2484,4 +2510,86 @@ model AccountDataExport {
 
   @@index([userId, requestedAt])
   @@index([requestedAt])
+}
+
+enum ItemLedgerReason {
+  ARMORY_BUY
+  ARMORY_SELL
+  ARMORY_UPGRADE
+  ADMIN_EDIT
+  ADMIN_GRANT
+  FORCE_CONTRIBUTION
+  ACCOUNT_RESET
+}
+
+enum ItemLedgerRunKind {
+  BASELINE
+  CHECK
+}
+
+/// One recorded change to a UserItem balance, written by the feature that made
+/// the change in the same transaction. Deltas state what the operation meant
+/// to do, independent of the rows it saved, so the daily check can disagree.
+model ItemLedgerEntry {
+  id         Int              @id @default(autoincrement())
+  userId     Int
+  type       ItemType
+  usage      ItemUsage
+  level      Int
+  delta      Int
+  reason     ItemLedgerReason
+  createdAt  DateTime         @default(now()) @db.Timestamptz(3)
+  /// Null until a daily check has consumed this entry.
+  checkRunId Int?
+
+  user     users          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkRun ItemLedgerRun? @relation(fields: [checkRunId], references: [id], onDelete: SetNull)
+
+  @@index([checkRunId])
+  @@index([userId, createdAt])
+}
+
+/// One daily check. The unique OT day is the guard against a second run.
+model ItemLedgerRun {
+  id        Int               @id @default(autoincrement())
+  dayKey    String            @unique
+  kind      ItemLedgerRunKind
+  createdAt DateTime          @default(now()) @db.Timestamptz(3)
+
+  entries    ItemLedgerEntry[]
+  mismatches ItemLedgerMismatch[]
+}
+
+/// Balance at the last daily check. Absent means zero.
+model ItemBalanceCheckpoint {
+  userId   Int
+  type     ItemType
+  usage    ItemUsage
+  level    Int
+  quantity Int
+
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, type, usage, level])
+}
+
+/// A balance that did not match checkpoint + recorded changes. Report only.
+model ItemLedgerMismatch {
+  id                 Int       @id @default(autoincrement())
+  runId              Int
+  userId             Int
+  type               ItemType
+  usage              ItemUsage
+  level              Int
+  checkpointQuantity Int
+  ledgerDelta        Int
+  actualQuantity     Int
+  drift              Int
+  createdAt          DateTime  @default(now()) @db.Timestamptz(3)
+
+  run  ItemLedgerRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  user users         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([userId])
 }

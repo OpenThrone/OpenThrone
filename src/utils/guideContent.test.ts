@@ -73,7 +73,9 @@ describe('guides and chronicles copy', () => {
 
   it('guides: every placeholder resolves to a live guide figure', () => {
     const facts = buildGuideFacts();
-    const extra = { unlockNames: { goldTransfer: '', mercenaryHall: '' } };
+    const extra = {
+      unlockNames: { goldTransfer: '', mercenaryFort: '', mercenaryLevel: '' },
+    };
     for (const locale of LOCALES) {
       for (const [key, text] of flatten(load(locale, 'guides'))) {
         for (const name of placeholders(text)) {

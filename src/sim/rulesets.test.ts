@@ -383,10 +383,12 @@ describe('runSingleBattle ruleset integration', () => {
   });
 
   it('weakLowLevelProtection ruleset yields strictly higher defender casualties than production under fixed RNG', async () => {
+    // A 300-guard garrison keeps the v13 guard-anchored casualty budget from
+    // saturating, so the protection multiplier still shows through.
     const prodAttacker = makePlayer({ id: 'atk', level: 12, offense: 200 });
-    const prodDefender = makePlayer({ id: 'def', level: 5, defense: 100 });
+    const prodDefender = makePlayer({ id: 'def', level: 5, defense: 300 });
     const weakAttacker = makePlayer({ id: 'atk', level: 12, offense: 200 });
-    const weakDefender = makePlayer({ id: 'def', level: 5, defense: 100 });
+    const weakDefender = makePlayer({ id: 'def', level: 5, defense: 300 });
 
     const prod = await runSingleBattle(prodAttacker, prodDefender, {
       ...NO_VARIANCE,
@@ -406,15 +408,18 @@ describe('runSingleBattle ruleset integration', () => {
   });
 
   it('candidateSafety ruleset clips defender casualties when daily cap is supplied', async () => {
+    // 800 v 600: under combat-v13's guard-anchored budget the natural losses
+    // (~28) still exceed the 20 remaining in the daily allowance, so the
+    // candidate cap must clip.
     const baselineAttacker = makePlayer({
       id: 'atk',
       level: 12,
-      offense: 200,
+      offense: 800,
     });
     const baselineDefender = makePlayer({
       id: 'def',
       level: 12,
-      defense: 100,
+      defense: 600,
     });
     const baseline = await runSingleBattle(baselineAttacker, baselineDefender, {
       ...NO_VARIANCE,
@@ -436,12 +441,12 @@ describe('runSingleBattle ruleset integration', () => {
     const candidateAttacker = makePlayer({
       id: 'atk2',
       level: 12,
-      offense: 200,
+      offense: 800,
     });
     const candidateDefender = makePlayer({
       id: 'def2',
       level: 12,
-      defense: 100,
+      defense: 600,
     });
     const capped = await runSingleBattle(candidateAttacker, candidateDefender, {
       ...NO_VARIANCE,

@@ -11,6 +11,16 @@ export const TRAINING_TRAIN_EVENT = 'openthrone:training-train';
 
 export type TrainingTrainDetail = { done: (trained: boolean) => void };
 
+/**
+ * `done` reports whether the Training page filled an order, so the tour only
+ * says "Order filled in" when it did; with no gold or citizens it fills
+ * nothing and shows a warning instead.
+ */
+export type TrainingPresetDetail = {
+  preset: unknown;
+  done?: (filled: boolean) => void;
+};
+
 export type TrainingPresetId = 'steady' | 'balanced' | 'raider';
 
 type PresetShares = Partial<Record<UnitType, number>>;
@@ -76,3 +86,19 @@ export const buildPresetOrder = (
   }
   return order;
 };
+
+/**
+ * Asks the Training page to fill the order for `preset`. `onResult` hears
+ * whether anything was filled; it is never called when no Training page is
+ * listening.
+ */
+export const requestTrainingPreset = (
+  preset: TrainingPresetId,
+  onResult: (filled: boolean) => void,
+  target: EventTarget = window,
+) =>
+  target.dispatchEvent(
+    new CustomEvent<TrainingPresetDetail>(TRAINING_PRESET_EVENT, {
+      detail: { preset, done: onResult },
+    }),
+  );

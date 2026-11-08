@@ -7,7 +7,7 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Badge } from '@mantine/core';
+import { Badge, VisuallyHidden } from '@mantine/core';
 import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
 
@@ -29,15 +29,17 @@ const renderOutcome = (
     type === 'defense'
       ? log.winner === log.defender_id
       : log.winner === log.attacker_id;
-  return won ? (
-    <FontAwesomeIcon
-      icon={faCheck}
-      color="lightgreen"
-      size="lg"
-      title={labels.won}
-    />
-  ) : (
-    <FontAwesomeIcon icon={faXmark} color="red" size="lg" title={labels.lost} />
+  // The icon is decorative; the hidden text names the outcome for readers.
+  return (
+    <>
+      <FontAwesomeIcon
+        icon={won ? faCheck : faXmark}
+        color={won ? 'lightgreen' : 'red'}
+        size="lg"
+        aria-hidden
+      />
+      <VisuallyHidden>{won ? labels.won : labels.lost}</VisuallyHidden>
+    </>
   );
 };
 

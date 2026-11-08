@@ -179,6 +179,7 @@ const INTEL_REPORT: RedactedAttackLog = {
         defense: 221500,
         spyOffense: 12400,
         spyDefense: 15800,
+        population: 6640,
         units: [
           { type: 'CITIZEN', level: 1, quantity: 640 },
           { type: 'WORKER', level: 1, quantity: 1850 },
@@ -211,6 +212,81 @@ const INTEL_REPORT: RedactedAttackLog = {
       spyLosses: [{ type: 'SPY', level: 1, quantity: 3 }],
       successProbability: 0.82,
       experienceGained: 140,
+    },
+  },
+};
+
+/**
+ * Partial intel (#286): the population is exact — the same number the attack
+ * list shows — while the troop breakdown stays sampled at intel quality.
+ */
+const PARTIAL_INTEL_REPORT: RedactedAttackLog = {
+  ...LOG_BASE,
+  id: 48231,
+  type: 'INTEL',
+  winner: ATTACKER_ID,
+  stats: {
+    spyResults: {
+      spiesSent: 5,
+      spiesLost: 0,
+      success: true,
+      turns: 1,
+      attackerLevel: 22,
+      defenderLevel: 19,
+      intelPercentage: 83,
+      intelligenceGathered: {
+        offense: null,
+        defense: null,
+        spyOffense: null,
+        spyDefense: null,
+        population: 48,
+        units: [
+          { type: 'CITIZEN', level: 1, quantity: 25 },
+          { type: 'WORKER', level: 1, quantity: 18 },
+        ],
+        mercenaries: null,
+        items: [],
+        fortLevel: null,
+        fortHitpoints: null,
+        defenseBonus: null,
+        spyLevel: null,
+        sentryLevel: null,
+        gold: '5676',
+        goldInBank: null,
+      },
+      spyLosses: [],
+      successProbability: 0.66,
+    },
+  },
+};
+
+/** Every stat missed: the card still shows, all rows Not Observed (#368). */
+const PARTIAL_SPY_RESULTS = (
+  PARTIAL_INTEL_REPORT.stats as {
+    spyResults: { intelligenceGathered: Record<string, unknown> };
+  }
+).spyResults;
+const TROOPS_ONLY_INTEL_REPORT: RedactedAttackLog = {
+  ...PARTIAL_INTEL_REPORT,
+  id: 48232,
+  stats: {
+    spyResults: {
+      ...PARTIAL_SPY_RESULTS,
+      intelPercentage: 20,
+      intelligenceGathered: {
+        ...PARTIAL_SPY_RESULTS.intelligenceGathered,
+        fortLevel: null,
+        fortHitpoints: null,
+        defenseBonus: null,
+        spyLevel: null,
+        sentryLevel: null,
+        gold: null,
+        goldInBank: null,
+        offense: null,
+        defense: null,
+        spyOffense: null,
+        spyDefense: null,
+      },
     },
   },
 };
@@ -618,6 +694,7 @@ export default function BattleReportsSection() {
         framed={false}
         name="AttackResults: racial defence"
         usedOn={[REPORT_PAGE]}
+        note="Viewer is the defender. Racial defences recovered 12 units and blocked 8 losses; the timeline names the single unit lost (#284)."
         wide
       >
         <ReportFrame>
@@ -626,6 +703,10 @@ export default function BattleReportsSection() {
               ...ATTACK_DEFEAT,
               stats: {
                 ...ATTACK_DEFEAT.stats,
+                defender_losses: {
+                  total: 1,
+                  units: [{ type: 'DEFENSE', level: 1, quantity: 1 }],
+                },
                 sanctuary_recovered: 12,
                 hallowed_blocked: 8,
               },
@@ -645,6 +726,38 @@ export default function BattleReportsSection() {
         <ReportFrame>
           <IntelResult
             battle={INTEL_REPORT}
+            lastGenerated={LAST_GENERATED}
+            viewerID={ATTACKER_ID}
+          />
+        </ReportFrame>
+      </Specimen>
+
+      <Specimen
+        framed={false}
+        name="IntelResult: partial intel (exact population, #286)"
+        usedOn={[REPORT_PAGE]}
+        note="Population is exact like the attack list; the troop breakdown is sampled at intel quality. Reports stored before #286 have no exact population and fall back to the sampled label."
+        wide
+      >
+        <ReportFrame>
+          <IntelResult
+            battle={PARTIAL_INTEL_REPORT}
+            lastGenerated={LAST_GENERATED}
+            viewerID={ATTACKER_ID}
+          />
+        </ReportFrame>
+      </Specimen>
+
+      <Specimen
+        framed={false}
+        name="IntelResult: troops only (every stat Not Observed, #368)"
+        usedOn={[REPORT_PAGE]}
+        note="A low-quality mission can gather troops or gear and no stat at all. The card still shows, so the missing fields read as a partial view."
+        wide
+      >
+        <ReportFrame>
+          <IntelResult
+            battle={TROOPS_ONLY_INTEL_REPORT}
             lastGenerated={LAST_GENERATED}
             viewerID={ATTACKER_ID}
           />

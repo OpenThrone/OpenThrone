@@ -108,6 +108,7 @@ export const getServerSideProps = async ({ locale }) => ({
       'common',
       'navigation',
       'mercenaries',
+      'structures',
     ])),
   },
 });

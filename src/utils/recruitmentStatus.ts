@@ -57,6 +57,31 @@ export function recruitsLeftFor(
   );
 }
 
+export interface RecruitAgainState {
+  /** The player pressed "Recruit again" and is waiting on the re-check. */
+  pending: boolean;
+  ready: boolean;
+  showCaptcha: boolean;
+  succeeded: boolean;
+  error: string | null;
+  submitting: boolean;
+}
+
+/**
+ * "Recruit again" recruits as soon as the eligibility re-check shows the
+ * plain form; a captcha or a refusal waits for the player (playtest #339).
+ */
+export function shouldSubmitRecruitAgain(state: RecruitAgainState): boolean {
+  return (
+    state.pending &&
+    state.ready &&
+    !state.showCaptcha &&
+    !state.succeeded &&
+    !state.error &&
+    !state.submitting
+  );
+}
+
 /** Local clock reading of the daily reset, with the weekday when it is not today. */
 export function formatResetTime(resetsAt: string): string {
   const reset = new Date(resetsAt);

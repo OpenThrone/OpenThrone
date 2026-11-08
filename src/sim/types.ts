@@ -221,6 +221,12 @@ export interface BehaviorParams {
    * scales with the attacker's stamina (calculateMoraleXpFactor).
    */
   staminaFloor?: number;
+  /**
+   * Rest instead of attacking while the stamina offense multiplier
+   * (attackerStaminaMultiplier) is below this. Fatigue only softens
+   * attacks, so personas without a threshold attack at any stamina.
+   */
+  minOffenseMultiplier?: number;
 }
 
 interface DailyLimits {

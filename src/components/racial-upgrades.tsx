@@ -10,7 +10,7 @@ import {
   raidersCapturePercent,
 } from '@/constants/RacialPerks';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
-import { fortificationName } from '@/utils/structureNames';
+import { fortRequirementName } from '@/utils/structureNames';
 
 export function RacialUpgrades({
   tier,
@@ -55,7 +55,7 @@ export function RacialUpgrades({
         position: index + 1,
         purchaseIndex: index,
         cells: [
-          fortificationName(t, racialFortRequirement(race, index + 1)),
+          fortRequirementName(t, racialFortRequirement(race, index + 1)),
           ...(race !== 'UNDEAD' ? [percent(item.blocked)] : []),
           ...(race === 'ELF'
             ? [percent(item.recovered), percent(item.cap)]

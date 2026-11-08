@@ -46,7 +46,11 @@ import {
   simulateInfiltration,
   simulateIntel,
 } from '@/utils/spyFunctions';
-import { getOTDayKey, getOTStartDate } from '@/utils/timefunctions';
+import {
+  getGameDayKey,
+  getGameDayMs,
+  getGameDayStart,
+} from '@/utils/timefunctions';
 
 const UNIT_TYPE_VALUES = [
   'CITIZEN',
@@ -101,9 +105,9 @@ function getTodayPressure(
   currentPressure: number,
 ): number {
   // Spy pressure resets with the OT calendar day, like every other daily rule.
-  const todayKey = getOTDayKey();
+  const todayKey = getGameDayKey();
   const pressureDateKey = currentDate
-    ? getOTDayKey(new Date(currentDate))
+    ? getGameDayKey(new Date(currentDate))
     : todayKey;
   return pressureDateKey === todayKey ? (currentPressure ?? 0) : 0;
 }
@@ -344,7 +348,7 @@ export const SpyService = {
             }
           }
           if (validatedData.type === 'INTEL') {
-            const dayAgo = new Date(new Date().getTime() - 86400000);
+            const dayAgo = new Date(Date.now() - getGameDayMs());
             // Same rolling 24h pair cap as infiltration/assassination.
             const intelAgainstDefender = await tx.attack_log.count({
               where: {
@@ -369,7 +373,7 @@ export const SpyService = {
             validatedData.type === 'INFILTRATE' ||
             validatedData.type === 'ASSASSINATE'
           ) {
-            const dayAgo = new Date(new Date().getTime() - 86400000);
+            const dayAgo = new Date(Date.now() - getGameDayMs());
             const limits =
               validatedData.type === 'INFILTRATE'
                 ? attacker.spyLimits.infil
@@ -421,7 +425,7 @@ export const SpyService = {
           let defenderDailyCasualtyRemaining: number | undefined;
           let targetTypeDailyRemaining: number | undefined;
           if (validatedData.type === 'ASSASSINATE' && validatedData.unit) {
-            const startOfToday = getOTStartDate();
+            const startOfToday = getGameDayStart();
             const [todayLossesAgg, todayTypeAgg] = await Promise.all([
               tx.attack_log.aggregate({
                 where: {

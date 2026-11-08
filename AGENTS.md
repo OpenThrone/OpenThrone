@@ -81,7 +81,10 @@ When active:
   any database except that container; never point it at staging or production.
 - Jest-native DOM suites: `bun run test:jest -- <path/to/test-file>` — only
   `src/lib/socket.test.ts`, `src/components/sidebar/SidebarShared.test.tsx`,
-  and `src/__tests__/app-shell.test.tsx` need jsdom; `test:bun` excludes them
+  `src/__tests__/app-shell.test.tsx`,
+  `src/components/BankDepositWithdraw.test.tsx`,
+  `src/context/UserProvider.test.tsx` and
+  `src/__tests__/ArmoryPurchase.test.tsx` need jsdom; `test:bun` excludes them
   because they use `jest.*` globals and cannot run without a DOM.
 - Design file: `bun run design:sync` — rebuilds `design/openthrone.figcraft`
   from alpha (`design:extract`, then `design:build`). See section 13.
@@ -355,7 +358,9 @@ developer-only and returns 404 in production builds.
 `design/openthrone.figcraft` is an editable FigCraft (open-source Figma) file of
 the public site and the logged-in game. It is rebuilt from the live alpha site:
 every element becomes a real frame, text, vector or image layer. It is
-generated, not committed. `design/README.md` covers setup.
+generated, not committed: `.gitignore` excludes it, so never `git add -f` it
+(at over 100 MB it also blocks the GitHub release mirror). Design-sync PRs
+commit only `design/exports/`. `design/README.md` covers setup.
 
 - **Re-sync after visual changes land on alpha.** When a PR that changes what
   players see (components, styles, layout, artwork, copy) is merged into
@@ -429,11 +434,53 @@ A change is complete only if:
 - [ ] Testing gates in section 10 run and passed (unit, browser, UX/UI, workflow), with evidence
 - [ ] Design file re-synced (`bun run design:sync`) once a visual change is merged and deployed to alpha
 - [ ] Feature touchpoints listed in the PR; new player state is viewable and editable in admin Edit Player (section 14)
+- [ ] Docs updated in this PR and a `Docs:` line added to its description (section 16)
+- [ ] After merge: `merged: true` confirmed, then the remote branch, local branch and worktree removed ([git workflow](docs/git-workflow.md))
 
+---
+
+## 16) Documentation Gates
+
+Docs ship with the change, not after it. Code and tests stay the source of truth, so a doc that disagrees with the code is a bug in the doc. Start from the [docs index](docs/README.md).
+
+### Every PR into `alpha`
+
+The PR carries its own doc updates. Do not leave them for a later PR.
+
+- **Behavior changed:** update the matching doc under `docs/mechanics/` or `docs/features/`, including its Tests and Known gaps, and set its `Last verified against code` line to today and your branch's last commit that changed code, so the doc is not flagged stale by its own PR.
+- **New system:** add a doc and list it in `docs/mechanics/README.md`.
+- **Player-visible change:** update How to Play, the FAQ and guides in `en`, `de` and `es`, and add a `CHANGELOG.md` entry.
+- **Decision worth keeping:** add a file under `docs/decisions/`, recording only the reasons actually given.
+- **Idea started, shipped or dropped:** update `docs/ideas.md`.
+- **Run `bun run docs:check`** and fix what it reports. It also runs inside `bun run test`.
+- **Add a `Docs:` line to the PR description** naming each doc changed, or `Docs: none, <reason>` when nothing needed changing. "None" needs a reason: a refactor with no behavior change is one, running short of time is not.
+
+Reviewers reject a PR into `alpha` with no `Docs:` line, or whose line does not match its diff.
+
+### Every release PR from `alpha` into `master`
+
+`master` must carry the latest docs. Before opening the release PR, make sure of each of these, and fix anything missing through a normal feature PR into `alpha`, since nobody commits to `alpha` or `master` directly.
+
+1. **Check what is shipping.** Read `git log origin/master..origin/alpha --merges` and confirm each PR's `Docs:` line was honored.
+2. **Re-verify stale docs.** `bun run docs:check --release` must pass. It fails on any doc whose linked source changed since its `Last verified` commit. Read each one against the code, fix what is wrong, and update the line. Do not bump the line without reading the code.
+3. **Check player copy.** How to Play, the FAQ and guides match the release in `en`, `de` and `es`, and `CHANGELOG.md` has the release entry.
+4. **Check the indexes.** `docs/README.md`, `docs/mechanics/README.md` and `docs/ideas.md` list what exists, and shipped ideas are gone from `docs/ideas.md`.
+5. **Check it is safe to publish.** `master` is the source of public GitHub releases, so docs must hold no hostnames, credentials, player data or undisclosed security problems. Security gaps go in a Forgejo issue, not a doc.
+
+Add a `Docs:` section to the release PR description stating the result of each step and the docs re-verified. The release PR does not merge until it is there.
+
+---
 
 ## Environments and deployment
 
-Branch model: `master` is production (`openthrone.dev`) and `alpha` is the alpha server (`alpha.openthrone.dev`). Agents work on a feature branch cut from `alpha`, test locally, open a PR into `alpha`, test on the alpha server, then open a release PR from `alpha` into `master`. Never commit directly to `alpha` or `master`. Do not deploy to production without the user's explicit go-ahead. Server hostnames, deploy steps, rollback and production data rules are kept outside this repository; ask the user for them before touching alpha or production.
+Branch model: `master` is production (`openthrone.dev`) and `alpha` is the alpha server (`alpha.openthrone.dev`). Agents work on a feature branch cut from `alpha`, test locally, open a PR into `alpha`, test on the alpha server, then open a release PR from `alpha` into `master`. Both PRs must pass the documentation gates in section 16. Never commit directly to `alpha` or `master`.
+
+**Git workflow:** follow [docs/git-workflow.md](docs/git-workflow.md) for every branch, worktree, merge and release. In short:
+
+- Branch from a freshly fetched `origin/alpha` (`<type>/<short-name>`); stage explicit paths, never generated files (`prisma/generated`, `node_modules`, `bun.lock`, `design/openthrone.figcraft`).
+- After `tea pr merge`, read the PR back and confirm `merged: true` before deploying or deleting the branch.
+- Once merged and deployed, delete the remote branch (`agent-forgejo branch-delete`), the local branch and the worktree in the same session. Never leave a worktree with uncommitted changes; commit them or save a patch.
+- A release is not finished until Forgejo is tagged, GitHub has its release commit and Release, and `alpha` is bumped to the next `-alpha` version (see Versioning and releases). Do not deploy to production without the user's explicit go-ahead. Server hostnames, deploy steps, rollback and production data rules are kept outside this repository; ask the user for them before touching alpha or production.
 
 ### Local validation before alpha
 
@@ -451,13 +498,15 @@ Local checks prove the change works against a fresh database. They do not replac
 
 ## Versioning and releases
 
-OpenThrone uses Semantic Versioning on the 0.x line (`CHANGELOG.md` explains the rules). For each production release:
+OpenThrone uses Semantic Versioning on the 0.x line (`CHANGELOG.md` explains the rules). Every production release runs all seven steps in [docs/git-workflow.md](docs/git-workflow.md#releases); the release is not done until the last one passes:
 
-1. On a feature branch into `alpha`, set `package.json` `version` to the release version (for example `0.5.0`, dropping `-alpha`) and add its player-facing `CHANGELOG.md` entry.
-2. Merge the release PR (`alpha` into `master`) and deploy, as above.
-3. Tag the release merge commit `vX.Y.Z` and push the tag.
-4. Publish the GitHub release (one squashed commit per release on GitHub `master`), tag it there too, and create a GitHub Release with the changelog entry.
-5. Bump `alpha` to the next pre-release (for example `0.6.0-alpha`).
+1. Version PR into `alpha`: `version` in `package.json` and `package-lock.json` set to the release (for example `0.5.0`, dropping `-alpha`), and its player-facing `CHANGELOG.md` entry.
+2. Release PR from `alpha` into `master` after the release documentation gate (section 16); merge only with the user's go-ahead.
+3. Deploy production, as above, and confirm the footer shows the new version.
+4. Tag the release merge commit `vX.Y.Z` on Forgejo, through the tags API under the bot's `tea` login (`agent-forgejo` cannot push tags).
+5. Mirror to GitHub: one squashed `Release vX.Y.Z` commit on `github/master` whose tree equals Forgejo `master`, the same tag, and a GitHub Release with the changelog entry, marked Latest. A release missed earlier gets its own commit first.
+6. PR into `alpha` bumping both package files to the next pre-release (for example `0.6.0-alpha`).
+7. Check that Forgejo `master`, Forgejo `alpha` and `github/master` show the expected versions and both remotes have the tag.
 
 The footer shows the version and build commit, so bug reports can name the exact build.
 

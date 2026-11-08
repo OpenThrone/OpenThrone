@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { PermissionType, Prisma } from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api';
+import { adminActivityDetails } from '@/utils/adminActivityDetails';
 import { logError } from '@/utils/logger';
 import { getOTStartDate } from '@/utils/timefunctions';
 
@@ -53,37 +54,41 @@ export function activityEvents(since: Date) {
     WITH events AS (
       SELECT 'bank:' || id AS key, CASE WHEN from_user_id > 0 THEN from_user_id ELSE to_user_id END AS actor,
         date_time AS at,
-        CASE WHEN stats->>'type' LIKE 'TRAINING_%' OR stats->>'type' = 'HIRE_MERCENARY' THEN 'training'
+        CASE WHEN stats->>'type' = 'ARMORY_UPGRADE' AND stats->>'new_level' IS NOT NULL THEN 'upgrades'
+          WHEN stats->>'type' LIKE 'TRAINING_%' OR stats->>'type' IN ('HIRE_MERCENARY', 'RENEW_MERCENARY') THEN 'training'
           WHEN stats->>'type' LIKE 'ARMORY_%' THEN 'equipment'
           WHEN stats->>'type' LIKE '%_UPGRADE' OR stats->>'type' LIKE 'BATTLE_UPGRADES_%' OR history_type = 'FORT_REPAIR' THEN 'upgrades'
           WHEN history_type IN ('FRIEND_TRANSFER', 'FRIEND_REQUEST') THEN 'social'
           WHEN history_type = 'PLAYER_TRANSFER' THEN 'banking' ELSE 'other' END AS category,
-        COALESCE(stats->>'type', history_type) AS action,
-        gold_amount::text AS gold, CASE WHEN history_type IN ('FRIEND_TRANSFER', 'FRIEND_REQUEST') THEN to_user_id ELSE NULL::int END AS target, NULL::int AS attack_id
+        -- The armory building and equipment upgrades both write ARMORY_UPGRADE; only the building has a new_level.
+        CASE WHEN stats->>'type' = 'ARMORY_UPGRADE' AND stats->>'new_level' IS NOT NULL THEN 'ARMORY_STRUCTURE_UPGRADE'
+          ELSE COALESCE(stats->>'type', history_type) END AS action,
+        gold_amount::text AS gold, CASE WHEN history_type IN ('FRIEND_TRANSFER', 'FRIEND_REQUEST') THEN to_user_id ELSE NULL::int END AS target, NULL::int AS attack_id,
+        jsonb_build_object('stats', stats, 'fromAccount', from_user_account_type, 'toAccount', to_user_account_type) AS detail_source
       FROM bank_history
       WHERE date_time >= ${since} AND history_type IN ('SALE', 'PLAYER_TRANSFER', 'FRIEND_TRANSFER', 'FRIEND_REQUEST', 'FORT_REPAIR')
         AND COALESCE(stats->>'transferType', '') <> 'FRIEND_TRANSFER_TAX'
       UNION ALL
-      SELECT 'recruit:' || id, to_user, timestamp, 'recruiting', 'RECRUIT', NULL, from_user, NULL
+      SELECT 'recruit:' || id, to_user, timestamp, 'recruiting', 'RECRUIT', NULL, from_user, NULL, NULL::jsonb
       FROM recruit_history WHERE timestamp >= ${since} AND from_user > 0
       UNION ALL
-      SELECT 'combat:' || id, attacker_id, timestamp, 'combat', type, pillaged_gold::text, defender_id, id
+      SELECT 'combat:' || id, attacker_id, timestamp, 'combat', type, pillaged_gold::text, defender_id, id, NULL::jsonb
       FROM attack_log WHERE timestamp >= ${since}
       UNION ALL
-      SELECT 'message:' || id, from_user_id, COALESCE(created_date, date_time), 'social', 'MESSAGE_SENT', NULL, NULL, NULL
+      SELECT 'message:' || id, from_user_id, COALESCE(created_date, date_time), 'social', 'MESSAGE_SENT', NULL, NULL, NULL, NULL::jsonb
       FROM messages WHERE COALESCE(created_date, date_time) >= ${since}
       UNION ALL
-      SELECT 'chat:' || id, "senderId", "sentAt", 'social', 'CHAT_SENT', NULL, NULL, NULL
+      SELECT 'chat:' || id, "senderId", "sentAt", 'social', 'CHAT_SENT', NULL, NULL, NULL, NULL::jsonb
       FROM "ChatMessage" WHERE "sentAt" >= ${since}
       UNION ALL
-      SELECT 'reaction:' || id, "userId", "createdAt", 'social', 'CHAT_REACTION', NULL, NULL, NULL
+      SELECT 'reaction:' || id, "userId", "createdAt", 'social', 'CHAT_REACTION', NULL, NULL, NULL, NULL::jsonb
       FROM "ChatMessageReaction" WHERE "createdAt" >= ${since}
       UNION ALL
-      SELECT 'alliance-request:' || id, user_id, created_at, 'social', 'ALLIANCE_REQUEST', NULL, NULL, NULL
+      SELECT 'alliance-request:' || id, user_id, created_at, 'social', 'ALLIANCE_REQUEST', NULL, NULL, NULL, NULL::jsonb
       FROM alliance_join_requests WHERE created_at >= ${since}
       UNION ALL
       SELECT 'alliance-bank:' || id, performed_by_user_id, created_at, 'social',
-        'ALLIANCE_' || transaction_type::text, amount::text, NULL, NULL
+        'ALLIANCE_' || transaction_type::text, amount::text, NULL, NULL, NULL::jsonb
       FROM alliance_bank_history WHERE created_at >= ${since} AND transaction_type::text IN ('DEPOSIT', 'WITHDRAWAL', 'LOAN')
     ), filtered AS (
       SELECT events.*, users.display_name FROM events JOIN users ON users.id = events.actor WHERE actor > 0
@@ -142,6 +147,7 @@ async function handler(
           gold: string | null;
           target: number | null;
           attack_id: number | null;
+          detail_source: unknown;
         }>
       >(
         Prisma.sql`${cte} SELECT * FROM filtered ${filter} ORDER BY at ${direction}, key ${direction} LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
@@ -169,7 +175,10 @@ async function handler(
         ...row,
         actions: Number(row.actions),
       })),
-      recent,
+      recent: recent.map(({ detail_source, ...row }) => ({
+        ...row,
+        details: adminActivityDetails(row.action, detail_source),
+      })),
     });
   } catch (error) {
     logError('Failed to load player activity analytics', error);

@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
+import ActivityEventDetails from '@/components/admin/ActivityEventDetails';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import { ContentPostActions } from '@/components/admin/ContentPostActions';
 import TablePagination from '@/components/admin/TablePagination';
@@ -38,6 +39,7 @@ import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import StatsList from '@/components/StatsList';
 import StatsTable from '@/components/statsTable';
 import type { Log, Loss, PlayerRace } from '@/types/typings';
+import { getProtectionShieldFacts } from '@/utils/battleProtection';
 import { toLocale } from '@/utils/numberFormatting';
 import { getAvatarSrc } from '@/utils/utilities';
 
@@ -138,6 +140,8 @@ const withAlpha = (hex: string, alpha: string) =>
 function AttackTargetList() {
   const { t } = useTranslation('battle');
   const theme = useMantineTheme();
+  // Same live rule numbers /battle/users quotes in the gold-shield tooltip (#284).
+  const shieldFacts = getProtectionShieldFacts();
   const brand = theme.colors.brand ?? theme.colors.blue;
   const secondary = theme.colors.secondary ?? theme.colors.yellow;
   const accent = secondary[4] ?? '#e5c55a';
@@ -241,7 +245,16 @@ function AttackTargetList() {
                       </Link>
                     </Tooltip>
                     {player.isProtected && (
-                      <Tooltip label={t('users.protectedHint')} withArrow>
+                      <Tooltip
+                        label={t('users.protectedHint', {
+                          allowance: toLocale(shieldFacts.allowance),
+                          share: shieldFacts.share,
+                          taperLevel: shieldFacts.taperLevel,
+                        })}
+                        multiline
+                        maw={300}
+                        withArrow
+                      >
                         <Badge
                           size="sm"
                           variant="light"
@@ -577,6 +590,24 @@ const MOCK_BANK_HISTORY = [
     to_user_account_type: 'BANK',
     gold_amount: '750000',
     stats: { type: 'ARMORY_EQUIP' },
+  },
+  {
+    history_type: 'SALE',
+    from_user_id: 102,
+    to_user_id: 0,
+    from_user_account_type: 'HAND',
+    to_user_account_type: 'BANK',
+    gold_amount: '360000',
+    stats: { type: 'HIRE_MERCENARY' },
+  },
+  {
+    history_type: 'SALE',
+    from_user_id: 102,
+    to_user_id: 0,
+    from_user_account_type: 'HAND',
+    to_user_account_type: 'BANK',
+    gold_amount: '90000',
+    stats: { type: 'RENEW_MERCENARY' },
   },
   {
     history_type: 'SALE',
@@ -988,6 +1019,60 @@ export default function TablesSection() {
               />
             </Group>
           ))}
+        </Stack>
+      </Specimen>
+
+      <Specimen
+        name="ActivityEventDetails"
+        usedOn={['/home/admin/analytics']}
+        note="Recorded unit and equipment quantities, conversions, bank direction, older actions marked as not recorded, and a dash for actions that never record details. No live data or actions."
+      >
+        <Stack gap="md">
+          <ActivityEventDetails
+            action="TRAINING_TRAIN"
+            details={{
+              items: [
+                { kind: 'unit', name: 'Soldier', level: 1, quantity: 1234 },
+                {
+                  kind: 'item',
+                  name: 'Dagger',
+                  level: 1,
+                  quantity: 25,
+                  usage: 'OFFENSE',
+                },
+              ],
+              conversions: [],
+            }}
+          />
+          <ActivityEventDetails
+            action="TRAINING_CONVERSION"
+            details={{
+              items: [],
+              conversions: [
+                {
+                  from: {
+                    kind: 'unit',
+                    name: 'Soldier',
+                    level: 1,
+                    quantity: 10,
+                  },
+                  to: { kind: 'unit', name: 'Knight', level: 2, quantity: 10 },
+                  quantity: 10,
+                },
+              ],
+            }}
+          />
+          <ActivityEventDetails
+            action="PLAYER_TRANSFER"
+            details={{
+              items: [],
+              conversions: [],
+              fromAccount: 'HAND',
+              toAccount: 'BANK',
+            }}
+          />
+          <ActivityEventDetails action="TRAINING_TRAIN" details={null} />
+          <ActivityEventDetails action="CHAT_SENT" details={null} />
         </Stack>
       </Specimen>
 

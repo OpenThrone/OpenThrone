@@ -592,6 +592,7 @@ export default function CardsSection() {
       <Specimen
         name="ProtectionMeter"
         usedOn={['sidebar (all game pages)', 'mobile sidebar']}
+        note="Gold-shield headline with the live rule numbers on hover/focus (#284); the bar fills toward whichever limit ends protection first."
       >
         <ProtectionMeter user={healthyUser} />
       </Specimen>

@@ -95,4 +95,11 @@ describe('public report server loader', () => {
     });
     expect((await getServerSideProps(await context())).props.battle).toBeNull();
   });
+  it('stamps the report with the mission time, not the view time', async () => {
+    acl = [{ is_public: true }];
+    const result = await getServerSideProps(await context());
+    expect(result.props.lastGenerated).toBe(
+      new Date('2026-10-01').toISOString(),
+    );
+  });
 });

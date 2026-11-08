@@ -89,6 +89,8 @@
     "experience": "Erfahrung",
     "level": "Stufe",
     "levelHelp": "Die Stufe wird aus der Erfahrung berechnet.",
+    "levelReachedAt": "Stufe erreicht",
+    "levelReachedAtHelp": "Wann der Spieler seine aktuelle Stufe erreicht hat. Nach 3 Spieltagen auf einer Stufe steigt die Verteidiger-EP aus Kämpfen mit jedem Spieltag, bis zum 3-Fachen. Wird die Erfahrung auf eine neue Stufe geändert, gilt jetzt als neuer Zeitpunkt.",
     "quantityFor": "Anzahl: {{name}}",
     "quantity": "Anzahl",
     "mercenary": "Söldner",

@@ -30,6 +30,7 @@ export const EXPORT_INCLUDED = [
   'kingdom',
   'units',
   'items',
+  'itemLedger',
   'structureUpgrades',
   'battleUpgrades',
   'bonusPoints',
@@ -262,6 +263,7 @@ function buildSections(userId: number): Array<[string, () => SectionValue]> {
     ],
     ['units', () => prisma.userUnit.findMany({ where: own })],
     ['items', () => prisma.userItem.findMany({ where: own })],
+    ['itemLedger', () => prisma.itemLedgerEntry.findMany({ where: own })],
     [
       'structureUpgrades',
       () => prisma.userStructureUpgrade.findMany({ where: own }),
@@ -269,6 +271,7 @@ function buildSections(userId: number): Array<[string, () => SectionValue]> {
     ['battleUpgrades', () => prisma.userBattleUpgrade.findMany({ where: own })],
     ['bonusPoints', () => prisma.userBonusPoints.findMany({ where: own })],
     ['eras', () => prisma.userEra.findMany({ where: own })],
+    ['eraActivity', () => prisma.userEraActivity.findMany({ where: own })],
     [
       'accountStatusHistory',
       () =>

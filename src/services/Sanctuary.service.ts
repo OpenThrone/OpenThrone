@@ -5,7 +5,7 @@ import {
   type ReanimationFallenRow,
 } from '@/constants/Reanimation';
 import type { Prisma } from '@/lib/prisma-exports';
-import { getOTDayKey } from '@/utils/timefunctions';
+import { getGameDayKey } from '@/utils/timefunctions';
 
 type Tx = Prisma.TransactionClient;
 export interface SanctuaryGrant {
@@ -34,7 +34,7 @@ export class SanctuaryService {
         sanctuary_recovered_today: true,
       },
     });
-    const day = getOTDayKey(now);
+    const day = getGameDayKey(now);
     const fresh = user.sanctuary_day !== day;
     const army = fresh
       ? await tx.userUnit.aggregate({

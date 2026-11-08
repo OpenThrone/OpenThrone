@@ -508,6 +508,7 @@ describe('ADM-04: staff email takeover and admin-on-admin edits are blocked', ()
       },
       userUnit: { updateMany: vi.fn(async () => ({ count: 1 })) },
       userItem: { updateMany: vi.fn(async () => ({ count: 1 })) },
+      itemLedgerEntry: { createMany: vi.fn(async () => ({ count: 1 })) },
       permissionGrant: {
         count: vi.fn(async () => options.grantCount ?? 0),
         updateMany: grantUpdateMany,
@@ -618,6 +619,112 @@ describe('ADM-04: staff email takeover and admin-on-admin edits are blocked', ()
           !('rank' in entry) && !('units' in entry) && !('items' in entry),
       ),
     ).toBe(true);
+  });
+
+  it('edits level_reached_at with a stale check and an audited before/after (#334)', async () => {
+    const loaded = new Date('2026-10-20T06:00:00.000Z');
+    const next = '2026-10-25T09:15:00.000Z';
+    const { res, update, tx } = await runPut(
+      ADMIN_ID,
+      [],
+      'target@example.com',
+      'target@example.com',
+      {
+        userOverrides: { level_reached_at: loaded },
+        extraBody: {
+          stats: { levelReachedAt: next },
+          expected: { fields: { levelReachedAt: loaded.toISOString() } },
+        },
+      },
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    const data = update.mock.calls.map((call: any) => call[0].data);
+    expect(data).toContainEqual({ level_reached_at: new Date(next) });
+    expect(logActionStrict).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'ADMIN_USER_UPDATE',
+        details: expect.objectContaining({
+          changes: expect.objectContaining({
+            fields: {
+              levelReachedAt: { before: loaded.toISOString(), after: next },
+            },
+          }),
+        }),
+      }),
+      tx,
+    );
+  });
+
+  it('rejects a stale level_reached_at edit with 409', async () => {
+    const { res, update } = await runPut(
+      ADMIN_ID,
+      [],
+      'target@example.com',
+      'target@example.com',
+      {
+        userOverrides: {
+          level_reached_at: new Date('2026-10-21T00:00:00.000Z'),
+        },
+        extraBody: {
+          stats: { levelReachedAt: '2026-10-25T09:15:00.000Z' },
+          expected: { fields: { levelReachedAt: '2026-10-20T06:00:00.000Z' } },
+        },
+      },
+    );
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('rejects a future level_reached_at with 422 and writes nothing', async () => {
+    const { res, update } = await runPut(
+      ADMIN_ID,
+      [],
+      'target@example.com',
+      'target@example.com',
+      {
+        extraBody: {
+          stats: {
+            levelReachedAt: new Date(Date.now() + 86_400_000).toISOString(),
+          },
+          expected: { fields: { levelReachedAt: null } },
+        },
+      },
+    );
+    expect(res.status).toHaveBeenCalledWith(422);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('restarts level_reached_at when an XP edit moves the level (#334)', async () => {
+    const before = Date.now();
+    const { res, update, tx } = await runPut(
+      ADMIN_ID,
+      [],
+      'target@example.com',
+      'target@example.com',
+      { extraBody: { stats: { experience: 8000 } } },
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    const stats = update.mock.calls
+      .map((call: any) => call[0].data)
+      .find((entry: any) => 'experience' in entry);
+    expect(stats.experience).toBe(8000);
+    expect(stats.level_reached_at).toBeInstanceOf(Date);
+    expect(stats.level_reached_at.getTime()).toBeGreaterThanOrEqual(before);
+    expect(logActionStrict).toHaveBeenCalledWith(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          changes: expect.objectContaining({
+            fields: expect.objectContaining({
+              levelReachedAt: {
+                before: null,
+                after: stats.level_reached_at.toISOString(),
+              },
+            }),
+          }),
+        }),
+      }),
+      tx,
+    );
   });
 
   it('takes the shared era lock before the player row lock', async () => {
@@ -895,6 +1002,25 @@ describe('ADM-04: staff email takeover and admin-on-admin edits are blocked', ()
     expect(tx.userItem.updateMany).toHaveBeenCalledWith({
       where: { userId: TARGET_ID, type: 'WEAPON', usage: 'DEFENSE', level: 1 },
       data: { quantity: 11 },
+    });
+    expect(tx.itemLedgerEntry.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          userId: TARGET_ID,
+          type: 'WEAPON',
+          usage: 'OFFENSE',
+          level: 1,
+          delta: 8,
+          reason: 'ADMIN_EDIT',
+        }),
+        expect.objectContaining({
+          type: 'WEAPON',
+          usage: 'DEFENSE',
+          level: 1,
+          delta: 8,
+          reason: 'ADMIN_EDIT',
+        }),
+      ],
     });
   });
 

@@ -223,7 +223,17 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
   const lockedKeys = useMemo(() => {
     const locked = new Set<string>();
     if (!supporterEnabled) locked.add('home.patronage');
-    if (!user || !isFeatureInReach(user, 'MERCENARY_HALL')) {
+    if (
+      !user ||
+      !isFeatureInReach(
+        {
+          economyLevel: user.economyLevel,
+          fortLevel: user.fortLevel,
+          race: user.race,
+        },
+        'MERCENARY_HALL',
+      )
+    ) {
       locked.add('battle.mercenaries');
     }
     if (!progress || !isBattleUpgradesUnlocked(progress)) {

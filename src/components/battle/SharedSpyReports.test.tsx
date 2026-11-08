@@ -93,3 +93,131 @@ describe('spy reports use the actual viewer perspective', () => {
     ).not.toMatch(/\b(you|your)\b/i);
   });
 });
+
+describe('partial intel reports show what was missed (#368)', () => {
+  const partialIntel = {
+    ...battle,
+    stats: {
+      spyResults: {
+        spiesSent: 6,
+        spiesLost: 0,
+        success: true,
+        intelPercentage: 60,
+        intelligenceGathered: {
+          offense: null,
+          defense: 264,
+          spyOffense: 40,
+          spyDefense: null,
+          population: 54,
+          units: [{ type: 'WORKER', level: 1, quantity: 32 }],
+          mercenaries: null,
+          items: null,
+          fortLevel: 2,
+          fortHitpoints: null,
+          defenseBonus: null,
+          spyLevel: 1,
+          sentryLevel: 1,
+          gold: 1000,
+          goldInBank: 5000,
+        },
+      },
+    },
+  };
+
+  it('lists every stat field, marking missing ones Not Observed', () => {
+    const out = text(
+      render(
+        <IntelResult
+          battle={partialIntel}
+          viewerID={11}
+          lastGenerated={undefined}
+        />,
+      ),
+    );
+    expect(out).toContain('Defense Bonus');
+    expect(out).toContain('Fort HP');
+    expect(out).toContain('Spy Defense');
+    expect(out).toContain('Not Observed');
+    expect(out).toContain(
+      'Fields marked Not Observed were missed at this intel quality.',
+    );
+  });
+
+  it('keeps the card when a mission observed troops but no stat at all', () => {
+    const html = render(
+      <IntelResult
+        battle={{
+          ...battle,
+          type: 'INTEL',
+          stats: {
+            spyResults: {
+              ...battle.stats.spyResults,
+              success: true,
+              intelPercentage: 20,
+              intelligenceGathered: {
+                offense: null,
+                defense: null,
+                spyOffense: null,
+                spyDefense: null,
+                population: 40,
+                units: [{ type: 'WORKER', level: 1, quantity: 12 }],
+                mercenaries: null,
+                items: null,
+                fortLevel: null,
+                fortHitpoints: null,
+                defenseBonus: null,
+                spyLevel: null,
+                sentryLevel: null,
+                gold: null,
+                goldInBank: null,
+              },
+            },
+          },
+        }}
+        lastGenerated={null}
+        viewerID={11}
+      />,
+    );
+    expect(html).toContain('Kingdom Intelligence');
+    expect(html.match(/Not Observed/g)?.length).toBeGreaterThanOrEqual(11);
+  });
+
+  it('shows no stats card when a failed mission gathered nothing', () => {
+    const html = render(
+      <IntelResult
+        battle={{
+          ...battle,
+          type: 'INTEL',
+          stats: {
+            spyResults: {
+              ...battle.stats.spyResults,
+              success: false,
+              intelPercentage: 0,
+              intelligenceGathered: null,
+            },
+          },
+        }}
+        lastGenerated={null}
+        viewerID={11}
+      />,
+    );
+    expect(html).not.toContain('Kingdom Intelligence');
+  });
+
+  it('shows no missed-fields note when every field was observed', () => {
+    const full = structuredClone(partialIntel);
+    Object.assign(full.stats.spyResults.intelligenceGathered, {
+      offense: 300,
+      spyDefense: 20,
+      fortHitpoints: 500,
+      defenseBonus: 10,
+    });
+    const out = text(
+      render(
+        <IntelResult battle={full} viewerID={11} lastGenerated={undefined} />,
+      ),
+    );
+    expect(out).toContain('+10%');
+    expect(out).not.toContain('missed at this intel quality');
+  });
+});

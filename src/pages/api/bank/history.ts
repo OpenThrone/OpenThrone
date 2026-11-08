@@ -139,7 +139,9 @@ const historyHandler = async (
       history_type: 'SALE',
       stats: {
         path: ['type'],
-        string_contains: '_UPGRADES',
+        // Structure purchases (FORTIFICATIONS_UPGRADE, SPY_UPGRADE, ...) and
+        // battle upgrades (BATTLE_UPGRADES_BUY) both contain this (#346).
+        string_contains: '_UPGRADE',
       },
     });
     transactionConditions.push({
@@ -157,6 +159,13 @@ const historyHandler = async (
       stats: {
         path: ['type'],
         string_contains: 'TRAINING_',
+      },
+    });
+    transactionConditions.push({
+      history_type: { in: ['SALE'] },
+      stats: {
+        path: ['type'],
+        string_contains: '_MERCENARY',
       },
     });
   }

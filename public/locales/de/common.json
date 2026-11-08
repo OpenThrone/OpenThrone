@@ -204,12 +204,13 @@
     "searchUsers": "Benutzer suchen",
     "protection": {
       "label": "Neulingsschutz",
-      "daysLeft_one": "Geschützt: noch {{count}} Tag",
-      "daysLeft_other": "Geschützt: noch {{count}} Tage",
-      "active": "Geschützt",
+      "daysLeft_one": "Gold geschützt: noch {{count}} Tag",
+      "daysLeft_other": "Gold geschützt: noch {{count}} Tage",
+      "active": "Gold geschützt",
+      "tooltip": "Angriffe werden nicht blockiert: Sie kosten weiterhin Einheiten und Festungs-HP. Nur Ihre ersten {{allowance}} Gold auf der Hand sind geschützt — Räubern bleiben davon auf Stufe 1 höchstens {{share}} % des normalen Beuteanteils, auf Stufe {{taperLevel}} das Ganze.",
       "population": "Bevölkerung {{population}} / {{threshold}}",
       "level": "Level {{level}} / {{limit}}",
-      "progress": "Schutz zu {{percent}} % verbraucht ({{limit}})",
+      "progress": "Schutz zu {{percent}} % verbraucht ({{limit}})",
       "limits": {
         "TIME": "Zeit",
         "POPULATION": "Bevölkerung",
@@ -224,7 +225,7 @@
       "moreWorkers": "Je mehr Arbeiter Sie haben, desto mehr Gold verdienen Sie pro Zug.",
       "recruitDaily": "Wenn Sie jeden Tag die maximale Anzahl rekrutieren, wächst Ihr Königreich stetig weiter.",
       "wellEquipped": "Eine Einheit ist nur so stark wie ihre Ausrüstung. Sorgen Sie dafür, dass Ihre Armee gut ausgerüstet ist.",
-      "fortDefense": "Wenn Ihre Verteidigung weniger als 25 % Ihrer nicht kämpfenden Bevölkerung beträgt, können Sie bei einem Angriff Bürger und Arbeiter verlieren. Halten Sie Ihre Festung instand."
+      "fortDefense": "Halte Verteidigungseinheiten bei mindestens 25 % deiner Bevölkerung, sonst richten Angreifer mehr Schaden am Fort an und erbeuten mehr Gold. Halte dein Fort repariert: Ist es gefallen, können bei einem Angriff Bürger und Arbeiter verloren gehen."
     },
     "armyCondition": {
       "label": "Armee-Ausdauer",
@@ -252,6 +253,7 @@
     "version": "Version {{version}}"
   },
   "errors": {
+    "stillSignedIn": "Der Server ist nicht erreichbar. Sie sind weiterhin angemeldet; versuchen Sie es gleich noch einmal.",
     "failedToFetchGitInfo": "Fehler beim Abrufen von Git-Informationen",
     "failedToFetchOnlinePlayerInfo": "Fehler beim Abrufen von Online-Spielerinformationen"
   },
@@ -287,8 +289,8 @@
     "signInToRecruit": "Melden Sie sich an, um 1 Bürger für Ihr Königreich zu rekrutieren.",
     "linkFrom": "Rekrutierungslink von {{name}}",
     "pairProgress": "Heute {{used}} von {{limit}} Mal mit {{name}} rekrutiert.",
-    "recruitsLeft_one": "Heute noch {{count}} Rekrut übrig. Zurücksetzung um {{time}}.",
-    "recruitsLeft_other": "Heute noch {{count}} Rekruten übrig. Zurücksetzung um {{time}}.",
+    "recruitsLeft_one": "Mit {{name}} kannst du heute noch {{count}}-mal rekrutieren. Zurücksetzung um {{time}}.",
+    "recruitsLeft_other": "Mit {{name}} kannst du heute noch {{count}}-mal rekrutieren. Zurücksetzung um {{time}}.",
     "again": "Erneut rekrutieren",
     "blockedPair": "Sie haben heute {{used}} von {{limit}} Mal mit {{name}} rekrutiert. Zurücksetzung um {{time}}.",
     "blockedRecruiter": "Sie haben alle {{limit}} täglichen Rekrutierungen verbraucht. Zurücksetzung um {{time}}.",
@@ -365,8 +367,27 @@
     "unitLevel": "{{name}} · St. {{level}}",
     "mercenary": "Söldner",
     "observedPopulation": "Beobachtete Bevölkerung",
+    "populationTitle": "Bevölkerung",
+    "populationTotal": "Bevölkerung: {{count}}",
+    "troopsObserved": "Beobachtete Truppen: {{observed}} von {{total}} (Aufklärungsqualität {{percent}} %)",
+    "notObserved": "Nicht beobachtet",
+    "statsNotObserved": "Als „Nicht beobachtet“ markierte Werte wurden bei dieser Aufklärungsqualität verfehlt.",
+    "observedStats": "Lagebericht des Königreichs",
+    "stats": {
+      "gold": "Gold zur Hand",
+      "goldInBank": "Gold in der Bank",
+      "offense": "Angriff",
+      "defense": "Verteidigung",
+      "spyOffense": "Spionageangriff",
+      "spyDefense": "Spionageabwehr",
+      "fortHitpoints": "Festungs-TP",
+      "fortLevel": "Festungsstufe",
+      "defenseBonus": "Verteidigungsbonus",
+      "spyLevel": "Stufe der Spionagegilde",
+      "sentryLevel": "Stufe des Wachpostens"
+    },
     "observedTotal": "Beobachtet: {{count}}",
-    "unobservedPopulation": "Die unbeobachtete Bevölkerung ist unbekannt.",
+    "unobservedPopulation": "Aufklärungsqualität {{percent}} %: Deine Spione haben etwa diesen Anteil der Truppen gesehen. Der Rest ist unbekannt.",
     "observedRoleUnits": {
       "OFFENSE": "Beobachtete Angriffseinheiten: {{count}}",
       "DEFENSE": "Beobachtete Verteidigungseinheiten: {{count}}",
@@ -451,6 +472,8 @@
     "friendRequestFrom": "Freundschaftsanfrage von {{name}}",
     "friendsWith": "Befreundet mit {{name}}",
     "addFriend": "Zur Freundesliste hinzufügen",
+    "friendRequestRetry": "Erneute Anfrage ab {{date}}",
+    "friendRequestClosed": "Freundschaftsanfrage abgelehnt",
     "removeFriend": "Freund entfernen",
     "removeFriendConfirm": "Möchten Sie {{name}} wirklich aus Ihrer Freundesliste entfernen?",
     "declareEnemy": "Zum Feind erklären",
@@ -584,7 +607,7 @@
         },
         "protection": {
           "title": "Sie stehen unter Schutz",
-          "body": "Als neuer Spieler verlieren Sie bei Angriffen nur einen kleinen Teil Ihres Goldes. Der Schutz endet, sobald eines davon eintritt: in etwa {{days}} Tagen, Ihre Bevölkerung erreicht {{population}} oder Level {{levelLimit}}. Nutzen Sie die Zeit zum Aufbau."
+          "body": "Als neuer Spieler sind Ihre ersten {{allowance}} Gold auf der Hand weitgehend vor Angriffen sicher, aber Angriffe kosten weiterhin Einheiten und beschädigen Ihre Festung, und Gold darüber kann geplündert werden — bringen Sie es zur Bank. Der Schutz endet, sobald eines davon eintritt: in etwa {{days}} Tagen, Ihre Bevölkerung erreicht {{population}} oder Level {{levelLimit}}. Nutzen Sie die Zeit zum Aufbau."
         },
         "stats": {
           "title": "Das Reich auf einen Blick",
@@ -647,12 +670,12 @@
       "lessonsTitle": "Geführte Lektionen",
       "guidesTitle": "Anleitungen",
       "status": {
-        "active": "Die Einführung ist aktiv: Jede Lektion startet, wenn Sie die jeweilige Seite besuchen.",
+        "active": "Die Einführung ist aktiv: Jede Lektion startet, wenn Sie die jeweilige Seite besuchen, und gilt als abgeschlossen, sobald Sie ihren letzten Schritt erreichen.",
         "snoozed": "Die Einführung ist pausiert und meldet sich morgen wieder.",
         "off": "Die Einführung ist abgeschaltet. Das Wiederholen einer Lektion schaltet sie wieder ein."
       },
       "seen": "Abgeschlossen",
-      "unseen": "Noch nicht gesehen",
+      "unseen": "Noch nicht abgeschlossen",
       "open": "Öffnen",
       "replay": "Wiederholen",
       "restart": "Gesamte Einführung neu starten",
@@ -698,6 +721,13 @@
     "CLERIC": "Kleriker",
     "ASSASSIN": "Assassine",
     "THIEF": "Dieb"
+  },
+  "classHint": "Die Klasse ist dauerhaft und gibt einen bleibenden Bonus.",
+  "classDescriptions": {
+    "FIGHTER": "+{{amount}} % Angriff: Angriffe treffen härter.",
+    "CLERIC": "+{{amount}} % Verteidigung: Das Königreich hält besser stand.",
+    "ASSASSIN": "+{{amount}} % Spion- und Wachenstärke: bessere Aufklärung, schwerer auszuspionieren.",
+    "THIEF": "+{{amount}} % Goldeinkommen pro Zug."
   },
   "eraResetNotice": {
     "scheduled": "Die Epoche wird am {{local}} OT-Zeit ({{utc}}) zurückgesetzt",
@@ -873,7 +903,7 @@
     }
   },
   "friendTransfer": {
-    "guide": "Freunde können sich Gold schicken, sobald beide die Kohlemine freigeschaltet haben. Beide Spieler müssen mindestens Stufe {{level}} sein und ein Konto haben, das mindestens {{days}} Tage alt ist. An Spieler, gegen die du in den letzten {{hours}} Stunden gekämpft hast, kannst du kein Gold senden. Für jede Überweisung fällt eine Gebühr an, die vernichtet wird."
+    "guide": "Freunde können sich Gold schicken, sobald beide die Kohlemine freigeschaltet haben (Wirtschaftsverbesserungen, benötigt Festung Stufe 2, Festungsstufe 11). Beide Spieler müssen mindestens Stufe {{level}} sein und ein Konto haben, das mindestens {{days}} Tage alt ist. An Spieler, gegen die du in den letzten {{hours}} Stunden gekämpft hast, kannst du kein Gold senden. Für jede Überweisung fällt eine Gebühr an, die vernichtet wird."
   },
   "veteran": {
     "badge": "Ära-1-Tester",

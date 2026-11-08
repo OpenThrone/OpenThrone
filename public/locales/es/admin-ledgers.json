@@ -5,7 +5,8 @@
     "recruits": "Historial de reclutamiento",
     "logins": "Historial de inicio de sesión",
     "suppressions": "Supresiones de correo",
-    "blocks": "Bloqueos de identidad"
+    "blocks": "Bloqueos de identidad",
+    "drift": "Desviación de objetos"
   },
   "sender": "ID del remitente",
   "receiver": "ID del destinatario",
@@ -51,7 +52,15 @@
     "createdByUserId": "Creado por (ID)",
     "kind": "Tipo",
     "sourceUserId": "ID del usuario de origen",
-    "expiresAt": "Caduca"
+    "expiresAt": "Caduca",
+    "type": "Objeto",
+    "usage": "Uso",
+    "level": "Nivel",
+    "checkpointQuantity": "Última comprobación",
+    "ledgerDelta": "Cambio registrado",
+    "actualQuantity": "Real",
+    "drift": "Desviación"
   },
-  "protectedRemoval": "Esta entrada está protegida y no se puede eliminar."
+  "protectedRemoval": "Esta entrada está protegida y no se puede eliminar.",
+  "driftNote": "Cantidades que no coinciden con la última comprobación más los cambios registrados. Cada una aparece una vez y nada se corrige automáticamente. Los días sin incidencias figuran en el registro de cron."
 }

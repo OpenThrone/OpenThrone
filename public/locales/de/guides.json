@@ -74,7 +74,7 @@
       "protection": {
         "title": "Ihre ersten Tage sind geschützt",
         "paragraphs": [
-          "Neue Königreiche sind vor den schlimmsten Überfällen geschützt. Der Schutz endet an der ersten von drei Grenzen: {{protection.days}} Tage nach Ihrem Eintritt in die Ära, Stufe {{protection.level}} ({{protection.levelXp}} Erfahrung) oder wenn Ihre Bevölkerung über eine von der Ära abhängige Schwelle wächst. Solange Sie geschützt sind, kostet Sie ein Kampf höchstens {{protection.lossCapPercent}} % Ihrer Bevölkerung, mindestens aber eine Einheit.",
+          "Neue Königreiche erhalten einen Goldschild, keine Immunität: Angriffe kosten weiterhin Einheiten und beschädigen die Festung. Der Schutz endet an der ersten von drei Grenzen: {{protection.days}} Tage nach Ihrem Eintritt in die Ära, Stufe {{protection.level}} ({{protection.levelXp}} Erfahrung) oder wenn Ihre Bevölkerung über eine von der Ära abhängige Schwelle wächst. Solange Sie geschützt sind, kostet Sie ein Kampf höchstens {{protection.lossCapPercent}} % Ihrer Bevölkerung, mindestens aber eine Einheit.",
           "Angreifen beendet Ihren Schutz nicht. Nutzen Sie die Zeit trotzdem, um Einkommen und Verteidigung aufzubauen, bevor Sie selbst plündern."
         ]
       },
@@ -123,7 +123,7 @@
         "title": "Wirtschafts-Upgrades",
         "paragraphs": [
           "Jedes Wirtschafts-Upgrade erhöht das Gold, das jeder Arbeiter verdient, und die Zahl der Bankeinzahlungen pro Tag. Viele Upgrades erfordern zudem eine Mindest-Befestigungsstufe.",
-          "Upgrades schalten auch Funktionen frei. Goldtransfers werden mit {{unlockNames.goldTransfer}} freigeschaltet, die Söldnerhalle mit {{unlockNames.mercenaryHall}}."
+          "Upgrades schalten auch Funktionen frei. Goldtransfers werden mit {{unlockNames.goldTransfer}} freigeschaltet, Söldner ab Stufe {{unlockNames.mercenaryLevel}}, sobald Ihre Festung ein {{unlockNames.mercenaryFort}} ist."
         ],
         "tableCaption": "Wirtschafts-Upgrades"
       },
@@ -195,6 +195,7 @@
         "paragraphs": [
           "Spionagemissionen kosten ebenfalls Züge. Eine Mission dauert bis zu {{spy.missionMaxTurns}} Züge. Aufklärungsmissionen dauern bis zu {{spy.intelMaxTurns}}, Infiltrationen mindestens {{spy.infiltrationMinTurns}} und Attentate mindestens {{spy.assassinationMinTurns}} Züge.",
           "Gegen dasselbe Ziel dürfen Sie in 24 Stunden höchstens {{spy.intelPerTargetPerDay}} Aufklärungsmissionen durchführen, und wiederholte Missionen gegen dasselbe Königreich werden im Laufe des Tages schwieriger. Ihre eigenen Spione und Wächter schützen Sie vor feindlichen Spionen.",
+          "Ein Aufklärungsbericht zeigt immer die genaue Bevölkerung des Ziels, dieselbe Zahl wie die Angriffsliste. Die beobachteten Truppen, Gold und Ausrüstungen sind eine Stichprobe, und der Bericht nennt seine Aufklärungsqualität: den Anteil des Königreichs, den Ihre Spione gesehen haben.",
           "Welche Missionen offen sind, ist eine Servereinstellung. Das Spionagemenü zeigt, was Sie gerade tun können."
         ]
       },

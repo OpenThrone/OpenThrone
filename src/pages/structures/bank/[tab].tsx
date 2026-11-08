@@ -25,9 +25,11 @@ import { EconomyUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import classes from '@/pages/structures/bank/[tab].module.css';
 import type { Locales } from '@/types/typings';
+import { depositLimitNotes } from '@/utils/bankLimits';
 import { logError } from '@/utils/logger';
 import { formatGold, toLocale } from '@/utils/numberFormatting';
 import { structureName } from '@/utils/structureNames';
+import { getGameDayMinutes } from '@/utils/timefunctions';
 
 const defaultFilters = {
   deposits: true,
@@ -128,6 +130,7 @@ export default function Bank() {
   const perTurn = (amount: number | bigint | string | undefined) =>
     t('bank.incomePerTurn', { amount: formatGold(amount, locale) });
   const nextDeposit = user?.nextDepositAvailable;
+  const income = user?.incomeBreakdown;
 
   const statItems = [
     {
@@ -137,7 +140,20 @@ export default function Bank() {
     },
     {
       label: t('bank.bankedGold'),
-      value: formatGold(user?.goldInBank, locale),
+      value: (
+        <>
+          {formatGold(user?.goldInBank, locale)}
+          <Text
+            component="span"
+            size="xs"
+            fw={400}
+            c="var(--ot-muted)"
+            display="block"
+          >
+            {t('bank.capacity', { amount: formatGold(user?.bankCap, locale) })}
+          </Text>
+        </>
+      ),
       icon: <FontAwesomeIcon icon={faBuildingColumns} />,
     },
     {
@@ -155,13 +171,13 @@ export default function Bank() {
             c="var(--ot-muted)"
             display="block"
           >
-            {nextDeposit &&
-            user?.depositsAvailable < (user?.maximumBankDeposits ?? 0)
-              ? t('bank.nextDepositIn', {
-                  hours: nextDeposit.hours,
-                  minutes: String(nextDeposit.minutes).padStart(2, '0'),
-                })
-              : t('bank.rollingDepositLimit')}
+            {depositLimitNotes(
+              t,
+              getGameDayMinutes() / 60,
+              user?.depositsAvailable ?? 0,
+              user?.maximumBankDeposits ?? 0,
+              nextDeposit,
+            ).join(' · ')}
           </Text>
         </>
       ),
@@ -231,10 +247,10 @@ export default function Bank() {
                 )}
               </EconomyRow>
               <EconomyRow label={t('bank.goldPerWorker')}>
-                {perTurn(user?.goldPerWorkerPerTurn)}
+                {perTurn(income?.goldPerWorker)}
               </EconomyRow>
               <EconomyRow label={t('bank.workerSubtotal')} accent>
-                +{perTurn(user?.workerGoldPerTurn)}
+                +{perTurn(income?.workerGold)}
               </EconomyRow>
             </Stack>
           </GameCard>
@@ -254,7 +270,7 @@ export default function Bank() {
                 ) ?? '—'}
               </EconomyRow>
               <EconomyRow label={t('bank.fortIncome')} accent>
-                +{perTurn(user?.fortificationGoldPerTurn)}
+                +{perTurn(income?.fortGold)}
               </EconomyRow>
             </Stack>
           </GameCard>
@@ -263,8 +279,18 @@ export default function Bank() {
             icon={<FontAwesomeIcon icon={faChartLine} />}
           >
             <Stack component="dl" gap="xs" m={0}>
+              <EconomyRow
+                label={t('bank.incomeBonusRow', {
+                  percent: toLocale(
+                    Math.round((user?.incomeBonus ?? 0) * 100) / 100,
+                    locale,
+                  ),
+                })}
+              >
+                +{perTurn(income?.bonusGold)}
+              </EconomyRow>
               <EconomyRow label={t('bank.totalIncome')}>
-                {perTurn(user?.goldPerTurn)}
+                {perTurn(income?.total ?? user?.goldPerTurn)}
               </EconomyRow>
               <EconomyRow label={t('bank.turnsPerDay')}>
                 {TURNS_PER_DAY}

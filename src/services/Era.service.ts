@@ -111,8 +111,11 @@ const getLatestEra = async (tx: Tx | typeof prisma = prisma) => {
   });
 };
 
-/** Ensure active era. */
-export const ensureActiveEra = async (tx: Tx | typeof prisma = prisma) => {
+const createEraIfMissing = async (tx: Tx) => {
+  // A fresh database gets many requests at once; without the lock each one
+  // saw no era and created its own (#274). Its own key, so callers that
+  // already hold the era lifecycle lock cannot deadlock on it.
+  await tx.$queryRaw`SELECT pg_advisory_xact_lock(684731921)::text`;
   const current = await getActiveEra(tx);
   if (current) return current;
 
@@ -125,6 +128,17 @@ export const ensureActiveEra = async (tx: Tx | typeof prisma = prisma) => {
   return tx.era.create({
     data: { name: `Era ${nextId}`, startDate: new Date() },
   });
+};
+
+/** Ensure active era. */
+export const ensureActiveEra = async (tx: Tx | typeof prisma = prisma) => {
+  const current = await getActiveEra(tx);
+  if (current) return current;
+
+  if ('$transaction' in tx) {
+    return tx.$transaction((inner) => createEraIfMissing(inner));
+  }
+  return createEraIfMissing(tx);
 };
 
 /** Get active era start settings. */
@@ -216,6 +230,17 @@ export const startNewEra = async (
     const defendWins = new Map<number, number>(
       defendWinRows.map((r) => [r.id, r.wins]),
     );
+    // Logs older than 20 days are gone, but their wins live on in the totals.
+    const rolledUp = currentEra
+      ? await tx.userEraActivity.findMany({
+          where: { eraId: currentEra.id },
+          select: { userId: true, attacksWon: true, defendsWon: true },
+        })
+      : [];
+    for (const { userId, attacksWon, defendsWon } of rolledUp) {
+      attackWins.set(userId, (attackWins.get(userId) ?? 0) + attacksWon);
+      defendWins.set(userId, (defendWins.get(userId) ?? 0) + defendsWon);
+    }
     const validatedNewEraId = EraIdSchema.parse(newEra.id);
     const snapshots: Prisma.UserEraCreateManyInput[] = [];
 

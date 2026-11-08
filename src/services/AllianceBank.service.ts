@@ -16,7 +16,7 @@ import { ensureActiveEra } from '@/services/Era.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { getMaxDeposit } from '@/utils/bankLimits';
 import { logError } from '@/utils/logger';
-import { getOTStartDate } from '@/utils/timefunctions';
+import { getGameDayStart } from '@/utils/timefunctions';
 
 const DepositSchema = z.object({
   allianceId: z.number().int().positive(),
@@ -72,7 +72,7 @@ export const getReceivedToday = async (
       transaction_type: {
         in: [AllianceTransactionType.WITHDRAWAL, AllianceTransactionType.LOAN],
       },
-      created_at: { gte: getOTStartDate() },
+      created_at: { gte: getGameDayStart() },
     },
     _sum: { amount: true },
   });

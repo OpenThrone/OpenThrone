@@ -8,6 +8,7 @@ import type {
   StructureUpgradeType,
 } from '@/lib/prisma-exports';
 import { returnForceInTx } from '@/services/ForceLifecycle.service';
+import { recordItemLedger } from '@/services/ItemLedger.service';
 import type { UnitType } from '@/types/typings';
 import type { EraStartSettings } from '@/utils/eraStartSettings';
 
@@ -117,6 +118,9 @@ export const buildDefaultUserUpdate = (
   // Every era join/reset path builds its update here, so this restarts the
   // new-player protection clock (see utils/battleProtection.ts).
   era_joined_at: new Date(),
+  // Experience resets to 0 (level 1), so the anti-camping XP ramp (#334)
+  // restarts from the reset too.
+  level_reached_at: new Date(),
   staminaUpdatedAt: new Date(),
   event_citizens_received: 0,
 });
@@ -148,6 +152,25 @@ export const resetUserRelations = async (
     where: { userId, status: 'REQUESTED' },
     data: { status: 'CANCELLED', closedAt: new Date() },
   });
+
+  // Every other item writer holds this lock, so no purchase can land between
+  // reading the old balances and replacing them.
+  await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
+  const oldItems = await tx.userItem.findMany({ where: { userId } });
+  await recordItemLedger(tx, userId, 'ACCOUNT_RESET', [
+    ...oldItems.map((item) => ({
+      type: item.type,
+      usage: item.usage,
+      level: item.level,
+      delta: -item.quantity,
+    })),
+    ...ERA_DEFAULT_ITEMS.map((item) => ({
+      type: item.type,
+      usage: item.usage,
+      level: item.level,
+      delta: item.quantity,
+    })),
+  ]);
 
   await Promise.all([
     tx.userUnit.deleteMany({ where: { userId } }),

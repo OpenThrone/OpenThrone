@@ -5,7 +5,7 @@ import { EconomyUpgrades } from '@/constants';
 import type { BattleUpgradeProps, Locales } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { toLocale } from '@/utils/numberFormatting';
-import { fortificationName, structureName } from '@/utils/structureNames';
+import { fortRequirementName, structureName } from '@/utils/structureNames';
 
 const EconomyTab: React.FC<BattleUpgradeProps> = ({
   userLevel,
@@ -24,7 +24,7 @@ const EconomyTab: React.FC<BattleUpgradeProps> = ({
     position: item.index,
     purchaseIndex: index,
     cells: [
-      fortificationName(t, item.fortLevel) || t('upgrades.manor'),
+      fortRequirementName(t, item.fortLevel) || t('upgrades.manor'),
       toLocale(item.goldPerWorker, locale),
       toLocale(item.depositsPerDay, locale),
       `${toLocale(item.goldTransferTx, locale)}/${toLocale(item.goldTransferRec, locale)}`,

@@ -18,7 +18,7 @@ FAQ factual anchors: PRODUCT.md (identity and non-affiliation), README.md (Disco
 
 ## Prioritized next content
 
-1. **Day-One guide set:** internal source-backed drafts now cover a first-session economy decision, army/equipment/upgrades, and target selection/battle reports: [draft index](day-one-strategy-guides.md). The numerical examples use synthetic data and fallback Era settings only; the live Era can override initial gold, citizens and turns. These are progress artifacts, not yet public pages.
+1. **Day-One guide set:** internal source-backed drafts now cover a first-session economy decision, army/equipment/upgrades, and target selection/battle reports (not kept in this repository). The numerical examples use synthetic data and fallback Era settings only; the live Era can override initial gold, citizens and turns. These are progress artifacts, not yet public pages.
 2. **Economy and banking guide:** extend the first-session draft with reviewed screenshots and operator-confirmed timing. Current source anchors support a per-deposit 80% of on-hand limit and a base three deposits in a trailing 24-hour window; the example must continue to be labeled as subject to current Era/economy settings.
 3. **Race comparison:** describe implemented bonuses and examples of meaningful choices without declaring one best race. Link directly to maintained constants and review whenever balance changes.
 4. **Account troubleshooting and support:** consolidate sign-in/recovery help, a safe bug-report template and a verified contact route. Establish who handles support and how contact details stay current.

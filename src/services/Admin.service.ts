@@ -11,6 +11,7 @@ import {
   isModerator,
 } from '@/utils/authorization';
 import { resolveEraStartSettings } from '@/utils/eraStartSettings';
+import { levelReachedAtUpdate } from '@/utils/levelReachedAt';
 import { logError } from '@/utils/logger';
 
 import { ensureActiveEra } from './Era.service';
@@ -971,6 +972,10 @@ export class AdminService {
             items: currentItems,
             gold: BigInt(validatedData.stats.gold),
             experience: validatedData.stats.experience,
+            ...levelReachedAtUpdate(
+              user.experience,
+              validatedData.stats.experience,
+            ),
             rank: validatedData.stats.level,
           },
         });

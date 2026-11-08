@@ -9,7 +9,11 @@ import { useUser } from '@/context/users';
 import { useRecruitmentStatus } from '@/hooks/useRecruitmentStatus';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
-import { formatResetTime, recruitsLeftFor } from '@/utils/recruitmentStatus';
+import {
+  formatResetTime,
+  recruitsLeftFor,
+  shouldSubmitRecruitAgain,
+} from '@/utils/recruitmentStatus';
 
 interface RecruitProps {
   id: string;
@@ -109,6 +113,7 @@ export default function RecruitmentFlow({
 
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const submittingRef = React.useRef(false);
+  const [recruitAgain, setRecruitAgain] = useState(false);
   const [userInfo, setUserInfo] = useState<RecruitProps | null>(null);
   const { user, forceUpdate } = useUser();
   const { t } = useTranslation('common');
@@ -266,7 +271,10 @@ export default function RecruitmentFlow({
     onBusyChange?.(true);
     try {
       const formData = new FormData(formRef.current);
-      const token = captchaToken ?? formData.get('cf-turnstile-response');
+      const rawToken = captchaToken ?? formData.get('cf-turnstile-response');
+      // No Turnstile widget (CAPTCHA off) means no token: omit it, never null.
+      const token =
+        typeof rawToken === 'string' && rawToken ? rawToken : undefined;
 
       const result = await requestJson(
         isExternal
@@ -320,6 +328,27 @@ export default function RecruitmentFlow({
     }
   };
 
+  useEffect(() => {
+    if (
+      !shouldSubmitRecruitAgain({
+        pending: recruitAgain,
+        ready,
+        showCaptcha,
+        succeeded,
+        error,
+        submitting,
+      })
+    ) {
+      if (recruitAgain && (showCaptcha || error)) setRecruitAgain(false);
+      return;
+    }
+    if (!formRef.current) return;
+    setRecruitAgain(false);
+    handleCaptchaSuccess();
+    // handleCaptchaSuccess is recreated each render; the state flags gate it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recruitAgain, ready, showCaptcha, succeeded, error, submitting]);
+
   const captchaSlot = showCaptcha ? (
     <Turnstile
       siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
@@ -363,7 +392,12 @@ export default function RecruitmentFlow({
       formRef={formRef}
       captchaSlot={captchaSlot}
       onSubmit={handleCaptchaSuccess}
-      onRetry={() => setRetry((value) => value + 1)}
+      onRetry={() => {
+        // From the success screen this is "Recruit again": recruit straight
+        // away once eligibility is re-checked. From an error it only retries.
+        setRecruitAgain(succeeded);
+        setRetry((value) => value + 1);
+      }}
       onRegister={() => router.push(`/account/register`)}
     />
   );

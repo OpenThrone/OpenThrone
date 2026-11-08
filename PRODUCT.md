@@ -44,7 +44,7 @@ OpenThrone's distinguishing context is its persistent kingdom strategy and conne
 
 The repository is under active development. This document does not establish the current live environment, release phase, reset schedule, or service reliability.
 
-Use the [README](README.md) for setup, [operations guide](docs/operations.md) for scheduled tasks, and [plan index](plans/README.md) for implementation proposals. Support contact information belongs in the README.
+Use the [README](README.md) for setup, the [operations guide](docs/operations.md) for scheduled tasks, and [ideas](docs/ideas.md) for planned work. Support contact information belongs in the README.
 
 ## Capabilities and Constraints
 
@@ -78,6 +78,6 @@ These are recommended decision rules, not a record of independently confirmed re
 
 ## Evidence and Open Decisions
 
-Source code supports the technical inventory above. The [documentation index](docs/README.md) separates maintained guides from historical findings; archived plans are not proof of current behavior or approved requirements.
+Source code supports the technical inventory above. The [documentation index](docs/README.md) separates maintained guides from historical findings; dated reports are not proof of current behavior or approved requirements.
 
 Still to establish: the current release objective, the priority of fidelity versus retention, expected session cadence, reset communication policy, and criteria for onboarding success. No player research or retention measurements are supplied here. Update this document when those decisions or evidence become available.

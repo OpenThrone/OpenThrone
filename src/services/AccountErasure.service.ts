@@ -6,6 +6,7 @@ import {
   AccountAnonymizationService,
   isAnonymizedUser,
 } from '@/services/AccountAnonymization.service';
+import { AllianceService } from '@/services/Alliance.service';
 import { sendImmediate } from '@/services/Email.service';
 import {
   renderErasureConfirmEmail,
@@ -461,6 +462,14 @@ export async function executeErasure(
         select: { userId: true },
       });
       if (!found) return { outcome: 'not_pending' };
+      // #318: the erased player leaves every alliance here, before the
+      // first user-row lock, so the whole erasure transaction takes
+      // alliance locks in the canonical leave/kick order. Nothing is lost
+      // when the request turns out not actionable: the exit rolls back
+      // with the rest of this transaction.
+      await AllianceService.leaveAllAlliancesOnErasure(tx, found.userId, {
+        actorUserId: options.expedite?.adminId,
+      });
       await lockUser(tx, found.userId);
       const request = await tx.accountErasureRequest.findUnique({
         where: { id: requestId },

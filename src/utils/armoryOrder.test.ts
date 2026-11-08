@@ -3,6 +3,7 @@ import { describe, expect, it } from 'bun:test';
 import type { ArmoryItem } from '@/utils/armoryOrder';
 import {
   armoryOrderCost,
+  armoryPurchaseLines,
   armorySlotReadiness,
   armoryUpgradeHint,
   maxArmoryQuantity,
@@ -274,5 +275,20 @@ describe('Armory upgrade planning', () => {
   it('never offers tiers no unit can wear', () => {
     const mace = { ...item('mace', 'WEAPON', 40, 0), level: 4 };
     expect(armoryUpgradeHint([mace], { 1: 5, 2: 5, 3: 5 })).toBeNull();
+  });
+});
+
+describe('armoryPurchaseLines (#361)', () => {
+  it('names the unit role for same-named items from different tabs', () => {
+    expect(
+      armoryPurchaseLines([
+        { name: 'Small Wooden Shield', usage: 'OFFENSE', quantity: 3 },
+        { name: 'Small Wooden Shield', usage: 'DEFENSE', quantity: 2 },
+        { name: 'Dagger', usage: 'OFFENSE', quantity: 0 },
+      ]),
+    ).toEqual([
+      { name: 'Small Wooden Shield', quantity: 3, role: 'offense' },
+      { name: 'Small Wooden Shield', quantity: 2, role: 'defense' },
+    ]);
   });
 });

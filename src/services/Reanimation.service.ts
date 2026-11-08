@@ -17,7 +17,7 @@ import {
   reanimationQuantity,
 } from '@/constants/Reanimation';
 import type { Prisma } from '@/lib/prisma-exports';
-import { getOTDayKey } from '@/utils/timefunctions';
+import { getGameDayKey } from '@/utils/timefunctions';
 
 type Tx = Prisma.TransactionClient;
 
@@ -219,7 +219,7 @@ export class ReanimationService {
         )
       : enemyReanimationQuantity(enemyFallen, fortLevel);
 
-    const todayKey = getOTDayKey(input.now);
+    const todayKey = getGameDayKey(input.now);
     const row = await tx.users.findUnique({
       where: { id: input.side.userId },
       select: {

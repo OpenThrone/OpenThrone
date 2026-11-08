@@ -1,8 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { beforeEach, describe, expect, spyOn, test } from 'bun:test';
 
+import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import {
   abandonExport,
@@ -35,6 +37,7 @@ import {
 import * as email from '@/services/Email.service';
 import { purgeErasedModerationRecords } from '@/services/PrivacyRetention.service';
 import * as billing from '@/services/supporter/AccountBilling.service';
+import { TemporaryForceLedgerService as Ledger } from '@/services/TemporaryForceLedger.service';
 import { createUser, getLoginBlockingStatus } from '@/services/User.service';
 import { ReauthError } from '@/utils/reauth';
 
@@ -718,6 +721,15 @@ describe('alliance free text', () => {
       motto: 'Synthetic data only',
     });
     const a = alliance.id;
+    // #318: erasing the last member dissolves the alliance, but this suite
+    // asserts which rows survive erasure — keep the alliance alive with a
+    // second member (who also succeeds alice as leader).
+    const privacyRole = await prisma.alliance_roles.findFirstOrThrow({
+      where: { alliance_id: a },
+    });
+    await prisma.alliance_memberships.create({
+      data: { alliance_id: a, user_id: bob, role_id: privacyRole.id },
+    });
     const log = await prisma.attack_log.create({
       data: {
         attacker_id: alice,
@@ -893,6 +905,334 @@ describe('alliance free text', () => {
     expect((await prisma.alliance_announcements.findFirstOrThrow()).title).toBe(
       'ALICE-ANNOUNCEMENT',
     );
+  });
+});
+
+describe('erasure leaves alliances (#318)', () => {
+  const DAY = 86_400_000;
+  const equipment = [
+    ...new Set(
+      ItemTypes.filter((item) => item.usage === 'OFFENSE').map(
+        (item) => item.type,
+      ),
+    ),
+  ].map((type) => ({ type, level: 1 }));
+
+  const erase = async (userId: number) => {
+    await scheduleErasure(userId);
+    const open = await openRequest(userId);
+    await makeDue(open.id);
+    await processDueErasures();
+  };
+
+  test('an erased leader is succeeded by the highest-ranked member', async () => {
+    await prisma.users.update({
+      where: { id: alice },
+      data: { experience: 1_000_000, gold: 100_000_000n },
+    });
+    const alliance = await AllianceService.createAlliance(alice, {
+      name: 'Succession pact',
+    });
+    const officerRole = await prisma.alliance_roles.create({
+      data: { alliance_id: alliance.id, name: 'Officer', rank_order: 1 },
+    });
+    const elderRole = await prisma.alliance_roles.create({
+      data: { alliance_id: alliance.id, name: 'Elder', rank_order: 5 },
+    });
+    const carol = await newUser('Carol');
+    await prisma.alliance_memberships.createMany({
+      data: [
+        {
+          alliance_id: alliance.id,
+          user_id: bob,
+          role_id: officerRole.id,
+          created_at: new Date(Date.now() - DAY),
+        },
+        {
+          alliance_id: alliance.id,
+          user_id: carol,
+          role_id: elderRole.id,
+          created_at: new Date(Date.now() - 30 * DAY),
+        },
+      ],
+    });
+
+    await erase(alice);
+
+    // Highest role wins even though the elder member joined first.
+    const after = await prisma.alliances.findUniqueOrThrow({
+      where: { id: alliance.id },
+      select: { leader_id: true },
+    });
+    expect(after.leader_id).toBe(bob);
+    expect(
+      await prisma.alliance_memberships.findFirst({
+        where: { alliance_id: alliance.id, user_id: alice },
+      }),
+    ).toBeNull();
+    expect(
+      await prisma.alliance_memberships.count({
+        where: { alliance_id: alliance.id },
+      }),
+    ).toBe(2);
+    const audit = await prisma.auditLog.findFirstOrThrow({
+      where: { action: 'ALLIANCE_LEADER_SUCCEEDED_ON_ERASURE' },
+    });
+    expect(audit.entityId).toBe(alliance.id);
+    expect(audit.details).toMatchObject({
+      previousLeaderId: alice,
+      newLeaderId: bob,
+      reason: 'ACCOUNT_ERASURE',
+    });
+  });
+
+  test('role ties in succession go to the longest-standing member', async () => {
+    await prisma.users.update({
+      where: { id: alice },
+      data: { experience: 1_000_000, gold: 100_000_000n },
+    });
+    const alliance = await AllianceService.createAlliance(alice, {
+      name: 'Tiebreak pact',
+    });
+    const role = await prisma.alliance_roles.findFirstOrThrow({
+      where: { alliance_id: alliance.id },
+    });
+    const carol = await newUser('Carol');
+    await prisma.alliance_memberships.createMany({
+      data: [
+        {
+          alliance_id: alliance.id,
+          user_id: bob,
+          role_id: role.id,
+          created_at: new Date(Date.now() - DAY),
+        },
+        {
+          alliance_id: alliance.id,
+          user_id: carol,
+          role_id: role.id,
+          created_at: new Date(Date.now() - 30 * DAY),
+        },
+      ],
+    });
+
+    await erase(alice);
+
+    const after = await prisma.alliances.findUniqueOrThrow({
+      where: { id: alliance.id },
+      select: { leader_id: true },
+    });
+    expect(after.leader_id).toBe(carol);
+  });
+
+  test("an erased last member's alliance is dissolved through the disband path", async () => {
+    await prisma.users.update({
+      where: { id: alice },
+      data: { gold: 100_000_000n },
+    });
+    const alliance = await prisma.alliances.create({
+      data: {
+        name: 'Lone wolves',
+        leader_id: alice,
+        gold_in_bank: 5_000_000n,
+        alliance_roles: { create: { name: 'Member' } },
+      },
+      include: { alliance_roles: true },
+    });
+    await prisma.alliance_memberships.create({
+      data: {
+        alliance_id: alliance.id,
+        user_id: alice,
+        role_id: alliance.alliance_roles[0]!.id,
+      },
+    });
+
+    await erase(alice);
+
+    expect(
+      await prisma.alliances.findUnique({ where: { id: alliance.id } }),
+    ).toBeNull();
+    expect(
+      await prisma.alliance_memberships.count({
+        where: { alliance_id: alliance.id },
+      }),
+    ).toBe(0);
+    // The shared disband teardown pays the treasury out to the members.
+    expect(
+      (await prisma.users.findUniqueOrThrow({ where: { id: alice } })).gold,
+    ).toBe(105_000_000n);
+    const audit = await prisma.auditLog.findFirstOrThrow({
+      where: { action: 'ALLIANCE_DISSOLVED_ON_ERASURE' },
+    });
+    expect(audit.entityId).toBe(alliance.id);
+  });
+
+  test('forces the erased player borrowed from the reserve are returned', async () => {
+    for (const userId of [bob, alice]) {
+      await prisma.users.update({
+        where: { id: userId },
+        data: { fort_level: 12, gold: 100_000_000n },
+      });
+      await prisma.userStructureUpgrade.updateMany({
+        where: { userId, type: 'ARMORY' },
+        data: { level: 12 },
+      });
+      await prisma.userUnit.updateMany({
+        where: { userId, type: 'OFFENSE', level: 1 },
+        data: { quantity: 100 },
+      });
+      for (const item of equipment)
+        await prisma.userItem.upsert({
+          where: {
+            userId_type_usage_level: {
+              userId,
+              type: item.type,
+              level: 1,
+              usage: 'OFFENSE',
+            },
+          },
+          create: {
+            userId,
+            type: item.type,
+            level: 1,
+            usage: 'OFFENSE',
+            quantity: 100,
+          },
+          update: { quantity: 100 },
+        });
+    }
+    const alliance = await prisma.alliances.create({
+      data: {
+        name: 'Force pact',
+        leader_id: bob,
+        alliance_roles: { create: { name: 'Member' } },
+      },
+      include: { alliance_roles: true },
+    });
+    const roleId = alliance.alliance_roles[0]!.id;
+    await prisma.alliance_memberships.createMany({
+      data: [bob, alice].map((user_id) => ({
+        alliance_id: alliance.id,
+        user_id,
+        role_id: roleId,
+      })),
+    });
+    await Ledger.savePolicy(alliance.id, bob, {
+      lendingMode: 'ROLE_ALLOWANCE',
+      roleAllowances: [
+        {
+          roleId,
+          maxBorrowed: 100,
+          maxTermDays: 7,
+          pillageRateBps: 200,
+          loanRateBps: 500,
+        },
+      ],
+    });
+    const donorUnit = await prisma.userUnit.findFirstOrThrow({
+      where: { userId: bob, type: 'OFFENSE' },
+    });
+    await Ledger.contribute({
+      allianceId: alliance.id,
+      userId: bob,
+      unitId: donorUnit.id,
+      quantity: 10,
+      equipment,
+      operationId: randomUUID(),
+    });
+    const contract = await Ledger.requestLoan({
+      allianceId: alliance.id,
+      userId: alice,
+      reserveId: (
+        await prisma.forceReserve.findFirstOrThrow({
+          where: { allianceId: alliance.id },
+        })
+      ).id,
+      quantity: 8,
+      termDays: 1,
+      operationId: randomUUID(),
+    });
+    expect(contract.status).toBe('ACTIVE');
+
+    await erase(alice);
+
+    expect(
+      (
+        await prisma.forceContract.findUniqueOrThrow({
+          where: { id: contract.id },
+        })
+      ).status,
+    ).toBe('RECALLED');
+    expect(
+      await prisma.forceReserve.findFirstOrThrow({
+        where: { allianceId: alliance.id },
+      }),
+    ).toMatchObject({ available: 10, woundedQuantity: 0 });
+    expect(
+      await prisma.alliance_memberships.count({
+        where: { alliance_id: alliance.id },
+      }),
+    ).toBe(1);
+  });
+
+  test("an erased member's outstanding loan is collected but never forgiven", async () => {
+    const alliance = await prisma.alliances.create({
+      data: {
+        name: 'Debt pact',
+        leader_id: bob,
+        gold_in_bank: 1_000_000n,
+        alliance_roles: { create: { name: 'Member' } },
+      },
+      include: { alliance_roles: true },
+    });
+    const roleId = alliance.alliance_roles[0]!.id;
+    await prisma.alliance_memberships.createMany({
+      data: [bob, alice].map((user_id) => ({
+        alliance_id: alliance.id,
+        user_id,
+        role_id: roleId,
+      })),
+    });
+    await prisma.users.update({
+      where: { id: alice },
+      data: { gold: 100_000n, gold_in_bank: 0n },
+    });
+    await prisma.alliance_loans.create({
+      data: {
+        alliance_id: alliance.id,
+        borrower_id: alice,
+        principal: 1_000_000n,
+        interest_pct: 10,
+        amount_owed: 1_100_000n,
+        status: 'ACTIVE',
+        due_at: new Date(Date.now() + DAY),
+      },
+    });
+
+    await erase(alice);
+
+    // Collection takes the gold on hand; the rest of the debt stays on the
+    // pseudonymous account (#13: leaving never forgives).
+    const loan = await prisma.alliance_loans.findFirstOrThrow({
+      where: { alliance_id: alliance.id, borrower_id: alice },
+    });
+    expect(loan.status).toBe('ACTIVE');
+    expect(loan.amount_repaid).toBe(100_000n);
+    expect(
+      (await prisma.users.findUniqueOrThrow({ where: { id: alice } })).gold,
+    ).toBe(0n);
+    expect(
+      await prisma.alliance_memberships.count({
+        where: { alliance_id: alliance.id },
+      }),
+    ).toBe(1);
+    expect(
+      (
+        await prisma.alliances.findUniqueOrThrow({
+          where: { id: alliance.id },
+          select: { leader_id: true },
+        })
+      ).leader_id,
+    ).toBe(bob);
   });
 });
 

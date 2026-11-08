@@ -798,6 +798,7 @@ export class BattleService {
           defenderDailyGoldRemaining: BigInt(replay.defenderDailyGoldRemaining),
           staminaPenaltyThreshold: replay.staminaPenaltyThreshold ?? 0,
           staminaMinMultiplier: replay.staminaMinMultiplier,
+          defenderGameDaysAtLevel: replay.defenderGameDaysAtLevel,
         },
       );
       const attackerRoster = [

@@ -26,9 +26,23 @@ import MainArea from '@/components/MainArea';
 import { DefaultLevelBonus } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
+import { calculateBonusPointMultiplier } from '@/utils/balance/v5Combat';
 import { readUpdatedBonusPoints } from '@/utils/bonusPointsResponse';
 
-const StatCard = ({
+const MAX_PROFICIENCY_POINTS = 75;
+
+/** Bonus percentage the game applies for a number of proficiency points. */
+const proficiencyBonusPercent = (points: number) =>
+  (calculateBonusPointMultiplier(points) - 1) * 100;
+
+const formatPercent = (value: number, locale?: string) =>
+  value.toLocaleString(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+/** One proficiency: its current bonus and the controls that change it. */
+export const StatCard = ({
   title,
   currentLevel,
   onAdd,
@@ -37,7 +51,7 @@ const StatCard = ({
   canReduce,
   icon,
 }) => {
-  const { t } = useTranslation('home');
+  const { t, i18n } = useTranslation('home');
   return (
     <GameCard title={title} icon={icon}>
       <Box className={panelClasses.insetRow}>
@@ -53,9 +67,15 @@ const StatCard = ({
               fontVariantNumeric: 'tabular-nums',
             }}
           >
-            {currentLevel}%
+            {`${formatPercent(proficiencyBonusPercent(currentLevel), i18n?.language)}%`}
           </Text>
         </Group>
+        <Text size="xs" c="dimmed" ta="right">
+          {t('levels.pointsSpent', {
+            points: currentLevel,
+            max: MAX_PROFICIENCY_POINTS,
+          })}
+        </Text>
       </Box>
       <Group justify="center" mt="md" gap="xs">
         <Button
@@ -63,10 +83,16 @@ const StatCard = ({
           disabled={!canReduce}
           variant="outline"
           size="xs"
+          aria-label={t('levels.decrease', { stat: title })}
         >
           <FontAwesomeIcon icon={faMinus} />
         </Button>
-        <Button onClick={onAdd} disabled={!canAdd} size="xs">
+        <Button
+          onClick={onAdd}
+          disabled={!canAdd}
+          size="xs"
+          aria-label={t('levels.increase', { stat: title })}
+        >
           <FontAwesomeIcon icon={faPlus} />
         </Button>
       </Group>
@@ -75,7 +101,7 @@ const StatCard = ({
 };
 
 const Levels = () => {
-  const { t } = useTranslation('home');
+  const { t, i18n } = useTranslation('home');
   const { user, forceUpdate } = useUser();
   const justSavedRef = useRef(false);
   const [levels, setLevels] = useState(user?.bonus_points ?? DefaultLevelBonus);
@@ -173,7 +199,13 @@ const Levels = () => {
           {t('levels.proficiencyPointsAvailable', { count: proficiencyPoints })}
         </Text>
         <Text size="sm" ta="center" c="dimmed">
-          {t('levels.maximumBonus')}
+          {t('levels.maximumBonus', {
+            max: MAX_PROFICIENCY_POINTS,
+            bonus: formatPercent(
+              proficiencyBonusPercent(MAX_PROFICIENCY_POINTS),
+              i18n?.language,
+            ),
+          })}
         </Text>
       </GameCard>
       <Space h="md" />
@@ -186,7 +218,10 @@ const Levels = () => {
             currentLevel={getCurrentLevel(bonus.type)}
             onAdd={() => handleBonusChange(bonus.type, 1)}
             onReduce={() => handleBonusChange(bonus.type, -1)}
-            canAdd={proficiencyPoints > 0 && getCurrentLevel(bonus.type) < 75}
+            canAdd={
+              proficiencyPoints > 0 &&
+              getCurrentLevel(bonus.type) < MAX_PROFICIENCY_POINTS
+            }
             canReduce={changeQueue[bonus.type]?.change > 0}
           />
         ))}

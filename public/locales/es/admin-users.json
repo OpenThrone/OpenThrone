@@ -89,6 +89,8 @@
     "experience": "Experiencia",
     "level": "Nivel",
     "levelHelp": "El nivel se calcula a partir de la experiencia.",
+    "levelReachedAt": "Nivel alcanzado",
+    "levelReachedAtHelp": "Cuándo alcanzó el jugador su nivel actual. Tras 3 días de juego en un mismo nivel, la XP de defensa de las batallas crece cada día de juego, hasta 3 veces. Cambiar la experiencia a otro nivel lo reinicia a ahora.",
     "quantityFor": "Cantidad de {{name}}",
     "quantity": "Cantidad",
     "mercenary": "Mercenario",

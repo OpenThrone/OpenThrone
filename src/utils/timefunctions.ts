@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
  * Uses NEXT_PUBLIC_TURN_INTERVAL_MINUTES for client bundles,
  * and falls back to TURN_INTERVAL_MINUTES for server if present.
  */
-function getTurnIntervalMinutes(): number {
+export function getTurnIntervalMinutes(): number {
   const raw =
     process.env.NEXT_PUBLIC_TURN_INTERVAL_MINUTES ??
     process.env.TURN_INTERVAL_MINUTES;
@@ -141,6 +141,84 @@ export function getOTStartDate(
 ): Date {
   const p = zonedParts(from);
   return otWallClockToDate(p.year, p.month, p.day + add);
+}
+
+const MINUTES_PER_DAY = 24 * 60;
+
+/**
+ * Length of a game day in minutes: the period every daily rule (caps,
+ * pressure, per-target limits, protection) runs on. Defaults to a real day;
+ * accelerated test servers set NEXT_PUBLIC_GAME_DAY_MINUTES (client) or
+ * GAME_DAY_MINUTES (server) to match their daily cron. Values that don't
+ * divide a day evenly fall back to a real day.
+ */
+export function getGameDayMinutes(): number {
+  const raw =
+    process.env.NEXT_PUBLIC_GAME_DAY_MINUTES ?? process.env.GAME_DAY_MINUTES;
+  const minutes = Number(raw);
+  return Number.isInteger(minutes) &&
+    minutes > 0 &&
+    MINUTES_PER_DAY % minutes === 0
+    ? minutes
+    : MINUTES_PER_DAY;
+}
+
+/** Length of a game day in milliseconds; the window for "per day" rolling limits. */
+export function getGameDayMs(): number {
+  return getGameDayMinutes() * 60 * 1000;
+}
+
+/**
+ * Time left until an entry made at `since` leaves the rolling game-day window
+ * (used for the bank's "next deposit in" countdown). Zero once it has left.
+ */
+export function getGameDayWindowCountdown(
+  since: Date | string,
+  now: Date = new Date(),
+): { hours: number; minutes: number; seconds: number } {
+  const timeDiff = new Date(since).getTime() + getGameDayMs() - now.getTime();
+  if (timeDiff <= 0) return { hours: 0, minutes: 0, seconds: 0 };
+  return {
+    hours: Math.floor(timeDiff / (1000 * 60 * 60)),
+    minutes: Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60)),
+    seconds: Math.floor((timeDiff % (1000 * 60)) / 1000),
+  };
+}
+
+/** Index of the game day within its OT calendar day (always 0 on real days). */
+function gameDayBlock(p: ZonedParts, minutes: number): number {
+  return Math.floor((p.hour * 60 + p.minute) / minutes);
+}
+
+/**
+ * Start of the game day containing `from`, optionally offset by N game days.
+ * Game days are aligned to OT midnight; on a real-day server this equals
+ * getOTStartDate.
+ */
+export function getGameDayStart(
+  add: number = 0,
+  from: Date = getOTTime(),
+): Date {
+  const minutes = getGameDayMinutes();
+  const p = zonedParts(from);
+  return otWallClockToDate(
+    p.year,
+    p.month,
+    p.day,
+    0,
+    (gameDayBlock(p, minutes) + add) * minutes,
+  );
+}
+
+/**
+ * Key of the game day containing an instant: YYYY-MM-DD on a real-day server,
+ * YYYY-MM-DD#n (n = game day within the calendar day) on an accelerated one.
+ */
+export function getGameDayKey(date: Date = getOTTime()): string {
+  const minutes = getGameDayMinutes();
+  const dayKey = getOTDayKey(date);
+  if (minutes === MINUTES_PER_DAY) return dayKey;
+  return `${dayKey}#${gameDayBlock(zonedParts(date), minutes)}`;
 }
 
 /** Formats an instant as an OT-time clock reading ("HH:MM" by default). */

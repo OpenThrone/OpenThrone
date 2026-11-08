@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
-import { SocialService } from '@/services/Social.service';
+import {
+  NO_ACTIVE_RELATIONSHIP_ERROR,
+  SocialService,
+} from '@/services/Social.service';
 import { logError } from '@/utils/logger';
 import { publicErrorMessage } from '@/utils/publicError';
 
@@ -35,7 +38,11 @@ const handler = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     logError('Error ending friendship:', error);
-    return res.status(500).json({ error: publicErrorMessage(error) });
+    const status =
+      error instanceof Error && error.message === NO_ACTIVE_RELATIONSHIP_ERROR
+        ? 404
+        : 500;
+    return res.status(status).json({ error: publicErrorMessage(error) });
   }
 };
 

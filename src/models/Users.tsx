@@ -757,12 +757,20 @@ class UserModel {
     return this.economyService.getWorkerGoldPerTurn();
   }
 
+  get incomeBreakdown() {
+    return this.economyService.getIncomeBreakdown();
+  }
+
   get goldPerWorkerPerTurn(): number {
     return this.economyService.getGoldPerWorkerPerTurn();
   }
 
   get maximumBankDeposits(): number {
     return this.economyService.getMaximumBankDeposits();
+  }
+
+  get bankCap(): number {
+    return this.economyService.getBankCap();
   }
 
   // Recruit / session helpers

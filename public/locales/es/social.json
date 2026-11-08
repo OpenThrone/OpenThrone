@@ -104,7 +104,7 @@
     "receiveLimitHint": "También se aplica el límite de recepción de tu amigo.",
     "overDailyLimit": "Más que tu límite diario restante de {{amount}} de oro.",
     "lockedTitle": "Transferencias de oro bloqueadas",
-    "locked": "Las transferencias de oro se desbloquean con el {{upgrade}}.",
+    "locked": "Las transferencias de oro se desbloquean con {{upgrade}}.",
     "limitsFailed": "No se pudieron cargar tus límites de transferencia.",
     "levelLockedTitle": "Nivel demasiado bajo",
     "levelLockedSelf": "Requiere nivel {{level}}. Alcanza el nivel {{level}} para enviar transferencias de oro.",

@@ -42,4 +42,4 @@ Capture overview with empty and populated dispatches, attack users and current c
 
 - 21 targeted Bun tests passed across login policy, existing-session validation, denied credential login, player-count API and user-data service suites. Checks ran with automatic env-file loading disabled and mocked data access.
 - TypeScript passed for the application. Changed-file ESLint and whitespace checks passed; final checks are recorded in the task response.
-- Browser creation also failed with `Browser is not available: iab`; no live visual pass was performed. Remaining work is tracked in [Forgejo issue #12](http://192.168.4.3:3000/dastacomann/OpenThrone/issues/12).
+- Browser creation also failed with `Browser is not available: iab`; no live visual pass was performed. Remaining work is tracked in Forgejo issue #12.

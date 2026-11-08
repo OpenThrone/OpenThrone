@@ -82,8 +82,23 @@ export default function MercenariesSection() {
         framed={false}
       >
         <MercenaryBarracks
+          fortLevel={1}
+          economyLevel={0}
+          armyShare={{ mercenaries: 23, trainedUnits: 100, allowed: 50 }}
+          gold="9000000"
+          offers={offers}
+          contracts={contracts}
+          onOrder={order}
+        />
+      </Specimen>
+      <Specimen
+        name="Mercenary barracks · higher tiers locked"
+        usedOn={['/battle/mercenaries']}
+        framed={false}
+      >
+        <MercenaryBarracks
           fortLevel={2}
-          economyLevel={2}
+          economyLevel={0}
           armyShare={{ mercenaries: 23, trainedUnits: 100, allowed: 50 }}
           gold="9000000"
           offers={offers}

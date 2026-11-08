@@ -104,7 +104,7 @@
     "receiveLimitHint": "Their receive limit applies too.",
     "overDailyLimit": "More than your remaining daily allowance of {{amount}} gold.",
     "lockedTitle": "Gold transfers locked",
-    "locked": "Gold transfers unlock with the {{upgrade}}.",
+    "locked": "Gold transfers unlock with {{upgrade}}.",
     "limitsFailed": "Could not load your transfer limits.",
     "levelLockedTitle": "Level too low",
     "levelLockedSelf": "Requires level {{level}}. Reach level {{level}} to send gold transfers.",

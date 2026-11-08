@@ -2,6 +2,8 @@
 
 Date: 2026-07-15
 
+> Historical report. It describes the game as of its date: for example, stamina no longer comes from the turn job, and `src/sim` has gained live-rules and ERA modes. For current rules see [mechanics](mechanics/README.md).
+
 ## Executive conclusion
 
 The current code gives every new or reset ERA account the same reproducible start: **50 citizens, 25,000 hand gold, 50 attack turns, 100 stamina, and zero workers/offense/defense/spy/sentry units**. At the documented 30-minute tick rate, even an untouched level-1 account gains 48,000 gold and 48 stored turns per day, plus one citizen per daily reset.

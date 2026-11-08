@@ -50,7 +50,12 @@ describe('resetCurrentEra', () => {
         updateMany: vi.fn(async () => ({ count: 0 })),
       },
       userUnit: { deleteMany: vi.fn(), createMany: vi.fn() },
-      userItem: { deleteMany: vi.fn(), createMany: vi.fn() },
+      userItem: {
+        deleteMany: vi.fn(),
+        createMany: vi.fn(),
+        findMany: vi.fn(async () => []),
+      },
+      itemLedgerEntry: { createMany: vi.fn() },
       userStructureUpgrade: { deleteMany: vi.fn(), createMany: vi.fn() },
       userBattleUpgrade: { deleteMany: vi.fn(), createMany: vi.fn() },
       userBonusPoints: { deleteMany: vi.fn(), createMany: vi.fn() },
@@ -76,6 +81,7 @@ describe('resetCurrentEra', () => {
       alliance_cooldowns: { deleteMany: vi.fn() },
       autoRecruitSession: { deleteMany: vi.fn() },
       userEra: { deleteMany: vi.fn() },
+      userEraActivity: { deleteMany: vi.fn() },
       // Dungeon captives (#210) are freed without returning at era reset.
       captive: { deleteMany: vi.fn(async () => ({ count: 0 })) },
       alliances: {
@@ -132,6 +138,9 @@ describe('resetCurrentEra', () => {
       where: { timestamp: { gte: startDate } },
     });
     expect(tx.userEra.deleteMany).toHaveBeenCalledWith({ where: { eraId: 7 } });
+    expect(tx.userEraActivity.deleteMany).toHaveBeenCalledWith({
+      where: { eraId: 7 },
+    });
     expect(tx.responseCache.deleteMany).toHaveBeenCalledWith({
       where: {
         key: {

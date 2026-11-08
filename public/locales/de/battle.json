@@ -17,6 +17,7 @@
     "attack": "Angreifen",
     "attackConfirm": "Sind Sie sicher, dass Sie {{player}} angreifen möchten?",
     "attackSuccess": "Angriff erfolgreich!",
+    "pairCapReached": "Sie haben das Limit von {{limit}} Angriffen auf diesen Spieler pro rollierendem Spieltag erreicht. Sie können ihn in {{wait}} wieder angreifen.",
     "attackFailed": "Angriff fehlgeschlagen!",
     "noTarget": "Bitte wählen Sie ein Ziel aus, bevor Sie angreifen.",
     "insufficientTurns": "Sie haben nicht genügend Züge zum Angreifen.",
@@ -121,8 +122,8 @@
     "loadingUserData": "Benutzerdaten werden geladen...",
     "you": "Sie",
     "attackRangeSentence": "Sie können Spieler der Stufen <strong>{{min}}</strong> bis <strong>{{max}}</strong> angreifen.",
-    "protected": "Geschützt",
-    "protectedHint": "Neuspielerschutz: Angriffe erbeuten nur einen kleinen Teil ihres Goldes."
+    "protected": "Gold geschützt",
+    "protectedHint": "Neuspieler-Goldschutz: Angriffe kosten weiterhin Einheiten und Festungs-HP. Nur die ersten {{allowance}} Gold auf der Hand sind geschützt — Räubern bleiben davon auf Stufe 1 höchstens {{share}} % des normalen Beuteanteils, auf Stufe {{taperLevel}} das Ganze."
   },
   "warHistory": {
     "title": "Kriegsgeschichte",
@@ -140,6 +141,8 @@
     "timestamp": "Zeit",
     "attackLog": "Angriffsprotokoll",
     "defenseLog": "Verteidigungsprotokoll",
+    "spyLog": "Spionagemissionen",
+    "noSpyMissions": "Noch keine Spionagemissionen ausgesandt.",
     "outcome": "Ergebnis",
     "player": "Spieler",
     "pillageAndExp": "Beute & EP",
@@ -151,7 +154,7 @@
     "showDetails": "Kampfdetails einblenden",
     "hideDetails": "Kampfdetails ausblenden",
     "goldBadge": "Gold: {{gold}}",
-    "xpBadge": "EP: {{xp}}",
+    "xpBadge": "Ihre EP: {{xp}}",
     "turnsBadge": "Züge: {{turns}}",
     "unknownPlayer": "Unbekannt",
     "missionType": {
@@ -159,7 +162,8 @@
       "INTEL": "Aufklärung",
       "ASSASSINATE": "Attentat",
       "INFILTRATE": "Infiltration"
-    }
+    },
+    "fortHpChange": "{{start}} → {{end}} TP"
   },
   "battleSimulator": {
     "title": "Kampfsimulator",
@@ -293,6 +297,7 @@
     "goldOnHand": "Gold zur Hand",
     "bankedGold": "Bankiertes Gold",
     "defenseRatio": "Verteidigungsverhältnis",
+    "defenseRatioHint": "Verteidigungseinheiten als Anteil deiner gesamten Bevölkerung. Unter {{threshold}} % richten Angreifer mehr Schaden an deinem Fort an und erbeuten mehr Gold.",
     "trainingProgress": "Trainingsfortschritt: bereit",
     "economy": "Wirtschaft",
     "offense": "Angriff",
@@ -420,7 +425,7 @@
     "defenderLost": "Verluste Verteidiger",
     "attackLine": "Angriffstruppen: {{soldiers}} Soldaten.",
     "counterLine": "Der Gegenangriff von {{player}} tötete {{dead}} Angreifer.",
-    "lossLine": "{{player}} verlor {{dead}} Soldaten.",
+    "lossLine": "{{player}} verlor {{dead}} Einheiten.",
     "victory": "Sieg",
     "defeat": "Niederlage",
     "attackerVictory": "Sieg des Angreifers",
@@ -514,10 +519,12 @@
     "playerEarnedXp": "{{player}} hat {{xp}} EP erhalten.",
     "goldPillaged": "Geplündertes Gold: {{gold}}",
     "fortDamage": "Vom Angreifer verursachter Festungsschaden: {{damage}}",
-    "youLostSoldiers_one": "Sie haben {{dead}} Soldaten verloren.",
-    "youLostSoldiers_other": "Sie haben {{dead}} Soldaten verloren.",
-    "playerLostSoldiers_one": "{{player}} hat {{dead}} Soldaten verloren.",
-    "playerLostSoldiers_other": "{{player}} hat {{dead}} Soldaten verloren.",
+    "youLostUnits_one": "Sie haben {{dead}} Einheit verloren.",
+    "youLostUnits_other": "Sie haben {{dead}} Einheiten verloren.",
+    "youLostUnitType": "Sie haben 1 Einheit ({{unit}}) verloren.",
+    "playerLostUnits_one": "{{player}} hat {{dead}} Einheit verloren.",
+    "playerLostUnits_other": "{{player}} hat {{dead}} Einheiten verloren.",
+    "playerLostUnitType": "{{player}} hat 1 Einheit ({{unit}}) verloren.",
     "captivesTaken_one": "Gefangene genommen: {{taken}}.",
     "captivesTaken_other": "Gefangene genommen: {{taken}}.",
     "troopsTakenCaptive_one": "{{taken}} Ihrer Truppen wurde gefangen genommen.",
@@ -607,7 +614,8 @@
       "dailyLimit_one": "Sie können nur {{count}} Infiltrationsversuch pro 24 Stunden unternehmen. Verbessern Sie Ihr Spionagegebäude, um die Anzahl der Versuche pro Tag zu erhöhen!",
       "dailyLimit_other": "Sie können nur {{count}} Infiltrationsversuche pro 24 Stunden unternehmen. Verbessern Sie Ihr Spionagegebäude, um die Anzahl der Versuche pro Tag zu erhöhen!",
       "turnsInfo": "Infiltrationen verbrauchen 2 bis 10 Angriffszüge. Mehr Züge erhöhen die Tiefe der Sabotage und das Entdeckungsrisiko."
-    }
+    },
+    "upgradeWithFort": "{{upgrade}} — Geheimdienst-Verbesserungen, benötigt {{fort}}"
   },
   "battleUpgradeNames": {
     "steeds": "Schlachtrösser",

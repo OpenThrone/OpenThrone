@@ -8,12 +8,14 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { NotificationData } from '@mantine/notifications';
 import { Notifications, notifications } from '@mantine/notifications';
+import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useRef } from 'react';
 
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import type { AlertType } from '@/services/Alert.service';
 import { alertService } from '@/services/Alert.service';
+import { toastsToHideOnNavigation } from '@/utils/toastScope';
 
 import classes from './GameNotifications.module.css';
 
@@ -51,6 +53,23 @@ export default function GameNotifications() {
   const loadingIdRef = useRef<string | null>(null);
   const lastAlertRef = useRef<AlertType | null>(null);
   const lastTypeRef = useRef<AlertType['type'] | null>(null);
+  /** Toasts that belong to the page they were raised on, by id → shown at. */
+  const pageToastsRef = useRef(new Map<string, number>());
+  const router = useRouter();
+
+  // Notices describe the page that raised them; leaving it dismisses them
+  // instead of carrying "Units trained" onto the Bank (#277).
+  useEffect(() => {
+    const onRouteChangeStart = () => {
+      const pageToasts = pageToastsRef.current;
+      for (const id of toastsToHideOnNavigation(pageToasts, Date.now())) {
+        notifications.hide(id);
+        pageToasts.delete(id);
+      }
+    };
+    router.events.on('routeChangeStart', onRouteChangeStart);
+    return () => router.events.off('routeChangeStart', onRouteChangeStart);
+  }, [router.events]);
 
   useEffect(() => {
     const subscription = alertService.alert.subscribe((alert) => {
@@ -104,11 +123,13 @@ export default function GameNotifications() {
         withCloseButton: true,
       };
 
+      let toastId: string;
       if (
         loadingIdRef.current &&
         (alert.type === 'success' || alert.type === 'error')
       ) {
-        notifications.update({ ...data, id: loadingIdRef.current });
+        toastId = loadingIdRef.current;
+        notifications.update({ ...data, id: toastId });
         loadingIdRef.current = null;
       } else {
         // An info/warn replaces the loading alert, so updateLoading can no
@@ -117,7 +138,10 @@ export default function GameNotifications() {
           notifications.hide(loadingIdRef.current);
           loadingIdRef.current = null;
         }
-        notifications.show(data);
+        toastId = notifications.show(data);
+      }
+      if (!alert.showAfterRedirect) {
+        pageToastsRef.current.set(toastId, Date.now());
       }
 
       // Clear so a late subscriber does not replay this alert.

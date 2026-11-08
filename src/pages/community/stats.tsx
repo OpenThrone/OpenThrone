@@ -160,6 +160,7 @@ const StatsGrid = ({ data, mode }: StatsGridProps) => {
         <StatsTable
           title={t('stats.top10WealthiestPlayers')}
           data={data.totalWealth}
+          description={t('stats.top10WealthiestPlayersDescription')}
         />
       </Grid.Col>
       <Grid.Col span={{ base: 12, lg: 6 }}>

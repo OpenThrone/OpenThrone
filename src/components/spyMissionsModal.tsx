@@ -19,13 +19,17 @@ import type { FC } from 'react';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import QuantitySlider from '@/components/battle/QuantitySlider';
-import { SpyUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 import { clampMissionQuantity } from '@/utils/missionQuantity';
 import { CITIZEN_WORKERS_TARGET } from '@/utils/spy/results';
+import {
+  fortRequirementName,
+  spyUpgradeForLevel,
+  structureName,
+} from '@/utils/structureNames';
 
 interface ModalProps {
   isOpen: boolean;
@@ -250,9 +254,14 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
   );
 
   const getUpgradeInfo = useCallback(
-    (level = 1): string => {
-      const validLevel = Math.max(0, Math.min(level, SpyUpgrades.length - 1));
-      return SpyUpgrades[validLevel]?.name ?? t('spyMissions.unknownUpgrade');
+    (level?: number): string => {
+      const upgrade = spyUpgradeForLevel(level);
+      if (!upgrade) return t('spyMissions.unknownUpgrade');
+      return t('spyMissions.upgradeWithFort', {
+        upgrade:
+          structureName(t, 'spy', upgrade.level, upgrade.name) ?? upgrade.name,
+        fort: fortRequirementName(t, upgrade.fortLevelRequirement),
+      });
     },
     [t],
   );

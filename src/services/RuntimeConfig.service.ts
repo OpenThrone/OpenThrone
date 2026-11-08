@@ -33,6 +33,9 @@ export interface RuntimeConfig {
   friendDailyReceivedCap?: number;
   /** Minimum player level to send or receive a friend gold transfer (1-100). */
   friendTransferMinLevel?: number;
+  friendRequestCooldownDays?: number;
+  friendRequestMaxDeclines?: number;
+  friendRequestDailyCap?: number;
   maxPendingGoldRequests?: number;
   forceMaxQuantity?: number;
   forceMaxTermDays?: number;
@@ -180,6 +183,11 @@ export async function getRuntimeConfig(
         depositCapPercent: values['bank.depositCapPercent'] as number,
         friendDailyReceivedCap: values['friend.dailyReceivedCap'] as number,
         friendTransferMinLevel: values['friend.transferMinLevel'] as number,
+        friendRequestCooldownDays: values[
+          'friend.requestCooldownDays'
+        ] as number,
+        friendRequestMaxDeclines: values['friend.requestMaxDeclines'] as number,
+        friendRequestDailyCap: values['friend.requestDailyCap'] as number,
         maxPendingGoldRequests: values[
           'alliance.maxPendingGoldRequests'
         ] as number,

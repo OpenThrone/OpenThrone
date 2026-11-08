@@ -29,7 +29,7 @@ import type { Locales } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { logError } from '@/utils/logger'; // Import logError
 import { toLocale } from '@/utils/numberFormatting';
-import { fortificationName, structureName } from '@/utils/structureNames';
+import { fortRequirementName, structureName } from '@/utils/structureNames';
 
 /**
  * Page component for viewing and upgrading housing structures.
@@ -109,7 +109,8 @@ const Housing: React.FC = () => {
       reasons.push(
         t('housing.requiresFortification', {
           name:
-            fortificationName(t, nextUpgrade.fortLevel) ?? t('housing.unknown'),
+            fortRequirementName(t, nextUpgrade.fortLevel) ??
+            t('housing.unknown'),
         }),
       );
     tooltipMessage = reasons.join(` ${t('housing.and')} `);
@@ -214,7 +215,7 @@ const Housing: React.FC = () => {
               )}
               {renderSlotRow(
                 t('housing.fortificationRequired'),
-                fortificationName(t, nextUpgrade.fortLevel) ??
+                fortRequirementName(t, nextUpgrade.fortLevel) ??
                   t('housing.notAvailable'),
                 needsHigherFort,
               )}

@@ -100,7 +100,7 @@ export const ItemTypes: Item[] = [
     cost: 750000,
     type: 'WEAPON',
     race: 'HUMAN',
-    armoryLevel: 7,
+    armoryLevel: 6,
     MeleeAtkPower: 1200,
     MeleeDefPower: 300,
     RangedAtkPower: 0,

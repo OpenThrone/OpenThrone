@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import { RegisterSchema } from '@/lib/validation';
+import { RecruitSchema, RegisterSchema } from '@/lib/validation';
 
 const validRegistration = {
   email: 'commander@example.com',
@@ -32,5 +32,23 @@ describe('RegisterSchema', () => {
     const result = RegisterSchema.safeParse(validRegistration);
 
     expect(result.success).toBe(true);
+  });
+});
+
+describe('RecruitSchema', () => {
+  // With CAPTCHA off there is no Turnstile widget, so the client sends
+  // `captchaToken: null`; that must not fail as "Invalid input".
+  it('accepts a null captcha token', () => {
+    const result = RecruitSchema.safeParse({
+      recruitedUserId: 'abc123',
+      selfRecruit: false,
+      captchaToken: null,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('still rejects a non-string captcha token', () => {
+    const result = RecruitSchema.safeParse({ captchaToken: 42 });
+    expect(result.success).toBe(false);
   });
 });

@@ -575,36 +575,18 @@ export class AccountService {
           throw new Error('Fortification is already at full health or above.');
         }
 
-        // Calculate cost
-        const totalCost =
-          BigInt(validatedData.repairPoints) *
-          BigInt(fortification.costPerRepairPoint);
-        if (user.gold < totalCost) {
-          throw new Error(
-            `Not enough gold. You need ${BigInt(totalCost).toLocaleString('en-US')} but have ${BigInt(user.gold).toLocaleString('en-US')}.`,
-          );
-        }
-
-        // Calculate new hitpoints
+        // Only the missing hit points are charged, however many were requested.
         const currentHp = user.fort_hitpoints;
-        let newFortHitpoints = user.fort_hitpoints + validatedData.repairPoints;
-        if (newFortHitpoints > fortification.hitpoints) {
-          newFortHitpoints = fortification.hitpoints;
-        }
-        const actualRepairAmount = newFortHitpoints - currentHp;
-
-        if (actualRepairAmount <= 0) {
-          throw new Error(
-            'Calculated repair amount is zero or negative, cannot proceed.',
-          );
-        }
-
-        // Recalculate cost based on actual repair amount
+        const actualRepairAmount = Math.min(
+          validatedData.repairPoints,
+          fortification.hitpoints - currentHp,
+        );
+        const newFortHitpoints = currentHp + actualRepairAmount;
         const finalCost =
           BigInt(actualRepairAmount) * BigInt(fortification.costPerRepairPoint);
         if (user.gold < finalCost) {
           throw new Error(
-            `Not enough gold for actual repair. Required: ${finalCost}, Available: ${user.gold}`,
+            `Not enough gold. You need ${finalCost.toLocaleString('en-US')} but have ${BigInt(user.gold).toLocaleString('en-US')}.`,
           );
         }
 

@@ -63,6 +63,13 @@ export type SpyIntelligence = {
   defense: number | null;
   spyOffense: number | null;
   spyDefense: number | null;
+  /**
+   * Exact total population at report time (units + mercenaries), matching the
+   * attack list (#286). Unlike every other field it is always gathered:
+   * population is public, so it is not sampled down to intel quality. Reports
+   * stored before this field exists have null and fall back to the old label.
+   */
+  population: number | null;
   units: SpyRosterUnit[] | null;
   mercenaries: SpyRosterUnit[] | null;
   items: SpyInventoryItem[] | null;

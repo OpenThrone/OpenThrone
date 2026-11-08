@@ -13,7 +13,7 @@
   "price": "Per unit: {{mobilization}} gold mobilization + {{daily}} gold/day. Total: {{total}} gold.",
   "cap": "Up to 100 surviving mercenaries per role, including wounded troops.",
   "shareCap": "Mercenaries: {{mercenaries}} / {{allowed}} allowed (at most half your own army).",
-  "lockedHall": "Mercenaries unlock with the {{upgrade}}.",
+  "lockedHall": "Mercenaries unlock at level {{level}}, once your fort is a Village.",
   "tierLocked": "unlocks with {{upgrade}}",
   "hire": "Hire \u00b7 {{total}} gold",
   "contractsTitle": "Your contracts",

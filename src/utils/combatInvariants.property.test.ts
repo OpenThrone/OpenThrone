@@ -392,9 +392,10 @@ describe('battle engine invariant gates (fuzzed)', () => {
             result.Losses.Attacker.total + sumQty(result.wounded.attacker);
 
           // A won assault always lands one hit, so the 8% cap floors at 1.
+          // combat-v12 rounds the cap up by chance, so it can reach the ceiling.
           const defCap = Math.max(
             result.result === 'WIN' ? 1 : 0,
-            Math.floor(defPop * C.SINGLE_ATTACK_POPULATION_LOSS_CAP),
+            Math.ceil(defPop * C.SINGLE_ATTACK_POPULATION_LOSS_CAP),
           );
           if (defLost > defCap)
             out.push(

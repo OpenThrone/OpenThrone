@@ -15,7 +15,7 @@ import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { getRequiredEconomyUpgradeName } from '@/constants/FeatureUnlocks';
+import { FEATURE_REQUIREMENTS } from '@/constants/FeatureUnlocks';
 import {
   FRIEND_TRANSFER_MIN_LEVEL_DEFAULT,
   FRIEND_TRANSFER_NOTE_MAX_LENGTH,
@@ -28,6 +28,7 @@ import type { Locales } from '@/types/typings';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
 import { formatGold } from '@/utils/numberFormatting';
+import { economyRequirementName } from '@/utils/structureNames';
 
 /** Daily gold transfer limits, as returned by the transfer-limits endpoint. */
 export interface TransferLimits {
@@ -177,7 +178,10 @@ export function GoldTransferModal({
 
   const activeLimits = limitsOverride ?? limits;
   const isLocked = activeLimits !== null && !activeLimits.unlocked;
-  const upgradeName = getRequiredEconomyUpgradeName('GOLD_TRANSFER');
+  const upgradeName = economyRequirementName(
+    t,
+    FEATURE_REQUIREMENTS.GOLD_TRANSFER.economyLevel,
+  );
   // Which side is under the minimum player level; the sender's own level wins.
   const levelBlock: 'send' | 'receive' | null =
     activeLimits === null

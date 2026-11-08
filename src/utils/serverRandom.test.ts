@@ -74,6 +74,7 @@ describe('private combat random streams', () => {
     // Versions with a ruleset replay.
     expect(isRetiredCombatReplayVersion('combat-v9')).toBe(false);
     expect(isRetiredCombatReplayVersion('combat-v10')).toBe(false);
+    expect(isRetiredCombatReplayVersion('combat-v11')).toBe(false);
     // Anything else is not a retired version: it is rejected.
     expect(isRetiredCombatReplayVersion('combat-v99')).toBe(false);
     expect(isRetiredCombatReplayVersion('unsupported-formula')).toBe(false);
@@ -82,7 +83,7 @@ describe('private combat random streams', () => {
 
   it('refuses to replay a version that has no ruleset', () => {
     const { replay } = createCombatRandom('attack');
-    for (const formulaVersion of ['combat-v7', 'combat-v8', 'combat-v11']) {
+    for (const formulaVersion of ['combat-v7', 'combat-v8', 'combat-v99']) {
       expect(() => replayCombatRandom({ ...replay, formulaVersion })).toThrow(
         'Unsupported combat replay',
       );

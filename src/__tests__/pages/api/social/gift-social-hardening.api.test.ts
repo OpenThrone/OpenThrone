@@ -194,7 +194,8 @@ describe('friend and enemy requests (SOC-03)', () => {
       runtimeSpy?.mockRestore();
       mockPrisma.$transaction = vi.fn(async (cb: any) => cb(mockPrisma));
       mockPrisma.$queryRaw = vi.fn().mockResolvedValue([]);
-      mockPrisma.social.findFirst = vi.fn().mockResolvedValue(null);
+      mockPrisma.social.findMany = vi.fn().mockResolvedValue([]);
+      mockPrisma.social.count = vi.fn().mockResolvedValue(0);
       mockPrisma.social.create = vi.fn(async ({ data }: any) => ({
         id: 1,
         ...data,

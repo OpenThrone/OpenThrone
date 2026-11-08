@@ -11,7 +11,8 @@
     "requestToJoin": "Solicitar unirse",
     "joinSuccess": "Te has unido a la alianza.",
     "manage": "Ver panel",
-    "joinError": "No se pudo unir a la alianza"
+    "joinError": "No se pudo unir a la alianza",
+    "noAlliancesHint": "Nadie ha fundado una alianza todavía. Funda la primera e invita a tus amigos."
   },
   "create": {
     "title": "Crear Alianza",
@@ -78,8 +79,8 @@
   },
   "mine": {
     "title": "Mis alianzas",
-    "count_one": "Perteneces a {{count}} de {{max}} alianzas",
-    "count_other": "Perteneces a {{count}} de {{max}} alianzas",
+    "count_one": "Estás en {{count}} alianza (puedes unirte a {{max}} como máximo)",
+    "count_other": "Estás en {{count}} alianzas (puedes unirte a {{max}} como máximo)",
     "browse": "Explorar alianzas",
     "create": "Crear alianza",
     "createLeading": "Ya lideras una alianza. Cede el liderazgo o disuélvela antes de crear otra.",

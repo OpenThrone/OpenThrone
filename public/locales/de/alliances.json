@@ -11,7 +11,8 @@
     "requestToJoin": "Beitritt anfragen",
     "joinSuccess": "Sie sind der Allianz beigetreten.",
     "manage": "Übersicht öffnen",
-    "joinError": "Beitritt zur Allianz fehlgeschlagen"
+    "joinError": "Beitritt zur Allianz fehlgeschlagen",
+    "noAlliancesHint": "Noch hat niemand eine Allianz gegründet. Gründe die erste und lade deine Freunde ein."
   },
   "create": {
     "title": "Allianz erstellen",
@@ -78,8 +79,8 @@
   },
   "mine": {
     "title": "Meine Allianzen",
-    "count_one": "Sie gehören {{count}} von {{max}} Allianzen an",
-    "count_other": "Sie gehören {{count}} von {{max}} Allianzen an",
+    "count_one": "Sie sind in {{count}} Allianz (höchstens {{max}} möglich)",
+    "count_other": "Sie sind in {{count}} Allianzen (höchstens {{max}} möglich)",
     "browse": "Allianzen durchsuchen",
     "create": "Allianz erstellen",
     "createLeading": "Sie führen bereits eine Allianz. Übergeben Sie die Führung oder lösen Sie sie auf, bevor Sie eine weitere erstellen.",

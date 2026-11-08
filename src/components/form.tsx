@@ -28,6 +28,11 @@ import { Controller, useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { z } from 'zod';
 
+import {
+  getClassBonusPercent,
+  PLAYER_CLASSES,
+  type PlayerClass,
+} from '@/utils/classBonuses';
 import { logError } from '@/utils/logger';
 import { safeLoginReturnPath } from '@/utils/loginReturn';
 
@@ -50,7 +55,7 @@ const registerSchema = z
     /** Selected player race. */
     race: z.enum(['HUMAN', 'UNDEAD', 'GOBLIN', 'ELF']),
     /** Selected player class. */
-    class: z.enum(['FIGHTER', 'CLERIC', 'ASSASSIN', 'THIEF']),
+    class: z.enum(PLAYER_CLASSES),
     /** 16 or older and has read the Privacy Policy (server checks it too). */
     acceptTerms: z.literal(true, {
       errorMap: () => ({ message: 'auth.acceptTermsRequired' }),
@@ -141,6 +146,10 @@ const Form: React.FC<FormProps> = ({
   const { t, i18n } = useTranslation('account');
   const { t: tCommon } = useTranslation('common');
   const { t: tLore } = useTranslation('how-to-play');
+  const classDescription = (playerClass: PlayerClass) =>
+    tCommon(`classDescriptions.${playerClass}`, {
+      amount: getClassBonusPercent(playerClass),
+    });
   const [showVacationModal, setShowVacationModal] = useState(false);
   const [erasureDate, setErasureDate] = useState<string | null>(null);
   const [cancellingErasure, setCancellingErasure] = useState(false);
@@ -699,12 +708,24 @@ const Form: React.FC<FormProps> = ({
                     label={t('auth.classLabel')}
                     placeholder={t('auth.pickOne')}
                     required
-                    data={[
-                      { value: 'FIGHTER', label: tCommon('classes.FIGHTER') },
-                      { value: 'CLERIC', label: tCommon('classes.CLERIC') },
-                      { value: 'ASSASSIN', label: tCommon('classes.ASSASSIN') },
-                      { value: 'THIEF', label: tCommon('classes.THIEF') },
-                    ]}
+                    data={PLAYER_CLASSES.map((playerClass) => ({
+                      value: playerClass,
+                      label: tCommon(`classes.${playerClass}`),
+                    }))}
+                    // Classes are permanent: say what each one gives (#282).
+                    description={
+                      field.value
+                        ? classDescription(field.value as PlayerClass)
+                        : tCommon('classHint')
+                    }
+                    renderOption={({ option }) => (
+                      <div>
+                        <Text size="sm">{option.label}</Text>
+                        <Text size="xs" c="dimmed">
+                          {classDescription(option.value as PlayerClass)}
+                        </Text>
+                      </div>
+                    )}
                     size="md"
                     styles={inputStyles}
                     {...field}

@@ -20,7 +20,13 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
 
-type Kind = 'transfers' | 'recruits' | 'logins' | 'suppressions' | 'blocks';
+type Kind =
+  | 'transfers'
+  | 'recruits'
+  | 'logins'
+  | 'drift'
+  | 'suppressions'
+  | 'blocks';
 type Row = Record<string, string | number | boolean | null>;
 type Result = {
   rows: Row[];
@@ -46,6 +52,21 @@ const config = {
       'ipPrefixHash',
       'userAgentHash',
       'deviceHash',
+    ],
+  },
+  drift: {
+    permission: 'VIEW_ECONOMY',
+    columns: [
+      'id',
+      'userId',
+      'type',
+      'usage',
+      'level',
+      'checkpointQuantity',
+      'ledgerDelta',
+      'actualQuantity',
+      'drift',
+      'createdAt',
     ],
   },
   suppressions: {
@@ -96,7 +117,7 @@ export default function LedgersPage() {
         return;
       }
       const params = new URLSearchParams({ page: String(page) });
-      if (from && ['transfers', 'recruits', 'logins'].includes(kind))
+      if (from && ['transfers', 'recruits', 'logins', 'drift'].includes(kind))
         params.set('from', from);
       if (to && ['transfers', 'recruits'].includes(kind)) params.set('to', to);
       if (start && !['suppressions', 'blocks'].includes(kind))
@@ -131,6 +152,8 @@ export default function LedgersPage() {
     return () => controller.abort();
   }, [load]);
   const changeKind = (value: string | null) => {
+    // Re-selecting the open tab must not clear results it will not reload.
+    if (value === kind) return;
     setKind(value as Kind | null);
     setFrom('');
     setTo('');
@@ -193,8 +216,9 @@ export default function LedgersPage() {
               <Text size="sm">{t('suppressionWarning')}</Text>
             )}
             {kind === 'logins' && <Text size="sm">{t('loginNote')}</Text>}
+            {kind === 'drift' && <Text size="sm">{t('driftNote')}</Text>}
             <Group align="end">
-              {['transfers', 'recruits', 'logins'].includes(kind) && (
+              {['transfers', 'recruits', 'logins', 'drift'].includes(kind) && (
                 <TextInput
                   label={t(
                     kind === 'transfers'
@@ -271,7 +295,10 @@ export default function LedgersPage() {
                         {config[kind].columns.map((column) => (
                           <Table.Td
                             key={column}
-                            style={{ overflowWrap: 'anywhere' }}
+                            style={{
+                              overflowWrap:
+                                kind === 'drift' ? 'normal' : 'anywhere',
+                            }}
                           >
                             {String(row[column] ?? '—')}
                           </Table.Td>

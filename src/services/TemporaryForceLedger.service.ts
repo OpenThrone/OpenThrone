@@ -13,6 +13,7 @@ import {
   assertForceBorrowingAllowed,
   returnForceInTx,
 } from '@/services/ForceLifecycle.service';
+import { recordItemLedger } from '@/services/ItemLedger.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { recomputeStoredStatsInTx } from '@/utils/adminRecomputeStats';
 import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
@@ -267,6 +268,17 @@ export class TemporaryForceLedgerService {
       if (debit.count !== 1)
         throw new Error('Insufficient equipment for fully equipped troops');
     }
+    await recordItemLedger(
+      tx,
+      userId,
+      'FORCE_CONTRIBUTION',
+      equipment.map((item) => ({
+        type: item.type,
+        usage: role,
+        level: item.level,
+        delta: -quantity,
+      })),
+    );
     const debit = await tx.userUnit.updateMany({
       where: {
         id: unitId,

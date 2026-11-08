@@ -2,6 +2,7 @@
 // The server enforces these with hasFeature; the UI uses getFeatureRequirement
 // to show what a locked feature needs.
 
+import { Fortifications } from '@/constants/Fortifications';
 import { EconomyUpgrades } from '@/constants/Structure_Upgrades';
 
 export const FEATURE_KEYS = [
@@ -33,9 +34,11 @@ export interface FeatureRequirement {
 
 export const FEATURE_REQUIREMENTS: Record<FeatureKey, FeatureRequirement> = {
   GOLD_TRANSFER: { economyLevel: 3 }, // Coal Mine
-  MERCENARY_HALL: { economyLevel: 4 }, // Tavern
-  MERCENARY_COMPANIES: { economyLevel: 5 }, // Copper Mine
-  MERCENARY_ELITE: { economyLevel: 6 }, // Meat Market
+  MERCENARY_HALL: { fortLevel: 2 }, // Village, from player level 5
+  // Tiers 2 and 3 open with the fort that trains the native units. Spy and
+  // Sentry tiers ask for more through their own unit fortLevel.
+  MERCENARY_COMPANIES: { fortLevel: 4 }, // Outpost, from player level 15
+  MERCENARY_ELITE: { fortLevel: 7 }, // Stronghold, from player level 30
   DUNGEON: { fortLevel: 13 }, // Citadel
   REANIMATION: { race: 'UNDEAD', fortLevel: 5 },
 };
@@ -81,4 +84,29 @@ export const getRequiredEconomyUpgradeName = (
   const level = FEATURE_REQUIREMENTS[key].economyLevel;
   if (level === undefined) return null;
   return EconomyUpgrades.find((u) => u.index === level)?.name ?? null;
+};
+
+/** Name of the fort a feature requires, for "unlocks with the <fort>" copy. */
+export const getRequiredFortName = (key: FeatureKey): string | null => {
+  const level = FEATURE_REQUIREMENTS[key].fortLevel;
+  if (level === undefined) return null;
+  return Fortifications.find((fort) => fort.level === level)?.name ?? null;
+};
+
+/**
+ * Lowest player level at which a feature can be unlocked: the level the
+ * required fort needs, counting the fort its economy upgrade is built on.
+ */
+export const getFeaturePlayerLevel = (key: FeatureKey): number | null => {
+  const req = FEATURE_REQUIREMENTS[key];
+  const upgradeFort =
+    req.economyLevel === undefined
+      ? undefined
+      : EconomyUpgrades.find((u) => u.index === req.economyLevel)?.fortLevel;
+  const fortLevel = Math.max(req.fortLevel ?? 0, upgradeFort ?? 0);
+  if (fortLevel <= 0) return null;
+  return (
+    Fortifications.find((fort) => fort.level === fortLevel)?.levelRequirement ??
+    null
+  );
 };

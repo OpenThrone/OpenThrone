@@ -92,6 +92,53 @@ describe('decidePersonaPolicy dispatch', () => {
     expect(cappedAttackTurns(decision!)).toBeGreaterThan(0);
   });
 
+  it('attacker spends attack turns at zero stamina, since fatigue only softens offense', () => {
+    const tactical = createInitialTacticalState('attacker');
+    const obs = makeObservation({ ...selfFor('attacker'), stamina: 0 }, []);
+    let decision: PersonaDecision | null = null;
+    for (const seed of [1, 2, 3, 4, 5, 10, 20, 30]) {
+      const result = decidePersonaPolicy(obs, tactical, createRng(seed));
+      if (result.decision.stance !== 'inactive') {
+        decision = result.decision;
+        break;
+      }
+    }
+    expect(decision).not.toBeNull();
+    expect(cappedAttackTurns(decision!)).toBeGreaterThan(0);
+  });
+
+  it('balanced rests while the offense multiplier is below its band threshold', () => {
+    const tactical = createInitialTacticalState('balanced');
+    // Stamina 24 -> multiplier 0.896, below the balanced band's 0.9 floor.
+    const obs = makeObservation({ ...selfFor('balanced'), stamina: 24 }, []);
+    let decision: PersonaDecision | null = null;
+    for (const seed of [1, 2, 3, 4, 5, 10, 20, 30]) {
+      const result = decidePersonaPolicy(obs, tactical, createRng(seed));
+      if (result.decision.stance !== 'inactive') {
+        decision = result.decision;
+        break;
+      }
+    }
+    expect(decision).not.toBeNull();
+    expect(cappedAttackTurns(decision!)).toBe(0);
+  });
+
+  it('balanced spends attack turns once the multiplier recovers to its threshold', () => {
+    const tactical = createInitialTacticalState('balanced');
+    // Stamina 25 -> multiplier 0.9, at the balanced band's floor.
+    const obs = makeObservation({ ...selfFor('balanced'), stamina: 25 }, []);
+    let decision: PersonaDecision | null = null;
+    for (const seed of [1, 2, 3, 4, 5, 10, 20, 30]) {
+      const result = decidePersonaPolicy(obs, tactical, createRng(seed));
+      if (result.decision.stance !== 'inactive') {
+        decision = result.decision;
+        break;
+      }
+    }
+    expect(decision).not.toBeNull();
+    expect(cappedAttackTurns(decision!)).toBeGreaterThan(0);
+  });
+
   it('defender prioritizes defense share and repair', () => {
     const tactical = createInitialTacticalState('defender');
     const self = {

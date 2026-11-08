@@ -204,9 +204,10 @@
     "searchUsers": "Search users",
     "protection": {
       "label": "New-player protection",
-      "daysLeft_one": "Protected: {{count}} day left",
-      "daysLeft_other": "Protected: {{count}} days left",
-      "active": "Protected",
+      "daysLeft_one": "Gold shielded: {{count}} day left",
+      "daysLeft_other": "Gold shielded: {{count}} days left",
+      "active": "Gold shielded",
+      "tooltip": "Attacks are not blocked: they still take units and fort HP. Only your first {{allowance}} gold on hand is shielded — raiders take at most {{share}}% of the normal cap from it at level 1, rising to 100% at level {{taperLevel}}.",
       "population": "Population {{population}} / {{threshold}}",
       "level": "Level {{level}} / {{limit}}",
       "progress": "Protection {{percent}}% used ({{limit}})",
@@ -224,7 +225,7 @@
       "moreWorkers": "The more workers you have, the more gold you'll earn per turn.",
       "recruitDaily": "Recruiting your max amount every day will ensure your kingdom continues to grow.",
       "wellEquipped": "A unit is only as strong as the equipment they wield. Make sure your army is well equipped.",
-      "fortDefense": "If your defense is less than 25% of your non-combatant population, you may lose citizens and workers in an attack. Keep your fort repaired."
+      "fortDefense": "Keep Defense Units at 25% or more of your population, or attackers deal more fort damage and take more gold. Keep your fort repaired: once it falls, citizens and workers can be lost in an attack."
     },
     "armyCondition": {
       "label": "Army Stamina",
@@ -252,6 +253,7 @@
     "version": "Version {{version}}"
   },
   "errors": {
+    "stillSignedIn": "Couldn't reach the server. You're still signed in; try again in a moment.",
     "failedToFetchGitInfo": "Failed to fetch git info",
     "failedToFetchOnlinePlayerInfo": "Failed to fetch online player info"
   },
@@ -287,8 +289,8 @@
     "signInToRecruit": "Sign in to recruit 1 citizen into your kingdom.",
     "linkFrom": "Recruitment link from {{name}}",
     "pairProgress": "Recruited with {{name}} {{used}} of {{limit}} times today.",
-    "recruitsLeft_one": "{{count}} recruit left today. Resets at {{time}}.",
-    "recruitsLeft_other": "{{count}} recruits left today. Resets at {{time}}.",
+    "recruitsLeft_one": "You can recruit with {{name}} {{count}} more time today. Resets at {{time}}.",
+    "recruitsLeft_other": "You can recruit with {{name}} {{count}} more times today. Resets at {{time}}.",
     "again": "Recruit again",
     "blockedPair": "You have recruited with {{name}} {{used}} of {{limit}} times today. Resets at {{time}}.",
     "blockedRecruiter": "You have used all {{limit}} of your daily recruits. Resets at {{time}}.",
@@ -365,8 +367,27 @@
     "unitLevel": "{{name}} · L{{level}}",
     "mercenary": "Mercenary",
     "observedPopulation": "Observed population",
+    "populationTitle": "Population",
+    "populationTotal": "Population: {{count}}",
+    "troopsObserved": "Troops observed: {{observed}} of {{total}} (intel quality {{percent}}%)",
+    "notObserved": "Not Observed",
+    "statsNotObserved": "Fields marked Not Observed were missed at this intel quality.",
+    "observedStats": "Kingdom Intelligence",
+    "stats": {
+      "gold": "Gold on hand",
+      "goldInBank": "Gold in bank",
+      "offense": "Offense",
+      "defense": "Defense",
+      "spyOffense": "Spy Offense",
+      "spyDefense": "Spy Defense",
+      "fortHitpoints": "Fort HP",
+      "fortLevel": "Fort Level",
+      "defenseBonus": "Defense Bonus",
+      "spyLevel": "Spy Guild Level",
+      "sentryLevel": "Sentry Post Level"
+    },
     "observedTotal": "Observed: {{count}}",
-    "unobservedPopulation": "Unobserved population is unknown.",
+    "unobservedPopulation": "Intel quality {{percent}}%: your spies saw about that share of the troops. The rest is unknown.",
     "observedRoleUnits": {
       "OFFENSE": "Observed offensive units: {{count}}",
       "DEFENSE": "Observed defensive units: {{count}}",
@@ -451,6 +472,8 @@
     "friendRequestFrom": "Friend Request from {{name}}",
     "friendsWith": "Friends with {{name}}",
     "addFriend": "Add to Friends List",
+    "friendRequestRetry": "Request again on {{date}}",
+    "friendRequestClosed": "Friend request declined",
     "removeFriend": "Remove Friend",
     "removeFriendConfirm": "Are you sure you want to remove {{name}} from your friends list?",
     "declareEnemy": "Declare Enemy",
@@ -584,7 +607,7 @@
         },
         "protection": {
           "title": "You are protected",
-          "body": "As a new player, attacks against you only take a small share of your gold. Protection ends at the first of these: about {{days}} days from now, your population reaching {{population}}, or level {{levelLimit}}. Use the time to build."
+          "body": "As a new player, your first {{allowance}} gold on hand is mostly safe from attacks, but attacks still kill units and damage your fort, and gold above that can be raided — bank it. Protection ends at the first of these: about {{days}} days from now, your population reaching {{population}}, or level {{levelLimit}}. Use the time to build."
         },
         "stats": {
           "title": "The realm at a glance",
@@ -647,12 +670,12 @@
       "lessonsTitle": "Guided lessons",
       "guidesTitle": "Guides",
       "status": {
-        "active": "The tutorial is on: each lesson plays when you visit its page.",
+        "active": "The tutorial is on: each lesson plays when you visit its page and is completed once you reach its last step.",
         "snoozed": "The tutorial is paused and will offer itself again tomorrow.",
         "off": "The tutorial is switched off. Replaying a lesson turns it back on."
       },
       "seen": "Completed",
-      "unseen": "Not seen yet",
+      "unseen": "Not finished yet",
       "open": "Open",
       "replay": "Replay",
       "restart": "Restart the whole tutorial",
@@ -698,6 +721,13 @@
     "CLERIC": "Cleric",
     "ASSASSIN": "Assassin",
     "THIEF": "Thief"
+  },
+  "classHint": "Your class is permanent and gives one lasting bonus.",
+  "classDescriptions": {
+    "FIGHTER": "+{{amount}}% offense: your attacks hit harder.",
+    "CLERIC": "+{{amount}}% defense: your kingdom holds out better.",
+    "ASSASSIN": "+{{amount}}% spy and sentry strength: sharper intel, and harder to spy on.",
+    "THIEF": "+{{amount}}% gold income every turn."
   },
   "eraResetNotice": {
     "scheduled": "Era will reset on {{local}} OT Time ({{utc}})",
@@ -880,7 +910,7 @@
     }
   },
   "friendTransfer": {
-    "guide": "Friends can send each other gold once both have unlocked the Coal Mine. Both players must be at least level {{level}} and have accounts at least {{days}} days old, and you cannot send gold to a player you have fought in the last {{hours}} hours. Every transfer pays a fee that is destroyed."
+    "guide": "Friends can send each other gold once both have unlocked the Coal Mine (Economy upgrades, needs Fortress Level 2, fort level 11). Both players must be at least level {{level}} and have accounts at least {{days}} days old, and you cannot send gold to a player you have fought in the last {{hours}} hours. Every transfer pays a fee that is destroyed."
   },
   "veteran": {
     "badge": "Era 1 Tester",

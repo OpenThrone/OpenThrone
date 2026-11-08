@@ -1,5 +1,9 @@
 import { COMBAT_V9 } from './combat-v9/ruleset';
 import { COMBAT_V10 } from './combat-v10/ruleset';
+import { COMBAT_V11 } from './combat-v11/ruleset';
+import { COMBAT_V12 } from './combat-v12/ruleset';
+import { COMBAT_V13 } from './combat-v13/ruleset';
+import { COMBAT_V14 } from './combat-v14/ruleset';
 import type { CombatRuleset } from './combatRuleset';
 
 /**
@@ -7,7 +11,7 @@ import type { CombatRuleset } from './combatRuleset';
  * the current one: new battles are fought under it and sealed with its
  * `version`. To change balance, append a ruleset built on the previous one:
  *
- *   const COMBAT_V11 = deriveCombatRuleset(COMBAT_V10, 'combat-v11', {
+ *   const COMBAT_V15 = deriveCombatRuleset(COMBAT_V14, 'combat-v15', {
  *     constants: { WOUNDED_SHARE: 0.35 },
  *   });
  *
@@ -15,7 +19,14 @@ import type { CombatRuleset } from './combatRuleset';
  * remove one: its battles could no longer be replayed. Versions without an
  * entry here (v7 and v8) were fought under rules this registry cannot rebuild.
  */
-const REGISTERED: readonly CombatRuleset[] = [COMBAT_V9, COMBAT_V10];
+const REGISTERED: readonly CombatRuleset[] = [
+  COMBAT_V9,
+  COMBAT_V10,
+  COMBAT_V11,
+  COMBAT_V12,
+  COMBAT_V13,
+  COMBAT_V14,
+];
 
 export const COMBAT_RULESETS: Readonly<Record<string, CombatRuleset>> =
   Object.freeze(

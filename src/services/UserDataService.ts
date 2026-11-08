@@ -12,6 +12,7 @@ import { resolveEraStartSettings } from '@/utils/eraStartSettings';
 import { CONTRACT_OWNER_ACTIVE } from '@/utils/forceContractFilters';
 import { logDebug } from '@/utils/logger';
 import { canAccessGame } from '@/utils/loginPolicy';
+import { getGameDayWindowCountdown } from '@/utils/timefunctions';
 
 import { contractRoster } from './Mercenary.service';
 import {
@@ -223,7 +224,7 @@ export class UserDataService {
     const depositsAvailable = maximumBankDeposits - depositHistory.length;
     const nextDepositAvailable =
       depositHistory.length > 0
-        ? this.getDepositCountdown(depositHistory[0].date_time.toString())
+        ? getGameDayWindowCountdown(depositHistory[0].date_time)
         : 0;
 
     const contracts = await prisma.forceContract.findMany({
@@ -409,22 +410,6 @@ export class UserDataService {
       totalAttacks,
       totalDefends,
     };
-  }
-
-  private static getDepositCountdown(timestamp: string) {
-    const targetDate = new Date(timestamp);
-    targetDate.setHours(targetDate.getHours() + 24);
-    const currentDate = new Date();
-    const timeDiff = targetDate.getTime() - currentDate.getTime();
-
-    if (timeDiff > 0) {
-      const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-      return { hours, minutes, seconds };
-    }
-
-    return { hours: 0, minutes: 0, seconds: 0 };
   }
 
   /**

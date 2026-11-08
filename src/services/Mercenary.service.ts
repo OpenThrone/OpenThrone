@@ -3,7 +3,9 @@ import { z } from 'zod';
 
 import { ItemTypes, UnitTypes } from '@/constants';
 import {
+  getFeaturePlayerLevel,
   getRequiredEconomyUpgradeName,
+  getRequiredFortName,
   hasFeature,
 } from '@/constants/FeatureUnlocks';
 import {
@@ -49,6 +51,33 @@ const changeSchema = z
   })
   .strict();
 type Tx = Prisma.TransactionClient;
+/** Contract gold goes through the bank ledger like every other purchase. */
+const recordContractPayment = (
+  tx: Tx,
+  action: 'HIRE_MERCENARY' | 'RENEW_MERCENARY',
+  contract: Pick<ForceContract, 'id' | 'userId' | 'type' | 'level'>,
+  quantity: number,
+  termDays: number,
+  gold: bigint,
+  now: Date,
+) =>
+  tx.bank_history.create({
+    data: {
+      gold_amount: gold,
+      from_user_id: contract.userId,
+      from_user_account_type: 'HAND',
+      to_user_id: 0,
+      to_user_account_type: 'BANK',
+      date_time: now,
+      history_type: 'SALE',
+      stats: {
+        type: action,
+        contractId: contract.id,
+        termDays,
+        items: [{ type: contract.type, level: contract.level, quantity }],
+      },
+    },
+  });
 export type ContractUnit = UserUnit & {
   forceContractId: number;
   forceKind: 'MERCENARY' | 'ALLIANCE';
@@ -133,16 +162,21 @@ async function operation(tx: Tx, key: string, command: unknown) {
   return { hash, prior };
 }
 
-/** Hiring and renewal need the hall, plus the tier's economy upgrade. */
-function assertMercenaryUnlocked(level: number, economyLevel: number) {
+/** Hiring and renewal need the hall, plus whatever the tier itself asks for. */
+function assertMercenaryUnlocked(
+  level: number,
+  economyLevel: number,
+  fortLevel: number,
+) {
   const key = mercenaryTierFeatureKey(level);
-  if (hasFeature({ economyLevel, fortLevel: 0 }, key)) return;
-  const upgrade = getRequiredEconomyUpgradeName(key);
-  throw new Error(
-    level === 1
-      ? `Mercenaries unlock with the ${upgrade}`
-      : `Mercenary tier ${level} unlocks with the ${upgrade}`,
-  );
+  if (hasFeature({ economyLevel, fortLevel }, key)) return;
+  if (!hasFeature({ economyLevel, fortLevel }, 'MERCENARY_HALL'))
+    throw new Error(
+      `Mercenaries unlock at level ${getFeaturePlayerLevel('MERCENARY_HALL')}, with the Village fort`,
+    );
+  const upgrade =
+    getRequiredEconomyUpgradeName(key) ?? getRequiredFortName(key);
+  throw new Error(`Mercenary tier ${level} unlocks with the ${upgrade}`);
 }
 
 /** Own trained army (citizens and workers excluded) and surviving mercenaries. */
@@ -285,8 +319,13 @@ export class MercenaryService {
         ARMY_DESERTION_MORALE_THRESHOLD
       )
         throw new Error(MERCENARY_REFUSAL_MESSAGE);
+      // The tier gate goes first: it names the fort the player should build.
+      assertMercenaryUnlocked(
+        command.level,
+        user.economy_level,
+        user.fort_level,
+      );
       assertForceTierUnlocked(command.type, command.level, user.fort_level);
-      assertMercenaryUnlocked(command.level, user.economy_level);
       const active = await tx.forceContract.aggregate({
         where: {
           userId: user.id,
@@ -345,6 +384,15 @@ export class MercenaryService {
         where: { id: user.id },
         data: { gold: { decrement: cost } },
       });
+      await recordContractPayment(
+        tx,
+        'HIRE_MERCENARY',
+        contract,
+        command.quantity,
+        command.termDays,
+        cost,
+        now,
+      );
       await tx.forceEvent.create({
         data: {
           operationKey: command.operationId,
@@ -379,6 +427,7 @@ export class MercenaryService {
         select: {
           currentEraId: true,
           economy_level: true,
+          fort_level: true,
           kingdom_morale: true,
         },
       });
@@ -399,7 +448,11 @@ export class MercenaryService {
         throw new Error('Contract is no longer active');
       // Dismissal stays available even when the feature is locked again.
       if (command.termDays)
-        assertMercenaryUnlocked(contract.level, owner.economy_level);
+        assertMercenaryUnlocked(
+          contract.level,
+          owner.economy_level,
+          owner.fort_level,
+        );
       // Renewals are refused below the desertion threshold (#205); dismissals stay open.
       if (
         command.termDays &&
@@ -423,6 +476,16 @@ export class MercenaryService {
           data: { gold: { decrement: gold } },
         });
         if (paid.count !== 1) throw new Error('Insufficient gold');
+        if (gold > 0n)
+          await recordContractPayment(
+            tx,
+            'RENEW_MERCENARY',
+            contract,
+            contract.survivingQuantity,
+            command.termDays,
+            gold,
+            now,
+          );
         updated = await tx.forceContract.update({
           where: { id: contract.id },
           data: { expiresAt },

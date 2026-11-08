@@ -73,6 +73,7 @@
     "ARMORY_UNEQUIP": "Sell equipment",
     "ARMORY_CONVERSION": "Convert equipment",
     "HIRE_MERCENARY": "Hire mercenaries",
+    "RENEW_MERCENARY": "Renew mercenaries",
     "RECRUIT": "Recruit player",
     "PLAYER_TRANSFER": "Bank transfer",
     "MESSAGE_SENT": "Send message",
@@ -82,8 +83,9 @@
     "ALLIANCE_DEPOSIT": "Alliance deposit",
     "ALLIANCE_WITHDRAWAL": "Alliance withdrawal",
     "ALLIANCE_LOAN": "Alliance loan",
-    "FORT_UPGRADE": "Upgrade fort",
-    "HOUSE_UPGRADE": "Upgrade housing",
+    "FORTIFICATIONS_UPGRADE": "Upgrade fort",
+    "HOUSES_UPGRADE": "Upgrade housing",
+    "RACIAL_UPGRADE": "Upgrade racial perk",
     "ECONOMY_UPGRADE": "Upgrade economy",
     "OFFENSE_UPGRADE": "Upgrade offense",
     "DEFENSE_UPGRADE": "Upgrade defense",
@@ -91,7 +93,11 @@
     "SENTRY_UPGRADE": "Upgrade sentry",
     "FRIEND_TRANSFER": "Send gold to friend",
     "FRIEND_REQUEST": "Request gold from friend",
-    "FORT_REPAIR": "Repair fort"
+    "FORT_REPAIR": "Repair fort",
+    "ARMORY_UPGRADE": "Upgrade equipment",
+    "ARMORY_STRUCTURE_UPGRADE": "Upgrade armory",
+    "BATTLE_UPGRADES_BUY": "Buy battle upgrades",
+    "BATTLE_UPGRADES_SELL": "Sell battle upgrades"
   },
   "metrics": {
     "gold": "Gold on hand",
@@ -134,5 +140,23 @@
     "previous": "Previous page",
     "first": "First page",
     "last": "Last page"
+  },
+  "eventDetails": {
+    "entity": "{{name}} (level {{level}})",
+    "quantity": "{{quantity}} × {{name}}",
+    "conversion": "{{quantity}} × {{from}} → {{to}}",
+    "newLevel": "New level: {{level}}",
+    "repairedHP": "Repaired {{amount}} fort HP",
+    "movement": "{{from}} → {{to}}",
+    "accounts": {
+      "HAND": "Gold on hand",
+      "BANK": "Bank"
+    },
+    "roles": {
+      "OFFENSE": "Offense",
+      "DEFENSE": "Defense",
+      "SPY": "Spy",
+      "SENTRY": "Sentry"
+    }
   }
 }

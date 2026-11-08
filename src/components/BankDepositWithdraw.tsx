@@ -8,7 +8,13 @@ import { PageLoading } from '@/components/game/PageLoading';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import type { Locales } from '@/types/typings';
-import { DEPOSIT_CAP_PERCENT, getMaxDeposit } from '@/utils/bankLimits';
+import {
+  DEPOSIT_CAP_PERCENT,
+  getBankRoom,
+  getMaxDeposit,
+} from '@/utils/bankLimits';
+import type { BankActionResult } from '@/utils/bankResponse';
+import { readBankResponse } from '@/utils/bankResponse';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
@@ -36,9 +42,17 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
   const locale = i18n.language;
   const { config } = useRuntimeConfig();
   const capPercent = config?.depositCapPercent ?? DEPOSIT_CAP_PERCENT;
-  const maxDeposit = getMaxDeposit(toBigIntSafe(user?.gold), capPercent);
   // UserModel exposes the balance as goldInBank; gold_in_bank is the raw column.
   const bankBalance = toBigIntSafe(user?.goldInBank ?? user?.gold_in_bank);
+  const bankRoom =
+    user?.bankCap === undefined
+      ? undefined
+      : getBankRoom(BigInt(user.bankCap), bankBalance);
+  const maxDeposit = getMaxDeposit(
+    toBigIntSafe(user?.gold),
+    capPercent,
+    bankRoom,
+  );
   useEffect(() => {
     if (user) {
       fetch('/api/bank/history?deposits=true&withdraws=true&limit=10&page=0')
@@ -60,21 +74,34 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
     if (type === 'withdraw' && amount > bankBalance) return;
     setPending(type);
     try {
-      const response = await fetch(`/api/bank/${type}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': `bank-${type}-${amount}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        },
-        body: JSON.stringify({ amount: amount.toString() }),
-      });
-      const data = await response.json();
-      if (data.error)
+      // A rejected request is as unknown as an unreadable reply: it may have
+      // landed, so the player is told to check rather than shown the browser's
+      // error, and nothing is resent.
+      let result: BankActionResult;
+      try {
+        const response = await fetch(`/api/bank/${type}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': `bank-${type}-${amount}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          },
+          body: JSON.stringify({ amount: amount.toString() }),
+        });
+        result = await readBankResponse(response);
+      } catch (error) {
+        logError('Bank request failed:', error);
+        result = { ok: false, error: null };
+      }
+      if (!result.ok) {
+        const error = result.error ?? null;
         throw new Error(
-          SERVER_ERROR_KEYS[data.error]
-            ? t(SERVER_ERROR_KEYS[data.error])
-            : data.error,
+          error === null
+            ? t('bank.unreachable')
+            : SERVER_ERROR_KEYS[error]
+              ? t(SERVER_ERROR_KEYS[error])
+              : error,
         );
+      }
       alertService.success(
         t(type === 'deposit' ? 'bank.depositSuccess' : 'bank.withdrawSuccess'),
       );
@@ -112,7 +139,11 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
             maxAriaLabel={t('bank.depositMaxAria')}
             error={
               depositAmount > maxDeposit
-                ? t('bank.depositOverCap', { percent: capPercent })
+                ? bankRoom !== undefined && depositAmount > bankRoom
+                  ? t('bank.depositOverCapacity', {
+                      amount: toLocale(bankRoom, locale as Locales),
+                    })
+                  : t('bank.depositOverCap', { percent: capPercent })
                 : undefined
             }
           />

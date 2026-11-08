@@ -105,7 +105,10 @@ describe('canonical outcome', () => {
     expect(canonical.defenderValueLost).toBeGreaterThanOrEqual(0);
     expect(canonical.fortValueDamage).toBeGreaterThanOrEqual(0);
     expect(canonical.defenseUnitsBroken).toBeGreaterThanOrEqual(0);
-    expect(canonical.assaultSucceeded).toBe(result.result === 'WIN');
+    // A won battle must have broken through at least once; a lost one may
+    // still have breached late ("a breach followed by a collapse still costs
+    // the attacker the verdict"), so no equality with result is asserted.
+    if (result.result === 'WIN') expect(canonical.assaultSucceeded).toBe(true);
   });
 
   it('a weak defended probe cannot win or take gold, even against a zero-HP fort', async () => {

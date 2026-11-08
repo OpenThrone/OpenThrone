@@ -86,6 +86,32 @@ export interface CombatRuleset {
    * engine; see `utils/casualtySpread.ts`. Absent means lowest-first.
    */
   readonly casualtySpread?: boolean;
+  /**
+   * How the per-battle casualty caps become whole units (combat-v12). Absent
+   * rounds down, so an army of 12 or fewer could never lose a unit to the 8%
+   * cap; 'stochastic' rounds up with chance equal to the fraction, drawing one
+   * value per side per battle from the seeded random, so small armies lose at
+   * the intended rate on average.
+   */
+  readonly casualtyRounding?: 'stochastic';
+  /**
+   * What the defender's casualty budget is anchored to (combat-v13). Absent
+   * anchors it to the defender's whole population, so idle workers and
+   * citizens grow the garrison's allowance though only guards can die
+   * (#303); 'engaged' anchors it to the units engaged in the battle — the
+   * military that fights and can die, plus the collateral pool once a
+   * breached fort exposes it — mirroring the attacker's offense-only
+   * budget.
+   */
+  readonly defenderBudgetPopulation?: 'engaged';
+  /**
+   * When citizens and idle workers join the defense (combat-v13). Absent, they
+   * fight once the guards are wiped out or the fort falls, but can only be
+   * hit after the fort falls. 'fortBreach' makes them fight, become
+   * targetable and count toward the casualty budget together, from the
+   * moment fort HP reaches 0.
+   */
+  readonly civiliansEngageOn?: 'fortBreach';
   readonly race: Readonly<Record<PlayerRace, RaceIdentityModifiers>>;
   /** Racial and class bonuses (attack, defense and casualty). */
   readonly bonuses: readonly RulesetBonus[];
@@ -125,6 +151,26 @@ export interface CombatRuleset {
   readonly xpPerTurn: {
     bands: readonly { upToLevel: number; xp: number }[];
     beyond: number;
+  };
+  /**
+   * Battle XP fairness (combat-v11, #334). Losing attackers earn by effort,
+   * defenders by the threat they faced, and a defender who sits at one level
+   * earns more the longer they camp there. Absent means the combat-v10 rules:
+   * no effort or threat scaling and no anti-camping ramp.
+   */
+  readonly battleXp?: {
+    /** Attack-to-defense ratio at or below which a lost attack is no effort. */
+    effortFloorRatio: number;
+    /** Ratio at which a lost attack counts as full effort. */
+    effortFullRatio: number;
+    /** Least share of the defender's XP even a hopeless attack still pays. */
+    defenderThreatFloor: number;
+    /** Game days at a level before the anti-camping ramp starts. */
+    stallGraceDays: number;
+    /** Defender XP multiplier added per further whole game day at the level. */
+    stallPerDay: number;
+    /** Cap on the anti-camping multiplier. */
+    stallMaxMultiplier: number;
   };
 }
 

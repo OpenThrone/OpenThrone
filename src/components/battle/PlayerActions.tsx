@@ -198,6 +198,7 @@ export function PlayerActionDialogs({
   onRecruited?: () => void;
 }) {
   const { t } = useTranslation('battle');
+  const { t: common } = useTranslation('common');
   const { forceUpdate } = useUser();
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
@@ -249,6 +250,7 @@ export function PlayerActionDialogs({
         closeOnEscape={!busy}
         closeOnClickOutside={!busy}
         withCloseButton={!busy}
+        closeButtonProps={{ 'aria-label': common('buttons.close') }}
         title={t('actions.recruitTarget', { name: target.name })}
         centered
       >
@@ -308,6 +310,7 @@ export function PlayerActionDialogs({
       closeOnEscape={!busy}
       closeOnClickOutside={!busy}
       withCloseButton={!busy}
+      closeButtonProps={{ 'aria-label': common('buttons.close') }}
       title={t(
         remove
           ? 'actions.removeEnemy'

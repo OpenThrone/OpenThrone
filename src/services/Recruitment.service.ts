@@ -6,7 +6,7 @@ import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
 import { lockRecruitmentRecipient } from '@/services/recruitmentGuards';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import type { RecruitmentStatus } from '@/utils/recruitmentStatus';
-import { getOTStartDate } from '@/utils/timefunctions';
+import { getGameDayStart } from '@/utils/timefunctions';
 
 type RecruitmentLimitStrategy = 'standard' | 'linkBased';
 type PrismaClientOrTx = Prisma.TransactionClient | typeof prisma;
@@ -75,9 +75,9 @@ const resolveDb = (db?: PrismaClientOrTx) => db ?? prisma;
  */
 const getRecruitmentWindowStart = async (
   db: PrismaClientOrTx,
-  requestedSince = getOTStartDate(),
+  requestedSince = getGameDayStart(),
 ) => {
-  const todayStart = getOTStartDate();
+  const todayStart = getGameDayStart();
   const activeEra = await db.era.findFirst({
     where: { endDate: null },
     orderBy: { startDate: 'desc' },
@@ -126,7 +126,7 @@ export const getRecruitmentBlock = async ({
   db,
   recruiterId,
   targetId,
-  since = getOTStartDate(),
+  since = getGameDayStart(),
 }: {
   db?: PrismaClientOrTx;
   recruiterId: number;
@@ -209,7 +209,7 @@ export const getRecruitmentStatus = async ({
     recruiterCap: await getRecruiterDailyCap(),
     targetCap: Number.MAX_SAFE_INTEGER,
     recruiterUsed,
-    resetsAt: getOTStartDate(1).toISOString(),
+    resetsAt: getGameDayStart(1).toISOString(),
     targets: Object.fromEntries(
       targetIds.map((id) => [
         String(id),
@@ -764,7 +764,7 @@ export async function getExternalRecruitmentStatus({
     perIpRemaining,
     dailyCap,
     perIpCap,
-    resetsAt: getOTStartDate(1).toISOString(),
+    resetsAt: getGameDayStart(1).toISOString(),
   };
 }
 

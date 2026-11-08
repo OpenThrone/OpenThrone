@@ -354,6 +354,7 @@ describe('redactAttackLogForViewer: spy reports', () => {
         intelligenceGathered: {
           offense: null,
           defense: 900,
+          population: 48,
           units: [
             { id: 55, userId: 2, type: 'DEFENSE', level: 1, quantity: 9 },
           ],
@@ -379,6 +380,9 @@ describe('redactAttackLogForViewer: spy reports', () => {
       { usage: 'DEFENSE', type: 'HELM', level: 1, quantity: 2 },
     ]);
     expect(spy.intelligenceGathered.gold).toBe('700');
+    // Exact population survives redaction (#286); reports stored before the
+    // field exists redact to null and the UI falls back to the sampled label.
+    expect(spy.intelligenceGathered.population).toBe(48);
     expect(spy.intelligenceGathered).not.toHaveProperty('hiddenExtra');
     expect(spy).not.toHaveProperty('successProbability');
     expect(spy).not.toHaveProperty('spyLosses');

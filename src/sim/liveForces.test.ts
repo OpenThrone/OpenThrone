@@ -39,14 +39,23 @@ describe('mercenaries', () => {
     );
   });
 
-  it('needs the Tavern and unlocks higher tiers with the economy', () => {
+  it('needs the Village fort and unlocks higher tiers with the fort', () => {
     const player = veteran();
-    player.economyLevel = 4;
+    player.economyLevel = 1;
+    player.fortLevel = 1;
     expect(mercenaryTier(player, 'OFFENSE')).toBe(0);
-    player.economyLevel = 5;
+    player.fortLevel = 2;
     expect(mercenaryTier(player, 'OFFENSE')).toBe(1);
-    player.economyLevel = 7;
+    player.fortLevel = 3;
+    expect(mercenaryTier(player, 'OFFENSE')).toBe(1);
+    player.fortLevel = 4;
+    expect(mercenaryTier(player, 'OFFENSE')).toBe(2);
+    player.fortLevel = 6;
+    expect(mercenaryTier(player, 'OFFENSE')).toBe(2);
+    player.fortLevel = 7;
     expect(mercenaryTier(player, 'OFFENSE')).toBe(3);
+    // Spies train later, so their mercenaries do too.
+    expect(mercenaryTier(player, 'SPY')).toBe(1);
   });
 
   it('stays within 100 per role and half of the own army', () => {

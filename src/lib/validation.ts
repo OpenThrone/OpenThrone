@@ -58,7 +58,7 @@ const SpySchema = z.object({
 
 /** Recruit schema. */
 export const RecruitSchema = z.object({
-  captchaToken: z.string().optional(),
+  captchaToken: z.string().nullish(),
   recruitedUserId: z
     .union([z.number().int().positive(), z.string()])
     .optional(),

@@ -30,11 +30,13 @@ import type {
 } from '@/utils/armoryOrder';
 import {
   armoryCategoryKeys,
+  armoryPurchaseLines,
   armorySlotReadiness,
   armoryUnitTiers,
   armoryUpgradeHint,
 } from '@/utils/armoryOrder';
 import { discountedItemCost, slotFloorCost } from '@/utils/armoryPricing';
+import { headlineStatValue } from '@/utils/combatStrength';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
 
@@ -111,7 +113,7 @@ const itemMapFunction = (
     ...item,
     id: `${itemType}_${item.id || item.name.replace(/\s+/g, '-')}`,
     name: item.name || 'Unknown',
-    bonus: item.bonus || 0,
+    bonus: headlineStatValue(item, item.usage),
     ownedItems:
       userItems.find(
         (i) =>
@@ -211,7 +213,22 @@ const ArmoryTab = () => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
-      alertService.success(data.message);
+      if (action === 'equip') {
+        const lines = armoryPurchaseLines(
+          itemsToProcess as Array<ArmoryItem & { quantity: number }>,
+        ).map((line) =>
+          t('armory.purchaseLine', {
+            quantity: toLocale(line.quantity),
+            item: line.name,
+            role: t(`armory.unitRoles.${line.role}_other`),
+          }),
+        );
+        alertService.success(
+          t('armory.purchaseSuccess', { items: lines.join(', ') }),
+        );
+      } else {
+        alertService.success(data.message);
+      }
       setItemCosts({});
       forceUpdate();
     } catch (error) {

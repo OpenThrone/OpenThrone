@@ -5,6 +5,7 @@ import { withAuth } from '@/middleware/auth';
 import UserModel from '@/models/Users';
 import { getDepositHistory } from '@/services/Bank.service';
 import { publicErrorMessage } from '@/utils/publicError';
+import { getGameDayWindowCountdown } from '@/utils/timefunctions';
 
 const getDeposits = async (req: NextApiRequest, res: NextApiResponse) => {
   const { session } = req;
@@ -20,26 +21,13 @@ const getDeposits = async (req: NextApiRequest, res: NextApiResponse) => {
 
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const getCountdown = (timestamp: string) => {
-      const targetDate = new Date(timestamp);
-      targetDate.setHours(targetDate.getHours() + 24);
-      const currentDate = new Date();
-      const timeDiff = targetDate.getTime() - currentDate.getTime();
-
-      if (timeDiff > 0) {
-        const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-        return { hours, minutes, seconds };
-      }
-      return { hours: 0, minutes: 0, seconds: 0 };
-    };
-
     const userMod = new UserModel(user);
     return res.status(200).json({
       deposits: userMod.maximumBankDeposits - history.length,
       nextDepositAvailable:
-        history.length > 0 ? getCountdown(history[0].date_time.toString()) : 0,
+        history.length > 0
+          ? getGameDayWindowCountdown(history[0].date_time)
+          : 0,
     });
   } catch (error) {
     return res.status(400).json({ error: publicErrorMessage(error) });

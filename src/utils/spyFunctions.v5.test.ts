@@ -179,3 +179,64 @@ describe('assassination daily caps', () => {
     expect(spent.unitsKilled).toBe(0);
   });
 });
+
+describe('intel coverage', () => {
+  // Playtest #286: 6 spies x 3 turns (98% intel) on a kingdom of 44 citizens
+  // and 6 spies reported only the 6 spies.
+  it('near-full intel reports every unit group', () => {
+    const defender: SpyMissionUser = {
+      ...network(6, 0),
+      units: [
+        { type: 'CITIZEN', level: 1, quantity: 44 },
+        { type: 'SPY', level: 1, quantity: 6 },
+      ],
+    };
+    const result = simulateIntel(network(6, 0), defender, 6, {
+      random: () => 0.5,
+      turns: 3,
+      spyPressureToday: 0,
+    });
+    expect(result.intelPercentage).toBeGreaterThan(95);
+    expect(result.intelPercentage).toBeLessThan(100);
+    const seen = result.intelligenceGathered?.units ?? [];
+    expect(seen.reduce((sum, unit) => sum + unit.quantity, 0)).toBe(50);
+  });
+
+  // Playtest #286: 4 spies x 5 turns (82% intel) on a kingdom of 94 with one
+  // big worker group showed 29 of 94, because groups were picked uniformly.
+  it('reports about the intel share of the troops, not of the groups', () => {
+    let seed = 7;
+    const random = () => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed / 2147483648;
+    };
+    const defender: SpyMissionUser = {
+      ...network(4, 0),
+      units: [
+        { type: 'WORKER', level: 1, quantity: 60 },
+        { type: 'CITIZEN', level: 1, quantity: 20 },
+        { type: 'OFFENSE', level: 1, quantity: 8 },
+        { type: 'SPY', level: 1, quantity: 4 },
+        { type: 'DEFENSE', level: 1, quantity: 2 },
+      ],
+    };
+    const shares: number[] = [];
+    for (let run = 0; run < 200; run += 1) {
+      const result = simulateIntel(network(6, 0), defender, 4, {
+        random,
+        turns: 5,
+        spyPressureToday: 0,
+      });
+      const units = result.intelligenceGathered?.units;
+      if (!units) continue;
+      expect(result.intelPercentage).toBeGreaterThan(80);
+      expect(result.intelPercentage).toBeLessThan(85);
+      shares.push(units.reduce((sum, unit) => sum + unit.quantity, 0) / 94);
+    }
+    expect(shares.length).toBeGreaterThan(50);
+    expect(Math.min(...shares)).toBeGreaterThanOrEqual(0.6);
+    const mean = shares.reduce((a, b) => a + b, 0) / shares.length;
+    expect(mean).toBeGreaterThan(0.75);
+    expect(mean).toBeLessThan(0.95);
+  });
+});

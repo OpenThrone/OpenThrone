@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+import {
+  FRIEND_REQUEST_COOLDOWN_DAYS_DEFAULT,
+  FRIEND_REQUEST_DAILY_CAP_DEFAULT,
+  FRIEND_REQUEST_MAX_DECLINES_DEFAULT,
+} from '@/constants/FriendRequests';
 import { FRIEND_TRANSFER_MIN_LEVEL_DEFAULT } from '@/constants/FriendTransfer';
 
 export const MaintenanceModeSchema = z.object({
@@ -215,6 +220,33 @@ export const RUNTIME_SETTING_REGISTRY = {
     schema: z.number().int().min(1).max(100),
     env: undefined,
     fallback: FRIEND_TRANSFER_MIN_LEVEL_DEFAULT,
+  },
+  'friend.requestCooldownDays': {
+    group: 'economy',
+    type: 'NUMBER',
+    label: 'Days before a declined or ended friendship can be requested again',
+    isPublic: false,
+    schema: z.number().int().min(0).max(365),
+    env: undefined,
+    fallback: FRIEND_REQUEST_COOLDOWN_DAYS_DEFAULT,
+  },
+  'friend.requestMaxDeclines': {
+    group: 'economy',
+    type: 'NUMBER',
+    label: 'Declined requests before a player cannot ask again (0 = no limit)',
+    isPublic: false,
+    schema: z.number().int().min(0).max(100),
+    env: undefined,
+    fallback: FRIEND_REQUEST_MAX_DECLINES_DEFAULT,
+  },
+  'friend.requestDailyCap': {
+    group: 'economy',
+    type: 'NUMBER',
+    label: 'Friend and enemy requests a player can send per day',
+    isPublic: false,
+    schema: z.number().int().min(1).max(1000),
+    env: undefined,
+    fallback: FRIEND_REQUEST_DAILY_CAP_DEFAULT,
   },
   'alliance.maxPendingGoldRequests': {
     group: 'alliances',

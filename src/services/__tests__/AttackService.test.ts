@@ -9,7 +9,7 @@ import {
 } from 'bun:test';
 import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 
-import { levelXPArray, UnitTypes } from '@/constants';
+import { levelXPArray, SpyUpgrades, UnitTypes } from '@/constants';
 import type { UserUnit } from '@/lib/prisma-exports';
 import BattleResult from '@/models/BattleResult';
 import { BattleUser } from '@/models/BattleUser';
@@ -17,12 +17,14 @@ import * as rulesetRegistry from '@/utils/balance/combatRulesets';
 import { CURRENT_COMBAT_RULESET } from '@/utils/balance/combatRulesets';
 import type { BattleGameEvents } from '@/utils/battleGameEvents';
 import type { CombatReplayEnvelope } from '@/utils/combatReplay';
+import { getGameDayMs } from '@/utils/timefunctions';
 
 installMockPrisma(vi);
 // Dynamic imports deliberately install the Prisma test boundary before service loading.
 const { invalidateGameEventModifiers } =
   await import('../GameEventRuntime.service');
-const { AttackService } = await import('../AttackService');
+const { AttackService, formatPairCapMessage } =
+  await import('../AttackService');
 const { SpyService, redactLiveSpyResult } = await import('../SpyService');
 const { BattleService } = await import('../Battle.service');
 const { updateUserUnits } = await import('../AttackDataService');
@@ -209,6 +211,7 @@ beforeEach(() => {
     },
   );
   mockPrisma.attack_log.count = vi.fn(async () => 0);
+  mockPrisma.attack_log.findFirst = vi.fn(async () => null);
   mockPrisma.attack_log.aggregate = vi.fn(async () => ({
     _sum: { defender_losses_total: 0, pillaged_gold: 0n },
   }));
@@ -595,6 +598,39 @@ describe('live combat persistence and replay', () => {
     ).toBe(false);
   });
 
+  test('battle XP stamps level_reached_at only for the side whose level moved (#334)', async () => {
+    const xpFor = (level: number) =>
+      levelXPArray.find((entry) => entry.level === level)!.xp;
+    // One XP short of level 80: any battle XP moves the attacker up a level.
+    players[1].experience = xpFor(80) - 1;
+    const attackerSince = new Date(Date.now() - 9 * getGameDayMs());
+    players[1].level_reached_at = attackerSince;
+    // The defender sits at level 80 with room to spare: same-level gain.
+    const defenderSince = new Date(Date.now() - 5.5 * getGameDayMs());
+    players[2].level_reached_at = defenderSince;
+    const startedAt = Date.now();
+
+    expect((await AttackService.executeAttack(1, 2, 10)).status).toBe(
+      'success',
+    );
+    const xp = JSON.parse(String((logs[0].stats as any).xpEarned ?? '{}'));
+    expect(xp.attacker).toBeGreaterThan(0);
+    expect(xp.defender).toBeGreaterThan(0);
+    expect(players[2].experience).toBeLessThan(xpFor(81));
+
+    const stamped = players[1].level_reached_at as Date;
+    expect(stamped).toBeInstanceOf(Date);
+    expect(stamped.getTime()).toBeGreaterThanOrEqual(startedAt);
+    expect(players[2].level_reached_at).toEqual(defenderSince);
+
+    // The ramp input is sealed so the battle replays with the same XP.
+    const replay = parseCombatReplay(logs[0].stats.replay);
+    expect(replay.domain).toBe('attack');
+    expect(
+      (replay as { defenderGameDaysAtLevel?: number }).defenderGameDaysAtLevel,
+    ).toBeCloseTo(5.5, 2);
+  });
+
   test('attacking a fellow alliance member requires confirmation, then proceeds', async () => {
     alliances = {
       7: { name: 'Iron Pact', members: [1, 2] },
@@ -634,6 +670,39 @@ describe('live combat persistence and replay', () => {
     mockPrisma.attack_log.count = vi.fn(async () => 99);
     const result = await AttackService.executeAttack(1, 2, 1);
     expect(result.code).toBe('TOO_MANY_ATTACKS');
+  });
+
+  test('the pair cap says when the rolling window frees the next attack (#359)', async () => {
+    const oldest = new Date(Date.now() - getGameDayMs() + 5 * 60 * 1000);
+    mockPrisma.attack_log.count = vi.fn(async () => 5);
+    mockPrisma.attack_log.findFirst = vi.fn(async () => ({
+      timestamp: oldest,
+    }));
+    const result = await AttackService.executeAttack(1, 2, 1);
+    expect(result.code).toBe('TOO_MANY_ATTACKS');
+    expect(result.message).toContain('You can attack them again in 5m.');
+    expect(result.extra_variables).toEqual({
+      limit: 5,
+      nextAttackAt: new Date(oldest.getTime() + getGameDayMs()).toISOString(),
+    });
+    expect(mockPrisma.attack_log.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ orderBy: { timestamp: 'asc' }, skip: 0 }),
+    );
+    expect(logs).toHaveLength(0);
+  });
+
+  test('a lowered cap reports the limit, not a false count, and skips to the right attack (#359)', async () => {
+    mockPrisma.attack_log.count = vi.fn(async () => 7);
+    mockPrisma.attack_log.findFirst = vi.fn(async () => ({
+      timestamp: new Date(),
+    }));
+    const result = await AttackService.executeAttack(1, 2, 1);
+    expect(result.code).toBe('TOO_MANY_ATTACKS');
+    expect(result.message).toContain('limit of 5 attacks');
+    expect(result.message).not.toContain('7');
+    expect(mockPrisma.attack_log.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 2 }),
+    );
   });
 
   test('a protected attacker hitting a protected defender keeps protection', async () => {
@@ -732,7 +801,7 @@ describe('live combat persistence and replay', () => {
     });
   }
 
-  test('combat-v10 charges losses to every unit tier and retests exactly', async () => {
+  test('casualty spread (combat-v10 on) charges losses to every unit tier and retests exactly', async () => {
     players[1].UserUnit = player(1, [
       { type: 'OFFENSE', level: 1, quantity: 3000 },
       { type: 'OFFENSE', level: 2, quantity: 2000 },
@@ -750,8 +819,9 @@ describe('live combat persistence and replay', () => {
     );
     const log = logs[0];
     expect(parseCombatReplay(log.stats.replay).formulaVersion).toBe(
-      'combat-v10',
+      CURRENT_COMBAT_RULESET.version,
     );
+    expect(CURRENT_COMBAT_RULESET.casualtySpread).toBe(true);
     const killed: { total: number; units: UnitLoss[] } = JSON.parse(
       log.stats.attacker_losses!,
     );
@@ -785,7 +855,7 @@ describe('live combat persistence and replay', () => {
     players = {};
     const retest = await BattleService.retestBattle(log.id);
     expect(retest.exactReplay).toBe(true);
-    expect(retest.formulaVersion).toBe('combat-v10');
+    expect(retest.formulaVersion).toBe(CURRENT_COMBAT_RULESET.version);
     expect(
       JSON.parse(JSON.stringify(retest.newSimulationAttackerLossesBreakdown)),
     ).toEqual(killed);
@@ -998,5 +1068,173 @@ describe('self-target guards', () => {
     expect(logs).toHaveLength(0);
     expect(players[1].attack_turns).toBe(250);
     expect(players[1].gold).toBe(50000n);
+  });
+});
+
+describe('formatPairCapMessage', () => {
+  const now = new Date('2026-11-02T05:00:00Z');
+  test('rounds up to whole minutes and shows hours', () => {
+    expect(formatPairCapMessage(5, new Date('2026-11-02T08:29:30Z'), now)).toBe(
+      'You have reached the limit of 5 attacks on this player per rolling game day. You can attack them again in 3h 30m.',
+    );
+  });
+  test('falls back to the plain text without a time', () => {
+    expect(formatPairCapMessage(5, null, now)).toBe(
+      'You have reached the limit of 5 attacks on this player per rolling game day.',
+    );
+  });
+});
+
+describe('level range refusal (ATTACK_LEVEL_RANGE)', () => {
+  const xpFor = (level: number) =>
+    levelXPArray.find((entry) => entry.level === level)!.xp;
+  const setRange = (value?: number) => {
+    // Keep the feature switches the suite enables, and add the range.
+    const rows = [
+      'ENABLE_ATTACKING',
+      'ENABLE_INFILTRATIONS',
+      'ENABLE_ASSASSINATIONS',
+      'ENABLE_INTEL',
+      'ENABLE_SOCIAL',
+      'ENABLE_ENEMIES',
+    ].map((key) => ({ key, value: true as number | boolean }));
+    if (value !== undefined) rows.push({ key: 'ATTACK_LEVEL_RANGE', value });
+    mockPrisma.serverSetting.findMany = vi.fn().mockResolvedValue(rows);
+    invalidateRuntimeConfigCache();
+  };
+  // The attacker is level 80. Level is derived from experience.
+  const targetAtLevel = (level: number) => {
+    players[2].experience = xpFor(level);
+  };
+
+  test('an attack beyond the configured range is refused before any write', async () => {
+    setRange(5);
+    targetAtLevel(86);
+    const result = await AttackService.executeAttack(1, 2, 10);
+    expect(result).toMatchObject({
+      status: 'failed',
+      code: 'LEVEL_RANGE_EXCEEDED',
+    });
+    expect(result.message).toContain('within 5 levels');
+    expect(logs).toHaveLength(0);
+    expect(players[1].attack_turns).toBe(250);
+    expect(players[2].gold).toBe(1000000n);
+  });
+
+  test('the range is symmetric: a target far below is refused too', async () => {
+    setRange(5);
+    targetAtLevel(74);
+    const result = await AttackService.executeAttack(1, 2, 10);
+    expect(result.code).toBe('LEVEL_RANGE_EXCEEDED');
+    expect(logs).toHaveLength(0);
+  });
+
+  test('a target exactly at the range edge is allowed', async () => {
+    setRange(5);
+    targetAtLevel(85);
+    const result = await AttackService.executeAttack(1, 2, 10);
+    expect(result.status).toBe('success');
+    expect(logs).toHaveLength(1);
+  });
+
+  test('the range follows the ATTACK_LEVEL_RANGE setting', async () => {
+    targetAtLevel(86);
+    setRange(10);
+    expect((await AttackService.executeAttack(1, 2, 10)).status).toBe(
+      'success',
+    );
+    setRange(5);
+    players[1].attack_turns = 250;
+    expect((await AttackService.executeAttack(1, 2, 10)).code).toBe(
+      'LEVEL_RANGE_EXCEEDED',
+    );
+  });
+
+  test('a spy mission beyond the range is refused with TARGET_OUT_OF_RANGE', async () => {
+    setRange(5);
+    targetAtLevel(86);
+    const result = await SpyService.executeSpyMission(1, 2, 10, 'INTEL');
+    expect(result).toMatchObject({
+      status: 'failed',
+      code: 'TARGET_OUT_OF_RANGE',
+    });
+    expect(logs).toHaveLength(0);
+    expect(players[1].attack_turns).toBe(250);
+  });
+
+  test('a spy mission at the range edge is allowed, and the range follows the setting', async () => {
+    setRange(5);
+    targetAtLevel(85);
+    expect((await SpyService.executeSpyMission(1, 2, 10, 'INTEL')).status).toBe(
+      'success',
+    );
+    targetAtLevel(86);
+    setRange(10);
+    expect((await SpyService.executeSpyMission(1, 2, 10, 'INTEL')).status).toBe(
+      'success',
+    );
+  });
+});
+
+describe('spy daily mission cap (SPY_DAILY_LIMIT)', () => {
+  const upgrade = SpyUpgrades.find((u) => u.level === 16)!;
+  // Per-target counts carry a defender_id; the daily count does not.
+  const countsOf = (perTarget: number, today: number) =>
+    vi.fn(async ({ where }: { where: { defender_id?: number } }) =>
+      where.defender_id === undefined ? today : perTarget,
+    );
+
+  for (const [mission, perDay, spies, unit] of [
+    ['INFILTRATE', upgrade.maxInfiltrations, 5, undefined],
+    ['ASSASSINATE', upgrade.maxAssassinations, 10, 'DEFENSE'],
+  ] as const) {
+    // Each iteration captures its own consts; fixtures are reset per test.
+    // eslint-disable-next-line no-loop-func
+    test(`${mission} is refused once today's missions reach the daily limit`, async () => {
+      expect(perDay).toBeGreaterThan(0);
+      mockPrisma.attack_log.count = countsOf(0, perDay);
+      const result = await SpyService.executeSpyMission(
+        1,
+        2,
+        spies,
+        mission,
+        unit,
+        10,
+      );
+      expect(result).toMatchObject({
+        status: 'failed',
+        code: 'SPY_DAILY_LIMIT',
+      });
+      expect(logs).toHaveLength(0);
+      expect(players[1].attack_turns).toBe(250);
+    });
+
+    // eslint-disable-next-line no-loop-func
+    test(`${mission} runs while one daily mission remains`, async () => {
+      mockPrisma.attack_log.count = countsOf(0, perDay - 1);
+      const result = await SpyService.executeSpyMission(
+        1,
+        2,
+        spies,
+        mission,
+        unit,
+        10,
+      );
+      expect(result.status).toBe('success');
+      expect(logs).toHaveLength(1);
+    });
+  }
+
+  test('the daily count is a rolling game-day window per mission type', async () => {
+    const count = countsOf(0, upgrade.maxInfiltrations - 1);
+    mockPrisma.attack_log.count = count;
+    await SpyService.executeSpyMission(1, 2, 5, 'INFILTRATE', undefined, 10);
+    const daily = count.mock.calls
+      .map(([args]) => args.where)
+      .find((where) => where.defender_id === undefined)!;
+    expect(daily).toMatchObject({ attacker_id: 1, type: 'INFILTRATE' });
+    const since = (daily.timestamp as { gte: Date }).gte.getTime();
+    expect(Date.now() - since).toBeGreaterThan(getGameDayMs() - 60_000);
+    expect(Date.now() - since).toBeLessThanOrEqual(getGameDayMs() + 60_000);
   });
 });

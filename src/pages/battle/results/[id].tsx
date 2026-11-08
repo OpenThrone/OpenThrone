@@ -145,7 +145,8 @@ export const getServerSideProps = async (context) => {
   return {
     props: {
       battle: redactAttackLogForViewer(battle, role),
-      lastGenerated: new Date().toISOString(),
+      // The report was generated when the mission ran, not when it is viewed.
+      lastGenerated: battle.timestamp.toISOString(),
       viewerID: viewerUserId,
     },
   };

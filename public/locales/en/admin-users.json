@@ -89,6 +89,8 @@
     "experience": "Experience",
     "level": "Level",
     "levelHelp": "Level is calculated from experience.",
+    "levelReachedAt": "Level reached",
+    "levelReachedAtHelp": "When the player reached their current level. After 3 game days at one level, defender XP from battles grows each game day, up to 3x. Changing experience to a new level resets it to now.",
     "quantityFor": "{{name}} quantity",
     "quantity": "Quantity",
     "mercenary": "Mercenary",

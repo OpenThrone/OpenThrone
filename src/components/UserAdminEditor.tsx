@@ -72,6 +72,8 @@ interface UserStats {
   goldInBank: string;
   experience: number;
   level: number;
+  /** ISO time the player reached their current level (#334); null = just reached. */
+  levelReachedAt: string | null;
 }
 
 interface UserUnit {
@@ -181,7 +183,7 @@ type PatchValue = string | number | null;
 export function buildUserPatch(loaded: UserData, edited: UserData) {
   const fields: Record<string, PatchValue> = {};
   const profile: Record<string, string> = {};
-  const stats: Record<string, string | number> = {};
+  const stats: Record<string, string | number | null> = {};
   const gameplay: Record<string, string | number | null> = {};
   const track = <T extends string | number | null>(
     target: Record<string, T>,
@@ -198,6 +200,10 @@ export function buildUserPatch(loaded: UserData, edited: UserData) {
   track(stats, 'gold', loaded.stats.gold, edited.stats.gold);
   track(stats, 'goldInBank', loaded.stats.goldInBank, edited.stats.goldInBank);
   track(stats, 'experience', loaded.stats.experience, edited.stats.experience);
+  if (loaded.stats.levelReachedAt !== edited.stats.levelReachedAt) {
+    stats.levelReachedAt = edited.stats.levelReachedAt;
+    fields.levelReachedAt = loaded.stats.levelReachedAt;
+  }
   for (const key of Object.keys(edited.gameplay) as (keyof UserGameplay)[]) {
     track(gameplay, key, loaded.gameplay[key], edited.gameplay[key]);
   }
@@ -264,6 +270,23 @@ export function buildUserPatch(loaded: UserData, edited: UserData) {
 
 const formatDate = (value: string | null) =>
   value ? new Date(value).toLocaleString() : '—';
+
+/** ISO time to the admin's local `datetime-local` value (minute precision). */
+export const toDateTimeLocal = (value: string | null) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 16);
+};
+
+/** A `datetime-local` value back to ISO; blank or invalid reads as null. */
+export const fromDateTimeLocal = (value: string) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
 
 const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
   userId,
@@ -876,6 +899,26 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
                   readOnly
                   description={t('fields.levelHelp')}
                   mt="sm"
+                />
+                <TextInput
+                  label={t('fields.levelReachedAt')}
+                  description={t('fields.levelReachedAtHelp')}
+                  type="datetime-local"
+                  value={toDateTimeLocal(userData.stats.levelReachedAt)}
+                  max={toDateTimeLocal(new Date().toISOString())}
+                  readOnly={isReadOnly}
+                  mt="sm"
+                  onChange={(event) =>
+                    setUserData({
+                      ...userData,
+                      stats: {
+                        ...userData.stats,
+                        levelReachedAt: fromDateTimeLocal(
+                          event.currentTarget.value,
+                        ),
+                      },
+                    })
+                  }
                 />
               </GameCard>
             </Grid.Col>

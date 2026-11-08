@@ -17,6 +17,7 @@
     "attack": "Attack",
     "attackConfirm": "Are you sure you want to attack {{player}}?",
     "attackSuccess": "Attack successful!",
+    "pairCapReached": "You've reached the limit of {{limit}} attacks on this player per rolling game day. You can attack them again in {{wait}}.",
     "attackFailed": "Attack failed!",
     "noTarget": "Please select a target before attacking.",
     "insufficientTurns": "You don't have enough turns to attack.",
@@ -121,8 +122,8 @@
     "loadingUserData": "Loading user data...",
     "you": "You",
     "attackRangeSentence": "You can attack players from levels <strong>{{min}}</strong> to <strong>{{max}}</strong>.",
-    "protected": "Protected",
-    "protectedHint": "New-player protection: attacks only take a small share of their gold."
+    "protected": "Gold shielded",
+    "protectedHint": "New-player gold shield: attacks still take units and fort HP. Only their first {{allowance}} gold on hand is shielded — raiders take at most {{share}}% of the normal cap from it at level 1, rising to 100% at level {{taperLevel}}."
   },
   "warHistory": {
     "title": "War History",
@@ -140,6 +141,8 @@
     "timestamp": "Time",
     "attackLog": "Attack Log",
     "defenseLog": "Defense Log",
+    "spyLog": "Spy Missions",
+    "noSpyMissions": "No spy missions sent yet.",
     "outcome": "Outcome",
     "player": "Player",
     "pillageAndExp": "Pillage & Exp",
@@ -151,7 +154,7 @@
     "showDetails": "Show battle details",
     "hideDetails": "Hide battle details",
     "goldBadge": "Gold: {{gold}}",
-    "xpBadge": "XP: {{xp}}",
+    "xpBadge": "Your XP: {{xp}}",
     "turnsBadge": "Turns: {{turns}}",
     "unknownPlayer": "Unknown",
     "missionType": {
@@ -159,7 +162,8 @@
       "INTEL": "Intel",
       "ASSASSINATE": "Assassination",
       "INFILTRATE": "Infiltration"
-    }
+    },
+    "fortHpChange": "{{start}} → {{end}} HP"
   },
   "battleSimulator": {
     "title": "Battle Simulator",
@@ -293,6 +297,7 @@
     "goldOnHand": "Gold On Hand",
     "bankedGold": "Banked Gold",
     "defenseRatio": "Defense Ratio",
+    "defenseRatioHint": "Defense Units as a share of your whole population. Below {{threshold}}%, attackers deal more damage to your fort and take more gold.",
     "trainingProgress": "Training progress: ready",
     "economy": "Economy",
     "offense": "Offense",
@@ -420,7 +425,7 @@
     "defenderLost": "Defender lost",
     "attackLine": "Attacking force: {{soldiers}} soldiers.",
     "counterLine": "{{player}}’s counter killed {{dead}} attackers.",
-    "lossLine": "{{player}} lost {{dead}} soldiers.",
+    "lossLine": "{{player}} lost {{dead}} units.",
     "victory": "Victory",
     "defeat": "Defeat",
     "attackerVictory": "Attacker victory",
@@ -514,10 +519,12 @@
     "playerEarnedXp": "{{player}} earned {{xp}} XP.",
     "goldPillaged": "Gold pillaged: {{gold}}",
     "fortDamage": "Fort damage dealt by the attacker: {{damage}}",
-    "youLostSoldiers_one": "You lost {{dead}} soldier.",
-    "youLostSoldiers_other": "You lost {{dead}} soldiers.",
-    "playerLostSoldiers_one": "{{player}} lost {{dead}} soldier.",
-    "playerLostSoldiers_other": "{{player}} lost {{dead}} soldiers.",
+    "youLostUnits_one": "You lost {{dead}} unit.",
+    "youLostUnits_other": "You lost {{dead}} units.",
+    "youLostUnitType": "You lost 1 {{unit}} unit.",
+    "playerLostUnits_one": "{{player}} lost {{dead}} unit.",
+    "playerLostUnits_other": "{{player}} lost {{dead}} units.",
+    "playerLostUnitType": "{{player}} lost 1 {{unit}} unit.",
     "captivesTaken_one": "Captives taken: {{taken}}.",
     "captivesTaken_other": "Captives taken: {{taken}}.",
     "troopsTakenCaptive_one": "{{taken}} of your troops was taken captive.",
@@ -607,7 +614,8 @@
       "dailyLimit_one": "You can only send {{count}} infiltration attempt per 24 hours. Upgrade your spy structure to increase the number of attempts per day!",
       "dailyLimit_other": "You can only send {{count}} infiltration attempts per 24 hours. Upgrade your spy structure to increase the number of attempts per day!",
       "turnsInfo": "Infiltrations use 2 to 10 attack turns. More turns increase sabotage depth and exposure."
-    }
+    },
+    "upgradeWithFort": "{{upgrade}} — Clandestine upgrades, needs {{fort}}"
   },
   "battleUpgradeNames": {
     "steeds": "Steeds",

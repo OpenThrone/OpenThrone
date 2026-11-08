@@ -41,6 +41,10 @@
       "title": "What should I check before attacking?",
       "answer": "Review the target, your offensive strength, and the attack turns you plan to commit. Spy information can help you assess a target, but combat carries a risk of losses. After the battle, inspect the report and War History to understand the result before committing more resources."
     },
+    "protection": {
+      "title": "What does new-player protection cover?",
+      "answer": "A gold shield, not immunity. Attacks still take units and fort HP. Only your first {{allowance}} gold on hand is shielded — raiders take at most {{share}}% of the normal cap from it at level 1, rising to 100% at level {{taperLevel}}. Bank what you cannot defend; protected players can attack each other."
+    },
     "transfers": {
       "title": "Can I send gold to a friend?"
     },

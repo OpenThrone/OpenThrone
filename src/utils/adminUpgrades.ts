@@ -118,6 +118,24 @@ export function missingItems(
   return ITEM_CATALOG.filter((i) => !have.has(itemKey(i)));
 }
 
+/**
+ * Ledger deltas for adding items. The add leaves an existing row alone, so
+ * only a key the player had no row for changes a balance.
+ */
+export function grantedItemDeltas<
+  T extends { type: string; usage: string; level: number; quantity: number },
+>(added: T[], owned: { type: string; usage: string; level: number }[]) {
+  const have = new Set(owned.map(itemKey));
+  return added
+    .filter((item) => !have.has(itemKey(item)))
+    .map(({ type, usage, level, quantity }) => ({
+      type,
+      usage,
+      level,
+      delta: quantity,
+    }));
+}
+
 const Quantity = z.number().int().min(0).max(QUANTITY_MAX);
 
 const ExpectedValue = z.number().int().nullable();

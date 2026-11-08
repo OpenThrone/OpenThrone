@@ -287,4 +287,12 @@ export interface PersonaAllocationBand {
   readonly attackAggression: number;
   /** Aggression dial governing intel mission count, in [0, 1]. */
   readonly intelAggression: number;
+  /**
+   * Rest instead of attacking while the stamina offense multiplier
+   * (attackerStaminaMultiplier) is below this, mirroring
+   * `BehaviorParams.minOffenseMultiplier`. Fatigue only softens attacks, so
+   * bands without a threshold attack at any stamina. Defaults to
+   * STAMINA_FATIGUE_MIN_MULTIPLIER.
+   */
+  readonly minOffenseMultiplier?: number;
 }

@@ -361,7 +361,9 @@ function allocate(
     options.collateralFallback &&
     options.limit !== 0 &&
     !options.unitLevels &&
-    (type === 'DEFENSE' || type === 'SENTRY')
+    // Citizens fight off attacks (0.1 effectiveness) but never catch spies:
+    // spy missions read sentries only, so spy defense gets no fallback.
+    type === 'DEFENSE'
   ) {
     for (const civilianType of ['CITIZEN', 'WORKER'] as const) {
       const civilianGroups = allocate(user, civilianType, {
@@ -433,6 +435,32 @@ export function calculateCombatStrength(
   for (const key of STAT_KEYS)
     result.totalStats[key] = Math.ceil(result.totalStats[key]);
   return result;
+}
+
+/**
+ * What one unit or item adds to its role's headline stat before bonuses: the
+ * number Overview shows for Offense (melee + ranged attack), Defense (melee
+ * defense), Spy offense (melee attack) and Sentry defense (melee defense).
+ * Training and Armory cards print this instead of the legacy `bonus` field,
+ * which summed every channel and promised more than the stat gains.
+ */
+export function headlineStatValue(
+  stats: Partial<CalculatedStrength>,
+  usage: string,
+): number {
+  const value = (key: (typeof STAT_KEYS)[number]) =>
+    Number.isFinite(stats[key]) ? Math.max(0, stats[key] ?? 0) : 0;
+  switch (usage) {
+    case 'OFFENSE':
+      return value('MeleeAtkPower') + value('RangedAtkPower');
+    case 'SPY':
+      return value('MeleeAtkPower');
+    case 'DEFENSE':
+    case 'SENTRY':
+      return value('MeleeDefPower');
+    default:
+      return 0;
+  }
 }
 
 export interface CombatBreakdownUnit {

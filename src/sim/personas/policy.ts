@@ -12,6 +12,11 @@
  * safety).
  */
 
+import {
+  attackerStaminaMultiplier,
+  STAMINA_FATIGUE_MIN_MULTIPLIER,
+} from '@/constants/ArmyStamina';
+
 import { SimulationConfigError } from '../invariants';
 import { UNIT_COSTS } from '../population';
 import type { Rng } from '../random';
@@ -255,7 +260,14 @@ function decideBandPolicy(
       clamp01(band.bankingPriority * (0.3 + self.bankExposure * 0.7)),
   );
 
-  const availableTurns = Math.max(0, Math.min(self.attackTurns, self.stamina));
+  // Stamina no longer blocks attacks in the live game; it only softens
+  // offense (attackerStaminaMultiplier). Bands rest only while the offense
+  // multiplier is below their threshold; bands without one attack through
+  // fatigue (mirroring behaviors.ts / BehaviorParams.minOffenseMultiplier).
+  const restingForFatigue =
+    attackerStaminaMultiplier(self.stamina) <
+    (band.minOffenseMultiplier ?? STAMINA_FATIGUE_MIN_MULTIPLIER);
+  const availableTurns = restingForFatigue ? 0 : Math.max(0, self.attackTurns);
   const attackTurnsToSpend =
     tactical.persona === 'attacker' || tactical.persona === 'balanced'
       ? Math.min(

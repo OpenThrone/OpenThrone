@@ -71,7 +71,7 @@ const Index = ({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { user, forceUpdate } = useUser();
   const { config, error: configError } = useRuntimeConfig();
-  const { t } = useTranslation('common');
+  const { t, i18n } = useTranslation('common');
   const { t: tAlliances } = useTranslation('alliances');
   const hideSidebar = !user;
   const userStatus = users.status;
@@ -97,6 +97,9 @@ const Index = ({
   const attackLevelRange = config?.attackLevelRange;
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
   const [friendRelationship, setFriendRelationship] = useState(null);
+  const [friendRequestBlock, setFriendRequestBlock] = useState<{
+    retryAt: string | null;
+  } | null>(null);
   const [isFriendLoading, setIsFriendLoading] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -144,6 +147,7 @@ const Index = ({
       if (response.ok) {
         const data = await response.json();
         setFriendRelationship(data.relationship);
+        setFriendRequestBlock(data.requestBlock ?? null);
       }
     } catch (error) {
       logError('Error fetching friend relationship:', error);
@@ -445,6 +449,20 @@ const Index = ({
           type: 'remove',
         };
       default:
+        if (friendRequestBlock) {
+          return {
+            text: '',
+            button: friendRequestBlock.retryAt
+              ? t('profileActions.friendRequestRetry', {
+                  date: new Date(friendRequestBlock.retryAt).toLocaleDateString(
+                    i18n.language,
+                  ),
+                })
+              : t('profileActions.friendRequestClosed'),
+            action: () => {},
+            type: 'blocked',
+          };
+        }
         return {
           text: '',
           button: t('profileActions.addFriend'),
@@ -832,7 +850,9 @@ const Index = ({
                       }
                       leftSection={<RpgAwesomeIcon icon="two-hearts" />}
                       loading={isFriendLoading}
-                      disabled={isOwnProfile}
+                      disabled={
+                        isOwnProfile || friendStatusDisplay.type === 'blocked'
+                      }
                       fullWidth
                       classNames={actionClassNames}
                     >
@@ -1146,6 +1166,7 @@ export const getServerSideProps = async ({ query, locale, req, res }) => {
     'allianceLists',
     'alliances',
     'social',
+    'structures',
   ]);
 
   // Only alliances whose roster is PUBLIC, or that the viewer belongs to.

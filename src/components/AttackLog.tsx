@@ -26,6 +26,8 @@ import { DefenseAdvisory } from '@/components/DefenseAdvisory';
 import { StyledTable } from '@/components/game/StyledTable';
 import type { Log } from '@/types/typings';
 import { getDefenseAdvisory } from '@/utils/defenseAdvisory';
+import { getFortDamageSummary } from '@/utils/fortDamageSummary';
+import { toLocale } from '@/utils/numberFormatting';
 
 import AnimatedButtons from './AnimatedButton';
 import LossesList from './LossesList';
@@ -66,6 +68,9 @@ interface AttackLogTableProps {
   logs: Log[];
   type: string;
   viewerID?: number;
+  emptyLabel?: string;
+  /** Accessible table name; defaults to the attack or defense log title. */
+  ariaLabel?: string;
 }
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -125,6 +130,8 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
   logs,
   type,
   viewerID,
+  emptyLabel,
+  ariaLabel,
 }) => {
   const { t } = useTranslation('battle');
   const [sharingLogId, setSharingLogId] = useState<number | null>(null);
@@ -246,9 +253,10 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
       )}
       <StyledTable
         ariaLabel={
-          type === 'defense'
+          ariaLabel ??
+          (type === 'defense'
             ? t('warHistory.defenseLog')
-            : t('warHistory.attackLog')
+            : t('warHistory.attackLog'))
         }
         headerRowProps={{ 'data-testid': 'table-row' }}
         headers={sortHeaders.map(({ column, label, key }) => (
@@ -269,7 +277,7 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
               className="text-center"
               style={{ borderColor: 'var(--ot-line)' }}
             >
-              {t('warHistory.noBattles')}
+              {emptyLabel ?? t('warHistory.noBattles')}
             </Table.Td>
           </Table.Tr>
         ) : (
@@ -289,6 +297,8 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
                 ? log.stats.attacker_losses
                 : log.stats.defender_losses;
 
+            const fort =
+              log.type === 'attack' ? getFortDamageSummary(log.stats) : null;
             const isViewerDefender =
               type === 'defense' &&
               log.type === 'attack' &&
@@ -363,18 +373,24 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
                         </Text>
                         <LossesList losses={enemyLosses ?? EMPTY_LOSSES} />
                       </Stack>
-                      {!(collapsedLogs[log.id] ?? true) && (
-                        <Stack gap={2} align="center">
-                          <Text size="xs" c="dimmed" tt="uppercase">
-                            {t('warHistory.fortDamage')}
-                          </Text>
-                          <span>
-                            {log.stats.fortDamage ??
-                              (log.stats.forthpAtStart || 0) -
-                                (log.stats.forthpAtEnd || 0)}
-                          </span>
-                        </Stack>
-                      )}
+                      {fort &&
+                        (fort.damage > 0 ||
+                          !(collapsedLogs[log.id] ?? true)) && (
+                          <Stack gap={2} align="center">
+                            <Text size="xs" c="dimmed" tt="uppercase">
+                              {t('warHistory.fortDamage')}
+                            </Text>
+                            <span>{toLocale(fort.damage)}</span>
+                            {fort.start !== null && fort.end !== null && (
+                              <Text size="xs" c="dimmed">
+                                {t('warHistory.fortHpChange', {
+                                  start: toLocale(fort.start),
+                                  end: toLocale(fort.end),
+                                })}
+                              </Text>
+                            )}
+                          </Stack>
+                        )}
                     </Stack>
                   </Table.Td>
                   <Table.Td

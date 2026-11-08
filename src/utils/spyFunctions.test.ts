@@ -229,6 +229,40 @@ describe('assassination dispatch and target conservation', () => {
 });
 
 describe('intel snapshots', () => {
+  it('reports the exact population while the troop breakdown stays sampled (#286)', () => {
+    // 25 citizens + 18 workers + 5 spies: the attack list would show 48.
+    const defender = user([
+      { type: 'CITIZEN', level: 1, quantity: 25 },
+      { type: 'WORKER', level: 1, quantity: 18 },
+      { type: 'SPY', level: 1, quantity: 5 },
+    ]);
+    const attacker = user([{ type: 'SPY', level: 1, quantity: 10000 }]);
+
+    const partial = simulateIntel(attacker, structuredClone(defender), 9, {
+      random: createSeededRandom('exact-population'),
+    });
+    expect(partial.success).toBe(true);
+    expect(partial.intelPercentage).toBe(90);
+    // The payload always carries the exact total, matching the attack list.
+    expect(partial.intelligenceGathered?.population).toBe(48);
+    // The per-unit breakdown is still a partial sample at intel quality.
+    const observed = [
+      ...(partial.intelligenceGathered?.units ?? []),
+      ...(partial.intelligenceGathered?.mercenaries ?? []),
+    ].reduce((sum, unit) => sum + unit.quantity, 0);
+    expect(observed).toBe(43);
+    expect(observed).toBeLessThan(48);
+
+    // Population is public: it is reported even when the roster itself went
+    // unobserved at low intel quality.
+    const sparse = simulateIntel(attacker, structuredClone(defender), 5, {
+      random: createSeededRandom('exact-population'),
+    });
+    expect(sparse.success).toBe(true);
+    expect(sparse.intelPercentage).toBe(50);
+    expect(sparse.intelligenceGathered?.population).toBe(48);
+  });
+
   it('includes exact fort, treasury, and every roster in a full report without retaining live references', () => {
     const defender = user(
       [{ type: 'WORKER', level: 1, quantity: 200 }],
@@ -282,6 +316,21 @@ describe('intel snapshots', () => {
     ).toBeLessThan(Object.keys(first.intelligenceGathered!).length);
     for (const unit of first.intelligenceGathered?.units ?? [])
       expect(unit.quantity).toBe(100);
+  });
+
+  it('reveals at least one unit row when units are gathered from a single-stack roster (#281)', () => {
+    const defender = user([{ type: 'CITIZEN', level: 1, quantity: 51 }]);
+    const attacker = user([{ type: 'SPY', level: 1, quantity: 1000 }]);
+    let seed = 13;
+    const rand = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+    const result = simulateIntel(attacker, defender, 3, { random: rand });
+    expect(result.success).toBe(true);
+    expect(result.intelligenceGathered?.units).not.toBeNull();
+    expect(result.intelligenceGathered!.units!.length).toBeGreaterThan(0);
+    expect(result.intelligenceGathered!.units![0]!.quantity).toBe(51);
   });
 
   it('applies and reports intel casualties across regular and mercenary spies', () => {

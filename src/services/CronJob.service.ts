@@ -20,6 +20,7 @@ import { loadProtectionContext } from '@/services/BattleProtection.service';
 import { CaptiveService } from '@/services/Captives.service';
 import { enqueueStaminaFullAlerts } from '@/services/discord/DiscordAlerts.service';
 import { ensureActiveEra } from '@/services/Era.service';
+import { rollUpExpiringActivity } from '@/services/EraActivity.service';
 import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
 import { KingdomMoraleService } from '@/services/KingdomMorale.service';
 import { pruneLoginTelemetry } from '@/services/LoginTelemetry.service';
@@ -788,35 +789,32 @@ export class CronJobService {
     await pruneAuditLogIps();
     const twentyDaysAgo = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
 
-    // Clean up ACL entries referencing old attack logs first to avoid foreign key violations
-    await prisma.attack_log_acl.deleteMany({
-      where: {
-        attack_log: {
-          timestamp: {
-            lt: twentyDaysAgo,
-          },
+    // Totals are folded in with the deletes, so a row can't be counted twice or
+    // lost. If this fails the logs simply wait for tomorrow's run.
+    try {
+      await prisma.$transaction(
+        async (tx) => {
+          await rollUpExpiringActivity(tx, twentyDaysAgo);
+
+          // Clean up ACL entries referencing old attack logs first to avoid foreign key violations
+          await tx.attack_log_acl.deleteMany({
+            where: { attack_log: { timestamp: { lt: twentyDaysAgo } } },
+          });
+          await tx.attack_log.deleteMany({
+            where: { timestamp: { lt: twentyDaysAgo } },
+          });
+          await tx.bank_history.deleteMany({
+            where: { date_time: { lt: twentyDaysAgo } },
+          });
+          await tx.recruit_history.deleteMany({
+            where: { timestamp: { lt: twentyDaysAgo } },
+          });
         },
-      },
-    });
-
-    const tablesToClean = [
-      { name: 'attack_log', dateField: 'timestamp' },
-      { name: 'bank_history', dateField: 'date_time' },
-      { name: 'recruit_history', dateField: 'timestamp' },
-    ];
-
-    const cleanupPromises = tablesToClean.map(
-      async (table) =>
-        await prisma[table.name].deleteMany({
-          where: {
-            [table.dateField]: {
-              lt: twentyDaysAgo,
-            },
-          },
-        }),
-    );
-
-    await Promise.all(cleanupPromises);
+        { maxWait: 10_000, timeout: 120_000 },
+      );
+    } catch (error) {
+      logError('Error rolling up and deleting expired logs', { error });
+    }
 
     // Overdue alliance loans: seize from gold then bank, else mark DEFAULTED.
     try {

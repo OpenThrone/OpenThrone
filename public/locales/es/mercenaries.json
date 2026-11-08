@@ -13,7 +13,7 @@
   "price": "Por unidad: {{mobilization}} de movilización en oro + {{daily}} de oro al día. Total: {{total}} de oro.",
   "cap": "Hasta 100 mercenarios supervivientes por rol, incluidos los heridos.",
   "shareCap": "Mercenarios: {{mercenaries}} / {{allowed}} permitidos (máximo la mitad de tu propio ejército).",
-  "lockedHall": "Los mercenarios se desbloquean con el {{upgrade}}.",
+  "lockedHall": "Los mercenarios se desbloquean en el nivel {{level}}, cuando tu fuerte sea una Aldea.",
   "tierLocked": "se desbloquea con {{upgrade}}",
   "hire": "Contratar \u00b7 {{total}} de oro",
   "contractsTitle": "Tus contratos",

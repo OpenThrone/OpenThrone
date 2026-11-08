@@ -16,9 +16,11 @@ import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useState } from 'react';
 
+import ActivityEventDetails from '@/components/admin/ActivityEventDetails';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import DateSortHeader from '@/components/admin/DateSortHeader';
 import TablePagination from '@/components/admin/TablePagination';
+import type { ActivityDetails } from '@/utils/adminActivityDetails';
 import { logError } from '@/utils/logger';
 
 const CATEGORIES = [
@@ -52,6 +54,7 @@ interface ActivityData {
     gold: string | null;
     target: number | null;
     attack_id: number | null;
+    details: ActivityDetails | null;
   }[];
 }
 
@@ -389,13 +392,18 @@ export default function PlayerActivity({ days }: { days: string }) {
                     <Table.Td>{row.gold ?? '—'}</Table.Td>
                     <Table.Td>{row.target ? `#${row.target}` : '—'}</Table.Td>
                     <Table.Td>
-                      {row.attack_id && (
+                      {row.attack_id ? (
                         <Anchor
                           component={Link}
                           href={`/home/admin/attacks?attackId=${row.attack_id}`}
                         >
                           {t('attackNumber', { id: row.attack_id })}
                         </Anchor>
+                      ) : (
+                        <ActivityEventDetails
+                          action={row.action}
+                          details={row.details}
+                        />
                       )}
                     </Table.Td>
                   </Table.Tr>

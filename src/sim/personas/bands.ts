@@ -9,6 +9,8 @@
  * adapt" requirement.
  */
 
+import { STAMINA_FATIGUE_MIN_MULTIPLIER } from '@/constants/ArmyStamina';
+
 import { SimulationConfigError } from '../invariants';
 import type { Persona } from '../scenarioTypes';
 import { PERSONAS } from '../scenarioTypes';
@@ -87,6 +89,9 @@ export const PERSONA_ALLOCATION_BANDS: Record<Persona, PersonaAllocationBand> =
       bankingPriority: 0.6,
       attackAggression: 0.45,
       intelAggression: 0.45,
+      // Attacks are income; does not spend them heavily fatigued
+      // (waits until fatigue costs at most 10% offense, stamina >= 25).
+      minOffenseMultiplier: 0.9,
     },
   };
 
@@ -141,6 +146,14 @@ export function interpolateBand(
     bankingPriority: lerp(greedy.bankingPriority, cautious.bankingPriority),
     attackAggression: lerp(greedy.attackAggression, cautious.attackAggression),
     intelAggression: lerp(greedy.intelAggression, cautious.intelAggression),
+    minOffenseMultiplier:
+      greedy.minOffenseMultiplier === undefined &&
+      cautious.minOffenseMultiplier === undefined
+        ? undefined
+        : lerp(
+            greedy.minOffenseMultiplier ?? STAMINA_FATIGUE_MIN_MULTIPLIER,
+            cautious.minOffenseMultiplier ?? STAMINA_FATIGUE_MIN_MULTIPLIER,
+          ),
   };
   return mix;
 }
@@ -180,6 +193,18 @@ export function validateAllocationBands(): void {
           'persona-band-dial-range',
         );
       }
+    }
+    const { minOffenseMultiplier } = band;
+    if (
+      minOffenseMultiplier !== undefined &&
+      (!Number.isFinite(minOffenseMultiplier) ||
+        minOffenseMultiplier < 0 ||
+        minOffenseMultiplier > 1)
+    ) {
+      throw new SimulationConfigError(
+        `Persona "${persona}" minOffenseMultiplier = ${minOffenseMultiplier}, expected [0, 1]`,
+        'persona-band-min-offense-range',
+      );
     }
   }
 }

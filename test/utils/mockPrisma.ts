@@ -45,6 +45,7 @@ export function installMockPrisma(vi: any) {
   };
   mockPrisma.alliance_memberships = {
     findFirst: vi.fn(async () => null),
+    findMany: vi.fn(async () => []),
   };
   mockPrisma.attack_log.aggregate = vi.fn(async () => ({
     _sum: { defender_losses_total: null, pillaged_gold: null },

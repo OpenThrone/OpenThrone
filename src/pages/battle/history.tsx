@@ -1,4 +1,4 @@
-import { faScroll } from '@fortawesome/free-solid-svg-icons';
+import { faScroll, faUserSecret } from '@fortawesome/free-solid-svg-icons';
 import { Group, Pagination, useMantineTheme } from '@mantine/core';
 import type { InferGetServerSidePropsType } from 'next';
 import { getSession } from 'next-auth/react';
@@ -9,7 +9,10 @@ import AttackLogTable from '@/components/AttackLog';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import prisma from '@/lib/prisma';
-import { redactAttackLogForViewer } from '@/services/AttackLogAccess.service';
+import {
+  ownSpyMissionsWhere,
+  redactAttackLogForViewer,
+} from '@/services/AttackLogAccess.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { localePrefix } from '@/utils/localeRedirect';
 
@@ -18,15 +21,18 @@ const ROWS_PER_PAGE = 5;
 const WarHistory = ({
   attackLogs,
   defenseLogs,
+  spyLogs,
   viewerID,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { t } = useTranslation('battle');
   const [attackPage, setAttackPage] = useState(1);
   const [defensePage, setDefensePage] = useState(1);
+  const [spyPage, setSpyPage] = useState(1);
   const theme = useMantineTheme();
 
   const totalAttackPages = Math.ceil(attackLogs.length / ROWS_PER_PAGE);
   const totalDefensePages = Math.ceil(defenseLogs.length / ROWS_PER_PAGE);
+  const totalSpyPages = Math.ceil(spyLogs.length / ROWS_PER_PAGE);
 
   const currentAttackLogs = attackLogs.slice(
     (attackPage - 1) * ROWS_PER_PAGE,
@@ -36,6 +42,11 @@ const WarHistory = ({
   const currentDefenseLogs = defenseLogs.slice(
     (defensePage - 1) * ROWS_PER_PAGE,
     defensePage * ROWS_PER_PAGE,
+  );
+
+  const currentSpyLogs = spyLogs.slice(
+    (spyPage - 1) * ROWS_PER_PAGE,
+    spyPage * ROWS_PER_PAGE,
   );
 
   return (
@@ -61,7 +72,11 @@ const WarHistory = ({
         </Group>
       </GameCard>
 
-      <GameCard title={t('warHistory.defenseLog')} icon={faScroll}>
+      <GameCard
+        title={t('warHistory.defenseLog')}
+        icon={faScroll}
+        style={{ marginBottom: theme.spacing.md }}
+      >
         <AttackLogTable
           logs={currentDefenseLogs}
           type="defense"
@@ -72,6 +87,25 @@ const WarHistory = ({
             total={totalDefensePages}
             value={defensePage}
             onChange={setDefensePage}
+            siblings={1}
+            boundaries={1}
+          />
+        </Group>
+      </GameCard>
+
+      <GameCard title={t('warHistory.spyLog')} icon={faUserSecret}>
+        <AttackLogTable
+          logs={currentSpyLogs}
+          type="attack"
+          viewerID={viewerID}
+          emptyLabel={t('warHistory.noSpyMissions')}
+          ariaLabel={t('warHistory.spyLog')}
+        />
+        <Group justify="center" pt="md">
+          <Pagination
+            total={totalSpyPages}
+            value={spyPage}
+            onChange={setSpyPage}
             siblings={1}
             boundaries={1}
           />
@@ -95,7 +129,7 @@ export const getServerSideProps = async (context: any) => {
 
   const era = await ensureActiveEra();
 
-  const [attackLogs, defenseLogs] = await Promise.all([
+  const [attackLogs, defenseLogs, spyLogs] = await Promise.all([
     prisma.attack_log.findMany({
       where: {
         attacker_id: userId,
@@ -124,6 +158,14 @@ export const getServerSideProps = async (context: any) => {
       },
       orderBy: { timestamp: 'desc' },
     }),
+    prisma.attack_log.findMany({
+      where: ownSpyMissionsWhere(userId, era.startDate),
+      include: {
+        attackerPlayer: { select: { id: true, display_name: true } },
+        defenderPlayer: { select: { id: true, display_name: true } },
+      },
+      orderBy: { timestamp: 'desc' },
+    }),
   ]);
 
   // Each side only receives its own allowlisted view of the log.
@@ -136,6 +178,7 @@ export const getServerSideProps = async (context: any) => {
       defenseLogs: defenseLogs.map((log) =>
         redactAttackLogForViewer(log, 'defender'),
       ),
+      spyLogs: spyLogs.map((log) => redactAttackLogForViewer(log, 'attacker')),
     },
   };
 };

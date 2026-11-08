@@ -74,7 +74,7 @@
       "protection": {
         "title": "Your first days are protected",
         "paragraphs": [
-          "New kingdoms are shielded from the worst of a raid. Protection ends at the first of three limits: {{protection.days}} days after you join the era, level {{protection.level}} ({{protection.levelXp}} experience), or your population growing past a threshold that depends on the era. While you are protected, one battle can cost you at most {{protection.lossCapPercent}}% of your population, with a minimum of one unit.",
+          "New kingdoms get a gold shield, not immunity: attacks still take units and damage the fort. Protection ends at the first of three limits: {{protection.days}} days after you join the era, level {{protection.level}} ({{protection.levelXp}} experience), or your population growing past a threshold that depends on the era. While you are protected, one battle can cost you at most {{protection.lossCapPercent}}% of your population, with a minimum of one unit.",
           "Attacking does not end your protection, but use the time to build income and a defense before you start raiding."
         ]
       },
@@ -123,7 +123,7 @@
         "title": "Economy upgrades",
         "paragraphs": [
           "Each Economy upgrade raises the gold every Worker earns and the number of Bank deposits you may make per day. Many upgrades also need a minimum fortification level.",
-          "Upgrades open features too. Gold transfers unlock with the {{unlockNames.goldTransfer}}, and the mercenary hall with the {{unlockNames.mercenaryHall}}."
+          "Upgrades open features too. Gold transfers unlock with the {{unlockNames.goldTransfer}}, and mercenaries from level {{unlockNames.mercenaryLevel}}, once your fort is a {{unlockNames.mercenaryFort}}."
         ],
         "tableCaption": "Economy upgrades"
       },
@@ -195,6 +195,7 @@
         "paragraphs": [
           "Spy missions spend turns as well. A mission takes up to {{spy.missionMaxTurns}} turns. Intel missions take up to {{spy.intelMaxTurns}}, infiltrations at least {{spy.infiltrationMinTurns}} and assassinations at least {{spy.assassinationMinTurns}}.",
           "You can run at most {{spy.intelPerTargetPerDay}} intel missions against one target in 24 hours, and repeated missions against the same kingdom get harder as the day goes on. Your own spies and sentries defend you against enemy spies.",
+          "An intel report always shows the target's exact population, the same number the attack list shows. The troops, gold and equipment it observed are a sample, and the report names its intel quality: the share of the kingdom your spies saw.",
           "Which missions are open is a server setting, so the Spy menu shows what you can do right now."
         ]
       },

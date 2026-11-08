@@ -23,6 +23,7 @@ describe('mercenary price quote', () => {
         findUnique: vi.fn().mockResolvedValue(null),
         create: vi.fn(),
       },
+      bank_history: { create: vi.fn() },
       users: {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
           id: 1,

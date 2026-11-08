@@ -33,6 +33,7 @@ import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { useSidebarData } from '@/hooks/useSidebarData';
 import { readStaminaBalance } from '@/hooks/useStamina';
 import { useSupporterStatus } from '@/hooks/useSupporterStatus';
+import { getEraNumberLabel } from '@/utils/eraLabel';
 import { getAvatarSrc } from '@/utils/utilities';
 
 import { GoldRequestNotificationModal } from './GoldRequestNotificationModal';
@@ -118,7 +119,7 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
     },
     {
       label: t('labels.era'),
-      value: user?.currentEra?.id ?? t('labels.unknown'),
+      value: getEraNumberLabel(user?.currentEra) ?? t('labels.unknown'),
       tooltip: user?.currentEra?.name ?? t('labels.unknown'),
       icon: <RpgAwesomeIcon icon="hourglass" fw />,
     },

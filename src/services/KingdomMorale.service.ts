@@ -31,7 +31,7 @@ import {
   type ProtectionSettings,
 } from '@/utils/battleProtection';
 import { logError, logInfo } from '@/utils/logger';
-import { getOTDayKey, getOTStartDate } from '@/utils/timefunctions';
+import { getGameDayKey, getGameDayStart } from '@/utils/timefunctions';
 
 type Tx = Prisma.TransactionClient;
 
@@ -114,7 +114,7 @@ export class KingdomMoraleService {
     let outcome: 'success' | 'stale' | 'failed';
     try {
       outcome = await prisma.$transaction(async (tx) => {
-        const todayKey = getOTDayKey(now);
+        const todayKey = getGameDayKey(now);
 
         // A defector recipient's row may need locking below, and every users
         // lock this pass takes must be acquired together in ascending id
@@ -511,7 +511,7 @@ export class KingdomMoraleService {
                 where: {
                   kind: 'DEFECT',
                   defectedToUserId: lockedRecipient.id,
-                  createdAt: { gte: getOTStartDate() },
+                  createdAt: { gte: getGameDayStart() },
                 },
               });
               let capRemaining = Math.max(

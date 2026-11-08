@@ -6,10 +6,11 @@ import UserModel from '@/models/Users';
 import { assertNoDefaultedLoan } from '@/services/AllianceLoan.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
-import { getMaxDeposit } from '@/utils/bankLimits';
+import { getBankRoom, getMaxDeposit } from '@/utils/bankLimits';
 import { parseBigInt } from '@/utils/jsonHelpers';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { sanitizeUserForResponse } from '@/utils/sanitizeUser';
+import { getGameDayMs } from '@/utils/timefunctions';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -60,7 +61,7 @@ export const withdrawGold = async (
 
 /**
  * Deposits gold from a user's hand into their bank account within a transaction.
- * The user row is locked first, so the deposit-count cap, balance and 80% cap
+ * The user row is locked first, so the deposit-count cap, balance, bank capacity and 80% cap
  * are all evaluated against committed state. Creates a bank history record.
  *
  * Transaction budget: Prisma defaults (timeout 5s / maxWait 2s) are kept.
@@ -115,6 +116,16 @@ const deposit = async (userId: number, depositAmount: bigint) => {
       throw new Error(
         `Deposit amount exceeds the maximum allowed (${capPercent}% of gold on hand).`,
       );
+
+    const room = getBankRoom(
+      BigInt(uModel.bankCap),
+      BigInt(user.gold_in_bank ?? 0),
+    );
+    if (validatedData.depositAmount > room) {
+      throw new Error(
+        `Your bank holds up to ${uModel.bankCap.toLocaleString('en-US')} gold and has room for ${room.toLocaleString('en-US')} more. Economy upgrades raise this limit.`,
+      );
+    }
 
     const updateResult = await tx.users.updateMany({
       where: {
@@ -232,7 +243,7 @@ export const getDepositHistory = async (
       history_type: 'PLAYER_TRANSFER',
       date_time: {
         gte: new Date(
-          Math.max(Date.now() - 24 * 60 * 60 * 1000, era.startDate.getTime()),
+          Math.max(Date.now() - getGameDayMs(), era.startDate.getTime()),
         ),
       },
     },

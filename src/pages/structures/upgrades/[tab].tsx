@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
+import { useEffect } from 'react';
 
 import ArmoryUpgradesTab from '@/components/armory-upgrades';
 import ClandestineUpgrade from '@/components/clandestineupgrades';
@@ -13,14 +14,24 @@ import MainArea from '@/components/MainArea';
 import OffenseUpgrade from '@/components/offenseupgrade';
 import { RacialUpgrades } from '@/components/racial-upgrades';
 import { useUser } from '@/context/users';
+import { resolveUpgradeTab } from '@/utils/upgradeTabs';
 
 const UpgradeTab = () => {
   const router = useRouter();
   const tabParam = Array.isArray(router.query.tab)
     ? router.query.tab[0]
     : router.query.tab;
-  const tab = tabParam || 'fortifications';
+  // Old or mistyped tab URLs land on a real tab instead of an empty card (#348).
+  const tab = resolveUpgradeTab(tabParam);
   const { user, forceUpdate } = useUser();
+
+  useEffect(() => {
+    if (router.isReady && tabParam && tabParam !== tab) {
+      router.replace(`/structures/upgrades/${tab}`, undefined, {
+        locale: router.locale,
+      });
+    }
+  }, [router, tabParam, tab]);
 
   const { t } = useTranslation('structures');
   // The racial track is named after the player's own perk (Discipline,

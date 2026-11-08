@@ -104,7 +104,7 @@
     "receiveLimitHint": "Der Empfänger hat ebenfalls ein Tageslimit.",
     "overDailyLimit": "Mehr als Ihr verbleibender Tagesbetrag von {{amount}} Gold.",
     "lockedTitle": "Goldübertragungen gesperrt",
-    "locked": "Goldübertragungen werden mit dem {{upgrade}} freigeschaltet.",
+    "locked": "Goldübertragungen werden freigeschaltet mit {{upgrade}}.",
     "limitsFailed": "Konnte Ihre Übertragungsgrenzen nicht laden.",
     "levelLockedTitle": "Stufe zu niedrig",
     "levelLockedSelf": "Erfordert Stufe {{level}}. Erreiche Stufe {{level}}, um Gold zu überweisen.",

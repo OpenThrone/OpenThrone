@@ -23,6 +23,7 @@ import { readStaminaBalance } from '@/hooks/useStamina';
 import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { logError } from '@/utils/logger';
 import { clampMissionQuantity } from '@/utils/missionQuantity';
+import { pairCapRefusalText } from '@/utils/pairCapMessage';
 
 /**
  * Props for the attack confirmation Modal component.
@@ -148,10 +149,15 @@ const Modal: React.FC<ModalProps> = ({
         Number.isNaN(Number(results.attack_log))
       ) {
         reportTab?.close();
+        const pairCapText =
+          results?.code === 'TOO_MANY_ATTACKS'
+            ? pairCapRefusalText(t, results?.extra_variables)
+            : null;
         setError(
-          typeof results?.message === 'string'
-            ? results.message
-            : t('attack.attackFailed'),
+          pairCapText ??
+            (typeof results?.message === 'string'
+              ? results.message
+              : t('attack.attackFailed')),
         );
         return;
       }

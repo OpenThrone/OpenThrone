@@ -2,8 +2,11 @@ import { describe, expect, it } from 'bun:test';
 
 import {
   buildPresetOrder,
+  requestTrainingPreset,
+  TRAINING_PRESET_EVENT,
   TRAINING_PRESET_IDS,
   TRAINING_PRESETS,
+  type TrainingPresetDetail,
 } from './trainingPresets';
 
 const UNITS = [
@@ -82,5 +85,45 @@ describe('trainingPresets', () => {
     expect(
       buildPresetOrder('raider', { citizens: 50, gold: 0, units: UNITS }),
     ).toEqual({});
+  });
+});
+
+describe('requestTrainingPreset', () => {
+  const pageAnswering = (filled: boolean) => {
+    const target = new EventTarget();
+    target.addEventListener(TRAINING_PRESET_EVENT, (event) =>
+      (event as CustomEvent<TrainingPresetDetail>).detail.done?.(filled),
+    );
+    return target;
+  };
+
+  it('reports an empty order, so the tour does not claim it was filled', () => {
+    const results: boolean[] = [];
+    requestTrainingPreset(
+      'steady',
+      (filled) => results.push(filled),
+      pageAnswering(false),
+    );
+    expect(results).toEqual([false]);
+  });
+
+  it('reports a filled order', () => {
+    const results: boolean[] = [];
+    requestTrainingPreset(
+      'steady',
+      (filled) => results.push(filled),
+      pageAnswering(true),
+    );
+    expect(results).toEqual([true]);
+  });
+
+  it('reports nothing when no Training page is listening', () => {
+    const results: boolean[] = [];
+    requestTrainingPreset(
+      'steady',
+      (filled) => results.push(filled),
+      new EventTarget(),
+    );
+    expect(results).toEqual([]);
   });
 });

@@ -4,6 +4,7 @@ import { mtRandImpl } from 'test/utils/mockMtRand';
 import { Fortifications, levelXPArray } from '@/constants';
 import UserModel from '@/models/Users';
 import { executeAttack } from '@/utils/attackFunctions';
+import { COMBAT_RULESETS } from '@/utils/balance/combatRulesets';
 import {
   calculateCasualtyBudget,
   calculateDailyReplacementThroughput,
@@ -301,6 +302,8 @@ describe('battle casualty integration', () => {
   });
 
   it('sub-unit population, stack and daily budgets never force one loss', async () => {
+    // combat-v11 and earlier round the caps down; combat-v12 rounds by chance
+    // (see casualtyRounding.test.ts), so the tiny-army half is pinned to v11.
     for (const quantity of [1, 12]) {
       const attacker = buildUser({
         ...RAIDER,
@@ -312,6 +315,7 @@ describe('battle casualty integration', () => {
       });
       const result = await executeAttack(attacker, defender, 10, false, {
         random: createSeededRandom(`tiny-army-${quantity}`),
+        ruleset: COMBAT_RULESETS['combat-v11'],
       });
       expect(result.Losses.Attacker.total).toBe(0);
       expect(

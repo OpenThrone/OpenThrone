@@ -6,6 +6,7 @@ import { UnitTypes } from '@/constants/Units';
 import { DEFAULT_ERA_START_SETTINGS } from '@/utils/eraStartSettings';
 import { buildGuideFacts, GUIDE_EXAMPLE_WORKERS } from '@/utils/guideFacts';
 import { staminaCost } from '@/utils/stamina';
+import { getGameDayMinutes } from '@/utils/timefunctions';
 
 describe('public guide figures', () => {
   it('reads unit costs and income from the game constants', () => {
@@ -31,7 +32,7 @@ describe('public guide figures', () => {
       GUIDE_EXAMPLE_WORKERS * income.farmPerWorker + income.manorPerTurn,
     );
     expect(income.examplePerDay).toBe(income.examplePerTurn * turnsPerDay);
-    expect(turnsPerDay * turnMinutes).toBe(24 * 60);
+    expect(turnsPerDay * turnMinutes).toBe(getGameDayMinutes());
   });
 
   it('falls back to the registry defaults until the live config loads', () => {

@@ -14,7 +14,7 @@ Artwork previously bundled under `/assets/` uses R2 keys under `artwork/v1/asset
 
 ## Local comparison
 
-On `ot.aioxhost.com`, the header includes an **Artwork comparison** selector with Configured default, R2 artwork, and Pure UI / fallback options. The choice is saved only in that browser. R2 uses the configured public artwork base, or the documented `https://assets.openthrone.dev` public origin when none is configured; Pure UI uses the existing CSS and icon fallbacks. Uploaded player avatars are preserved.
+On the local development host, the header includes an **Artwork comparison** selector with Configured default, R2 artwork, and Pure UI / fallback options. The choice is saved only in that browser. R2 uses the configured public artwork base, or the documented `https://assets.openthrone.dev` public origin when none is configured; Pure UI uses the existing CSS and icon fallbacks. Uploaded player avatars are preserved.
 
 Changing the option redraws the page and resets open dialogs and unsaved page filters. The selector and its override are disabled on every other hostname, including alpha and production. Server rendering and the configured deployment default are unchanged.
 

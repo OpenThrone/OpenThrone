@@ -292,10 +292,24 @@ export const initializeSocket = (httpServer: HttpServer) => {
         (minimalReq.headers as { authorization?: string }).authorization =
           `Bearer ${tokenFromClient}`;
 
-        const token = await getToken({
-          req: minimalReq as unknown as Parameters<typeof getToken>[0]['req'],
-          secret: process.env.JWT_SECRET,
-        });
+        // Mirror the login system's secret resolution (src/pages/api/auth/[...nextauth].ts):
+        // sessions are signed with NEXTAUTH_SECRET when set, so accept either secret.
+        const authSecrets = Array.from(
+          new Set(
+            [process.env.NEXTAUTH_SECRET, process.env.JWT_SECRET].filter(
+              Boolean,
+            ),
+          ),
+        ) as string[];
+
+        let token: Awaited<ReturnType<typeof getToken>> = null;
+        for (const secret of authSecrets) {
+          token = await getToken({
+            req: minimalReq as unknown as Parameters<typeof getToken>[0]['req'],
+            secret,
+          });
+          if (hasTokenUserId(token)) break;
+        }
 
         if (!hasTokenUserId(token)) {
           logInfo('Socket Auth: Invalid or missing token/user ID');

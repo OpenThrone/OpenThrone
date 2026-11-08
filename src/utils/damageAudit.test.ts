@@ -7,6 +7,7 @@ const { simulateBattle, distributeCasualties } = require('./attackFunctions');
 const BattleResult = require('../models/BattleResult').default;
 const UserModel = require('../models/Users').default;
 const MockUserGenerator = require('./MockUserGenerator').default;
+const { COMBAT_RULESETS } = require('./balance/combatRulesets');
 
 beforeEach(() => {
   mtRandImpl.fn = () => 0.9;
@@ -44,8 +45,11 @@ const runSeeded = async () => {
     { type: 'DEFENSE', quantity: 600, level: 1 },
     { type: 'CITIZEN', quantity: 400, level: 1 },
   ]);
+  // Pinned to combat-v11: the golden predates v12's cap-rounding draw, and
+  // this test only proves the audit never changes an outcome.
   return simulateBattle(attacker, defender, 500, 10, false, false, {
     random: seeded(42),
+    ruleset: COMBAT_RULESETS['combat-v11'],
   });
 };
 

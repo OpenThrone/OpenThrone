@@ -83,4 +83,4 @@ The original audit is retained as the before-state record; this document records
 
 Added an Administrator-only **Reset current era & enable logins** flow in Era Management, with links from the login settings. It preserves the era identity and saved starting settings, resets staff/player and alliance progress, and atomically opens logins only after the reset and required audit succeed. Era/login changes serialize through a common lifecycle lock, stale confirmations are rejected, old cron queue entries are discarded, and recruitment quota windows respect the refreshed era start.
 
-See [current-era reset operations](current-era-reset.md) for the exact retained/deleted scope and launch steps. No live reset or login-state change was executed while implementing this flow.
+See [Eras and era resets](mechanics/era-reset.md) for the exact retained/deleted scope and launch steps. No live reset or login-state change was executed while implementing this flow.

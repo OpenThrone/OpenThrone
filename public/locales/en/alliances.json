@@ -11,7 +11,8 @@
     "requestToJoin": "Request to join",
     "joinSuccess": "You joined the alliance.",
     "manage": "View Dashboard",
-    "joinError": "Failed to join alliance"
+    "joinError": "Failed to join alliance",
+    "noAlliancesHint": "No one has founded an alliance yet. Found the first one and invite your friends."
   },
   "create": {
     "title": "Create Alliance",
@@ -79,8 +80,8 @@
   },
   "mine": {
     "title": "My Alliances",
-    "count_one": "You belong to {{count}} of {{max}} alliances",
-    "count_other": "You belong to {{count}} of {{max}} alliances",
+    "count_one": "You are in {{count}} alliance (you can join up to {{max}})",
+    "count_other": "You are in {{count}} alliances (you can join up to {{max}})",
     "browse": "Browse alliances",
     "create": "Create alliance",
     "createLeading": "You already lead an alliance. Hand over leadership or disband it before creating another.",

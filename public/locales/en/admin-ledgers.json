@@ -5,7 +5,8 @@
     "recruits": "Recruit history",
     "logins": "Login history",
     "suppressions": "Email suppressions",
-    "blocks": "Identity blocks"
+    "blocks": "Identity blocks",
+    "drift": "Item drift"
   },
   "sender": "Sender ID",
   "receiver": "Receiver ID",
@@ -51,7 +52,15 @@
     "createdByUserId": "Created by ID",
     "kind": "Kind",
     "sourceUserId": "Source user ID",
-    "expiresAt": "Expires"
+    "expiresAt": "Expires",
+    "type": "Item",
+    "usage": "Usage",
+    "level": "Level",
+    "checkpointQuantity": "Last check",
+    "ledgerDelta": "Recorded change",
+    "actualQuantity": "Actual",
+    "drift": "Drift"
   },
-  "protectedRemoval": "This entry is protected and cannot be removed."
+  "protectedRemoval": "This entry is protected and cannot be removed.",
+  "driftNote": "Balances that did not match the last check plus recorded changes. Each is listed once and nothing is corrected automatically. Clean days appear in the Cron run log."
 }

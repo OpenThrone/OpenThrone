@@ -18,7 +18,7 @@ import {
   MERCENARY_ROLE_CAP,
   mercenaryShareCap,
 } from '@/utils/temporaryForces';
-import { getOTDayKey } from '@/utils/timefunctions';
+import { getGameDayKey } from '@/utils/timefunctions';
 import { getLevelFromXP } from '@/utils/utilities';
 
 import de from '../../public/locales/de/battle.json';
@@ -316,7 +316,7 @@ export async function computeVoidPlan(
       'This battle belongs to an earlier era and can no longer be voided',
     );
   const attackerWon = log.winner === log.attacker_id;
-  const battleDay = getOTDayKey(log.timestamp ?? new Date());
+  const battleDay = getGameDayKey(log.timestamp ?? new Date());
   const now = new Date();
   const items: VoidItem[] = [];
   const add = (
@@ -1345,7 +1345,7 @@ export async function computeVoidPlan(
   if (
     hasLedger &&
     defender.defense_pressure_date &&
-    getOTDayKey(defender.defense_pressure_date) === battleDay
+    getGameDayKey(defender.defense_pressure_date) === battleDay
   ) {
     const delta = num(pressure.before) - num(pressure.after);
     const next = Math.max(0, num(defender.defense_pressure_today) + delta);

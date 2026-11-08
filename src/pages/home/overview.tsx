@@ -4,6 +4,7 @@ import {
   faCopy,
   faCrown,
   faEye,
+  faLandmark,
   faLevelUpAlt,
   faMedal,
   faMoneyBills,
@@ -53,12 +54,17 @@ import { KingdomMoraleMeter } from '@/components/overview/KingdomMoraleMeter';
 import { ReanimationLine } from '@/components/overview/ReanimationLine';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import StatCard from '@/components/StatCard';
+import { Fortifications } from '@/constants/Fortifications';
 import { useUser } from '@/context/users';
 import { usePlayerIdentity } from '@/hooks/usePlayerIdentity';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import type { Locales } from '@/types/typings';
 import { logError } from '@/utils/logger';
 import { formatGold, toLocale } from '@/utils/numberFormatting';
+
+/** Structures > Upgrades opens with the Village fort, at this player level. */
+const STRUCTURE_UPGRADES_LEVEL =
+  Fortifications.find((fort) => fort.level === 2)?.levelRequirement ?? 5;
 
 const Overview = () => {
   const { t, i18n } = useTranslation('home');
@@ -213,6 +219,21 @@ const Overview = () => {
       label: t('overview.netWorth'),
       value: toLocale(user.netWorth, locale),
       href: '/community/stats',
+    },
+    {
+      icon: faLandmark,
+      label: t('overview.structures'),
+      value: t('overview.structuresValue', {
+        fort:
+          Fortifications.find((fort) => fort.level === user.fortLevel)?.name ??
+          toLocale(user.fortLevel, locale),
+        spy: toLocale(user.spyLevel, locale),
+        sentry: toLocale(user.sentryLevel, locale),
+      }),
+      href:
+        user.level >= STRUCTURE_UPGRADES_LEVEL
+          ? '/structures/upgrades'
+          : undefined,
     },
   ];
   return (

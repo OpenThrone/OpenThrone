@@ -5,6 +5,7 @@ import {
   recruitmentBlockFor,
   type RecruitmentStatus,
   recruitsLeftFor,
+  shouldSubmitRecruitAgain,
 } from './recruitmentStatus';
 
 const status = (
@@ -64,5 +65,36 @@ describe('recruitBlockMessage', () => {
       'recruit.blockedPair|5/5|Tyler',
     );
     expect(recruitBlockMessage(t, status(), 42, 'Tyler')).toBeNull();
+  });
+});
+
+describe('shouldSubmitRecruitAgain (playtest #339)', () => {
+  const ready = {
+    pending: true,
+    ready: true,
+    showCaptcha: false,
+    succeeded: false,
+    error: null,
+    submitting: false,
+  };
+
+  it('recruits once the re-check shows the form', () => {
+    expect(shouldSubmitRecruitAgain(ready)).toBe(true);
+  });
+
+  it('waits while the re-check is still running', () => {
+    expect(shouldSubmitRecruitAgain({ ...ready, ready: false })).toBe(false);
+    expect(shouldSubmitRecruitAgain({ ...ready, succeeded: true })).toBe(false);
+  });
+
+  it('leaves captchas, refusals and plain retries to the player', () => {
+    expect(shouldSubmitRecruitAgain({ ...ready, showCaptcha: true })).toBe(
+      false,
+    );
+    expect(shouldSubmitRecruitAgain({ ...ready, error: 'cap' })).toBe(false);
+    expect(shouldSubmitRecruitAgain({ ...ready, pending: false })).toBe(false);
+    expect(shouldSubmitRecruitAgain({ ...ready, submitting: true })).toBe(
+      false,
+    );
   });
 });

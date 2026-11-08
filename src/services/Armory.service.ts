@@ -7,6 +7,8 @@ import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services/AttackDataService';
 import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
+import type { ItemDelta } from '@/services/ItemLedger.service';
+import { recordItemLedger } from '@/services/ItemLedger.service';
 import { MercenaryService } from '@/services/Mercenary.service';
 import { updateUserAndBankHistory } from '@/services/User.service';
 import type { Item } from '@/types/typings';
@@ -14,6 +16,15 @@ import { discountedItemCost, slotFloorCost } from '@/utils/armoryPricing';
 import { ArmoryUpgradeSchema } from '@/utils/armoryUpgradeSchema';
 import { logError } from '@/utils/logger';
 import { calculateUserStats } from '@/utils/utilities';
+
+/** Ledger deltas for an armory request, signed by direction. */
+const armoryDeltas = (items: ArmoryItem[], sign: 1 | -1): ItemDelta[] =>
+  items.map((item) => ({
+    type: item.type as ItemDelta['type'],
+    usage: item.usage as ItemDelta['usage'],
+    level: item.level,
+    delta: sign * Number(item.quantity),
+  }));
 
 // Type definitions for armory operations
 /** Describes the armory item data contract. */
@@ -300,6 +311,12 @@ export class ArmoryService {
           },
           'items',
         );
+        await recordItemLedger(
+          tx,
+          userId,
+          'ARMORY_BUY',
+          armoryDeltas(itemsToEquip as ArmoryItem[], 1),
+        );
 
         return updatedItemsArray;
       });
@@ -438,6 +455,12 @@ export class ArmoryService {
           },
           'items',
         );
+        await recordItemLedger(
+          tx,
+          userId,
+          'ARMORY_SELL',
+          armoryDeltas(itemsToUnequip as ArmoryItem[], -1),
+        );
 
         return finalItemsArray;
       });
@@ -516,6 +539,7 @@ export class ArmoryService {
           level: Number(item.level),
           quantity: Number(item.quantity),
         }));
+        const ledgerDeltas: ItemDelta[] = [];
         let totalCost = 0;
         let totalRefund = 0;
         for (const { fromItem, toItem, conversionAmount } of conversions) {
@@ -561,6 +585,20 @@ export class ArmoryService {
           }
           source.quantity -= conversionAmount;
           target.quantity += conversionAmount;
+          ledgerDeltas.push(
+            {
+              type: from.type as ItemDelta['type'],
+              usage: from.usage as ItemDelta['usage'],
+              level: from.level,
+              delta: -conversionAmount,
+            },
+            {
+              type: to.type as ItemDelta['type'],
+              usage: to.usage as ItemDelta['usage'],
+              level: to.level,
+              delta: conversionAmount,
+            },
+          );
           totalCost += quote.cost;
           totalRefund += quote.refund;
         }
@@ -602,6 +640,7 @@ export class ArmoryService {
           },
           'items',
         );
+        await recordItemLedger(tx, userId, 'ARMORY_UPGRADE', ledgerDeltas);
         return { userItems, totalCost };
       });
       return {

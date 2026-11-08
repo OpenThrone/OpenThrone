@@ -273,6 +273,36 @@ describe('Casualties', () => {
     });
   });
 
+  describe('protected defender damage', () => {
+    const hit = (isDefenderProtected: boolean) =>
+      newComputeCasualties(
+        100000,
+        50000,
+        0,
+        0,
+        0,
+        1,
+        undefined,
+        false,
+        false,
+        isDefenderProtected,
+      );
+
+    it('halves the damage a protected defender takes', () => {
+      const open = hit(false);
+      const shielded = hit(true);
+      expect(open.damageDealt).toBeGreaterThan(1000);
+      expect(shielded.damageDealt).toBe(Math.ceil(open.damageDealt * 0.5));
+      expect(CURRENT_COMBAT_RULESET.constants.PROTECTED_DAMAGE_MULTIPLIER).toBe(
+        0.5,
+      );
+    });
+
+    it('leaves the pre-protection raw damage unchanged', () => {
+      expect(hit(true).rawDamageDealt).toBe(hit(false).rawDamageDealt);
+    });
+  });
+
   it('should compute casualties with unequal strength', () => {
     const result = newComputeCasualties(
       2000,

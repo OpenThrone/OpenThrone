@@ -41,6 +41,10 @@
       "title": "Was prüfe ich vor einem Angriff?",
       "answer": "Prüfen Sie das Ziel, Ihre Angriffsstärke und die geplanten Angriffszüge. Spionageinformationen helfen bei der Einschätzung, doch Kämpfe können Verluste verursachen. Lesen Sie anschließend den Bericht und die Kriegshistorie, bevor Sie weitere Ressourcen einsetzen."
     },
+    "protection": {
+      "title": "Was deckt der Neuspielerschutz ab?",
+      "answer": "Einen Goldschild, keine Immunität. Angriffe kosten weiterhin Einheiten und Festungs-HP. Nur Ihre ersten {{allowance}} Gold auf der Hand sind geschützt — Räubern bleiben davon auf Stufe 1 höchstens {{share}} % des normalen Beuteanteils, auf Stufe {{taperLevel}} das Ganze. Bringen Sie zur Bank, was Sie nicht verteidigen können; geschützte Spieler können einander angreifen."
+    },
     "transfers": {
       "title": "Kann ich einem Freund Gold schicken?"
     },

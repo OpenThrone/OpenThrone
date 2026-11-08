@@ -8,11 +8,11 @@
   },
   "coreLoop": {
     "title": "Der Kernzyklus",
-    "description": "OpenThrone läuft in einem dauerhaften Zyklus. Alle 30 Minuten erhalten Sie Angriffszüge. Geben Sie Züge aus, um andere Spieler zu überfallen für Gold und Erfahrung. Nutzen Sie Gold, um Ihre Armee zu vergrößern und Ihr Königreich zu befestigen.",
+    "description": "OpenThrone läuft in einem dauerhaften Zyklus. Alle {{minutes}} Minuten erhalten Sie Angriffszüge. Geben Sie Züge aus, um andere Spieler zu überfallen für Gold und Erfahrung. Nutzen Sie Gold, um Ihre Armee zu vergrößern und Ihr Königreich zu befestigen.",
     "steps": {
       "earn": {
         "title": "Züge verdienen",
-        "text": "Angriffszüge regenerieren sich alle 30 Minuten, auch offline."
+        "text": "Angriffszüge regenerieren sich alle {{minutes}} Minuten, auch offline."
       },
       "attack": {
         "title": "Angreifen & Plündern",
@@ -47,7 +47,9 @@
       "name": "Untot",
       "description": "+5 % Angriffsbonus."
     },
-    "matchups": "Rassenboni prägen Ihre Armee; keine Rasse besiegt automatisch eine andere. Nahkampfangriffe treffen auf Nahkampfverteidigung, Fernkampfangriffe auf Fernkampfverteidigung. Erkunden Sie den Gegner und rüsten Sie Ihre Truppen für den erwarteten Angriff aus."
+    "matchups": "Rassenboni prägen Ihre Armee; keine Rasse besiegt automatisch eine andere. Nahkampfangriffe treffen auf Nahkampfverteidigung, Fernkampfangriffe auf Fernkampfverteidigung. Erkunden Sie den Gegner und rüsten Sie Ihre Truppen für den erwarteten Angriff aus.",
+    "classesTitle": "Wählen Sie Ihre Klasse",
+    "classesDescription": "Die Klasse ist die zweite Wahl bei der Anmeldung und bleibt dauerhaft. Jede gibt einen bleibenden Bonus:"
   },
   "army": {
     "title": "Bauen Sie Ihre Armee auf",
@@ -74,22 +76,30 @@
     "description": "Gold ist das Lebensblut Ihres Imperiums. Verwalten Sie es klug — was Sie nicht schützen, wird jemand anderes nehmen.",
     "bank": {
       "title": "Bank",
-      "text": "Bewahren Sie Gold sicher vor Plünderern auf. Upgrade für höhere Kapazität."
+      "text": "Zahlen Sie Gold ein, damit Plünderer es nicht nehmen können. Wirtschafts-Upgrades erhöhen, wie viel Sie pro Tag einzahlen können und wie viel die Bank fasst."
     },
     "armory": {
       "title": "Waffenkammer",
-      "text": "Kaufen Sie Waffen und Rüstung für Ihre Truppen. Verbessern Sie für bessere Ausrüstung."
+      "text": "Kaufen Sie Waffen und Rüstung für Ihre Truppen. Waffenkammer-Upgrades schalten bessere Ausrüstung frei."
+    },
+    "housing": {
+      "title": "Wohnen",
+      "text": "Bringt jeden Tag neue Bürger in Ihr Königreich. Verbessern Sie es für mehr Bürger; höhere Stufen erfordern eine stärkere Befestigung."
+    },
+    "repair": {
+      "title": "Reparatur",
+      "text": "Angriffe beschädigen Ihre Festung. Hier stellen Sie ihre Trefferpunkte gegen Gold wieder her."
     },
     "fortifications": {
       "title": "Befestigungen",
-      "text": "Stärken Sie Ihre Verteidigung. Höhere Mauern bedeuten weniger Verluste bei Angriffen."
+      "text": "Ihre Festung beginnt als Herrenhaus. Verbessern Sie sie unter Strukturen > Verbesserungen, das ab Level 5 mit dem Dorf freigeschaltet wird, für mehr Verteidigung, Gold pro Zug und Trefferpunkte der Festung."
+    },
+    "economyUpgrades": {
+      "title": "Wirtschafts-Upgrades",
+      "text": "Ebenfalls unter Verbesserungen. Farmen, Märkte und Minen erhöhen das Gold, das jeder Arbeiter verdient, und wie viel Ihre Bank aufnehmen kann."
     },
     "transfers": {
       "title": "Goldüberweisungen"
-    },
-    "mines": {
-      "title": "Minen",
-      "text": "Erhöhen Sie die passive Goldgenerierung. Unverzichtbar für langfristiges Wachstum."
     }
   },
   "combat": {
@@ -109,11 +119,19 @@
     },
     "losses": {
       "title": "Verluste",
-      "text": "Verluste treffen alle Ihre Einheitenstufen im Verhältnis zur Zahl der Truppen auf jeder Stufe. Billige Truppen der Stufe 1 schützen Ihre besten Einheiten nicht mehr. Angeheuerte Söldner stehen innerhalb ihrer Stufe weiterhin in vorderster Reihe."
+      "text": "Verluste treffen alle Ihre Einheitenstufen im Verhältnis zur Zahl der Truppen auf jeder Stufe. Billige Truppen der Stufe 1 schützen Ihre besten Einheiten nicht mehr. Söldner gibt es ab Stufe {{mercenaryLevel}}: Sobald Ihre Festung ein {{mercenaryFort}} ist, öffnet sich Kampf → Söldner; angeheuert stehen sie innerhalb ihrer Stufe in vorderster Reihe."
+    },
+    "protection": {
+      "title": "Neuspielerschutz",
+      "text": "Der Neuspielerschutz ist ein Goldschild, keine Immunität: Angriffe kosten weiterhin Einheiten und beschädigen Ihre Festung. Ihre ersten {{allowance}} Gold auf der Hand sind geschützt — Räubern bleiben davon auf Stufe 1 höchstens {{share}} % des normalen Beuteanteils, auf Stufe {{taperLevel}} das Ganze — und Gold darüber wird normal geplündert, also bringen Sie es zur Bank. Der Schutz endet nach einer festen Zahl von Spieltagen, bei einer Bevölkerungsgrenze oder auf Level 10, je nachdem, was zuerst eintritt."
     },
     "stamina": {
       "title": "Ausdauer"
-    }
+    },
+      "experience": {
+        "title": "Erfahrung und Stufen",
+        "text": "Erfahrung (EP) gibt es im Kampf. Ein gewonnener Angriff bringt am meisten, abhängig von den eingesetzten Zügen, dem Stufenunterschied und davon, wie knapp der Kampf war. Ein verlorener Angriff bringt einen kleineren Anteil, aber nur bei einem echten Kampf: nichts unter {{effortFloor}} % der Stärke des Verteidigers, den vollen Anteil ab {{effortFull}} %. Verteidiger erhalten bei jedem Angriff EP, mehr fürs Standhalten als fürs Fallen, abhängig von der Größe der Bedrohung (mindestens {{threatFloor}} %). Bleiben Sie länger als {{graceDays}} Spieltage auf einer Stufe, steigen die EP aus erlittenen Angriffen um {{stallStep}} % pro weiterem Spieltag, bis zum {{stallMax}}-Fachen, damit sich niemand auf niedrigen Stufen verstecken kann. Spionagemissionen geben keine EP. Die Übersicht zeigt, wie viele EP Ihnen bis zur nächsten Stufe fehlen; jede Stufe gibt einen Kompetenzpunkt und schaltet an Meilensteinen neue Gebäude frei."
+      }
   },
   "alliances": {
     "title": "Allianzen",

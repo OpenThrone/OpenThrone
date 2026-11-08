@@ -35,6 +35,7 @@ import { useUser } from '@/context/users';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { useSidebarData } from '@/hooks/useSidebarData';
 import { readStaminaBalance } from '@/hooks/useStamina';
+import { getEraNumberLabel } from '@/utils/eraLabel';
 import { getAvatarSrc } from '@/utils/utilities';
 
 import CollapsibleSection from './CollapsibleSection';
@@ -99,7 +100,7 @@ const Sidebar: React.FC = () => {
         style={{ font: 'inherit', color: 'inherit' }}
         className="whitespace-nowrap rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
       >
-        {user?.currentEra?.id ?? t('labels.unknown')}
+        {getEraNumberLabel(user?.currentEra) ?? t('labels.unknown')}
       </UnstyledButton>
     </Tooltip>
   );

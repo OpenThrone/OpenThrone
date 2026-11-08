@@ -244,6 +244,7 @@ const ARMORY_TRANSACTION_LABELS: Record<
   ARMORY_UPGRADE: { label: 'Armory Upgrade', key: 'armoryUpgrade' },
   ARMORY_CONVERSION: { label: 'Armory Conversion', key: 'armoryConversion' },
   HIRE_MERCENARY: { label: 'Mercenary Hire', key: 'mercenaryHire' },
+  RENEW_MERCENARY: { label: 'Mercenary Renewal', key: 'mercenaryRenewal' },
 };
 
 /** Classify gameplay sales before generic self-transfers, including historical rows. */
@@ -284,6 +285,9 @@ export const getTransactionType = (
       case 'BATTLE_UPGRADES_SELL':
         return 'Battle Upgrade Sale';
     }
+    // Structure purchases (FORTIFICATIONS_UPGRADE, HOUSES_UPGRADE, ...).
+    if (typeof statsType === 'string' && statsType.endsWith('_UPGRADE'))
+      return 'Structure Upgrade';
   }
   if (Number(from_user_id) === Number(to_user_id)) {
     if (from_user_account_type === 'HAND') {

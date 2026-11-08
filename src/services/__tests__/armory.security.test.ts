@@ -66,6 +66,7 @@ beforeEach(() => {
   db = freshDb();
   calls = [];
   tx = {
+    itemLedgerEntry: { createMany: mock(async () => ({ count: 1 })) },
     $queryRaw: mock(async () => {
       calls.push('lock');
       return [];
@@ -130,6 +131,18 @@ describe('ArmoryService.equipItems armory level gate (F-08)', () => {
     expect(db.items).toEqual([
       { type: 'WEAPON', usage: 'OFFENSE', level: 2, quantity: 1 },
     ]);
+    expect(tx.itemLedgerEntry.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          type: 'WEAPON',
+          usage: 'OFFENSE',
+          level: 2,
+          delta: 1,
+          userId: 7,
+          reason: 'ARMORY_BUY',
+        },
+      ],
+    });
   });
 
   it('locks the user row before reading gold', async () => {
@@ -300,5 +313,69 @@ describe('atomic multi-slot equipment upgrades', () => {
     const conversion = { ...weapon, cost: 0, refund: 1_000_000 };
     await ArmoryService.upgradeItems({ userId: 7, conversions: [conversion] });
     expect(db.gold).toBe(975_000n);
+  });
+});
+
+describe('ArmoryService.unequipItems sell refund', () => {
+  const hatchet = { type: 'WEAPON', usage: 'OFFENSE', level: 2 }; // costs 25000
+  const owned = (quantity: number) => [{ ...hatchet, quantity }];
+
+  it('refunds 75% of the item cost per unit sold and removes the items', async () => {
+    db.items = owned(3);
+    await ArmoryService.unequipItems({
+      userId: 7,
+      items: [{ ...hatchet, quantity: 2 }],
+    });
+    // floor(25000 * 2 * 0.75)
+    expect(db.gold).toBe(1_000_000n + 37_500n);
+    expect(db.items).toEqual(owned(1));
+    expect(tx.bank_history.create.mock.calls[0][0].data).toMatchObject({
+      gold_amount: 37_500n,
+      to_user_id: 7,
+      history_type: 'SALE',
+    });
+    expect(tx.itemLedgerEntry.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          type: 'WEAPON',
+          usage: 'OFFENSE',
+          level: 2,
+          delta: -2,
+          userId: 7,
+          reason: 'ARMORY_SELL',
+        },
+      ],
+    });
+  });
+
+  it('sums the refund across several item stacks', async () => {
+    db.items = [
+      ...owned(1),
+      { type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 4 }, // costs 12500
+    ];
+    await ArmoryService.unequipItems({
+      userId: 7,
+      items: [
+        { ...hatchet, quantity: 1 },
+        { type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 3 },
+      ],
+    });
+    // floor(25000 * 0.75) + floor(12500 * 3 * 0.75)
+    expect(db.gold).toBe(1_000_000n + 18_750n + 28_125n);
+    expect(db.items).toEqual([
+      { type: 'WEAPON', usage: 'OFFENSE', level: 1, quantity: 1 },
+    ]);
+  });
+
+  it('refuses to sell more than is owned and pays nothing', async () => {
+    db.items = owned(1);
+    await expect(
+      ArmoryService.unequipItems({
+        userId: 7,
+        items: [{ ...hatchet, quantity: 2 }],
+      }),
+    ).rejects.toThrow('Not enough');
+    expect(db.gold).toBe(1_000_000n);
+    expect(db.items).toEqual(owned(1));
   });
 });

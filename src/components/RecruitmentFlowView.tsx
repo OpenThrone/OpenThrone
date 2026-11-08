@@ -119,6 +119,7 @@ export default function RecruitmentFlowView({
             </Text>
             <Text size="sm" c="dimmed" data-testid="recruits-left">
               {t('recruit.recruitsLeft', {
+                name: pairProgress.name,
                 count: pairProgress.left,
                 time: pairProgress.resetsAt,
               })}

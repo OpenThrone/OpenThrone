@@ -95,16 +95,53 @@ export class UserEconomyService {
     return goldPerWorkerBase * (1 + this.incomeBonus / 100);
   }
 
+  /** Fort income including the income bonus, as `getGoldPerTurn` counts it. */
   getFortificationGoldPerTurn(): number {
-    return (
+    const fortGold =
       Fortifications.find((fort) => fort.level === this.fortLevel)
-        ?.goldPerTurn ?? 0
-    );
+        ?.goldPerTurn ?? 0;
+    return fortGold * (1 + this.incomeBonus / 100);
+  }
+
+  /**
+   * Base worker and fort income in whole gold, plus the income bonus as the
+   * rest of what a turn pays, so the three rows always add up to the total.
+   */
+  getIncomeBreakdown(): {
+    goldPerWorker: number;
+    workerGold: number;
+    fortGold: number;
+    bonusGold: number;
+    total: number;
+  } {
+    const goldPerWorker =
+      EconomyUpgrades[this.economyLevel]?.goldPerWorker ?? 0;
+    const workers = this.units
+      .filter((unit) => unit.type === 'WORKER')
+      .reduce((sum, unit) => sum + (unit.quantity ?? 0), 0);
+    const workerGold = goldPerWorker * workers;
+    const fortGold =
+      Fortifications.find((fort) => fort.level === this.fortLevel)
+        ?.goldPerTurn ?? 0;
+    const total = Number(this.getGoldPerTurn());
+    return {
+      goldPerWorker,
+      workerGold,
+      fortGold,
+      bonusGold: total - workerGold - fortGold,
+      total,
+    };
   }
 
   getMaximumBankDeposits(): number {
     const upgrade = EconomyUpgrades[this.economyLevel];
     return upgrade?.depositsPerDay ?? 0;
+  }
+
+  /** Most gold the bank will accept deposits up to at this economy level. */
+  getBankCap(): number {
+    const topTier = EconomyUpgrades[EconomyUpgrades.length - 1];
+    return (EconomyUpgrades[this.economyLevel] ?? topTier).bankCap;
   }
 
   getRecruitingBonus(): number {

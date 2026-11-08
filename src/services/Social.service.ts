@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+import {
+  FRIEND_REQUEST_COOLDOWN_DAYS_DEFAULT,
+  FRIEND_REQUEST_DAILY_CAP_DEFAULT,
+  FRIEND_REQUEST_MAX_DECLINES_DEFAULT,
+  type FriendRequestBlock,
+  type FriendRequestRules,
+  getFriendRequestBlock,
+} from '@/constants/FriendRequests';
 import { FRIEND_TRANSFER_NOTE_MAX_LENGTH } from '@/constants/FriendTransfer';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
@@ -95,6 +103,7 @@ interface RelationshipInfo {
   relationship: any;
   canInteract: boolean;
   availableActions: string[];
+  requestBlock: FriendRequestBlock | null;
 }
 
 // Zod schemas for validation
@@ -150,6 +159,45 @@ const GoldRequestResponseSchema = z.object({
   message: z.string().max(FRIEND_TRANSFER_NOTE_MAX_LENGTH).optional(),
 });
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const isActiveStatus = (status: string) =>
+  status === 'requested' || status === 'accepted';
+
+/** Every row between two players, newest first. */
+const getPairHistory = (
+  firstId: number,
+  secondId: number,
+  db: Pick<Prisma.TransactionClient, 'social'> = prisma,
+) =>
+  db.social.findMany({
+    where: {
+      OR: [
+        { playerId: firstId, friendId: secondId },
+        { playerId: secondId, friendId: firstId },
+      ],
+    },
+    orderBy: { id: 'desc' },
+  });
+
+const requestRules = (runtime: {
+  friendRequestCooldownDays?: number;
+  friendRequestMaxDeclines?: number;
+}): FriendRequestRules => ({
+  cooldownDays:
+    runtime.friendRequestCooldownDays ?? FRIEND_REQUEST_COOLDOWN_DAYS_DEFAULT,
+  maxDeclines:
+    runtime.friendRequestMaxDeclines ?? FRIEND_REQUEST_MAX_DECLINES_DEFAULT,
+});
+
+const requestBlockMessage = (block: FriendRequestBlock) =>
+  block.retryAt
+    ? `You can send this player a request again after ${block.retryAt.toUTCString()}.`
+    : 'This player has declined your requests. Only they can reach out now.';
+
+export const NO_ACTIVE_RELATIONSHIP_ERROR =
+  'You have no active relationship with this user';
+
 /** Encapsulates social data access and domain operations. */
 export class SocialService {
   /**
@@ -159,40 +207,40 @@ export class SocialService {
     playerId: number,
     friendId: number,
     tx: Prisma.TransactionClient,
+    { dailyCap, ...rules }: FriendRequestRules & { dailyCap: number },
   ) {
     // Check if user is trying to add relationship with themselves
     if (playerId === friendId) {
       throw new Error('Cannot create relationship with yourself');
     }
 
-    // Check if relationship already exists
-    const existingRelationship = await tx.social.findFirst({
+    const history = await getPairHistory(playerId, friendId, tx);
+    const active = history.find(({ status }) => isActiveStatus(status));
+
+    if (active?.status === 'requested') {
+      throw new Error(
+        `A ${active.relationshipType.toLowerCase()} request is already pending between you and this user.`,
+      );
+    }
+    if (active) {
+      throw new Error(
+        `You already have an active ${active.relationshipType.toLowerCase()} relationship with this user.`,
+      );
+    }
+
+    const block = getFriendRequestBlock(history, playerId, rules);
+    if (block) throw new Error(requestBlockMessage(block));
+
+    const dailyRequests = await tx.social.count({
       where: {
-        OR: [
-          {
-            AND: [{ playerId }, { friendId }],
-          },
-          {
-            AND: [{ playerId: friendId }, { friendId: playerId }],
-          },
-        ],
+        playerId,
+        requestDate: { gte: new Date(Date.now() - DAY_MS) },
       },
     });
-
-    if (existingRelationship) {
-      if (existingRelationship.status === 'requested') {
-        throw new Error(
-          `A ${existingRelationship.relationshipType.toLowerCase()} request is already pending between you and this user.`,
-        );
-      } else if (existingRelationship.status === 'accepted') {
-        throw new Error(
-          `You already have an active ${existingRelationship.relationshipType.toLowerCase()} relationship with this user.`,
-        );
-      } else {
-        throw new Error(
-          `A ${existingRelationship.relationshipType.toLowerCase()} relationship already exists with this user.`,
-        );
-      }
+    if (dailyRequests >= dailyCap) {
+      throw new Error(
+        'You have sent too many requests today. Please try again tomorrow.',
+      );
     }
 
     // Check if target user exists
@@ -213,9 +261,9 @@ export class SocialService {
     const validatedData = AddSocialSchema.parse(data);
 
     try {
+      const runtime = await getRuntimeConfig();
       // Defense in depth behind getRuntimeFeatureBlock: enemy requests only exist while enemies are enabled.
       if (validatedData.relationshipType === 'ENEMY') {
-        const runtime = await getRuntimeConfig();
         if (!runtime.enableEnemies) {
           throw new Error('Enemy relationships are currently disabled.');
         }
@@ -231,6 +279,11 @@ export class SocialService {
           playerId,
           validatedData.friendId,
           tx,
+          {
+            ...requestRules(runtime),
+            dailyCap:
+              runtime.friendRequestDailyCap ?? FRIEND_REQUEST_DAILY_CAP_DEFAULT,
+          },
         );
 
         const relationship = await tx.social.create({
@@ -266,13 +319,15 @@ export class SocialService {
     const validatedData = RemoveSocialSchema.parse(data);
 
     try {
-      const result = await prisma.social.deleteMany({
+      // The row stays so cancelling can't be used to reset the request limits.
+      const result = await prisma.social.updateMany({
         where: {
           playerId,
           friendId: validatedData.friendId,
           relationshipType: validatedData.relationshipType,
           status: 'requested', // Only allow removing pending requests
         },
+        data: { status: 'cancelled', endDate: new Date() },
       });
 
       if (result.count === 0) {
@@ -302,7 +357,7 @@ export class SocialService {
     const validatedData = EndRelationshipSchema.parse(data);
 
     try {
-      await prisma.social.updateMany({
+      const ended = await prisma.social.updateMany({
         where: {
           OR: [
             {
@@ -322,6 +377,10 @@ export class SocialService {
           endDate: new Date(),
         },
       });
+
+      if (ended.count === 0) {
+        throw new Error(NO_ACTIVE_RELATIONSHIP_ERROR);
+      }
 
       return { message: 'Friendship ended successfully' };
     } catch (error: any) {
@@ -417,58 +476,41 @@ export class SocialService {
         );
       }
 
-      // Find the relationship between the two users
-      const relationship = await prisma.social.findFirst({
-        where: {
-          OR: [
-            {
-              playerId: validatedData.userId,
-              friendId: validatedData.targetUserId,
-            },
-            {
-              playerId: validatedData.targetUserId,
-              friendId: validatedData.userId,
-            },
-          ],
-        },
-      });
+      const [history, runtime] = await Promise.all([
+        getPairHistory(validatedData.userId, validatedData.targetUserId),
+        getRuntimeConfig(),
+      ]);
+      const relationship =
+        history.find(({ status }) => isActiveStatus(status)) ??
+        history[0] ??
+        null;
 
-      if (!relationship) {
-        return {
-          relationship: null,
-          canInteract: true,
-          availableActions: ['add'],
-        } as RelationshipInfo;
-      }
-
-      // Determine available actions based on relationship status
-      let availableActions: string[] = [];
+      let availableActions: string[] = ['add'];
       let canInteract = true;
+      let requestBlock: FriendRequestBlock | null = null;
 
-      if (relationship.status === 'requested') {
-        if (relationship.playerId === userId) {
-          // Outgoing request
-          availableActions = ['cancel'];
-        } else {
-          // Incoming request
-          availableActions = ['accept', 'decline'];
-        }
-      } else if (relationship.status === 'accepted') {
-        // Existing relationship
+      if (relationship?.status === 'requested') {
+        availableActions =
+          relationship.playerId === userId ? ['cancel'] : ['accept', 'decline'];
+      } else if (relationship?.status === 'accepted') {
         availableActions = ['remove'];
-      } else if (
-        relationship.status === 'declined' ||
-        relationship.status === 'ended'
-      ) {
-        // Ended relationship
-        availableActions = ['add'];
-        canInteract = true;
+      } else {
+        requestBlock = getFriendRequestBlock(
+          history,
+          userId,
+          requestRules(runtime),
+        );
+        if (requestBlock) {
+          availableActions = [];
+          canInteract = false;
+        }
       }
 
       return {
         relationship,
         canInteract,
         availableActions,
+        requestBlock,
       } as RelationshipInfo;
     } catch (error: any) {
       logError('Error getting relationship', {

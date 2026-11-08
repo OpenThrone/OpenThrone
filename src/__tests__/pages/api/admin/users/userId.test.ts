@@ -8,6 +8,7 @@ import {
   fortMaxHitpoints,
   GameplayPatchSchema,
   GameplaySchema,
+  LevelReachedAtSchema,
   MAX_ECONOMY_LEVEL,
   MAX_FORT_LEVEL,
   MAX_HOUSE_LEVEL,
@@ -224,5 +225,38 @@ describe('fort level expectations', () => {
       expected: { eraId: 1, fields: { fortLevel: 3 }, units: {}, items: {} },
     });
     expect(missing).toEqual(['fortHitpoints']);
+  });
+});
+
+describe('LevelReachedAtSchema (#334)', () => {
+  it('accepts a past ISO time and null', () => {
+    expect(
+      LevelReachedAtSchema.safeParse('2026-10-01T08:30:00.000Z').success,
+    ).toBe(true);
+    expect(
+      LevelReachedAtSchema.safeParse('2026-10-01T08:30:00+02:00').success,
+    ).toBe(true);
+    expect(LevelReachedAtSchema.safeParse(null).success).toBe(true);
+  });
+
+  it.each([
+    ['a future time', new Date(Date.now() + 3_600_000).toISOString()],
+    ['an invalid date', '2026-13-45T99:00:00Z'],
+    ['free text', 'yesterday'],
+    ['a number', 1730000000000],
+    ['a local time without an offset', '2026-10-01T08:30'],
+  ])('rejects %s', (_, value) => {
+    expect(LevelReachedAtSchema.safeParse(value).success).toBe(false);
+  });
+
+  it('needs the loaded value as an expectation', () => {
+    const missing = findMissingExpectations({
+      profile: {},
+      stats: { levelReachedAt: '2026-10-01T08:30:00.000Z' },
+      army: { units: [] },
+      items: { items: [] },
+      expected: { eraId: 1, fields: {}, units: {}, items: {} },
+    });
+    expect(missing).toEqual(['levelReachedAt']);
   });
 });

@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { StyledTable } from '@/components/game/StyledTable';
 import type { Locales } from '@/types/typings';
 import { toLocale } from '@/utils/numberFormatting';
-import { fortificationName } from '@/utils/structureNames';
+import { fortRequirementName } from '@/utils/structureNames';
 
 /** What must be reached before a level can be bought. */
 export interface UpgradeRequirement {
@@ -79,7 +79,7 @@ export function UpgradeLedger({
   const lockedCopy = (requirement: UpgradeRequirement) =>
     requirement.type === 'fort'
       ? t('upgrades.unlockWithFort', {
-          name: fortificationName(t, requirement.value),
+          name: fortRequirementName(t, requirement.value),
         })
       : t('upgrades.unlockWithLevel', { level: requirement.value });
 

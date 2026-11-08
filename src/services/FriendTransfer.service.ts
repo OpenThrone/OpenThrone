@@ -17,6 +17,7 @@ import { ensureActiveEra } from '@/services/Era.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { getActiveAccountStatus } from '@/services/User.service';
 import { createApiError } from '@/utils/api-error';
+import { getGameDayMs } from '@/utils/timefunctions';
 import { getLevelFromXP } from '@/utils/utilities';
 
 import {
@@ -63,7 +64,6 @@ interface FriendTransferRequest {
   };
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 const MIN_ACCOUNT_AGE_MS =
   FRIEND_TRANSFER_MIN_ACCOUNT_AGE_DAYS * 24 * 60 * 60 * 1000;
 const ATTACK_BLOCK_MS = FRIEND_TRANSFER_ATTACK_BLOCK_HOURS * 60 * 60 * 1000;
@@ -501,7 +501,7 @@ const transferGoldWithinTransaction = async (
       to_user_id: validatedParams.toUserId,
       to_user_account_type: 'HAND',
       history_type: 'FRIEND_TRANSFER',
-      date_time: { gte: new Date(Date.now() - DAY_MS) },
+      date_time: { gte: new Date(Date.now() - getGameDayMs()) },
     },
   });
   const receivedToday = BigInt(received?._sum?.gold_amount ?? 0);
@@ -532,7 +532,7 @@ const transferGoldWithinTransaction = async (
       from_user_account_type: 'HAND',
       to_user_account_type: 'HAND',
       history_type: 'FRIEND_TRANSFER',
-      date_time: { gte: new Date(Date.now() - DAY_MS) },
+      date_time: { gte: new Date(Date.now() - getGameDayMs()) },
     },
   });
   const sentToday = BigInt(sent?._sum?.gold_amount ?? 0);
@@ -1068,7 +1068,7 @@ export const getFriendTransferStatus = async (
       : null;
 
   const limits = limitsOf(user);
-  const since = new Date(Date.now() - DAY_MS);
+  const since = new Date(Date.now() - getGameDayMs());
   // Sent total excludes the SYSTEM tax rows: they book the fee, not the gift.
   const [sent, received] = await Promise.all([
     prisma.bank_history.aggregate({

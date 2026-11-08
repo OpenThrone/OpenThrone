@@ -22,6 +22,10 @@ import { DefenseAdvisory } from '@/components/DefenseAdvisory';
 import SpyMissionsModal from '@/components/spyMissionsModal';
 import { useUser } from '@/context/users';
 import type { Locales } from '@/types/typings';
+import {
+  summarizeBattleLosses,
+  unitTypeFallbackLabel,
+} from '@/utils/lossSummary';
 import { formatGold, toLocale } from '@/utils/numberFormatting';
 import { getLevelChange, getLevelFromXP } from '@/utils/utilities';
 
@@ -111,7 +115,6 @@ const AttackResults = ({ battle, viewerID }) => {
     'OFFENSE',
   );
   const attackerLossCount = totalLosses(stats.attacker_losses);
-  const defenderLossCount = totalLosses(stats.defender_losses);
   // Garrison fatigue (#204) is recorded on the log for both sides to read.
   const garrisonFatigue =
     Number(
@@ -134,14 +137,37 @@ const AttackResults = ({ battle, viewerID }) => {
           player: playerName,
           xp: toLocale(xp, locale),
         });
-  const lossLine = (isViewer: boolean, playerName: string, count: number) =>
-    isViewer
-      ? t('timeline.youLostSoldiers', { count, dead: toLocale(count, locale) })
-      : t('timeline.playerLostSoldiers', {
-          count,
+  const lossLine = (
+    isViewer: boolean,
+    playerName: string,
+    losses: string | { total?: number } | undefined,
+  ) => {
+    // One regular unit lost: name its type; anything bigger stays generic (#284).
+    const summary = summarizeBattleLosses(losses);
+    const namedUnit = summary.unitType
+      ? t(`unitTypes.${summary.unitType}`, {
+          defaultValue: unitTypeFallbackLabel(summary.unitType),
+        })
+      : null;
+    if (namedUnit) {
+      return isViewer
+        ? t('timeline.youLostUnitType', { unit: namedUnit })
+        : t('timeline.playerLostUnitType', {
+            player: playerName,
+            unit: namedUnit,
+          });
+    }
+    return isViewer
+      ? t('timeline.youLostUnits', {
+          count: summary.total,
+          dead: toLocale(summary.total, locale),
+        })
+      : t('timeline.playerLostUnits', {
+          count: summary.total,
           player: playerName,
-          dead: toLocale(count, locale),
+          dead: toLocale(summary.total, locale),
         });
+  };
 
   const summaryLines = [
     t('timeline.battleId', { id: battle.id }),
@@ -182,8 +208,16 @@ const AttackResults = ({ battle, viewerID }) => {
       gold: formatGold(stats.pillagedGold, locale),
     }),
     t('timeline.fortDamage', { damage: toLocale(fortDamage, locale) }),
-    lossLine(isViewerAttacker, attackerPlayer.display_name, attackerLossCount),
-    lossLine(isViewerDefender, defenderPlayer.display_name, defenderLossCount),
+    lossLine(
+      isViewerAttacker,
+      attackerPlayer.display_name,
+      stats.attacker_losses,
+    ),
+    lossLine(
+      isViewerDefender,
+      defenderPlayer.display_name,
+      stats.defender_losses,
+    ),
     // Dungeon captives (#210): each side reads its own line.
     ...(isViewerAttacker && captivesTaken > 0
       ? [

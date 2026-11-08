@@ -11,6 +11,7 @@ import {
 } from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { AdminService } from '@/services/Admin.service';
+import { recordItemLedger } from '@/services/ItemLedger.service';
 import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
 import { recomputeStoredStatsInTx } from '@/utils/adminRecomputeStats';
 import { currentStatus, deriveAdminUserStatus } from '@/utils/adminStatus';
@@ -18,6 +19,7 @@ import { AppConfig } from '@/utils/AppConfig';
 import { getRequestIp, logAction, logActionStrict } from '@/utils/auditLogger';
 import { countOtherAdministrators } from '@/utils/authorization';
 import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
+import { levelReachedAtUpdate } from '@/utils/levelReachedAt';
 import { logError } from '@/utils/logger';
 import { getLevelFromXP } from '@/utils/utilities';
 
@@ -32,6 +34,20 @@ const MoneySchema = z
   .refine((value) => value <= MONEY_MAX, 'Amount is too large');
 export const INT_MAX = 2147483647;
 const QuantitySchema = z.number().int().min(0).max(INT_MAX);
+/** Small allowance for the admin's clock running ahead of the server's. */
+const FUTURE_SKEW_MS = 60_000;
+/**
+ * When the player reached their current level (#334): an ISO timestamp that
+ * is not in the future, or null for "just reached" (no anti-camping ramp).
+ */
+export const LevelReachedAtSchema = z
+  .string()
+  .datetime({ offset: true })
+  .refine(
+    (value) => new Date(value).getTime() <= Date.now() + FUTURE_SKEW_MS,
+    'Level reached date cannot be in the future',
+  )
+  .nullable();
 
 export const MAX_FORT_LEVEL = Math.max(...Fortifications.map((f) => f.level));
 export const MAX_HOUSE_LEVEL = Math.max(
@@ -277,6 +293,7 @@ const AdminUserUpdateSchema = z.object({
       gold: MoneySchema.optional(),
       goldInBank: MoneySchema.optional(),
       experience: QuantitySchema.optional(),
+      levelReachedAt: LevelReachedAtSchema.optional(),
     })
     .default({}),
   army: z
@@ -421,6 +438,7 @@ async function handler(
           experience: user?.experience || 0,
           goldInBank: user?.gold_in_bank.toString() || 0,
           level: getLevelFromXP(user.experience ?? 0),
+          levelReachedAt: user.level_reached_at?.toISOString() ?? null,
         },
         gameplay: {
           fortLevel: user.fort_level,
@@ -637,6 +655,7 @@ async function handler(
             gold: user.gold,
             goldInBank: user.gold_in_bank,
             experience: user.experience,
+            levelReachedAt: user.level_reached_at?.toISOString() ?? null,
             fortLevel: user.fort_level,
             fortHitpoints: user.fort_hitpoints,
             stamina: user.stamina,
@@ -782,6 +801,20 @@ async function handler(
                 after: item.quantity,
               };
           }
+          // An explicit date wins; otherwise an XP edit that moves the level
+          // restarts the anti-camping clock, as any other XP change does.
+          const levelReachedAt: Date | null | undefined =
+            updateData.stats.levelReachedAt !== undefined
+              ? updateData.stats.levelReachedAt === null
+                ? null
+                : new Date(updateData.stats.levelReachedAt)
+              : updateData.stats.experience !== undefined
+                ? levelReachedAtUpdate(
+                    user.experience,
+                    updateData.stats.experience,
+                  ).level_reached_at
+                : undefined;
+
           // Email is never copied into the audit diff; emailChanged flags it.
           const { email: _email, ...fieldsWithoutEmail } = currentFields;
           const fieldDiff = buildFieldDiff(fieldsWithoutEmail, {
@@ -789,6 +822,10 @@ async function handler(
             gold: updateData.stats.gold,
             goldInBank: updateData.stats.goldInBank,
             experience: updateData.stats.experience,
+            levelReachedAt:
+              levelReachedAt === undefined
+                ? undefined
+                : (levelReachedAt?.toISOString() ?? null),
             ...gameplay,
             fortHitpoints,
             ...(veteranTouched ? veteran : {}),
@@ -885,11 +922,33 @@ async function handler(
             if (result.count !== 1)
               throw new AdminUpdateError(409, 'Item no longer exists');
           }
+          await recordItemLedger(
+            tx,
+            userIdNum,
+            'ADMIN_EDIT',
+            updateData.items.items.flatMap((item) => {
+              const change = itemDiff[item.id];
+              return change
+                ? [
+                    {
+                      type: item.type,
+                      usage: item.usage,
+                      level: item.level,
+                      delta: Number(change.after) - Number(change.before),
+                    },
+                  ]
+                : [];
+            }),
+          );
           const statsData = definedOnly({
             gold: updateData.stats.gold,
             gold_in_bank: updateData.stats.goldInBank,
             experience: updateData.stats.experience,
           });
+          // null is a real value here (clears the ramp), so it is set apart
+          // from definedOnly, which only drops undefined.
+          if (levelReachedAt !== undefined)
+            statsData.level_reached_at = levelReachedAt;
           if (Object.keys(statsData).length > 0)
             await tx.users.update({
               where: { id: userIdNum },

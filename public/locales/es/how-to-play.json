@@ -8,11 +8,11 @@
   },
   "coreLoop": {
     "title": "El Ciclo Principal",
-    "description": "OpenThrone funciona en un ciclo persistente. Cada 30 minutos ganas turnos de ataque. Gasta turnos para saquear otros jugadores y obtener oro y experiencia. Usa el oro para hacer crecer tu ejército y fortificar tu reino.",
+    "description": "OpenThrone funciona en un ciclo persistente. Cada {{minutes}} minutos ganas turnos de ataque. Gasta turnos para saquear otros jugadores y obtener oro y experiencia. Usa el oro para hacer crecer tu ejército y fortificar tu reino.",
     "steps": {
       "earn": {
         "title": "Gana Turnos",
-        "text": "Los turnos de ataque se regeneran cada 30 minutos, incluso sin conexión."
+        "text": "Los turnos de ataque se regeneran cada {{minutes}} minutos, incluso sin conexión."
       },
       "attack": {
         "title": "Ataca y Saquea",
@@ -47,7 +47,9 @@
       "name": "No Muerto",
       "description": "+5 % de bonificación de ataque."
     },
-    "matchups": "Las bonificaciones raciales influyen en tu ejército; ninguna raza vence automáticamente a otra. El ataque cuerpo a cuerpo se enfrenta a la defensa cuerpo a cuerpo y el ataque a distancia a la defensa a distancia. Explora al enemigo y equipa tus tropas para el ataque que esperas."
+    "matchups": "Las bonificaciones raciales influyen en tu ejército; ninguna raza vence automáticamente a otra. El ataque cuerpo a cuerpo se enfrenta a la defensa cuerpo a cuerpo y el ataque a distancia a la defensa a distancia. Explora al enemigo y equipa tus tropas para el ataque que esperas.",
+    "classesTitle": "Elige tu clase",
+    "classesDescription": "Tu clase es la segunda elección al registrarte y es permanente. Cada una da una bonificación duradera:"
   },
   "army": {
     "title": "Construye tu Ejército",
@@ -74,22 +76,30 @@
     "description": "El oro es la sangre de tu imperio. Manéjalo con sabiduría — lo que no protejas, alguien lo tomará.",
     "bank": {
       "title": "Banco",
-      "text": "Almacena oro de forma segura lejos de los saqueadores. Mejora para mayor capacidad."
+      "text": "Deposita oro para que los saqueadores no puedan llevárselo. Las mejoras de economía aumentan cuánto puedes depositar al día y cuánto cabe en el banco."
     },
     "armory": {
       "title": "Armería",
-      "text": "Compra armas y armaduras para tus tropas. Mejora para desbloquear mejor equipo."
+      "text": "Compra armas y armaduras para tus tropas. Las mejoras de la armería desbloquean mejor equipo."
+    },
+    "housing": {
+      "title": "Vivienda",
+      "text": "Trae nuevos ciudadanos a tu reino cada día. Mejórala para recibir más; los niveles altos requieren una fortificación más fuerte."
+    },
+    "repair": {
+      "title": "Reparación",
+      "text": "Los ataques dañan tu fortaleza. Gasta oro aquí para restaurar sus puntos de vida."
     },
     "fortifications": {
       "title": "Fortificaciones",
-      "text": "Fortalece tus defensas. Muros más altos significan menos bajas al ser atacado."
+      "text": "Tu fortaleza empieza como una Mansión. Mejórala en Estructuras > Mejoras, que se abre en el nivel 5 con la Aldea, para ganar defensa, oro por turno y puntos de vida de la fortaleza."
+    },
+    "economyUpgrades": {
+      "title": "Mejoras de economía",
+      "text": "También en Mejoras. Granjas, mercados y minas aumentan el oro que gana cada trabajador y cuánto admite tu banco."
     },
     "transfers": {
       "title": "Transferencias de oro"
-    },
-    "mines": {
-      "title": "Minas",
-      "text": "Aumenta la generación pasiva de oro. Esencial para el crecimiento a largo plazo."
     }
   },
   "combat": {
@@ -109,11 +119,19 @@
     },
     "losses": {
       "title": "Bajas",
-      "text": "Las bajas recaen en todos los niveles de tus unidades en proporción al número de tropas de cada nivel, así que las tropas baratas de nivel 1 ya no protegen a tus mejores unidades. Los mercenarios contratados siguen ocupando la primera línea dentro de su nivel."
+      "text": "Las bajas recaen en todos los niveles de tus unidades en proporción al número de tropas de cada nivel, así que las tropas baratas de nivel 1 ya no protegen a tus mejores unidades. Los mercenarios se desbloquean desde el nivel {{mercenaryLevel}}: cuando tu fuerte sea una {{mercenaryFort}}, se abre Batalla → Mercenarios; una vez contratados, ocupan la primera línea dentro de su nivel."
+    },
+    "protection": {
+      "title": "Protección de novato",
+      "text": "La protección de novato es un escudo de oro, no inmunidad: los ataques siguen matando unidades y dañando tu fuerte. Tus primeras {{allowance}} monedas de oro en mano están protegidas — los saqueadores toman como máximo el {{share}} % del tope normal en el nivel 1, y el 100 % en el nivel {{taperLevel}} — y el oro por encima se saquea al ritmo normal, así que guárdalo en el banco. La protección termina tras un número fijo de días de juego, al llegar a cierta población o al nivel 10, lo que ocurra primero."
     },
     "stamina": {
       "title": "Resistencia"
-    }
+    },
+      "experience": {
+        "title": "Experiencia y niveles",
+        "text": "La experiencia (XP) se gana en combate. Ganar un ataque es lo que más da, según los turnos que comprometas, la diferencia de nivel y lo reñida que fue la batalla. Un ataque perdido da una parte menor, y solo si fue un combate real: nada por debajo del {{effortFloor}} % de la fuerza del defensor, la parte completa desde el {{effortFull}} %. Los defensores ganan XP cada vez que los atacan, más por resistir que por caer, según el tamaño de la amenaza (al menos el {{threatFloor}} %). Si te quedas en un nivel más de {{graceDays}} días de juego, la XP que recibes al ser atacado sube un {{stallStep}} % por cada día de juego adicional, hasta {{stallMax}}×, para que nadie se esconda en niveles bajos. Las misiones de espionaje no dan XP. El resumen muestra cuánta XP necesitas para el siguiente nivel; cada nivel da un punto de competencia y, en ciertos hitos, abre nuevas estructuras."
+      }
   },
   "alliances": {
     "title": "Alianzas",

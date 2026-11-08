@@ -1,5 +1,7 @@
 import { HouseUpgrades } from '@/constants';
+import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { resolveEraStartSettings } from '@/utils/eraStartSettings';
+import { getGameDayMs } from '@/utils/timefunctions';
 import { getLevelFromXP } from '@/utils/utilities';
 
 /** Protection always ends once a player reaches this level. */
@@ -7,8 +9,6 @@ export const PROTECTION_LEVEL_LIMIT = 10;
 export const DEFAULT_PROTECTION_DURATION_DAYS = 14;
 export const MIN_PROTECTION_DURATION_DAYS = 1;
 export const MAX_PROTECTION_DURATION_DAYS = 60;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Why a player is (or is no longer) protected. `ACTIVE` means still protected. */
 export type ProtectionReason = 'ACTIVE' | 'LEVEL' | 'POPULATION' | 'TIME';
@@ -153,7 +153,8 @@ export function getProtectionStatus(
         if (eraStart && created) return created > eraStart ? created : eraStart;
         return eraStart ?? created;
       })();
-    if (joined) endsAt = new Date(joined.getTime() + durationDays * DAY_MS);
+    if (joined)
+      endsAt = new Date(joined.getTime() + durationDays * getGameDayMs());
   }
 
   const levelLimit = settings.levelLimit ?? PROTECTION_LEVEL_LIMIT;
@@ -173,9 +174,11 @@ export function getProtectionStatus(
     populationThreshold,
     forfeited: false,
     durationDays,
-    daysLeft: msLeft === null ? null : msLeft / DAY_MS,
+    daysLeft: msLeft === null ? null : msLeft / getGameDayMs(),
     timeRemainingShare:
-      msLeft === null ? null : Math.min(1, msLeft / (durationDays * DAY_MS)),
+      msLeft === null
+        ? null
+        : Math.min(1, msLeft / (durationDays * getGameDayMs())),
   };
 }
 
@@ -183,6 +186,24 @@ export function getProtectionStatus(
 export type ProtectionSummary = Omit<ProtectionStatus, 'endsAt'> & {
   endsAt: string | null;
 };
+
+/**
+ * Rule numbers the player-facing gold-shield copy quotes (#284), straight from
+ * the live combat constants: the shielded on-hand allowance, the share of the
+ * normal loot cap raiders can still take from it at level 1, and the level at
+ * which the shield has tapered away.
+ */
+export function getProtectionShieldFacts(): {
+  allowance: number;
+  share: number;
+  taperLevel: number;
+} {
+  return {
+    allowance: V5_COMBAT_CONSTANTS.PROTECTED_GOLD_ALLOWANCE,
+    share: Math.round(V5_COMBAT_CONSTANTS.PROTECTED_LOOT_MULTIPLIER * 100),
+    taperLevel: V5_COMBAT_CONSTANTS.PROTECTION_TAPER_END_LEVEL,
+  };
+}
 
 /** Serializes a status for the API (dates become ISO strings). */
 export function toProtectionSummary(

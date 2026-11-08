@@ -255,8 +255,12 @@ beforeEach(() => {
     }),
   };
   for (const model of ['attack_log', 'recruit_history']) {
-    mockPrisma[model] = { deleteMany: vi.fn(async () => ({})) };
+    mockPrisma[model] = {
+      deleteMany: vi.fn(async () => ({})),
+      findMany: vi.fn(async () => []),
+    };
   }
+  mockPrisma.era.findMany = vi.fn(async () => []);
   mockPrisma.bank_history.deleteMany = vi.fn(async () => ({}));
 });
 
@@ -688,7 +692,8 @@ describe('daily cron', () => {
     expect(row.UserUnit.find((u: Row) => u.type === 'DEFENSE').quantity).toBe(
       healedDefense,
     );
-    for (const tx of txLog) {
+    // The daily log cleanup runs in its own transaction and locks no player.
+    for (const tx of txLog.filter(({ locks }) => locks.length > 0)) {
       expect(tx.locks).toEqual([5]);
       expect(tx.options).toEqual(CRON_USER_TX_OPTIONS);
     }

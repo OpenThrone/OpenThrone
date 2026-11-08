@@ -61,3 +61,83 @@ describe('OT time', () => {
     expect(formatOTTime(new Date('2026-01-15T12:00:00Z'))).toBe('07:00');
   });
 });
+
+describe('game day length', () => {
+  const withGameDay = async (minutes: string | undefined, run: () => void) => {
+    const previous = process.env.GAME_DAY_MINUTES;
+    const previousPublic = process.env.NEXT_PUBLIC_GAME_DAY_MINUTES;
+    delete process.env.NEXT_PUBLIC_GAME_DAY_MINUTES;
+    if (minutes === undefined) delete process.env.GAME_DAY_MINUTES;
+    else process.env.GAME_DAY_MINUTES = minutes;
+    try {
+      run();
+    } finally {
+      if (previous === undefined) delete process.env.GAME_DAY_MINUTES;
+      else process.env.GAME_DAY_MINUTES = previous;
+      if (previousPublic !== undefined)
+        process.env.NEXT_PUBLIC_GAME_DAY_MINUTES = previousPublic;
+    }
+  };
+
+  it('matches the OT calendar day by default', async () => {
+    const t = await import('./timefunctions');
+    await withGameDay(undefined, () => {
+      const at = new Date('2026-10-14T01:30:00Z');
+      expect(t.getGameDayMs()).toBe(24 * 60 * 60 * 1000);
+      expect(t.getGameDayKey(at)).toBe(t.getOTDayKey(at));
+      expect(t.getGameDayStart(0, at)).toEqual(t.getOTStartDate(0, at));
+      expect(t.getGameDayStart(2, at)).toEqual(t.getOTStartDate(2, at));
+    });
+  });
+
+  it('splits the OT day into blocks aligned to OT midnight', async () => {
+    const t = await import('./timefunctions');
+    await withGameDay('240', () => {
+      // 09:30 in New York (EDT) is in the 08:00-12:00 block, the third of the day.
+      const at = new Date('2026-10-30T13:30:00Z');
+      expect(t.getGameDayMs()).toBe(4 * 60 * 60 * 1000);
+      expect(t.getGameDayKey(at)).toBe('2026-10-30#2');
+      expect(t.getGameDayStart(0, at).toISOString()).toBe(
+        '2026-10-30T12:00:00.000Z',
+      );
+      expect(t.getGameDayStart(1, at).toISOString()).toBe(
+        '2026-10-30T16:00:00.000Z',
+      );
+      // Offsets roll across OT midnight.
+      expect(t.getGameDayStart(-3, at).toISOString()).toBe(
+        '2026-10-30T00:00:00.000Z',
+      );
+      expect(t.getGameDayKey(new Date('2026-10-31T03:59:00Z'))).toBe(
+        '2026-10-30#5',
+      );
+    });
+  });
+
+  it('counts the deposit countdown down over the game day, not 24 hours', async () => {
+    const t = await import('./timefunctions');
+    const since = new Date('2026-10-30T16:24:36Z');
+    const now = new Date('2026-10-30T16:25:36Z');
+    await withGameDay('240', () => {
+      expect(t.getGameDayWindowCountdown(since, now)).toEqual({
+        hours: 3,
+        minutes: 59,
+        seconds: 0,
+      });
+      expect(
+        t.getGameDayWindowCountdown(since, new Date('2026-10-30T20:24:36Z')),
+      ).toEqual({ hours: 0, minutes: 0, seconds: 0 });
+    });
+    await withGameDay(undefined, () => {
+      expect(t.getGameDayWindowCountdown(since, now).hours).toBe(23);
+    });
+  });
+
+  it('falls back to a real day for lengths that do not divide it', async () => {
+    const t = await import('./timefunctions');
+    for (const bad of ['0', '-60', '250', '90.5', 'abc']) {
+      await withGameDay(bad, () => {
+        expect(t.getGameDayMinutes()).toBe(24 * 60);
+      });
+    }
+  });
+});

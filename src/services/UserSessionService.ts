@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { ATTACK_TURN_INTERVAL_MINUTES } from '@/constants/Turns';
+import { getTurnIntervalMinutes } from '@/utils/timefunctions';
 
 const UserDataSchema = z.object({
   last_active: z.union([z.date(), z.string(), z.null()]).optional(),
@@ -31,7 +31,8 @@ export class UserSessionService {
   }
 
   getTimeToNextTurn(date = new Date()): Date {
-    const ms = ATTACK_TURN_INTERVAL_MINUTES * 60_000;
+    // Same configurable interval as the turn cron and the sidebar timer.
+    const ms = getTurnIntervalMinutes() * 60 * 1000;
     return new Date(Math.ceil(date.getTime() / ms) * ms);
   }
 }

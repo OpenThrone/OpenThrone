@@ -1,5 +1,8 @@
 import { staminaDrainFactor } from '@/constants/ArmyStamina';
-import { FEATURE_REQUIREMENTS } from '@/constants/FeatureUnlocks';
+import {
+  FEATURE_REQUIREMENTS,
+  getFeaturePlayerLevel,
+} from '@/constants/FeatureUnlocks';
 import { Fortifications } from '@/constants/Fortifications';
 import { DEFENDER_FATIGUE_MIN_MULTIPLIER } from '@/constants/KingdomMorale';
 import {
@@ -21,6 +24,7 @@ import {
   staminaGuideValues,
   type StaminaRules,
 } from '@/utils/stamina';
+import { getGameDayMinutes } from '@/utils/timefunctions';
 
 /**
  * Every number the public strategy guides print. Static rules are read from the
@@ -97,7 +101,9 @@ export interface GuideFacts {
     knightCost: number;
     /** Economy upgrade indexes (see tables.economy) that open each feature. */
     goldTransferEconomy: number;
-    mercenaryHallEconomy: number;
+    /** Fort level and player level that open the mercenary hall. */
+    mercenaryHallFortLevel: number;
+    mercenaryHallLevel: number;
   };
   racial: {
     firstFortLevel: number;
@@ -166,7 +172,10 @@ export function buildGuideFacts(config: GuideConfig = {}): GuideFacts {
     : 0;
   const examplePerTurn =
     GUIDE_EXAMPLE_WORKERS * farm.goldPerWorker + manor.goldPerTurn;
-  const turnsPerDay = Math.round((24 * 60) / ATTACK_TURN_INTERVAL_MINUTES);
+  // Per game day, so the guide matches the daily rules on accelerated servers.
+  const turnsPerDay = Math.round(
+    getGameDayMinutes() / ATTACK_TURN_INTERVAL_MINUTES,
+  );
   const level =
     config.protectionLevelLimit ?? registryDefault('era.protectionLevelLimit');
   const rules: StaminaRules = config.stamina ?? DEFAULT_STAMINA_RULES;
@@ -226,8 +235,9 @@ export function buildGuideFacts(config: GuideConfig = {}): GuideFacts {
       knightFortLevel: unitFortLevel('Knight'),
       knightCost: unitCost('OFFENSE', 2),
       goldTransferEconomy: FEATURE_REQUIREMENTS.GOLD_TRANSFER.economyLevel ?? 0,
-      mercenaryHallEconomy:
-        FEATURE_REQUIREMENTS.MERCENARY_HALL.economyLevel ?? 0,
+      mercenaryHallFortLevel:
+        FEATURE_REQUIREMENTS.MERCENARY_HALL.fortLevel ?? 0,
+      mercenaryHallLevel: getFeaturePlayerLevel('MERCENARY_HALL') ?? 0,
     },
     racial: {
       firstFortLevel: racialFortRequirement('ELF', 1),

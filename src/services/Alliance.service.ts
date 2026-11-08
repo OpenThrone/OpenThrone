@@ -39,6 +39,7 @@ import { lockAllianceChatRooms } from '@/services/chatRoomGuards';
 import { returnMemberForcesInTx } from '@/services/ForceLifecycle.service';
 import { settleForcePillageInTx } from '@/services/ForcePillage.service';
 import { recomputeStoredStatsInTx } from '@/utils/adminRecomputeStats';
+import { logActionStrict } from '@/utils/auditLogger';
 import { lockEraLifecycleShared } from '@/utils/eraLifecycleLock';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
@@ -316,6 +317,30 @@ export const redactAllianceForViewer = <T extends Record<string, any>>(
     }),
   } as unknown as T;
 };
+
+/** A membership candidate for the erasure succession (#318). */
+export interface SuccessionCandidate {
+  user_id: number;
+  created_at: Date;
+  role: { rank_order: number };
+}
+
+/**
+ * Orders succession candidates for an erased leader (#318): the highest
+ * role first (lower `rank_order` outranks), ties go to the longest-standing
+ * member (earliest join), and the user id is the final tiebreak so the
+ * order is total and deterministic.
+ */
+export function rankSuccessionCandidates<T extends SuccessionCandidate>(
+  members: T[],
+): T[] {
+  return [...members].sort(
+    (a, b) =>
+      a.role.rank_order - b.role.rank_order ||
+      a.created_at.getTime() - b.created_at.getTime() ||
+      a.user_id - b.user_id,
+  );
+}
 
 /** Encapsulates alliance data access and domain operations. */
 export class AllianceService {
@@ -1119,6 +1144,140 @@ export class AllianceService {
     } catch (error: any) {
       logError('Error deleting alliance', { allianceId, leaderId, error });
       throw error;
+    }
+  }
+
+  /**
+   * Erasure (#318): the account is about to be erased, so it leaves every
+   * alliance it belongs to inside the caller's erasure transaction — a
+   * pseudonymous roster entry must never keep leading or occupying a slot.
+   * Call it before the first user-row lock of the erasure transaction so
+   * the whole transaction takes locks in the canonical leave/kick order
+   * (era lifecycle → chat rooms → alliance → users ascending).
+   *
+   * Per alliance this applies the normal leave effects: borrowed forces
+   * return to the reserve, pending gold requests are cancelled, and loans
+   * are collected from gold and bank without ever forgiving the remainder —
+   * the debt stays attached to the pseudonymous borrower (#13 reserve
+   * rules). An erased leader is succeeded by the highest-ranked remaining
+   * member (ties go to the longest-standing one); if nobody remains, the
+   * alliance is dissolved through the shared disband teardown, not a
+   * parallel path.
+   */
+  static async leaveAllAlliancesOnErasure(
+    tx: Prisma.TransactionClient,
+    userId: number,
+    options: { actorUserId?: number } = {},
+  ): Promise<void> {
+    // Transaction harnesses in unit tests may not define the model (same
+    // guard style as settleLoansOnExit's alliance_loans check).
+    if (!tx.alliance_memberships) return;
+    const memberships = await tx.alliance_memberships.findMany({
+      where: { user_id: userId },
+      select: { alliance_id: true },
+      orderBy: { alliance_id: 'asc' },
+    });
+    if (memberships.length === 0) return;
+    await lockEraLifecycleShared(tx);
+    for (const { alliance_id: allianceId } of memberships) {
+      await lockAllianceChatRooms(tx, allianceId);
+      await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${allianceId} FOR UPDATE`;
+      const alliance = await tx.alliances.findUnique({
+        where: { id: allianceId },
+        select: { id: true, name: true, leader_id: true },
+      });
+      if (!alliance) continue;
+      const remaining = await tx.alliance_memberships.findMany({
+        where: { alliance_id: allianceId, user_id: { not: userId } },
+        include: { role: { select: { rank_order: true } } },
+      });
+      if (remaining.length === 0) {
+        // Last member: dissolve through the shared disband teardown (the
+        // treasury split and force returns are the leader-disband ones).
+        // Chat eviction is unnecessary — the only member is the erased
+        // account, whose session dies with the erasure.
+        await AllianceService.teardownAlliance(
+          tx,
+          allianceId,
+          alliance.leader_id ?? userId,
+        );
+        await logActionStrict(
+          {
+            userId: options.actorUserId ?? userId,
+            action: 'ALLIANCE_DISSOLVED_ON_ERASURE',
+            ip: 'unknown',
+            entityType: 'alliances',
+            entityId: allianceId,
+            details: {
+              allianceName: alliance.name,
+              lastMemberId: userId,
+              reason: 'ACCOUNT_ERASURE',
+            },
+          },
+          tx,
+        );
+        continue;
+      }
+      if (alliance.leader_id === userId) {
+        const candidates = rankSuccessionCandidates(remaining);
+        // Prefer a member who does not already lead another alliance (the
+        // one-led rule of transferLeadership). A forced succession must
+        // not strand the alliance, so when every remaining member leads
+        // elsewhere the top candidate wins anyway.
+        let successor = candidates[0];
+        for (const candidate of candidates) {
+          const leadsElsewhere = await tx.alliances.findFirst({
+            where: { leader_id: candidate.user_id, id: { not: allianceId } },
+            select: { id: true },
+          });
+          if (!leadsElsewhere) {
+            successor = candidate;
+            break;
+          }
+        }
+        // Same lock order as transferLeadership (alliance → users asc).
+        // The guarded update can only miss if the leader changed since the
+        // read above, which the alliance-row lock rules out.
+        if (successor) {
+          await lockAllianceThenUsers(tx, allianceId, [
+            userId,
+            successor.user_id,
+          ]);
+          const changed = await tx.alliances.updateMany({
+            where: { id: allianceId, leader_id: userId },
+            data: { leader_id: successor.user_id },
+          });
+          if (changed.count === 1) {
+            await logActionStrict(
+              {
+                userId: options.actorUserId ?? userId,
+                action: 'ALLIANCE_LEADER_SUCCEEDED_ON_ERASURE',
+                ip: 'unknown',
+                targetUserId: successor.user_id,
+                entityType: 'alliances',
+                entityId: allianceId,
+                details: {
+                  allianceName: alliance.name,
+                  previousLeaderId: userId,
+                  newLeaderId: successor.user_id,
+                  reason: 'ACCOUNT_ERASURE',
+                },
+              },
+              tx,
+            );
+          }
+        }
+      }
+      // The normal leave teardown (leaders are refused there, not here).
+      await returnMemberForcesInTx(tx, allianceId, userId);
+      await recomputeStoredStatsInTx(tx, userId);
+      await tx.alliance_memberships.deleteMany({
+        where: { alliance_id: allianceId, user_id: userId },
+      });
+      await cancelPendingGoldRequests(tx, allianceId, userId);
+      // Collects what it can; the remainder stays owed by the pseudonymous
+      // account instead of blocking or forgiving (#13 reserve rules).
+      await settleLoansOnExit(tx, allianceId, userId, 'erasure');
     }
   }
 

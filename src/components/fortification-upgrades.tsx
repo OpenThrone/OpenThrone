@@ -5,7 +5,7 @@ import { Fortifications } from '@/constants';
 import type { BattleUpgradeProps, Locales } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { toLocale } from '@/utils/numberFormatting';
-import { structureName } from '@/utils/structureNames';
+import { fortRequirementName } from '@/utils/structureNames';
 
 const FortificationsTab: React.FC<BattleUpgradeProps> = ({
   userLevel,
@@ -19,8 +19,7 @@ const FortificationsTab: React.FC<BattleUpgradeProps> = ({
   const rows = Fortifications.filter((item) => item.level <= fortLevel + 2).map(
     (item, index) => ({
       key: `${item.level}_${item.name}`,
-      name:
-        structureName(t, 'fortifications', item.level, item.name) ?? item.name,
+      name: fortRequirementName(t, item.level) ?? item.name,
       position: item.level,
       purchaseIndex: index,
       cells: [

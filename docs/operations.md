@@ -19,7 +19,7 @@ Example crontab entries (replace host and secret placeholders):
 30 0 * * * /usr/bin/curl --fail -X POST -H "Authorization: <TASK_SECRET>" https://<host>/api/cronJobs/bots
 ```
 
-The daily job also grants every participating account the **Daily citizen bonus** from **Administration → Server settings** (`era.dailyCitizenBonus`, default 0) on top of the per-player recruit bonus. Only accounts with gameplay activity within the **Daily citizen bonus activity window** (`era.dailyCitizenBonusActivityHours`, default 24; 0 disables the check) receive it. Gameplay activity means a bank deposit, training or untraining units, buying or selling armory items, an attack, a spy mission, or a fort repair; each stamps `users.last_gameplay_at`, which an era reset clears. The recruit bonus is unaffected. Values are read once per run and recorded in each `DAILY_RECRUIT` bank-history entry.
+The daily job also grants every participating account any **Daily citizen bonus** set by the active [game events](mechanics/game-events.md) (`dailyCitizenBonus`) on top of the per-player recruit bonus. Only accounts with gameplay activity within the event's activity window (`dailyCitizenActivityHours`, default 24; 0 disables the check) receive it. Gameplay activity means a bank deposit, training or untraining units, buying or selling armory items, an attack, a spy mission, or a fort repair; each stamps `users.last_gameplay_at`, which an era reset clears. The recruit bonus is unaffected. Values are read once per run and recorded in each `DAILY_RECRUIT` bank-history entry.
 
 Changing `TURN_INTERVAL_MINUTES` changes the application interval, not the external scheduler. Keep both aligned. Inspect [cron handlers](../src/pages/api/cronJobs) for current task behavior.
 
@@ -74,13 +74,13 @@ uses NextAuth's normal sign-out flow for compatibility with older links.
 
 ## Disabled login and current-era participation
 
-`NEXT_PUBLIC_DISABLE_LOGIN=true` permits only accounts with unrevoked ADMINISTRATOR or MODERATOR staff assignments to enter the game. Credential validation checks this before status/activity writes; existing sessions and new socket connections also recheck access. Impersonation of a blocked non-staff target is rejected. Rebuild/redeploy when changing this public environment setting; existing connections should be restarted during the rollout.
+`NEXT_PUBLIC_DISABLE_LOGIN=true` permits only accounts with unrevoked ADMINISTRATOR or MODERATOR staff assignments to enter the game. Credential validation checks this before status/activity writes; existing sessions and new socket connections also recheck access. Impersonation of a blocked non-staff target is rejected. The `DISABLE_LOGIN` runtime setting overrides this environment value without a rebuild; the environment value is only the fallback. See [runtime settings](mechanics/runtime-settings.md).
 
 Daily and turn processing, attack-user lists, public player counts, current community leaderboards and comparison rankings require a non-system account assigned to the current era with `last_active` on/after its start. During disabled login they additionally require an active staff role. These filters do not change archived era snapshots. Normal vacation gold behavior continues for qualifying era participants when login is open; verify maintenance economics before rollout.
 
 The activity update endpoint only updates its authenticated session owner. Gameplay data reads reject blocked targets before refreshing activity or initializing era state. Comparison cache keys include era and disabled-login mode; community stats use the existing ISR lifecycle and should be refreshed after deployment.
 
-Older failed logins may already have written activity, LOGIN audit entries and subsequent rewards. Those entries cannot prove admission. [Forgejo issue #11](http://192.168.4.3:3000/dastacomann/OpenThrone/issues/11) tracks a reviewed correction plan before reopening login. No production data cleanup is included in the source patch.
+Older failed logins may already have written activity, LOGIN audit entries and subsequent rewards. Those entries cannot prove admission. Forgejo issue #11 tracks a reviewed correction plan before reopening login. No production data cleanup is included in the source patch.
 
 ## Client IP and trusted proxies
 
@@ -108,7 +108,7 @@ hops are skipped); otherwise the socket address is used.
 
 ## Scheduled Era resets
 
-The custom Bun server now polls database-backed Era reset schedules automatically; the turn/daily cron jobs above remain externally scheduled. Admins configure a reset under **Administration → Eras → Schedule reset**. See [current-era-reset.md](current-era-reset.md) for reset scope, player notices, cancellation, failure recovery, and deployment details.
+The custom Bun server now polls database-backed Era reset schedules automatically; the turn/daily cron jobs above remain externally scheduled. Admins configure a reset under **Administration → Eras → Schedule reset**. See [Eras and era resets](mechanics/era-reset.md) for reset scope, player notices, cancellation, failure recovery, and deployment details.
 
 Deployments using plain `next start` need a separate supervised `bun run era-reset-worker` process. At the announced UTC time, logins close; the reset runs after a 35-second access-cache drain. Restarted workers pick up overdue schedules. Keep at least one worker running and monitor failures before relying on an announced deadline.
 

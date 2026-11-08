@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
+import { getGameDayMs } from '@/utils/timefunctions';
 
 const UserSchema = z.object({
   id: z.number().int().positive(),
@@ -29,9 +30,9 @@ export const canAttack = async (
         { voidedAt: null },
         {
           timestamp: {
-            gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24),
+            gte: new Date(Date.now() - getGameDayMs()),
           },
-        }, // Last 24 hours
+        }, // Last game day
       ],
     },
   });
@@ -59,7 +60,7 @@ const canAssassinate = async (
         { type: 'ASSASSINATE' },
         {
           timestamp: {
-            gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24),
+            gte: new Date(Date.now() - getGameDayMs()),
           },
         },
       ],
@@ -89,7 +90,7 @@ const canInfiltrate = async (
         { type: 'INFILTRATE' },
         {
           timestamp: {
-            gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24),
+            gte: new Date(Date.now() - getGameDayMs()),
           },
         },
       ],

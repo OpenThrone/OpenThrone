@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'bun:test';
 
 import { levelXPArray } from '@/constants/XPLevels';
+import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import {
   getProtectionPopulationThreshold,
   getProtectionProgress,
+  getProtectionShieldFacts,
   getProtectionStatus,
   normalizeProtectionDurationDays,
   PROTECTION_LEVEL_LIMIT,
@@ -55,6 +57,33 @@ describe('getProtectionStatus', () => {
     expect(status.levelLimit).toBe(10);
     expect(status.daysLeft).toBeCloseTo(12, 5);
     expect(status.endsAt?.getTime()).toBe(NOW.getTime() + 12 * DAY);
+  });
+
+  it('counts protection in game days on an accelerated server', () => {
+    const previous = process.env.GAME_DAY_MINUTES;
+    process.env.GAME_DAY_MINUTES = '240';
+    try {
+      const gameDay = 4 * 60 * 60 * 1000;
+      const status = getProtectionStatus(
+        fresh({ eraJoinedAt: new Date(NOW.getTime() - 2 * gameDay) }),
+        ERA,
+        SETTINGS,
+        NOW,
+      );
+      expect(status.daysLeft).toBeCloseTo(12, 5);
+      expect(status.endsAt?.getTime()).toBe(NOW.getTime() + 12 * gameDay);
+      expect(
+        getProtectionStatus(
+          fresh({ eraJoinedAt: new Date(NOW.getTime() - 14 * gameDay) }),
+          ERA,
+          SETTINGS,
+          NOW,
+        ).reason,
+      ).toBe('TIME');
+    } finally {
+      if (previous === undefined) delete process.env.GAME_DAY_MINUTES;
+      else process.env.GAME_DAY_MINUTES = previous;
+    }
   });
 
   it('ends at the configured level', () => {
@@ -248,5 +277,17 @@ describe('getProtectionProgress', () => {
         populationThreshold: 0,
       }),
     ).toEqual({ share: 1, limit: 'LEVEL' });
+  });
+});
+
+// The player-facing gold-shield copy quotes these numbers, so they must track
+// the live combat constants (#284).
+describe('getProtectionShieldFacts', () => {
+  it('reads the shield rule numbers from the live constants', () => {
+    expect(getProtectionShieldFacts()).toEqual({
+      allowance: V5_COMBAT_CONSTANTS.PROTECTED_GOLD_ALLOWANCE,
+      share: Math.round(V5_COMBAT_CONSTANTS.PROTECTED_LOOT_MULTIPLIER * 100),
+      taperLevel: V5_COMBAT_CONSTANTS.PROTECTION_TAPER_END_LEVEL,
+    });
   });
 });

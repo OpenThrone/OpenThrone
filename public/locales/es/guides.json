@@ -74,7 +74,7 @@
       "protection": {
         "title": "Tus primeros días están protegidos",
         "paragraphs": [
-          "Los reinos nuevos están a salvo de lo peor de un saqueo. La protección termina con el primero de tres límites: {{protection.days}} días después de unirte a la era, el nivel {{protection.level}} ({{protection.levelXp}} de experiencia) o que tu población supere un umbral que depende de la era. Mientras estés protegido, una batalla puede costarte como máximo el {{protection.lossCapPercent}} % de tu población, con un mínimo de una unidad.",
+          "Los reinos nuevos reciben un escudo de oro, no inmunidad: los ataques siguen costando unidades y dañando el fuerte. La protección termina con el primero de tres límites: {{protection.days}} días después de unirte a la era, el nivel {{protection.level}} ({{protection.levelXp}} de experiencia) o que tu población supere un umbral que depende de la era. Mientras estés protegido, una batalla puede costarte como máximo el {{protection.lossCapPercent}} % de tu población, con un mínimo de una unidad.",
           "Atacar no pone fin a tu protección, pero aprovecha el tiempo para construir ingresos y una defensa antes de empezar a saquear."
         ]
       },
@@ -123,7 +123,7 @@
         "title": "Mejoras de economía",
         "paragraphs": [
           "Cada mejora de economía aumenta el oro que gana cada trabajador y el número de depósitos en el banco que puedes hacer al día. Muchas mejoras también exigen un nivel mínimo de fortificación.",
-          "Las mejoras también desbloquean funciones. Las transferencias de oro se desbloquean con {{unlockNames.goldTransfer}} y el salón de mercenarios con {{unlockNames.mercenaryHall}}."
+          "Las mejoras también desbloquean funciones. Las transferencias de oro se desbloquean con {{unlockNames.goldTransfer}} y los mercenarios desde el nivel {{unlockNames.mercenaryLevel}}, cuando tu fuerte sea una {{unlockNames.mercenaryFort}}."
         ],
         "tableCaption": "Mejoras de economía"
       },
@@ -195,6 +195,7 @@
         "paragraphs": [
           "Las misiones de espionaje también gastan turnos. Una misión usa hasta {{spy.missionMaxTurns}} turnos. Las de inteligencia usan hasta {{spy.intelMaxTurns}}, las infiltraciones al menos {{spy.infiltrationMinTurns}} y los asesinatos al menos {{spy.assassinationMinTurns}}.",
           "Puedes hacer como máximo {{spy.intelPerTargetPerDay}} misiones de inteligencia contra un mismo objetivo en 24 horas, y las misiones repetidas contra el mismo reino se vuelven más difíciles a lo largo del día. Tus propios espías y centinelas te defienden de los espías enemigos.",
+          "Un informe de inteligencia siempre muestra la población exacta del objetivo, el mismo número que muestra la lista de ataques. Las tropas, el oro y el equipo observados son una muestra, y el informe indica su calidad de inteligencia: la parte del reino que vieron tus espías.",
           "Qué misiones están abiertas es un ajuste del servidor, así que el menú de espionaje muestra lo que puedes hacer ahora mismo."
         ]
       },

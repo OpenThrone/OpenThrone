@@ -5,7 +5,8 @@
     "recruits": "Anwerbeverlauf",
     "logins": "Anmeldeverlauf",
     "suppressions": "E-Mail-Unterdrückungen",
-    "blocks": "Identitätssperren"
+    "blocks": "Identitätssperren",
+    "drift": "Gegenstandsabweichung"
   },
   "sender": "Absender-ID",
   "receiver": "Empfänger-ID",
@@ -51,7 +52,15 @@
     "createdByUserId": "Erstellt von (ID)",
     "kind": "Art",
     "sourceUserId": "Quellbenutzer-ID",
-    "expiresAt": "Läuft ab"
+    "expiresAt": "Läuft ab",
+    "type": "Gegenstand",
+    "usage": "Verwendung",
+    "level": "Stufe",
+    "checkpointQuantity": "Letzte Prüfung",
+    "ledgerDelta": "Erfasste Änderung",
+    "actualQuantity": "Tatsächlich",
+    "drift": "Abweichung"
   },
-  "protectedRemoval": "Dieser Eintrag ist geschützt und kann nicht entfernt werden."
+  "protectedRemoval": "Dieser Eintrag ist geschützt und kann nicht entfernt werden.",
+  "driftNote": "Bestände, die nicht zur letzten Prüfung plus den erfassten Änderungen passen. Jeder Eintrag erscheint einmal, und nichts wird automatisch korrigiert. Fehlerfreie Tage stehen im Cron-Protokoll."
 }

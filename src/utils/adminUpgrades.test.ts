@@ -6,6 +6,7 @@ import {
   diffByKey,
   findMissingExpectations,
   findStaleUpgrades,
+  grantedItemDeltas,
   missingItems,
   missingUnits,
   snapshotUpgrades,
@@ -248,5 +249,21 @@ describe('admin upgrades stale-edit protection', () => {
     });
     const parsed = AdminUpgradesUpdateSchema.parse(patch);
     expect(findMissingExpectations(parsed)).toEqual([]);
+  });
+});
+
+describe('grantedItemDeltas', () => {
+  const add = { type: 'HELM', usage: 'OFFENSE', level: 2, quantity: 5 };
+
+  test('records a key the player has no row for', () => {
+    expect(grantedItemDeltas([add], [])).toEqual([
+      { type: 'HELM', usage: 'OFFENSE', level: 2, delta: 5 },
+    ]);
+  });
+
+  test('records nothing for an existing row, which the add leaves alone', () => {
+    expect(
+      grantedItemDeltas([add], [{ type: 'HELM', usage: 'OFFENSE', level: 2 }]),
+    ).toEqual([]);
   });
 });

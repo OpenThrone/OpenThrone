@@ -9,13 +9,12 @@ import {
   isAllianceActive,
 } from '@/services/allianceStatus';
 import { logError } from '@/utils/logger';
+import { getGameDayMs } from '@/utils/timefunctions';
 
 export const ANNOUNCEMENT_TITLE_MAX = 120;
 export const ANNOUNCEMENT_BODY_MAX = 4000;
 export const ANNOUNCEMENTS_PER_DAY = 10;
 export const ANNOUNCEMENTS_PAGE_SIZE_MAX = 50;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 const CreateSchema = z.object({
   allianceId: z.number().int().positive(),
@@ -126,7 +125,7 @@ export class AllianceAnnouncementsService {
         const recent = await tx.alliance_announcements.count({
           where: {
             alliance_id: alliance.id,
-            created_at: { gte: new Date(Date.now() - DAY_MS) },
+            created_at: { gte: new Date(Date.now() - getGameDayMs()) },
           },
         });
         if (recent >= ANNOUNCEMENTS_PER_DAY) {

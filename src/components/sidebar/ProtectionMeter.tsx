@@ -1,15 +1,19 @@
-import { Progress, Stack, Text } from '@mantine/core';
+import { Progress, Stack, Text, Tooltip } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import React from 'react';
 
 import type UserModel from '@/models/Users';
-import { getProtectionProgress } from '@/utils/battleProtection';
+import {
+  getProtectionProgress,
+  getProtectionShieldFacts,
+} from '@/utils/battleProtection';
 import { toLocale } from '@/utils/numberFormatting';
 
 /**
  * Compact new-player protection meter. Reads the status the player's own data
  * API already serves (`user.protection`), so it adds no polling. Hidden once
- * protection has ended.
+ * protection has ended. The headline names the gold shield, not blanket
+ * immunity (#284); the tooltip carries the live rule numbers.
  */
 export const ProtectionMeter = React.memo(function ProtectionMeter({
   user,
@@ -26,6 +30,12 @@ export const ProtectionMeter = React.memo(function ProtectionMeter({
     days === null
       ? t('sidebar.protection.active')
       : t('sidebar.protection.daysLeft', { count: days });
+  const facts = getProtectionShieldFacts();
+  const tooltip = t('sidebar.protection.tooltip', {
+    allowance: toLocale(facts.allowance, user.locale),
+    share: facts.share,
+    taperLevel: facts.taperLevel,
+  });
   // The bar fills toward whichever limit ends protection first.
   const progress = getProtectionProgress(protection);
   const percent = Math.round(progress.share * 100);
@@ -37,9 +47,19 @@ export const ProtectionMeter = React.memo(function ProtectionMeter({
       aria-label={t('sidebar.protection.label')}
       data-tour-id="protection"
     >
-      <Text size="xs" fw={600} lh={1.3}>
-        {headline}
-      </Text>
+      <Tooltip
+        label={tooltip}
+        multiline
+        maw={300}
+        withArrow
+        position="top"
+        withinPortal
+        events={{ hover: true, focus: true, touch: false }}
+      >
+        <Text component="span" size="xs" fw={600} lh={1.3} tabIndex={0}>
+          {headline}
+        </Text>
+      </Tooltip>
       <Text size="xs" lh={1.3}>
         {/* Each figure stays on one line; a narrow sidebar wraps at the dot. */}
         <span className="whitespace-nowrap">

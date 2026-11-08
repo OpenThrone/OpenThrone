@@ -5,7 +5,7 @@ import { UpgradeLedger } from '@/components/game/UpgradeLedger';
 import { SpyUpgrades } from '@/constants';
 import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
-import { fortificationName, structureName } from '@/utils/structureNames';
+import { fortRequirementName, structureName } from '@/utils/structureNames';
 
 const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({
   userLevel,
@@ -23,7 +23,7 @@ const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({
     position: item.level,
     purchaseIndex: index,
     cells: [
-      fortificationName(t, item.fortLevelRequirement),
+      fortRequirementName(t, item.fortLevelRequirement),
       <>
         {t('upgrades.spyBonus')}: {item.offenseBonusPercentage}%<br />
         {t('upgrades.maxInfiltrations')}: {item.maxInfiltrations}

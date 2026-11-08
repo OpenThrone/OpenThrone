@@ -15,9 +15,14 @@ import { useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
 import {
-  getRequiredEconomyUpgradeName,
+  FEATURE_REQUIREMENTS,
+  getFeaturePlayerLevel,
   hasFeature,
 } from '@/constants/FeatureUnlocks';
+import {
+  economyRequirementName,
+  fortRequirementName,
+} from '@/utils/structureNames';
 import {
   MERCENARY_ROLE_CAP,
   mercenaryTierFeatureKey,
@@ -105,15 +110,24 @@ export function MercenaryBarracks({
     (value) => value <= (limits?.maxTermDays ?? 7),
   );
   const termDays = Number(days) || 1;
-  const hallUpgrade = getRequiredEconomyUpgradeName('MERCENARY_HALL') ?? '';
-  const hallLocked = !hasFeature(
-    { economyLevel, fortLevel: 0 },
-    'MERCENARY_HALL',
-  );
+  const hallLevel = getFeaturePlayerLevel('MERCENARY_HALL') ?? 0;
+  const hallLocked = !hasFeature({ economyLevel, fortLevel }, 'MERCENARY_HALL');
   const tierLocked = (level: number) =>
-    !hasFeature({ economyLevel, fortLevel: 0 }, mercenaryTierFeatureKey(level));
-  const tierUpgrade = (level: number) =>
-    getRequiredEconomyUpgradeName(mercenaryTierFeatureKey(level)) ?? '';
+    !hasFeature({ economyLevel, fortLevel }, mercenaryTierFeatureKey(level));
+  /** What still stands between the player and an offer, if anything. */
+  const offerRequirement = ({
+    level,
+    fortLevel: unitFort,
+  }: {
+    level: number;
+    fortLevel: number;
+  }) => {
+    const req = FEATURE_REQUIREMENTS[mercenaryTierFeatureKey(level)];
+    if (economyLevel < (req.economyLevel ?? 0))
+      return economyRequirementName(t, req.economyLevel);
+    const fort = Math.max(req.fortLevel ?? 0, unitFort);
+    return fortLevel < fort ? fortRequirementName(t, fort) : undefined;
+  };
   const withinShareCap = armyShare
     ? armyShare.mercenaries + Math.max(0, Math.floor(count)) <=
       armyShare.allowed
@@ -148,7 +162,7 @@ export function MercenaryBarracks({
           )}
           {hallLocked && (
             <Alert color="yellow">
-              {t('lockedHall', { upgrade: hallUpgrade })}
+              {t('lockedHall', { level: hallLevel })}
             </Alert>
           )}
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
@@ -158,15 +172,18 @@ export function MercenaryBarracks({
               value={selected}
               onChange={setSelected}
               disabled={hallLocked}
-              data={offers.map((o) => ({
-                value: `${o.type}:${o.level}`,
-                label: `${t(`roles.${o.type}`)} · ${o.name} · ${t('tier', { level: o.level })}${
-                  tierLocked(o.level)
-                    ? ` · ${t('tierLocked', { upgrade: tierUpgrade(o.level) })}`
-                    : ''
-                }`,
-                disabled: fortLevel < o.fortLevel || tierLocked(o.level),
-              }))}
+              data={offers.map((o) => {
+                const requirement = offerRequirement(o);
+                return {
+                  value: `${o.type}:${o.level}`,
+                  label: `${t(`roles.${o.type}`)} · ${o.name} · ${t('tier', { level: o.level })}${
+                    requirement
+                      ? ` · ${t('tierLocked', { upgrade: requirement })}`
+                      : ''
+                  }`,
+                  disabled: fortLevel < o.fortLevel || tierLocked(o.level),
+                };
+              })}
             />
             <NumberInput
               label={t('quantity')}

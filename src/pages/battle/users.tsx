@@ -62,7 +62,14 @@ import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { loadProtectionContext } from '@/services/BattleProtection.service';
-import { getProtectionStatus } from '@/utils/battleProtection';
+import {
+  getAttackListRanks,
+  type RankablePlayer,
+} from '@/utils/attackListRanks';
+import {
+  getProtectionShieldFacts,
+  getProtectionStatus,
+} from '@/utils/battleProtection';
 import { hasParticipatedInEra } from '@/utils/eraParticipation';
 import { logError, logInfo } from '@/utils/logger';
 import { getEraParticipantWhere } from '@/utils/loginPolicy';
@@ -74,6 +81,8 @@ const Users = ({
   allUsers,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { t } = useTranslation('battle');
+  // Rule numbers the gold-shield tooltip quotes, from the live constants (#284).
+  const protectionFacts = getProtectionShieldFacts();
   const [selectedAction, setSelectedAction] =
     useState<SelectedPlayerAction | null>(null);
   const actionTrigger = useRef<HTMLElement | null>(null);
@@ -426,6 +435,11 @@ const Users = ({
     theyBeatMeIds,
   ]);
 
+  const listRanks = useMemo(
+    () => getAttackListRanks(allUsers as RankablePlayer[], sortBy),
+    [allUsers, sortBy],
+  );
+
   useEffect(() => {
     if (!user) return;
     const start = (page - 1) * rowsPerPage;
@@ -433,29 +447,13 @@ const Users = ({
     const sortedPlayers = [...filteredUsers];
     setLastPage(Math.ceil(filteredUsers.length / rowsPerPage));
 
-    // Fallback for users where rank hasn't been calculated yet (and is therefore 0 or null)
-    sortedPlayers.forEach((u) => (u.rank = u.rank || Infinity));
-
-    // Sorting logic
-    if (sortBy === 'gold') {
-      sortedPlayers.sort((a, b) =>
-        sortDir === 'desc'
-          ? Number(b.gold) - Number(a.gold)
-          : Number(a.gold) - Number(b.gold),
-      );
-    } else if (sortBy === 'population') {
-      sortedPlayers.sort((a, b) =>
-        sortDir === 'desc'
-          ? Number(b.population) - Number(a.population)
-          : Number(a.population) - Number(b.population),
-      );
-    } else if (sortBy === 'level') {
-      sortedPlayers.sort((a, b) =>
-        sortDir === 'desc'
-          ? Number(b.experience) - Number(a.experience)
-          : Number(a.experience) - Number(b.experience),
-      );
-    }
+    // One rank per player for the sorted column, shared by the rows, the
+    // order and "Your rank" (#275).
+    const rankOf = (player: { id: number }) =>
+      listRanks.get(player.id) ?? Number.POSITIVE_INFINITY;
+    sortedPlayers.sort((a, b) =>
+      sortDir === 'asc' ? rankOf(b) - rankOf(a) : rankOf(a) - rankOf(b),
+    );
 
     // Recalculate page of logged-in player
     const loggedInPlayerIndex = sortedPlayers.findIndex(
@@ -464,24 +462,18 @@ const Users = ({
     const playerPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
 
     const paginatedPlayers = sortedPlayers.slice(start, end);
-    // Show each player's real overall rank, not their position in this
-    // filtered/sorted view (which changed with every filter and direction).
-    paginatedPlayers.forEach((player: any, index) => {
-      const realRank = Number(player.rank);
-      player.overallrank =
-        Number.isFinite(realRank) && realRank > 0
-          ? realRank
-          : sortDir === 'asc'
-            ? filteredUsers.length - start - index
-            : start + index + 1;
+    // Ranks come from the whole list, so filters and direction never change
+    // a player's number.
+    paginatedPlayers.forEach((player: any) => {
+      player.overallrank = listRanks.get(player.id);
     });
 
     setPlayers(paginatedPlayers);
 
     // 0 means you are filtered out of this view.
     setMyPage(loggedInPlayerIndex >= 0 ? playerPage : 0);
-    setMyRank(loggedInPlayerIndex + 1);
-  }, [page, sortBy, sortDir, filteredUsers, rowsPerPage, user]);
+    setMyRank(user?.id ? (listRanks.get(user.id) ?? 0) : 0);
+  }, [page, sortDir, filteredUsers, listRanks, rowsPerPage, user]);
 
   useEffect(() => {
     const golds = players.map((player) => toLocale(player.gold, user?.locale));
@@ -511,12 +503,10 @@ const Users = ({
         const sortDirParam = sortDirQuery;
 
         if (!pageParam && !sortByParam && !sortDirParam) {
-          const loggedInPlayerIndex = allUsers.findIndex(
-            (player) => player.id === user?.id,
-          );
+          const myListRank = listRanks.get(user.id);
 
-          if (loggedInPlayerIndex !== -1) {
-            const newPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
+          if (myListRank) {
+            const newPage = Math.floor((myListRank - 1) / rowsPerPage) + 1;
             setPage(newPage);
           }
         } else {
@@ -532,7 +522,7 @@ const Users = ({
     }
   }, [
     user,
-    allUsers,
+    listRanks,
     pageQuery,
     sortByQuery,
     sortDirQuery,
@@ -1095,7 +1085,19 @@ const Users = ({
                             }
                           />
                           {nplayer.isProtected && (
-                            <Tooltip label={t('users.protectedHint')} withArrow>
+                            <Tooltip
+                              label={t('users.protectedHint', {
+                                allowance: toLocale(
+                                  protectionFacts.allowance,
+                                  user?.locale,
+                                ),
+                                share: protectionFacts.share,
+                                taperLevel: protectionFacts.taperLevel,
+                              })}
+                              multiline
+                              maw={300}
+                              withArrow
+                            >
                               <Badge
                                 size="sm"
                                 variant="light"
@@ -1165,7 +1167,8 @@ const Users = ({
                       {t('users.gold')}
                     </Text>
                     <Text style={{ color: accent }} fw={600} size="sm">
-                      {toLocale(formattedGolds[index])}
+                      {formattedGolds[index] ??
+                        toLocale(nplayer.gold, user?.locale)}
                     </Text>
                   </Table.Td>
                   <Table.Td

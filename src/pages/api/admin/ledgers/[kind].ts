@@ -8,7 +8,14 @@ import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp, logActionStrict } from '@/utils/auditLogger';
 
 const querySchema = z.object({
-  kind: z.enum(['transfers', 'recruits', 'logins', 'suppressions', 'blocks']),
+  kind: z.enum([
+    'transfers',
+    'recruits',
+    'logins',
+    'drift',
+    'suppressions',
+    'blocks',
+  ]),
   page: z.coerce.number().int().min(1).max(100000).default(1),
   from: z.coerce.number().int().positive().optional(),
   to: z.coerce.number().int().positive().optional(),
@@ -21,6 +28,7 @@ const permissions = {
   transfers: PermissionType.VIEW_ECONOMY,
   recruits: PermissionType.VIEW_ANALYTICS,
   logins: PermissionType.VIEW_MULTI_ACCOUNTS,
+  drift: PermissionType.VIEW_ECONOMY,
   suppressions: PermissionType.SEND_MASS_MESSAGES,
   blocks: PermissionType.MANAGE_ACCOUNT_STATUS,
 } as const;
@@ -232,6 +240,20 @@ const handlers = Object.fromEntries(
               take: 25,
             }),
             prisma.loginEvent.count({ where }),
+          ]);
+        } else if (kind === 'drift') {
+          const where = {
+            ...(q.from ? { userId: q.from } : {}),
+            ...(hasDate ? { createdAt: date } : {}),
+          };
+          [rows, total] = await Promise.all([
+            prisma.itemLedgerMismatch.findMany({
+              where,
+              orderBy: { id: 'desc' },
+              skip,
+              take: 25,
+            }),
+            prisma.itemLedgerMismatch.count({ where }),
           ]);
         } else if (kind === 'suppressions') {
           const where = q.search

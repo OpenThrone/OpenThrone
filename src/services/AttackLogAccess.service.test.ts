@@ -8,6 +8,7 @@ const {
   getAttackLogViewerRole,
   getRoomShareRecipientIds,
   grantAttackLogAccessToRoom,
+  ownSpyMissionsWhere,
 } = await import('@/services/AttackLogAccess.service');
 
 // Synthetic IDs; none correspond to real players, rooms or alliances.
@@ -178,6 +179,17 @@ describe('room share recipients', () => {
     expect(mockPrisma.attack_log_acl.createMany).toHaveBeenCalledWith({
       data: [{ attack_log_id: 100, shared_with_user_id: OUTSIDER_ID }],
       skipDuplicates: true,
+    });
+  });
+});
+
+describe('ownSpyMissionsWhere (#287)', () => {
+  it('selects only the viewer spy missions this era, not battles', () => {
+    const since = new Date('2026-10-01T00:00:00Z');
+    expect(ownSpyMissionsWhere(ATTACKER_ID, since)).toEqual({
+      attacker_id: ATTACKER_ID,
+      type: { in: ['INTEL', 'ASSASSINATE', 'INFILTRATE'] },
+      timestamp: { gte: since },
     });
   });
 });

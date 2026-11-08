@@ -41,7 +41,8 @@ it('serializes opposite-direction relationship requests before checking duplicat
     },
   );
   mockPrisma.social = {
-    findFirst: vi.fn(async () => relationship),
+    findMany: vi.fn(async () => (relationship ? [relationship] : [])),
+    count: vi.fn(async () => 0),
     create: vi.fn(async ({ data }: { data: unknown }) => {
       relationship = data;
       firstCreated();

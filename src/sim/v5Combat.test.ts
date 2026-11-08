@@ -657,8 +657,11 @@ describe('v5 combat simulator battle envelopes', () => {
       makeBattlePlayer({ id: 'equal-defender', level: 10, defense: 100 }),
       { maxTurns: 10, random: seededRandom(42) },
     );
+    // combat-v13 budgets defender losses on the engaged garrison instead of
+    // the whole population, so a same-size garrison behind a standing fort
+    // survives one battle; the day-one win edge grew from ~12% to ~25%.
     const advantaged = await runSingleBattle(
-      makeBattlePlayer({ id: 'adv-attacker', level: 10, offense: 112 }),
+      makeBattlePlayer({ id: 'adv-attacker', level: 10, offense: 125 }),
       makeBattlePlayer({ id: 'adv-defender', level: 10, defense: 100 }),
       { maxTurns: 10, random: seededRandom(42) },
     );

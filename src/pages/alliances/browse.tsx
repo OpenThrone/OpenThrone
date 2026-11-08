@@ -1,4 +1,5 @@
-import { SimpleGrid } from '@mantine/core';
+import { Alert, Button, Loader, SimpleGrid, Stack, Text } from '@mantine/core';
+import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 
@@ -8,8 +9,21 @@ import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
+type BrowseStatus = 'loading' | 'ready' | 'error';
+
+/** Message to show instead of (or before) the alliance grid, if any. */
+export const browseNotice = (
+  status: BrowseStatus,
+  count: number,
+): 'loading' | 'error' | 'empty' | null => {
+  if (status === 'loading') return 'loading';
+  if (status === 'error') return 'error';
+  return count === 0 ? 'empty' : null;
+};
+
 const Browse = () => {
   const [alliances, setAlliances] = useState([]);
+  const [status, setStatus] = useState<BrowseStatus>('loading');
   const { t } = useTranslation('alliances');
   const { user, forceUpdate } = useUser();
 
@@ -42,17 +56,36 @@ const Browse = () => {
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        setAlliances(data);
+        setAlliances(Array.isArray(data) ? data : []);
+        setStatus('ready');
       } catch (error) {
         logError(t('browse.errorFetching'), error);
+        setStatus('error');
       }
     };
 
     fetchAlliances();
   }, []);
 
+  const notice = browseNotice(status, alliances.length);
+
   return (
     <MainArea title={t('browse.title')}>
+      {notice === 'loading' && <Loader mx="auto" />}
+      {notice === 'error' && (
+        <Alert color="red" role="alert">
+          {t('browse.errorFetching')}
+        </Alert>
+      )}
+      {notice === 'empty' && (
+        <Stack align="center" gap="sm">
+          <Text fw={600}>{t('browse.noAlliances')}</Text>
+          <Text c="var(--ot-muted)">{t('browse.noAlliancesHint')}</Text>
+          <Button component={Link} href="/alliances/create">
+            {t('mine.create')}
+          </Button>
+        </Stack>
+      )}
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
         {alliances.map((alliance) => {
           const userMembership = user?.alliance_memberships?.find(

@@ -108,6 +108,17 @@ describe('cron job handlers record runs', () => {
     delete process.env.DO_BOT_UPDATES;
   });
 
+  it('runs the item check when the daily pass throws and keeps the 500', async () => {
+    processDailyUpdates.mockRejectedValue(new Error('daily broke'));
+    const response = makeResponse();
+    await dailyHandler(authorizedRequest(), response);
+
+    expect(response.statusCode).toBe(500);
+    expect(
+      mockPrisma.cronRun.create.mock.calls.map((c: any) => c[0].data.job),
+    ).toContain('itemLedgerCheck');
+  });
+
   it('records no run when the scheduler secret is wrong', async () => {
     const response = makeResponse();
     await turnsHandler(
@@ -219,7 +230,7 @@ describe('cron job handlers record runs', () => {
     // The supporter sub-job finishes first and gets its own row.
     expect(
       mockPrisma.cronRun.create.mock.calls.map((c: any) => c[0].data.job),
-    ).toEqual(['daily', 'dailySupporter']);
+    ).toEqual(['daily', 'dailySupporter', 'itemLedgerCheck']);
     const supporterUpdate = mockPrisma.cronRun.update.mock.calls[0][0];
     expect(supporterUpdate.data.status).toBe('SUCCESS');
     expect(supporterUpdate.data.summary).toEqual({

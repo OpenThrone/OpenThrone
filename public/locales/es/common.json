@@ -204,12 +204,13 @@
     "searchUsers": "Buscar usuarios",
     "protection": {
       "label": "Protección para nuevos jugadores",
-      "daysLeft_one": "Protegido: queda {{count}} día",
-      "daysLeft_other": "Protegido: quedan {{count}} días",
-      "active": "Protegido",
+      "daysLeft_one": "Oro protegido: queda {{count}} día",
+      "daysLeft_other": "Oro protegido: quedan {{count}} días",
+      "active": "Oro protegido",
+      "tooltip": "Los ataques no se bloquean: siguen costando unidades y PS del fuerte. Solo tus primeras {{allowance}} monedas de oro en mano están protegidas: los saqueadores toman como máximo el {{share}} % del tope normal en el nivel 1, y el 100 % en el nivel {{taperLevel}}.",
       "population": "Población {{population}} / {{threshold}}",
       "level": "Nivel {{level}} / {{limit}}",
-      "progress": "Protección usada al {{percent}} % ({{limit}})",
+      "progress": "Protección usada al {{percent}} % ({{limit}})",
       "limits": {
         "TIME": "tiempo",
         "POPULATION": "población",
@@ -224,7 +225,7 @@
       "moreWorkers": "Cuantos más trabajadores tengas, más oro ganarás por turno.",
       "recruitDaily": "Reclutar tu máximo cada día asegurará que tu reino siga creciendo.",
       "wellEquipped": "Una unidad es tan fuerte como el equipo que porta. Asegúrate de que tu ejército esté bien equipado.",
-      "fortDefense": "Si tu defensa es inferior al 25 % de tu población no combatiente, podrías perder ciudadanos y trabajadores en un ataque. Mantén tu fortaleza reparada."
+      "fortDefense": "Mantén las unidades de defensa en al menos el 25 % de tu población, o los atacantes causarán más daño al fuerte y se llevarán más oro. Mantén tu fuerte reparado: si cae, puedes perder ciudadanos y trabajadores en un ataque."
     },
     "armyCondition": {
       "label": "Resistencia del ejército",
@@ -252,6 +253,7 @@
     "version": "Versión {{version}}"
   },
   "errors": {
+    "stillSignedIn": "No se pudo conectar con el servidor. Sigues con la sesión iniciada; inténtalo de nuevo en un momento.",
     "failedToFetchGitInfo": "Error al obtener información de git",
     "failedToFetchOnlinePlayerInfo": "Error al obtener información de jugadores en línea"
   },
@@ -287,8 +289,8 @@
     "signInToRecruit": "Inicia sesión para reclutar 1 ciudadano para tu reino.",
     "linkFrom": "Enlace de reclutamiento de {{name}}",
     "pairProgress": "Hoy has reclutado con {{name}} {{used}} de {{limit}} veces.",
-    "recruitsLeft_one": "Te queda {{count}} reclutamiento hoy. Se restablece a las {{time}}.",
-    "recruitsLeft_other": "Te quedan {{count}} reclutamientos hoy. Se restablece a las {{time}}.",
+    "recruitsLeft_one": "Hoy puedes reclutar con {{name}} {{count}} vez más. Se restablece a las {{time}}.",
+    "recruitsLeft_other": "Hoy puedes reclutar con {{name}} {{count}} veces más. Se restablece a las {{time}}.",
     "again": "Reclutar de nuevo",
     "blockedPair": "Hoy has reclutado con {{name}} {{used}} de {{limit}} veces. Se restablece a las {{time}}.",
     "blockedRecruiter": "Has usado los {{limit}} reclutamientos diarios. Se restablece a las {{time}}.",
@@ -365,8 +367,27 @@
     "unitLevel": "{{name}} · Nv. {{level}}",
     "mercenary": "Mercenario",
     "observedPopulation": "Población observada",
+    "populationTitle": "Población",
+    "populationTotal": "Población: {{count}}",
+    "troopsObserved": "Tropas observadas: {{observed}} de {{total}} (calidad de inteligencia {{percent}} %)",
+    "notObserved": "No observado",
+    "statsNotObserved": "Los campos marcados como «No observado» no se obtuvieron con esta calidad de inteligencia.",
+    "observedStats": "Inteligencia del reino",
+    "stats": {
+      "gold": "Oro disponible",
+      "goldInBank": "Oro en el banco",
+      "offense": "Ataque",
+      "defense": "Defensa",
+      "spyOffense": "Ataque de espionaje",
+      "spyDefense": "Defensa de espionaje",
+      "fortHitpoints": "PV del fuerte",
+      "fortLevel": "Nivel del fuerte",
+      "defenseBonus": "Bonificación de defensa",
+      "spyLevel": "Nivel del gremio de espías",
+      "sentryLevel": "Nivel del puesto de centinelas"
+    },
     "observedTotal": "Observados: {{count}}",
-    "unobservedPopulation": "La población no observada es desconocida.",
+    "unobservedPopulation": "Calidad de inteligencia {{percent}} %: tus espías vieron aproximadamente esa parte de las tropas. El resto es desconocido.",
     "observedRoleUnits": {
       "OFFENSE": "Unidades ofensivas observadas: {{count}}",
       "DEFENSE": "Unidades defensivas observadas: {{count}}",
@@ -451,6 +472,8 @@
     "friendRequestFrom": "Solicitud de amistad de {{name}}",
     "friendsWith": "Amigo de {{name}}",
     "addFriend": "Añadir a la lista de amigos",
+    "friendRequestRetry": "Nueva solicitud el {{date}}",
+    "friendRequestClosed": "Solicitud de amistad rechazada",
     "removeFriend": "Eliminar amigo",
     "removeFriendConfirm": "¿Seguro que quieres eliminar a {{name}} de tu lista de amigos?",
     "declareEnemy": "Declarar enemigo",
@@ -584,7 +607,7 @@
         },
         "protection": {
           "title": "Estás protegido",
-          "body": "Como jugador nuevo, los ataques contra ti solo se llevan una pequeña parte de tu oro. La protección termina con lo primero que ocurra: dentro de unos {{days}} días, que tu población llegue a {{population}} o el nivel {{levelLimit}}. Aprovecha el tiempo para construir."
+          "body": "Como jugador nuevo, tus primeras {{allowance}} monedas de oro en mano están casi a salvo de los ataques, pero los ataques siguen matando unidades y dañando tu fuerte, y el oro por encima de eso se puede saquear: guárdalo en el banco. La protección termina con lo primero que ocurra: dentro de unos {{days}} días, que tu población llegue a {{population}} o el nivel {{levelLimit}}. Aprovecha el tiempo para construir."
         },
         "stats": {
           "title": "El reino de un vistazo",
@@ -647,12 +670,12 @@
       "lessonsTitle": "Lecciones guiadas",
       "guidesTitle": "Guías",
       "status": {
-        "active": "El tutorial está activo: cada lección se reproduce al visitar su página.",
+        "active": "El tutorial está activo: cada lección se reproduce al visitar su página y se completa al llegar a su último paso.",
         "snoozed": "El tutorial está en pausa y volverá a ofrecerse mañana.",
         "off": "El tutorial está desactivado. Repetir una lección lo vuelve a activar."
       },
       "seen": "Completada",
-      "unseen": "Aún sin ver",
+      "unseen": "Aún sin terminar",
       "open": "Abrir",
       "replay": "Repetir",
       "restart": "Reiniciar todo el tutorial",
@@ -698,6 +721,13 @@
     "CLERIC": "Clérigo",
     "ASSASSIN": "Asesino",
     "THIEF": "Ladrón"
+  },
+  "classHint": "Tu clase es permanente y da una bonificación duradera.",
+  "classDescriptions": {
+    "FIGHTER": "+{{amount}} % de ataque: tus ataques golpean más fuerte.",
+    "CLERIC": "+{{amount}} % de defensa: tu reino resiste mejor.",
+    "ASSASSIN": "+{{amount}} % de fuerza de espías y centinelas: mejor inteligencia y más difícil de espiar.",
+    "THIEF": "+{{amount}} % de ingresos de oro por turno."
   },
   "eraResetNotice": {
     "scheduled": "La Era se reiniciará el {{local}} hora OT ({{utc}})",
@@ -873,7 +903,7 @@
     }
   },
   "friendTransfer": {
-    "guide": "Los amigos pueden enviarse oro cuando ambos han desbloqueado la Mina de carbón. Ambos jugadores deben ser al menos de nivel {{level}} y tener cuentas con al menos {{days}} días de antigüedad, y no puedes enviar oro a un jugador contra el que hayas combatido en las últimas {{hours}} horas. Cada transferencia paga una comisión que se destruye."
+    "guide": "Los amigos pueden enviarse oro cuando ambos han desbloqueado la Mina de carbón (mejoras de economía, requiere Fortaleza nivel 2, nivel de fortaleza 11). Ambos jugadores deben ser al menos de nivel {{level}} y tener cuentas con al menos {{days}} días de antigüedad, y no puedes enviar oro a un jugador contra el que hayas combatido en las últimas {{hours}} horas. Cada transferencia paga una comisión que se destruye."
   },
   "veteran": {
     "badge": "Probador de la Era 1",

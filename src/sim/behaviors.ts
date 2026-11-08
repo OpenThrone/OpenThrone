@@ -1,4 +1,9 @@
 import {
+  attackerStaminaMultiplier,
+  STAMINA_FATIGUE_MIN_MULTIPLIER,
+} from '@/constants/ArmyStamina';
+
+import {
   calculateRepairCost,
   calculateTotalUnitCost,
   calculateUpgradeCost,
@@ -50,9 +55,14 @@ export function makeDailyDecisions(
   const restingForXp =
     player.behavior.staminaFloor !== undefined &&
     player.stamina < player.behavior.staminaFloor;
-  const availableAttackTurns = restingForXp
-    ? 0
-    : Math.max(0, Math.min(player.attackTurns, player.stamina));
+  // Stamina no longer blocks attacks; it only softens offense
+  // (attackerStaminaMultiplier). Efficiency-minded personas still wait out
+  // the worst fatigue before spending turns; everyone else attacks through it.
+  const restingForFatigue =
+    attackerStaminaMultiplier(player.stamina) <
+    (player.behavior.minOffenseMultiplier ?? STAMINA_FATIGUE_MIN_MULTIPLIER);
+  const availableAttackTurns =
+    restingForXp || restingForFatigue ? 0 : Math.max(0, player.attackTurns);
   const burstBudget = decideBurstTurnBudget(player, availableAttackTurns);
   if (burstBudget <= 0 && player.gold < 250000 && player.units.citizen < 150) {
     return decision;
@@ -169,7 +179,7 @@ function shouldActThisTick(
   player: PlayerState,
   random: () => number = createDefaultRandom(),
 ): boolean {
-  const readyToSpendTurns = player.attackTurns >= 3 && player.stamina >= 3;
+  const readyToSpendTurns = player.attackTurns >= 3;
   const hoardedTurns = player.attackTurns >= 12;
   const economyOnly = player.gold > 250000 || player.units.citizen > 200;
   const activityThreshold = hoardedTurns

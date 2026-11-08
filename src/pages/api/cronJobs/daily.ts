@@ -4,6 +4,7 @@ import type { NextApiResponse } from 'next';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { CronJobService } from '@/services';
 import { pruneOldCronRuns, withCronRunLog } from '@/services/CronRun.service';
+import { runItemLedgerCheckSafely } from '@/services/ItemLedger.service';
 import { runSupporterDaily } from '@/services/supporter/SupporterDaily.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
@@ -96,6 +97,10 @@ const dailyCron = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     return res
       .status(500)
       .json({ message: 'Internal server error during daily cron job.' });
+  } finally {
+    // Report-only and independent of the daily pass: it runs even when the
+    // pass failed, and it never changes the response.
+    await runItemLedgerCheckSafely();
   }
 };
 

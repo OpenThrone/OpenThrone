@@ -65,6 +65,8 @@ function generateBehaviorForStyle(
       spyPreference: 0.6,
       turnStrategy: 'conservative' as TurnStrategy,
       primaryGoal: 'defense',
+      // Waits until fatigue costs at most 10% offense (stamina >= 25).
+      minOffenseMultiplier: 0.9,
     },
     balanced: {
       aggression: 0.5,
@@ -83,6 +85,8 @@ function generateBehaviorForStyle(
       spyPreference: 0.3,
       turnStrategy: 'balanced' as TurnStrategy,
       primaryGoal: 'wealth',
+      // Attacks are income; does not spend them heavily fatigued.
+      minOffenseMultiplier: 0.9,
     },
     'spy-focused': {
       aggression: 0.4,
@@ -92,6 +96,8 @@ function generateBehaviorForStyle(
       spyPreference: 0.9,
       turnStrategy: 'conservative' as TurnStrategy,
       primaryGoal: 'wealth',
+      // Strikes from the shadows at nearly full strength only.
+      minOffenseMultiplier: 0.85,
     },
   };
 
@@ -105,6 +111,7 @@ function generateBehaviorForStyle(
     turnStrategy: b.turnStrategy!,
     playStyle: style,
     primaryGoal: b.primaryGoal!,
+    minOffenseMultiplier: b.minOffenseMultiplier,
   };
 }
 

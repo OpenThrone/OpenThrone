@@ -240,6 +240,8 @@ interface BattleState {
   initialDefenderScore: number;
   /** Remaining units the defender may lose today across all attackers (dogpile cap). */
   defenderDailyCasualtyRemaining?: number;
+  /** Game days the defender has held their current level (combat-v11 XP ramp). */
+  defenderGameDaysAtLevel?: number;
   /** Garrison fatigue multiplier from defense pressure today (#204); scales the defender's power, never casualties. */
   defenderFatigueMultiplier: number;
   attackerStaminaMultiplier: number;
@@ -268,6 +270,8 @@ export type SimulationOptions = {
   defenderDailyCasualtyRemaining?: number;
   /** Remaining daily gold all attackers may take from this defender. */
   defenderDailyGoldRemaining?: bigint;
+  /** Game days the defender has held their current level; drives the combat-v11 anti-camping XP ramp. */
+  defenderGameDaysAtLevel?: number;
 };
 
 /** Defines the battle constants shape used by related workflows. */
@@ -312,6 +316,7 @@ export async function simulateBattle(
   );
   state.defenderDailyCasualtyRemaining =
     options?.defenderDailyCasualtyRemaining;
+  state.defenderGameDaysAtLevel = options?.defenderGameDaysAtLevel;
   state.defenderDailyGoldRemaining =
     options?.defenderDailyGoldRemaining === undefined
       ? null
@@ -557,7 +562,15 @@ async function executeBattleTurn(state: BattleState, turn: number) {
       attackerStrength.meleeAtkPower + attackerStrength.rangedAtkPower;
     troopChipScale = total > 0 ? troops / total : 1;
   }
-  const includeCitz = state.defenderDefenseRemaining === 0 || state.fortHP <= 0;
+  // Civilians (citizens and idle workers) join the defense. Through combat-v12
+  // they fight once the guards are gone or the fort falls, but can only be
+  // hit once the fort is down. combat-v13 (#303) starts all three — fighting,
+  // being targetable and counting toward the casualty budget — when the fort
+  // falls.
+  const includeCitz =
+    ruleset.civiliansEngageOn === 'fortBreach'
+      ? state.fortHP <= 0
+      : state.defenderDefenseRemaining === 0 || state.fortHP <= 0;
   const includeOffense =
     state.fortHP <= 0 && state.defenderDefenseRemaining === 0;
   const defenderStrength = calculateStrength(
@@ -822,6 +835,7 @@ async function executeBattleTurn(state: BattleState, turn: number) {
     isDefenderProtected: state.isDefenderProtected,
     assaultSucceeded,
     ruleset,
+    random: state.random,
   });
   state.spread?.attacker.project(state.battleResult.Losses.Attacker.units);
   state.spread?.defender.project(state.battleResult.Losses.Defender.units);
@@ -947,6 +961,44 @@ export function calculateFortDamage(
   return share * safeMax * Math.max(0, Number(variance) || 0);
 }
 
+/**
+ * How real a fight was (combat-v11, #334), from 0 to 1. `strengthRatio` is the
+ * attacker's starting offense power over the defender's starting defense
+ * power (see calculateAndApplyExperience). Rulesets without battleXp rules
+ * count every fight as full effort.
+ */
+export function calculateBattleEffort(
+  strengthRatio: number,
+  ruleset: CombatRuleset = CURRENT_COMBAT_RULESET,
+): number {
+  const rules = ruleset.battleXp;
+  if (!rules) return 1;
+  const ratio = Math.max(0, Number(strengthRatio) || 0);
+  const span = rules.effortFullRatio - rules.effortFloorRatio;
+  if (span <= 0) return ratio >= rules.effortFullRatio ? 1 : 0;
+  return clamp((ratio - rules.effortFloorRatio) / span, 0, 1);
+}
+
+/**
+ * Anti-camping multiplier on defender XP (combat-v11, #334): 1 for the grace
+ * days at a level, then `stallPerDay` more per further whole game day, up to
+ * the cap. Rulesets without battleXp rules always return 1.
+ */
+export function calculateLevelStallMultiplier(
+  gameDaysAtLevel: number,
+  ruleset: CombatRuleset = CURRENT_COMBAT_RULESET,
+): number {
+  const rules = ruleset.battleXp;
+  if (!rules) return 1;
+  const days = Math.floor(Math.max(0, Number(gameDaysAtLevel) || 0));
+  const extraDays = Math.max(0, days - rules.stallGraceDays);
+  return clamp(
+    1 + extraDays * rules.stallPerDay,
+    1,
+    Math.max(1, rules.stallMaxMultiplier),
+  );
+}
+
 /** Calculates battle experience used by combat, economy, or presentation logic. */
 export function calculateBattleExperience(
   isAttackerWinner: boolean,
@@ -957,6 +1009,7 @@ export function calculateBattleExperience(
   attackerMorale: number = 100,
   attackerLevel: number = 1,
   ruleset: CombatRuleset = CURRENT_COMBAT_RULESET,
+  defenderGameDaysAtLevel: number = 0,
 ): { attackerXP: number; defenderXP: number } {
   const maxTurns = ruleset.battle.MAX_TURNS;
   const turns = clamp(attackTurns, 1, maxTurns);
@@ -979,10 +1032,24 @@ export function calculateBattleExperience(
     moraleFactor *
     fortBonus;
 
+  // combat-v11 (#334): a lost attack pays by effort, so hopeless pokes and
+  // traded deliberate losses earn nothing; the defender is paid by the same
+  // threat measure with a floor, times the anti-camping ramp. Under older
+  // rulesets all three factors are 1 and the XP is unchanged.
+  const effort = calculateBattleEffort(winRatio, ruleset);
+  const threat = ruleset.battleXp
+    ? Math.max(ruleset.battleXp.defenderThreatFloor, effort)
+    : 1;
+  const stall = calculateLevelStallMultiplier(defenderGameDaysAtLevel, ruleset);
+
   // The defender's share is taken from the unmodified base: repelling an
   // assault pays better than losing one, regardless of the attacker's result.
-  const attackerXP = Math.round(baseXP * (isAttackerWinner ? 1 : 0.22));
-  const defenderXP = Math.round(baseXP * (isAttackerWinner ? 0.25 : 0.75));
+  const attackerXP = Math.round(
+    baseXP * (isAttackerWinner ? 1 : 0.22 * effort),
+  );
+  const defenderXP = Math.round(
+    baseXP * (isAttackerWinner ? 0.25 : 0.75) * threat * stall,
+  );
 
   return {
     attackerXP,
@@ -1438,6 +1505,12 @@ export function newComputeCasualties(
 }
 
 /** Distribute casualties. */
+/** Per-battle stochastic rounding draws, keyed by the battle's result. */
+const CASUALTY_ROUNDING_DRAWS = new WeakMap<
+  BattleResult,
+  { attacker?: number; defender?: number }
+>();
+
 export async function distributeCasualties(params: {
   result: BattleResult;
   attacker: BattleUserLike;
@@ -1455,6 +1528,8 @@ export async function distributeCasualties(params: {
   assaultSucceeded?: boolean;
   /** Rules the casualties fall under; defaults to the current combat ruleset. */
   ruleset?: CombatRuleset;
+  /** The battle's seeded random; required for stochastic cap rounding. */
+  random?: RandomFn;
 }): Promise<{ attackerCasualties: number; defenderCasualties: number }> {
   const {
     result,
@@ -1470,8 +1545,24 @@ export async function distributeCasualties(params: {
     isDefenderProtected = false,
     assaultSucceeded = false,
     ruleset = CURRENT_COMBAT_RULESET,
+    random,
   } = params;
   const { constants } = ruleset;
+
+  // One rounding draw per side per battle, reused every turn: re-drawing each
+  // turn would let the best of several draws set the cap and bias losses up.
+  const roundingOffsetFor = (side: 'attacker' | 'defender'): number => {
+    // Without the battle's seeded random (direct unit-test calls) keep floor.
+    if (ruleset.casualtyRounding !== 'stochastic' || !random) return 0;
+    let draws = CASUALTY_ROUNDING_DRAWS.get(result);
+    if (!draws) {
+      draws = {};
+      CASUALTY_ROUNDING_DRAWS.set(result, draws);
+    }
+    if (draws[side] === undefined)
+      draws[side] = clamp(requireRandom(random)(), 0, 0.999999);
+    return draws[side]!;
+  };
 
   let totalAttackerCasualties = 0;
   let totalDefenderCasualties = 0;
@@ -1522,6 +1613,8 @@ export async function distributeCasualties(params: {
     winQualityFloor?: number;
     /** Attacks received today; only the defender under dogpile earns this. */
     defensePressureToday: number;
+    /** Added before the caps round down; 0 keeps plain floor rounding. */
+    roundingOffset?: number;
   }): {
     cap: number;
     singleAttackCap: number | null;
@@ -1563,10 +1656,14 @@ export async function distributeCasualties(params: {
       },
       ruleset,
     );
+    const roundingOffset = params.roundingOffset ?? 0;
     const singleAttackCap = Math.floor(
-      params.population * constants.SINGLE_ATTACK_POPULATION_LOSS_CAP,
+      params.population * constants.SINGLE_ATTACK_POPULATION_LOSS_CAP +
+        roundingOffset,
     );
-    const softCap = Math.floor(softCapCasualties(params.population, budget));
+    const softCap = Math.floor(
+      softCapCasualties(params.population, budget) + roundingOffset,
+    );
     const perBattleRemaining = Math.max(
       0,
       Math.min(singleAttackCap, softCap) - params.alreadyLost,
@@ -1900,10 +1997,25 @@ export async function distributeCasualties(params: {
       totals.sentries;
     const fortHpPercent = clamp(fortHP / Math.max(1, initialFortHP), 0, 1);
     const populationAtStart = totalPopulation + result.Losses.Defender.total;
+    // combat-v13 (#303): budget the defender on the units engaged in this
+    // battle — the military that fights and can die — mirroring the
+    // attacker's offense-only budget, so idle workers and citizens behind
+    // standing walls no longer grow the garrison's allowance. A breached
+    // fort (includeCitz) exposes the collateral pool to damage, so from that
+    // moment the civilians at risk count as engaged too. Earlier rulesets
+    // keep the whole-population budget and replay unchanged.
+    const engagedUnits = _includeCitz
+      ? [...defenderFightingPool, ...defenderCollateralPool]
+      : defenderFightingPool;
+    const budgetPopulation =
+      ruleset.defenderBudgetPopulation === 'engaged'
+        ? engagedUnits.reduce((sum, u) => sum + (u.quantity || 0), 0) +
+          result.Losses.Defender.total
+        : populationAtStart;
     const budgetDetails = budgetCasualtyCapDetailsFor({
       user: defender,
       opponent: attacker,
-      population: populationAtStart,
+      population: budgetPopulation,
       turns: turn,
       fortHpPercent,
       cumulativeDamageToUser: cumulativeDamageToDefender,
@@ -1911,6 +2023,7 @@ export async function distributeCasualties(params: {
       alreadyLost: result.Losses.Defender.total,
       dailyAllowanceRemaining: defender.dailyCasualtyAllowanceRemaining,
       defensePressureToday: Number(defender.defensePressureToday ?? 0),
+      roundingOffset: roundingOffsetFor('defender'),
     });
     const budgetCap = budgetDetails.cap;
     // New players keep a hard per-battle ceiling instead of a damage floor:
@@ -2007,6 +2120,7 @@ export async function distributeCasualties(params: {
       alreadyLost: result.Losses.Attacker.total,
       defensePressureToday: 0, // the away army earns no dogpile protection
       winQualityFloor: constants.ATTACKER_WIN_QUALITY_FLOOR,
+      roundingOffset: roundingOffsetFor('attacker'),
     });
     const attackerCapUnits = attackerBudget.cap;
     const attackerPass = applyDamageToUnits(
@@ -2160,12 +2274,17 @@ function calculateAndApplyExperience(
     isAttackerWinner: boolean;
     attackerScore?: number;
     defenderScore?: number;
+    defenderGameDaysAtLevel?: number;
     ruleset: CombatRuleset;
   },
 ): void {
   const { attacker, defender, attackTurns, fortDestroyed, ruleset } = params;
 
   const levelDifference = (defender.level ?? 0) - (attacker.level ?? 0);
+  // Starting offense power (melee + ranged attack, with gear, upgrades and
+  // bonuses) over starting defense power (melee + ranged defense): the same
+  // offense-vs-defense comparison players see, fixed before any dice roll, so
+  // the battle closeness and the combat-v11 effort/threat factor read it.
   const winRatio =
     (params.attackerScore ?? 0) / Math.max(1, params.defenderScore ?? 1);
 
@@ -2178,6 +2297,7 @@ function calculateAndApplyExperience(
     attacker.stamina ?? 100,
     attacker.level ?? 1,
     ruleset,
+    params.defenderGameDaysAtLevel ?? 0,
   );
 
   result.experienceGained = {
@@ -2386,6 +2506,7 @@ function finalizeBattleResult(state: BattleState): void {
     isAttackerWinner: canonical.winner === 'ATTACKER',
     attackerScore: state.initialAttackerScore,
     defenderScore: state.initialDefenderScore,
+    defenderGameDaysAtLevel: state.defenderGameDaysAtLevel,
     ruleset: state.ruleset,
   });
 }
