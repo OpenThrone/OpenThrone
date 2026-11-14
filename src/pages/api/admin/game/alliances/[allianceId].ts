@@ -8,6 +8,10 @@ import {
   loanRemaining,
   OPEN_LOAN_STATUSES,
 } from '@/components/admin/allianceAdminActions';
+import {
+  getDuesPeriodStart,
+  validateAllianceDuesSettings,
+} from '@/constants/allianceDues';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import {
@@ -15,7 +19,7 @@ import {
   PermissionType,
   WarStatus,
 } from '@/lib/prisma-exports';
-import { evictUserFromAllianceChatRooms } from '@/lib/socket';
+import { evictUserFromAllianceChatRooms } from '@/lib/realtime';
 import { withApiGuard } from '@/middleware/apiGuard';
 import {
   ALLIANCE_BANK_TX_OPTIONS,
@@ -402,6 +406,100 @@ const runAction = async (
           throw new AdminActionError(error.message);
         throw error;
       }
+    }
+
+    case 'set_hall_level': {
+      // Staff override of the Alliance Hall level: no cost, no member
+      // requirement. Lowering it keeps every member and treasury gold; the
+      // lower caps only stop new members and deposits.
+      await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${allianceId} FOR UPDATE`;
+      const current = await tx.alliances.findUnique({
+        where: { id: allianceId },
+        select: { hall_level: true },
+      });
+      if (!current) throw new AdminActionError('Alliance not found');
+      if (
+        input.fromLevel !== undefined &&
+        current.hall_level !== input.fromLevel
+      )
+        throw new AdminActionError(
+          `The Alliance Hall changed to level ${current.hall_level} since you opened this alliance. Reload to see it; nothing was saved.`,
+        );
+      if (current.hall_level === input.level)
+        throw new AdminActionError(
+          `The Alliance Hall is already at level ${input.level}`,
+        );
+      await tx.alliances.update({
+        where: { id: allianceId },
+        data: { hall_level: input.level },
+      });
+      return {
+        message: `Alliance Hall set to level ${input.level}`,
+        details: { previousLevel: current.hall_level, level: input.level },
+      };
+    }
+
+    case 'set_dues': {
+      // Staff override of the join fee and membership dues: same bounds as
+      // the leader's Settings card. A new period starts counting from now,
+      // exactly as AllianceDuesService.updateSettings does.
+      const refusal = validateAllianceDuesSettings({
+        joinFee: input.joinFee,
+        duesAmount: input.duesAmount,
+        duesPeriod: input.duesPeriod,
+      });
+      if (refusal) throw new AdminActionError(refusal);
+      await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${allianceId} FOR UPDATE`;
+      const current = await tx.alliances.findUnique({
+        where: { id: allianceId },
+        select: { join_fee: true, dues_amount: true, dues_period: true },
+      });
+      if (!current) throw new AdminActionError('Alliance not found');
+      // A leader (or set_dues rank) may have changed them while the drawer
+      // was open; saving would silently undo that change.
+      if (
+        input.expected &&
+        (BigInt(current.join_fee) !== input.expected.joinFee ||
+          BigInt(current.dues_amount) !== input.expected.duesAmount ||
+          current.dues_period !== input.expected.duesPeriod)
+      )
+        throw new AdminActionError(
+          'The fee or dues changed since you opened this alliance. Reload to see the current values; nothing was saved.',
+        );
+      if (
+        BigInt(current.join_fee) === input.joinFee &&
+        BigInt(current.dues_amount) === input.duesAmount &&
+        current.dues_period === input.duesPeriod
+      )
+        throw new AdminActionError('The fee and dues are already set so');
+      await tx.alliances.update({
+        where: { id: allianceId },
+        data: {
+          join_fee: input.joinFee,
+          dues_amount: input.duesAmount,
+          dues_period: input.duesPeriod,
+        },
+      });
+      if (current.dues_period !== input.duesPeriod)
+        await tx.alliance_memberships.updateMany({
+          where: { alliance_id: allianceId },
+          data: {
+            dues_paid_through: getDuesPeriodStart(input.duesPeriod),
+          },
+        });
+      return {
+        message: 'Fee and dues updated',
+        details: {
+          previous: {
+            joinFee: String(current.join_fee),
+            duesAmount: String(current.dues_amount),
+            duesPeriod: current.dues_period,
+          },
+          joinFee: input.joinFee.toString(),
+          duesAmount: input.duesAmount.toString(),
+          duesPeriod: input.duesPeriod,
+        },
+      };
     }
 
     case 'end_war': {

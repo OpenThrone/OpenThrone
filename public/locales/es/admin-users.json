@@ -127,7 +127,11 @@
     "veteranTitleNone": "Ninguno",
     "veteranTitleERA1_TESTER": "Probador de la Era 1",
     "veteranSince": "Veterano desde (fecha de registro original)",
-    "veteranSinceHelp": "Fecha ISO de creación de la cuenta original. Se borra al quitar el título."
+    "veteranSinceHelp": "Fecha ISO de creación de la cuenta original. Se borra al quitar el título.",
+    "duesArrears": "Aportaciones de alianza pendientes (oro)",
+    "duesArrearsHelp": "Aportaciones impagadas, cobradas antes de las nuevas. 0 las borra.",
+    "duesArrearsMax": "Como máximo {{max}} de oro",
+    "duesLeaderExempt": "Líder: no paga aportaciones"
   },
   "actions": {
     "edit": "Editar",

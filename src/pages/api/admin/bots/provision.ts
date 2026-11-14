@@ -1,9 +1,7 @@
-import { existsSync, statSync } from 'fs';
 import type { NextApiResponse } from 'next';
-import { join } from 'path';
 import { z } from 'zod';
 
-import { CONFIG_ROOT_DIR } from '@/botUsers/constants';
+import { isKnownBotManifest } from '@/botUsers/config';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { BotService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -30,13 +28,7 @@ const provisionBots = async (
   ctx: { body: z.infer<typeof ProvisionBodySchema> },
 ) => {
   const manifest = ctx.body.manifest ?? 'default';
-  const manifestPath = join(
-    process.cwd(),
-    CONFIG_ROOT_DIR,
-    'manifests',
-    `${manifest}.json`,
-  );
-  if (!existsSync(manifestPath) || !statSync(manifestPath).isFile()) {
+  if (!isKnownBotManifest(manifest)) {
     return res.status(400).json({ error: 'Unknown bot manifest' });
   }
   const result = await BotService.provisionBotsFromManifest(manifest, {

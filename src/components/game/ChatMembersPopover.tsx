@@ -13,6 +13,7 @@ import {
 import { useTranslation } from 'next-i18next';
 
 import type { FrontendRoom } from '@/types/typings';
+import { resolveAvatarSrc } from '@/utils/utilities';
 
 import styles from './ChatThemed.module.css';
 
@@ -47,7 +48,14 @@ export default function ChatMembersPopover({
           <Stack gap="sm">
             {participants.map((participant) => (
               <Group key={participant.id} gap="sm" wrap="nowrap">
-                <Avatar src={participant.avatar} size={36} radius="xl">
+                <Avatar
+                  src={resolveAvatarSrc(
+                    participant.avatar,
+                    (participant as { race?: string }).race,
+                  )}
+                  size={36}
+                  radius="xl"
+                >
                   {participant.display_name?.charAt(0).toUpperCase() || '?'}
                 </Avatar>
                 <div className={styles.roomContent}>

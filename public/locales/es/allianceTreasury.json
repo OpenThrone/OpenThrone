@@ -89,5 +89,10 @@
     "dailyCapHint": "De 100.000 a 50.000.000 de oro",
     "save": "Guardar reglas",
     "saved": "Reglas del tesoro actualizadas."
-  }
+  },
+  "depositOverRoom": "El tesoro puede recibir como máximo {{room}} de oro más",
+  "depositSlots": "{{level}}: te quedan {{left}} de {{limit}} depósitos en las últimas 24 horas",
+  "depositNextSlot": "Tu próximo depósito estará disponible a las {{time}}.",
+  "depositRoom": "Espacio en el tesoro: {{room}} de oro (límite {{cap}})",
+  "depositRaiseLimits": "Aumenta estos límites en Mejoras"
 }

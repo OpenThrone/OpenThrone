@@ -43,7 +43,7 @@ const { AccountService } = require('../Account.service');
 const { AuthService } = require('../Auth.service');
 const { invalidateRuntimeConfigCache } = require('../RuntimeConfig.service');
 const { hashIdentity, legacyEmailHash } = require('@/utils/identityHash');
-const argon2 = require('argon2');
+const passwordHash = require('@/lib/passwordHash');
 
 const passwordSpies: Array<{ mockRestore: () => void }> = [];
 afterEach(() => {
@@ -173,7 +173,9 @@ describe('AccountAnonymizationService.anonymizeAccount', () => {
     resetMockPrisma();
     logActionStrict.mockClear();
     passwordSpies.push(
-      vi.spyOn(argon2, 'hash').mockResolvedValue('random-scrambled-hash'),
+      vi
+        .spyOn(passwordHash, 'hashPassword')
+        .mockResolvedValue('random-scrambled-hash'),
     );
     tx = buildTx();
   });
@@ -611,7 +613,9 @@ describe('AccountAnonymizationService.recordSanctionBlock / clearSanctionBlocks'
 
   beforeEach(() => {
     tx = buildTx();
-    passwordSpies.push(vi.spyOn(argon2, 'hash').mockResolvedValue('x'));
+    passwordSpies.push(
+      vi.spyOn(passwordHash, 'hashPassword').mockResolvedValue('x'),
+    );
   });
 
   it('records a permanent SANCTION block for an open-ended ban', async () => {
@@ -783,7 +787,9 @@ describe('inactivity erasure veteran records', () => {
 
   beforeEach(() => {
     tx = buildTx();
-    passwordSpies.push(vi.spyOn(argon2, 'hash').mockResolvedValue('x'));
+    passwordSpies.push(
+      vi.spyOn(passwordHash, 'hashPassword').mockResolvedValue('x'),
+    );
   });
 
   it('writes a VeteranRecord and no email cooldown for a clean inactivity erasure', async () => {

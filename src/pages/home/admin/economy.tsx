@@ -5,7 +5,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Grid, Loader, Paper, Stack, Table, Text } from '@mantine/core';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
 import { ADMIN_STAT_COLORS } from '@/components/admin/adminColors';
@@ -14,6 +13,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import AdminRequestState from '@/components/admin/AdminRequestState';
 import { GameCard } from '@/components/game/GameCard';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 interface EconomyStats {
   totalLiquidGold: string;

@@ -3,11 +3,18 @@ import type { NextApiResponse } from 'next';
 
 import { withApiGuard } from '@/middleware/apiGuard';
 import { CronJobService } from '@/services';
-import { pruneOldCronRuns, withCronRunLog } from '@/services/CronRun.service';
+import { AllianceDuesService } from '@/services/AllianceDues.service';
+import {
+  hasCronRunSince,
+  isForcedCronRequest,
+  pruneOldCronRuns,
+  withCronRunLog,
+} from '@/services/CronRun.service';
 import { runItemLedgerCheckSafely } from '@/services/ItemLedger.service';
 import { runSupporterDaily } from '@/services/supporter/SupporterDaily.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { getGameDayStart } from '@/utils/timefunctions';
 
 const guardedHandler = withApiGuard({
   methods: ['POST'],
@@ -38,6 +45,19 @@ const isAuthorizedTaskRequest = (
 const dailyCron = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (!isAuthorizedTaskRequest(req, process.env.DO_DAILY_UPDATES === 'true')) {
     return res.status(401).json({ message: 'Unauthorized or Disabled Task' });
+  }
+
+  // The daily pass has no per-run marker: running it twice grants citizen
+  // growth twice. A second delivery in the same game day (which starts at
+  // OT midnight, when the scheduled run fires) is skipped instead.
+  if (
+    !isForcedCronRequest(req.query) &&
+    (await hasCronRunSince('daily', getGameDayStart()))
+  ) {
+    return res.status(200).json({
+      message: 'Daily updates already ran today; skipped.',
+      skipped: true,
+    });
   }
 
   try {
@@ -72,6 +92,24 @@ const dailyCron = async (req: AuthenticatedRequest, res: NextApiResponse) => {
           return null;
         });
 
+      // Alliance membership dues (allianceDues.ts) fall due at OT midnight,
+      // when this job runs. Logged as their own run and independent of the
+      // daily pass; collection is idempotent per member per period, so a
+      // forced re-run charges nobody twice.
+      const allianceDues = await withCronRunLog('allianceDues', async () => {
+        const dues = await AllianceDuesService.collectAll();
+        return {
+          failed: dues.failed > 0,
+          summary: dues,
+          dues,
+        };
+      })
+        .then((run) => run.dues)
+        .catch((error) => {
+          logError('Alliance dues collection failed:', error);
+          return null;
+        });
+
       return {
         failed: !result.success,
         summary: {
@@ -80,6 +118,7 @@ const dailyCron = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         },
         result,
         supporter,
+        allianceDues,
       };
     });
 
@@ -89,6 +128,7 @@ const dailyCron = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         processed: outcome.result.processed,
         failed: outcome.result.failed,
         supporter: outcome.supporter,
+        allianceDues: outcome.allianceDues,
       });
     }
     return res.status(500).json({ message: 'Daily cron job failed.' });

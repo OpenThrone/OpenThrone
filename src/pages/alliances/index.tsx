@@ -59,7 +59,12 @@ export const getServerSideProps: GetServerSideProps<{
   const myAlliances: MyAlliance[] = memberships.map((m) => ({
     id: m.alliance.id,
     name: m.alliance.name,
-    ...(({ isPremium, premiumUntil }) => ({ isPremium, premiumUntil }))(
+    // getServerSideProps cannot serialize undefined, and memberships carry
+    // no premium fields, so absent values become false/null (dev 500 before).
+    ...(({ isPremium, premiumUntil }) => ({
+      isPremium: isPremium ?? false,
+      premiumUntil: premiumUntil ?? null,
+    }))(
       m.alliance as typeof m.alliance & {
         isPremium?: boolean;
         premiumUntil?: string | null;

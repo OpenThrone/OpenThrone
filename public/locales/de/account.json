@@ -90,6 +90,7 @@
     "cancel": "Abbrechen",
     "verificationFailedError": "Bestätigung fehlgeschlagen",
     "emailUpdatedSuccessfully": "E-Mail erfolgreich aktualisiert",
+    "emailUpdatedSignIn": "E-Mail-Adresse aktualisiert. Melden Sie sich mit Ihrer neuen Adresse an.",
     "failedToUpdateEmail": "Aktualisierung der E-Mail fehlgeschlagen"
   },
   "passwordReset": {

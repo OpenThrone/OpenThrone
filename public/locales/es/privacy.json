@@ -19,7 +19,7 @@
         "Datos de la cuenta: tu correo electrónico, tu nombre visible, tu contraseña (guardada solo como hash irreversible) y, si activas el inicio de sesión en dos pasos, tu secreto de autenticación (guardado cifrado).",
         "Datos del juego y del perfil: tu reino, raza y clase, ajustes, biografía e imagen de avatar opcionales, batallas, historial de banco y reclutamiento, actividad de alianza e informes que envías.",
         "Mensajes: los mensajes privados y de chat que envías.",
-        "Datos técnicos: tu dirección IP y los datos de tu navegador cuando usas el sitio. Los usamos para la seguridad, para evitar abusos y trampas, y para limitar peticiones. Los registros de inicio de sesión solo guardan huellas irreversibles de tu IP y navegador, no los valores en sí.",
+        "Datos técnicos: tu dirección IP y los datos de tu navegador cuando usas el sitio. Los usamos para la seguridad, para evitar abusos y trampas, y para limitar peticiones. El registro, el inicio de sesión y un registro de visita único al día mientras tienes la sesión iniciada guardan solo huellas irreversibles de tu IP, tu rango de red y tu navegador, nunca los valores en sí, durante 30 días; los usamos para seguridad y para detectar cuentas múltiples.",
         "Pagos, si apoyas OpenThrone: Stripe gestiona el pago, y el número completo de tu tarjeta y su código de seguridad nunca nos llegan. Guardamos los identificadores de Stripe, importes, moneda e impuestos, tu país y estado de facturación, el estado y las fechas de los pagos, las condiciones que aceptaste al pagar y para qué reino o alianza era cada pago.",
         "Discord, si lo vinculas: tu ID y nombre de usuario de Discord, tus ajustes de alertas y los mensajes de alerta que ponemos en cola para ti.",
         "Correo: qué correos te enviamos y tus preferencias de correo."
@@ -40,7 +40,7 @@
       "body": [
         "Usamos una cookie esencial para mantener tu sesión iniciada, además de cookies de corta duración que protegen el inicio de sesión. No usamos cookies de analítica ni de publicidad.",
         "El almacenamiento local de tu navegador guarda preferencias de visualización, como tu esquema de colores y los ajustes del simulador de batalla. Se queda en tu dispositivo.",
-        "La verificación de seguridad de Cloudflare (Turnstile), que aparece en el registro, el inicio de sesión y algunos formularios, puede poner sus propias cookies para distinguir personas de bots. Nuestras fuentes se sirven desde nuestro propio sitio."
+        "La verificación de seguridad de Cloudflare (Turnstile), que aparece en el registro, el inicio de sesión y algunos formularios, puede poner sus propias cookies para distinguir personas de bots. Nuestras fuentes se sirven desde nuestro propio sitio. Para reclutar usamos otra comprobación que alojamos nosotros: se ejecuta en tu navegador, no pone cookies y no envía nada a terceros. Turnstile sigue protegiendo el registro y el inicio de sesión."
       ]
     },
     "share": {
@@ -63,7 +63,7 @@
       "body": [
         "Datos de la cuenta y del juego: mientras exista tu cuenta.",
         "Registros de batallas, banco y reclutamiento: 20 días.",
-        "Huellas de inicio de sesión: 30 días.",
+        "Huellas de registro, inicio de sesión y visitas: 30 días.",
         "Direcciones IP en nuestro registro de auditoría de administración: 90 días. El registro de la acción en sí se conserva por seguridad.",
         "Mensajes de alerta de Discord: 14 días después de enviarse.",
         "Registros de pago: el tiempo que exija la ley fiscal y contable, también tras eliminar una cuenta (entonces figuran bajo el nombre aleatorio).",
@@ -109,6 +109,45 @@
       "title": "Cambios en esta política",
       "body": [
         "Actualizamos esta política cuando cambia lo que hacemos. La fecha de arriba indica la última versión. Anunciaremos los cambios importantes en el juego o por correo antes de que entren en vigor."
+      ]
+    }
+  },
+  "analyticsSections": {
+    "collect": {
+      "body": [
+        "Datos de la cuenta: tu correo electrónico, tu nombre visible, tu contraseña (guardada solo como hash irreversible) y, si activas el inicio de sesión en dos pasos, tu secreto de autenticación (guardado cifrado).",
+        "Datos del juego y del perfil: tu reino, raza y clase, ajustes, biografía e imagen de avatar opcionales, batallas, historial de banco y reclutamiento, actividad de alianza e informes que envías.",
+        "Mensajes: los mensajes privados y de chat que envías.",
+        "Datos técnicos: tu dirección IP y los datos de tu navegador cuando usas el sitio. Los usamos para la seguridad, para evitar abusos y trampas, y para limitar peticiones. El registro, el inicio de sesión y un registro de visita único al día mientras tienes la sesión iniciada guardan solo huellas irreversibles de tu IP, tu rango de red y tu navegador, nunca los valores en sí, durante 30 días; los usamos para seguridad y para detectar cuentas múltiples.",
+        "Analítica opcional: solo si aceptas las cookies de analítica, Google Analytics 4 registra, de forma agregada, la ruta de página que ves (solo patrones de ruta), tu tipo de dispositivo y navegador, el sitio desde el que llegaste y tu país aproximado, que Google deduce de tu dirección IP. GA4 no almacena tu dirección IP y nunca recibe tu cuenta, tu nombre de jugador ni ningún ID de jugador.",
+        "Pagos, si apoyas OpenThrone: Stripe gestiona el pago, y el número completo de tu tarjeta y su código de seguridad nunca nos llegan. Guardamos los identificadores de Stripe, importes, moneda e impuestos, tu país y estado de facturación, el estado y las fechas de los pagos, las condiciones que aceptaste al pagar y para qué reino o alianza era cada pago.",
+        "Discord, si lo vinculas: tu ID y nombre de usuario de Discord, tus ajustes de alertas y los mensajes de alerta que ponemos en cola para ti.",
+        "Correo: qué correos te enviamos y tus preferencias de correo."
+      ]
+    },
+    "use": {
+      "body": [
+        "Para gestionar tu cuenta y el juego, incluido mostrar tu reino a otros jugadores y entregar mensajes. Es necesario para prestar el servicio en el que te registraste.",
+        "Para que el juego sea justo y seguro: detectar trampas y cuentas múltiples, evitar abusos, moderar el chat y los informes, y proteger las cuentas. Lo hacemos porque tenemos un interés legítimo en un juego justo y seguro.",
+        "Para enviar correos: correos de cuenta y seguridad (necesarios para el servicio); noticias y anuncios (puedes darte de baja cuando quieras); y alertas de batalla, solo si las activas.",
+        "Para procesar pagos y conservar los registros que exige la ley fiscal y contable.",
+        "No vendemos tus datos personales ni los compartimos para publicidad conductual (segmentada) entre contextos, y no creamos perfiles publicitarios. Usamos Google Analytics 4 únicamente con tu consentimiento, para entender de forma agregada qué páginas se visitan y cómo se usa el sitio; puedes retirar ese consentimiento en cualquier momento."
+      ]
+    },
+    "cookies": {
+      "body": [
+        "Usamos una cookie esencial para mantenerte conectado, más cookies de corta duración que protegen el inicio de sesión. Nunca se usan cookies publicitarias. Las cookies de analítica solo se colocan si las aceptas, y nuestra propia cookie ot_consent (180 días) recuerda tu decisión.",
+        "El almacenamiento local de tu navegador guarda preferencias de visualización, como tu esquema de colores y los ajustes del simulador de batalla. Se queda en tu dispositivo.",
+        "La verificación de seguridad de Cloudflare (Turnstile), que aparece en el registro, el inicio de sesión y algunos formularios, puede poner sus propias cookies para distinguir personas de bots. Nuestras fuentes se sirven desde nuestro propio sitio. Para reclutar usamos otra comprobación que alojamos nosotros: se ejecuta en tu navegador, no pone cookies y no envía nada a terceros. Turnstile sigue protegiendo el registro y el inicio de sesión.",
+        "Si aceptas la analítica, Google Analytics 4 nos ayuda a entender cómo se usa el sitio. Comienza solo después de tu decisión y recibe el patrón de ruta de la página en la que estás, tu tipo de dispositivo y navegador, el sitio desde el que llegaste (solo origen y ruta) y tu país aproximado, que Google deduce de tu dirección IP; GA4 no almacena la dirección IP en sí y nunca recibe tu cuenta, tu nombre de jugador ni ningún ID de jugador. Google entonces coloca sus cookies _ga y _ga_<id de medición> (hasta 2 años, renovadas en visitas posteriores) y procesa estos datos para nosotros como encargado, únicamente siguiendo nuestras instrucciones. Puedes cambiar o retirar tu decisión en cualquier momento desde «Ajustes de cookies» en el pie del sitio; al retirarla también se eliminan las cookies de Google de tu dispositivo. Si tu navegador envía la señal Global Privacy Control y no has tomado una decisión, tratamos la analítica como rechazada."
+      ]
+    },
+    "share": {
+      "body": [
+        "Otros jugadores ven lo que el juego muestra públicamente: tu nombre visible, perfil, datos del reino, clasificaciones, alianza e informes de batalla que tú u otros compartáis.",
+        "Nuestros moderadores y administradores pueden ver los datos de la cuenta y del juego, y leer mensajes y chat cuando la moderación lo requiere. Su acceso queda registrado.",
+        "Proveedores que tratan datos por encargo nuestro: Cloudflare (protección de red, el control de seguridad Turnstile y almacenamiento de imágenes), Supabase (alojamiento de la base de datos en Estados Unidos), Stripe (pagos, si nos apoyas), Discord (alertas y respuestas del bot, solo si vinculas tu cuenta) y Google (mediciones analíticas agregadas, solo si aceptaste las cookies de analítica). Enviamos el correo desde nuestro propio servidor.",
+        "Podemos revelar datos cuando la ley lo exija o para proteger a los jugadores, el juego o nuestros derechos."
       ]
     }
   }

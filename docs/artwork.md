@@ -12,6 +12,10 @@ Existing `NEXT_PUBLIC_USE_AWS=true` plus `NEXT_PUBLIC_AWS_S3_ENDPOINT` remains s
 
 Artwork previously bundled under `/assets/` uses R2 keys under `artwork/v1/assets/` with its existing relative path. Public URLs include the manifest's SHA-256 as a version query to bypass cached misses from before the migration. Existing character portraits, menu textures, and avatar frames already stored in R2 retain their `images/` keys. Failed decorative images disappear into the CSS surface; failed crests/navigation artwork use local icons, and the logo falls back to the typeset game name. CSS backgrounds always have a base surface beneath them.
 
+## Workers preview
+
+`bun run cloudflare:build:preview` pins the preview public URL, disables Socket.IO and Turnstile for this environment, and selects `https://assets.openthrone.dev` at build time. `bun run cloudflare:deploy:preview` uses this build automatically; matching runtime artwork variables are recorded in `wrangler.jsonc`. Rebuild and redeploy after artwork configuration changes; changing runtime variables alone does not update browser bundles.
+
 ## Local comparison
 
 On the local development host, the header includes an **Artwork comparison** selector with Configured default, R2 artwork, and Pure UI / fallback options. The choice is saved only in that browser. R2 uses the configured public artwork base, or the documented `https://assets.openthrone.dev` public origin when none is configured; Pure UI uses the existing CSS and icon fallbacks. Uploaded player avatars are preserved.

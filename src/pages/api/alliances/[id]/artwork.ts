@@ -1,13 +1,20 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import formidable from 'formidable';
-import { promises as fs } from 'fs';
-import imageSize from 'image-size';
 import type { NextApiResponse } from 'next';
-import os from 'os';
 import path from 'path';
 import { z } from 'zod';
 
 import { hasAlliancePermission } from '@/constants/alliancePermissions';
+import { localAvatarStorageAvailable } from '@/lib/avatarUpload';
+import type { UploadedFile } from '@/lib/imageUpload';
+import {
+  IMAGE_CONTENT_TYPES,
+  inspectImage,
+  InvalidMultipartError,
+  parseMultipartForm,
+  putPublicObject,
+  sha256Hex,
+  UploadTooLargeError,
+  writeLocalFile,
+} from '@/lib/imageUpload';
 import prisma from '@/lib/prisma';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { AllianceService } from '@/services/Alliance.service';
@@ -17,19 +24,17 @@ import { withAvatarFraming } from '@/utils/avatarFraming';
 import {
   avatarExtensionFromImageType,
   buildAvatarFileName,
-  hashFileSha256,
   resolveAvatarPath,
 } from '@/utils/avatarStorage';
 import { logError } from '@/utils/logger';
 
 export const config = { api: { bodyParser: false } };
 const MAX_BYTES = 4 * 1024 * 1024;
-const CONTENT_TYPES: Record<string, string> = {
-  jpg: 'image/jpeg',
-  png: 'image/png',
-  gif: 'image/gif',
-  webp: 'image/webp',
-};
+// Two images plus the multipart envelope and the small framing fields.
+const MAX_BODY_BYTES = MAX_BYTES * 2 + 16 * 1024;
+const MAX_FIELDS = 4;
+const MAX_FIELDS_BYTES = 1024;
+const storesInS3 = () => process.env.NEXT_PUBLIC_USE_AWS === 'true';
 
 /** Kept separate from the guard so multipart storage can be integration-tested. */
 export async function handleAllianceArtwork(
@@ -42,7 +47,11 @@ export async function handleAllianceArtwork(
   if (!Number.isSafeInteger(allianceId) || allianceId <= 0)
     return res.status(400).json({ error: 'Invalid alliance' });
   const userId = Number(req.session?.user?.id);
-  let temporaryDirectory: string | undefined;
+  // Uploads are parsed in memory; only local-disk storage needs a filesystem.
+  if (!storesInS3() && !(await localAvatarStorageAvailable()))
+    return res
+      .status(503)
+      .json({ error: 'Artwork uploads are unavailable right now.' });
   try {
     const alliance = await prisma.alliances.findUnique({
       where: { id: allianceId },
@@ -67,19 +76,24 @@ export async function handleAllianceArtwork(
         .status(403)
         .json({ error: 'You do not have permission to edit this alliance' });
     }
-    temporaryDirectory = await fs.mkdtemp(
-      path.join(os.tmpdir(), 'ot-alliance-art-'),
-    );
-    const form = formidable({
-      uploadDir: temporaryDirectory,
-      maxFiles: 2,
-      maxFileSize: MAX_BYTES,
-      maxTotalFileSize: MAX_BYTES * 2,
-      maxFields: 4,
-      maxFieldsSize: 1024,
-      allowEmptyFiles: false,
+    const { fields, files } = await parseMultipartForm(req, {
+      maxBytes: MAX_BODY_BYTES,
     });
-    const [fields, files] = await form.parse(req);
+    const fieldValues = Object.values(fields).flat();
+    if (
+      fieldValues.length > MAX_FIELDS ||
+      fieldValues.reduce((total, value) => total + value.length, 0) >
+        MAX_FIELDS_BYTES
+    )
+      return res.status(400).json({ error: 'Invalid artwork fields' });
+    if (
+      Object.values(files)
+        .flat()
+        .some((file) => file.size > MAX_BYTES)
+    )
+      return res
+        .status(400)
+        .json({ error: 'Images must be at most 4 MB each' });
     if (
       Object.keys(files).some(
         (key) => !['avatar', 'bannerimg'].includes(key),
@@ -120,7 +134,7 @@ export async function handleAllianceArtwork(
     }
     const data: { avatar?: string; bannerimg?: string } = {};
     const uploads: {
-      file: formidable.File;
+      file: UploadedFile;
       kind: 'avatar' | 'bannerimg';
       extension: string;
     }[] = [];
@@ -139,14 +153,11 @@ export async function handleAllianceArtwork(
       if (remove) data[kind] = '';
       const file = selected?.[0];
       if (!file) continue;
-      let dimensions: { width?: number; height?: number; type?: string };
-      try {
-        dimensions = imageSize(file.filepath);
-      } catch {
+      const dimensions = inspectImage(file.bytes);
+      if (!dimensions)
         return res
           .status(400)
           .json({ error: 'Upload a valid PNG, JPEG, GIF or WebP image' });
-      }
       const extension = avatarExtensionFromImageType(dimensions.type);
       const maxWidth = kind === 'avatar' ? 1024 : 2400;
       const maxHeight = kind === 'avatar' ? 1024 : 1200;
@@ -176,29 +187,12 @@ export async function handleAllianceArtwork(
     for (const { file, kind, extension } of uploads) {
       const fileName = buildAvatarFileName(
         allianceId,
-        await hashFileSha256(file.filepath),
+        sha256Hex(file.bytes),
         extension,
       );
       const key = `alliances/${allianceId}/${kind}/${fileName}`;
-      if (process.env.NEXT_PUBLIC_USE_AWS === 'true') {
-        const s3 = new S3Client({
-          endpoint: process.env.AWS_S3_ENDPOINT,
-          region: process.env.AWS_REGION ?? 'auto',
-          forcePathStyle: true,
-          credentials: {
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? '',
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? '',
-          },
-        });
-        await s3.send(
-          new PutObjectCommand({
-            Bucket: process.env.AWS_BUCKET_NAME ?? '',
-            Key: key,
-            Body: await fs.readFile(file.filepath),
-            ContentType: CONTENT_TYPES[extension],
-            ACL: 'public-read',
-          }),
-        );
+      if (storesInS3()) {
+        await putPublicObject(key, file.bytes, IMAGE_CONTENT_TYPES[extension]);
         data[kind] = `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/${key}`;
       } else {
         const directory = path.join(
@@ -208,10 +202,10 @@ export async function handleAllianceArtwork(
           String(allianceId),
           kind,
         );
-        await fs.mkdir(directory, { recursive: true });
-        await fs.copyFile(
-          file.filepath,
+        await writeLocalFile(
+          directory,
           resolveAvatarPath(directory, fileName),
+          file.bytes,
         );
         data[kind] = `/${key}`;
       }
@@ -225,19 +219,16 @@ export async function handleAllianceArtwork(
     await AllianceService.updateAlliance(allianceId, userId, data);
     return res.status(200).json({ success: true });
   } catch (error) {
-    if (error instanceof formidable.errors.FormidableError)
+    if (error instanceof UploadTooLargeError)
       return res
         .status(400)
         .json({ error: 'Images must be at most 4 MB each' });
+    if (error instanceof InvalidMultipartError)
+      return res.status(400).json({ error: 'Invalid artwork fields' });
     logError('Alliance artwork update failed', error);
     return res
       .status(500)
       .json({ error: 'Could not save alliance artwork. Try again.' });
-  } finally {
-    if (temporaryDirectory)
-      await fs
-        .rm(temporaryDirectory, { recursive: true, force: true })
-        .catch(() => undefined);
   }
 }
 

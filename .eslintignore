@@ -4,5 +4,11 @@ node_modules
 .opencode
 coverage
 out
+prisma/generated
+prisma-generated
+.open-next
+dogfood-output
+.zcode
+bun.lock
 temp
 !.storybook

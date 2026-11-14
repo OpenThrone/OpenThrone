@@ -10,7 +10,6 @@ import {
   Textarea,
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -18,6 +17,7 @@ import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const AppealsReviewPage = () => {
   const [appeals, setAppeals] = useState<any[]>([]);

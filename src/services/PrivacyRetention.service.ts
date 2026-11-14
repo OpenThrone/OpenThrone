@@ -7,6 +7,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 
+import { localAvatarStorageAvailable } from '@/lib/avatarUpload';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@/lib/prisma-exports';
 import { logError } from '@/utils/logger';
@@ -280,7 +281,9 @@ export async function deleteUserAvatarFiles(userId: number) {
       logError('Unable to delete avatar files from storage', { userId });
     }
   // Local uploads (and any left from before the bucket was used), even if
-  // the bucket call failed.
+  // the bucket call failed. Runtimes without a usable filesystem (Workers)
+  // can never have stored one.
+  if (!(await localAvatarStorageAvailable())) return ok;
   try {
     await fs.promises.rm(path.join(process.cwd(), 'public', prefix), {
       recursive: true,

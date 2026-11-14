@@ -1,6 +1,5 @@
-import { PrismaPg } from '@prisma/adapter-pg';
-
-import { PrismaClient } from '../../prisma/generated/prisma/client';
+import type { PrismaClient } from '../../prisma/generated/prisma/client';
+import { getPrismaClient } from './prismaClients';
 
 // Recursive function to convert BigInt to string in query results.
 // Preserve Date objects and non-plain objects to avoid turning them into {}.
@@ -30,36 +29,18 @@ const _convertBigIntToString = (obj: any): any => {
   return obj;
 };
 
-function createPrismaClient() {
-  const adapter = new PrismaPg({
-    connectionString: process.env.POSTGRES_PRISMA_URL,
-  });
-
-  return new PrismaClient({
-    adapter,
-    log: [
-      // 'query', // TODO: let's move this to .env instead or disable it in production
-      'info',
-      'warn',
-      'error',
-    ],
-  });
-}
-
-const prisma =
-  (globalThis as any).prisma ||
-  (typeof window === 'undefined' ? createPrismaClient() : undefined);
-
-if (prisma && typeof window === 'undefined') {
-  // Add middleware to handle BigInt in all queries
-  // Temporarily commented out to fix build error
-  // prisma.$use(async (params, next) => {
-  //   const result = await next(params);
-  //   return convertBigIntToString(result);
-  // });
-
-  if (process.env.NODE_ENV === 'development')
-    (globalThis as any).prisma = prisma;
-}
+// Call sites import a single `prisma` object; the proxy resolves the right
+// client at access time so none of them need to change. Typed `any` as
+// before — callers were written against the untyped export.
+const prisma: any =
+  typeof window === 'undefined'
+    ? new Proxy({} as PrismaClient, {
+        get(_target, property) {
+          const client = getPrismaClient();
+          const value = Reflect.get(client, property, client);
+          return typeof value === 'function' ? value.bind(client) : value;
+        },
+      })
+    : undefined;
 
 export default prisma;

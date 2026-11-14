@@ -108,7 +108,7 @@
     "action": "Aktion",
     "amount": "Betrag",
     "type": "Typ",
-    "owned": "Besessen",
+    "owned": "Im Besitz",
     "buy": "Kaufen",
     "sell": "Verkaufen",
     "max": "Max.",
@@ -252,10 +252,32 @@
     "operator": "OpenThrone.dev wird von AIOXperts IT Solutions LLC betrieben.",
     "version": "Version {{version}}"
   },
+  "consent": {
+    "banner": {
+      "regionLabel": "Cookie-Einwilligung",
+      "title": "Cookies: deine Wahl",
+      "text": "Wir nutzen eigene Cookies, um das Spiel zu betreiben. Mit deinem OK zählt Google Analytics außerdem Besuche, damit wir die Seite verbessern können. Es bekommt nie dein Konto, deinen Spielernamen oder IDs.",
+      "privacyLink": "Datenschutzerklärung",
+      "accept": "Analysen zulassen",
+      "decline": "Ablehnen"
+    },
+    "settings": {
+      "title": "Cookie-Einstellungen",
+      "text": "Analysen sind optional und aus, bis du sie erlaubst. Es sieht nur Seitenrouten, Gerätetyp und ungefähr, woher Besucher kommen - nie dein Konto, deinen Spielernamen oder IDs.",
+      "privacyLink": "Datenschutzerklärung",
+      "analyticsLabel": "Google Analytics",
+      "stateUnset": "Noch nicht gewählt - Analysen sind aus.",
+      "stateGranted": "Erlaubt. Du kannst das jederzeit abschalten.",
+      "stateDenied": "Blockiert. Google Analytics läuft nicht.",
+      "gpcNote": "Dein Browser sendet das Global-Privacy-Control-Signal, daher bleiben Analysen aus, bis du sie hier erlaubst."
+    },
+    "footerLink": "Cookie-Einstellungen"
+  },
   "errors": {
     "stillSignedIn": "Der Server ist nicht erreichbar. Sie sind weiterhin angemeldet; versuchen Sie es gleich noch einmal.",
     "failedToFetchGitInfo": "Fehler beim Abrufen von Git-Informationen",
-    "failedToFetchOnlinePlayerInfo": "Fehler beim Abrufen von Online-Spielerinformationen"
+    "failedToFetchOnlinePlayerInfo": "Fehler beim Abrufen von Online-Spielerinformationen",
+    "userDataFailed": "Die Daten Ihres Königreichs konnten nicht geladen werden. Laden Sie die Seite neu, um es erneut zu versuchen."
   },
   "recruit": {
     "externalAllowance": "Dieses Königreich hat heute noch {{remaining}} von {{limit}} externen Rekrutierungen. Diese Verbindung kann noch {{ipRemaining}} rekrutieren, bis zu {{ipLimit}} pro Königreich und Tag.",
@@ -296,7 +318,9 @@
     "blockedRecruiter": "Sie haben alle {{limit}} täglichen Rekrutierungen verbraucht. Zurücksetzung um {{time}}.",
     "blockedTarget": "{{name}} hat das tägliche Limit von {{limit}} Rekrutierungen erreicht. Zurücksetzung um {{time}}.",
     "targetTitle": "Rekrutierungsziel",
-    "targetSummary": "{{name}} ist ein {{race}} {{class}} der Stufe {{level}}."
+    "targetSummary": "{{name}} ist ein {{race}} {{class}} der Stufe {{level}}.",
+    "pleaseWaitAltcha": "Bitte warten Sie, während Ihr Browser unten eine kurze Prüfung durchführt.",
+    "captchaPolicyAltcha": "Wir verwenden eine selbst gehostete Prüfung, die in Ihrem Browser läuft und nichts an Dritte sendet, um Spam und Missbrauch zu verhindern. Sie dauert einen Moment; indem Sie sie abschließen lassen, helfen Sie uns, das Spiel für alle fair und unterhaltsam zu halten."
   },
   "ariaLabels": {
     "closeAlert": "Alarm schließen",
@@ -908,5 +932,33 @@
   "veteran": {
     "badge": "Ära-1-Tester",
     "since": "Spielt seit {{date}}"
+  },
+  "notFound": {
+    "title": "Seite nicht gefunden",
+    "description": "Der Thronsaal, den du suchst, existiert nicht. Die Seite wurde möglicherweise verschoben oder in einer Belagerung zerstört.",
+    "backHome": "Zurück zum Thron"
+  },
+  "gameAlerts": {
+    "someone": "Jemand",
+    "attackTitle": "Sie wurden angegriffen",
+    "attack": "Eine feindliche Armee hat Ihr Königreich angegriffen.",
+    "viewReport": "Kampfbericht ansehen",
+    "spyTitle": "Spion gefasst",
+    "spy": "Ihre Wachen haben einen feindlichen Spion gestoppt ({{mission}}).",
+    "missions": {
+      "INTEL": "Spionage",
+      "ASSASSINATE": "Attentat",
+      "INFILTRATE": "Infiltration"
+    },
+    "goldTitle": "Gold erhalten",
+    "gold": "{{name}} hat Ihnen {{amount}} Gold geschickt.",
+    "viewBank": "Bankverlauf ansehen",
+    "friendTitle": "Freundschaftsanfrage",
+    "friend": "{{name}} hat Ihnen eine Freundschaftsanfrage geschickt.",
+    "goldRequestTitle": "Goldanfrage",
+    "goldRequest": "{{name}} bittet Sie um Gold.",
+    "viewRequests": "Anfragen ansehen",
+    "awayAttacked": "Sie wurden angegriffen, während Sie abwesend waren. Sehen Sie in Ihrem Kampfverlauf nach.",
+    "awaySpy": "Ihre Wachen haben während Ihrer Abwesenheit einen Spion gefasst."
   }
 }

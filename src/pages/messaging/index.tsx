@@ -1,4 +1,4 @@
-import { Button, Space, Text } from '@mantine/core';
+import { Alert, Button, Space, Text } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
@@ -12,12 +12,21 @@ import MainArea from '@/components/MainArea';
 import NewMessageModal from '@/components/NewMessageModal';
 import { useUser } from '@/context/users';
 import useSocket from '@/hooks/useSocket';
+import { resolveRealtimeTransport } from '@/lib/realtimeTransport';
 import type {
   ChatMessage as FrontendMessage,
   FrontendRoom,
 } from '@/types/typings';
 import { logError, logInfo } from '@/utils/logger';
 
+// NEXT_PUBLIC_* inlines at build time. Realtime is read-only only when the
+// resolved transport is 'off' (legacy NEXT_PUBLIC_DISABLE_SOCKET semantics);
+// the 'do' pilot transport keeps the send input live.
+const REALTIME_DISABLED =
+  resolveRealtimeTransport(
+    process.env.NEXT_PUBLIC_REALTIME_TRANSPORT,
+    process.env.NEXT_PUBLIC_DISABLE_SOCKET,
+  ) === 'off';
 const MessageList = () => {
   const [rooms, setRooms] = useState<FrontendRoom[]>([]);
   const router = useRouter();
@@ -334,6 +343,7 @@ const MessageListComponent = ({
     [rooms, selectedRoomId],
   );
   const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
+  const [readOnlyNoticeDismissed, setReadOnlyNoticeDismissed] = useState(false);
   const composeToUserId = useMemo(() => {
     const raw = router.query.composeToUserId;
     const id = Number(Array.isArray(raw) ? raw[0] : raw);
@@ -379,6 +389,17 @@ const MessageListComponent = ({
 
   return (
     <MainArea title={t('title')}>
+      {REALTIME_DISABLED && !readOnlyNoticeDismissed && (
+        <Alert
+          variant="light"
+          color="yellow"
+          withCloseButton
+          onClose={() => setReadOnlyNoticeDismissed(true)}
+          mb="md"
+        >
+          {t('readOnlyNotice')}
+        </Alert>
+      )}
       <div className="p-4">
         <GameCard title={t('newMessage')}>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -695,6 +716,9 @@ const RealtimeMessageHandler = ({
     setRooms,
     t,
   ]);
+
+  // Realtime disabled: no socket to join rooms or receive events with.
+  if (REALTIME_DISABLED) return null;
 
   return null;
 };

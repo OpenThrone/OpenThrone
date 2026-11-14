@@ -139,6 +139,18 @@ const getAvatarSrc = (
   return src;
 };
 
+/**
+ * Image URL for a stored avatar value, or undefined when there is none, so
+ * Mantine's Avatar falls back to its initials. Stored values are not always
+ * URLs: players without a picture store "SHIELD" (their race's shield).
+ */
+const resolveAvatarSrc = (
+  avatar?: string | null,
+  race?: PlayerRace | string | null,
+  size: '25x25' | '150x150' = '150x150',
+): string | undefined =>
+  avatar ? getAvatarSrc(avatar, (race as PlayerRace) || undefined, size) : undefined;
+
 const calculateOverallRank = (user) => {
   const unitScore = user.units
     ? user.units.map((unit) => unit.quantity).reduce((a, b) => a + b, 0)
@@ -337,6 +349,7 @@ export {
   generateRandomString,
   getAssetPath,
   getAvatarSrc,
+  resolveAvatarSrc,
   getLevelChange,
   getLevelFromXP,
   serializeDates,

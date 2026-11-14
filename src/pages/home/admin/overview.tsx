@@ -12,7 +12,6 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Grid, Loader, Paper, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
 import { ADMIN_STAT_COLORS } from '@/components/admin/adminColors';
@@ -21,6 +20,7 @@ import AdminRequestState from '@/components/admin/AdminRequestState';
 import { GameCard } from '@/components/game/GameCard';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 interface OverviewStats {
   pendingEmails: number;

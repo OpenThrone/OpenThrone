@@ -12,7 +12,6 @@ import {
 } from '@mantine/core';
 import type { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -31,6 +30,7 @@ import DateSortHeader from '@/components/admin/DateSortHeader';
 import PlayerActivity from '@/components/admin/PlayerActivity';
 import { GameCard } from '@/components/game/GameCard';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 interface TrendPoint {
   date: string;

@@ -4,7 +4,6 @@ import type { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 import { signIn, useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -18,6 +17,7 @@ import { endImpersonation } from '@/hooks/useImpersonation';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 interface UserSummary {
   id: string;

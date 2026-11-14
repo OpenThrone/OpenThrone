@@ -37,5 +37,3 @@ export const DEFAULT_EMAIL_DOMAIN = 'bots.openthrone.local';
 
 export const BOT_IP_ADDRESS = '127.0.0.1';
 export const RECRUIT_DAILY_CAP_PER_BOT = 5;
-
-export const CONFIG_ROOT_DIR = 'config/bots';

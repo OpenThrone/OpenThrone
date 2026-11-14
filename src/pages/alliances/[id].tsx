@@ -16,8 +16,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { getServerSession } from 'next-auth';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 
 import { AllianceAnnouncements } from '@/components/alliance/AllianceAnnouncements';
@@ -27,10 +26,15 @@ import { AllianceIntel } from '@/components/alliance/AllianceIntel';
 import { AllianceInternalBattles } from '@/components/alliance/AllianceInternalBattles';
 import { AllianceLists } from '@/components/alliance/AllianceLists';
 import { AllianceMembers } from '@/components/alliance/AllianceMembers';
+import {
+  AllianceJoinTerms,
+  duesTermsOf,
+} from '@/components/alliance/AllianceMembershipDues';
 import { AllianceOverview } from '@/components/alliance/AllianceOverview';
 import { AllianceRanks } from '@/components/alliance/AllianceRanks';
 import { AllianceSettings } from '@/components/alliance/AllianceSettings';
 import { getAllianceStanding } from '@/components/alliance/allianceStanding';
+import { AllianceUpgrades } from '@/components/alliance/AllianceUpgrades';
 import { AllianceWar } from '@/components/alliance/AllianceWar';
 import { ReservedBadge } from '@/components/alliance/ReservedAllianceNotice';
 import { ReservedAllianceSection } from '@/components/alliance/ReservedAllianceSection';
@@ -43,6 +47,7 @@ import { AllianceService } from '@/services';
 import type { AllianceInfo } from '@/services/Alliance.service';
 import { avatarFramingStyle, splitAvatarFraming } from '@/utils/avatarFraming';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 interface AlliancePageProps {
   initialAlliance: string;
@@ -70,7 +75,25 @@ const AlliancePage = ({
   const router = useRouter();
   const { id } = router.query;
   const theme = useMantineTheme();
-  const [activeTab, setActiveTab] = useState<string | null>('overview');
+  // `?tab=` opens a tab directly; limit notices link to `?tab=upgrades`.
+  const queryTab =
+    typeof router.query.tab === 'string' ? router.query.tab : null;
+  const [activeTab, setActiveTab] = useState<string | null>(
+    queryTab ?? 'overview',
+  );
+  useEffect(() => {
+    if (queryTab) setActiveTab(queryTab);
+  }, [queryTab]);
+  // Keep the URL in step so a link to the open tab still switches to it.
+  const changeTab = (tab: string | null) => {
+    setActiveTab(tab);
+    if (!tab || tab === queryTab) return;
+    router.replace(
+      { pathname: router.pathname, query: { ...router.query, tab } },
+      undefined,
+      { shallow: true, scroll: false },
+    );
+  };
 
   const {
     data: allianceData,
@@ -171,6 +194,10 @@ const AlliancePage = ({
                 </Title>
                 {reserved && <ReservedBadge />}
                 <Text c="dimmed">{alliance.motto}</Text>
+                {/* Outsiders see what joining costs before they ask. */}
+                {!isMember && !reserved && (
+                  <AllianceJoinTerms terms={duesTermsOf(alliance)} />
+                )}
               </Box>
             </Group>
           </Box>
@@ -196,7 +223,7 @@ const AlliancePage = ({
             {t('index.troops')}
           </Button>
         )}
-        <Tabs value={activeTab} onChange={setActiveTab} variant="outline">
+        <Tabs value={activeTab} onChange={changeTab} variant="outline">
           <Tabs.List>
             <Tabs.Tab value="overview">
               {t('index.overview', 'Overview')}
@@ -207,6 +234,11 @@ const AlliancePage = ({
             <Tabs.Tab value="members">{t('index.members', 'Members')}</Tabs.Tab>
             {isMember && !reserved && (
               <Tabs.Tab value="bank">{t('index.bank', 'Bank')}</Tabs.Tab>
+            )}
+            {isMember && !reserved && (
+              <Tabs.Tab value="upgrades">
+                {t('index.upgrades', 'Upgrades')}
+              </Tabs.Tab>
             )}
             {isMember && !reserved && (
               <Tabs.Tab value="war">{t('index.war', 'War Room')}</Tabs.Tab>
@@ -242,7 +274,7 @@ const AlliancePage = ({
               <AllianceOverview
                 alliance={alliance}
                 isMember={isMember}
-                onViewAnnouncements={() => setActiveTab('announcements')}
+                onViewAnnouncements={() => changeTab('announcements')}
               />
               {!reserved && (
                 <Box mt="md">
@@ -275,6 +307,9 @@ const AlliancePage = ({
               <>
                 <Tabs.Panel value="bank">
                   <AllianceBank alliance={alliance} onUpdate={mutate} />
+                </Tabs.Panel>
+                <Tabs.Panel value="upgrades">
+                  <AllianceUpgrades alliance={alliance} onUpdate={mutate} />
                 </Tabs.Panel>
                 <Tabs.Panel value="war">
                   <AllianceWar alliance={alliance} viewerId={viewerId} />
@@ -317,6 +352,10 @@ const AlliancePage = ({
                   canEditProfile={
                     isMember &&
                     getAllianceStanding(alliance, viewerId).can('edit_profile')
+                  }
+                  canSetDues={
+                    isMember &&
+                    getAllianceStanding(alliance, viewerId).can('set_dues')
                   }
                   reserved={reserved}
                 />

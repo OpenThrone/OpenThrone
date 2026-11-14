@@ -12,6 +12,7 @@ import {
   useState,
 } from 'react';
 
+import useGameEventAlerts from '@/hooks/useGameEventAlerts';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import useSocket from '@/hooks/useSocket';
 import type { users as PrismaUser } from '@/lib/prisma-exports';
@@ -80,6 +81,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const { t } = useTranslation('common');
   const translate = useRef(t);
   translate.current = t;
+  const awayAlertsShown = useRef(false);
   const { config } = useRuntimeConfig();
   const staminaRulesKey = config?.stamina
     ? JSON.stringify(config.stamina)
@@ -156,21 +158,23 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
           }
         }
 
-        if ((userData as UserApiResponse).beenAttacked) {
-          alertService.error(
-            'You have been attacked since you were last active!',
-          );
-        }
-        if ((userData as UserApiResponse).detectedSpy) {
-          alertService.error(
-            'You have detected a Spy attempt since you were last active!',
-          );
+        // "Since you were last active" only holds for the tab's first load;
+        // while the tab is open, live game alerts report each attack and spy
+        // as it happens, so later refetches stay quiet.
+        if (!awayAlertsShown.current) {
+          awayAlertsShown.current = true;
+          if ((userData as UserApiResponse).beenAttacked) {
+            alertService.error(translate.current('gameAlerts.awayAttacked'));
+          }
+          if ((userData as UserApiResponse).detectedSpy) {
+            alertService.error(translate.current('gameAlerts.awaySpy'));
+          }
         }
         return true; // Indicate success
       } catch (error) {
         logError('Error processing user data:', error, userData);
         // Handle specific error cases if needed
-        alertService.error('Failed to process user data.');
+        alertService.error(translate.current('errors.userDataFailed'));
         return false; // Indicate failure
       } finally {
         setLoading(false);
@@ -257,8 +261,20 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     };
   }, [addEventListener, removeEventListener, userId]);
 
+  const refreshAfterGameEvent = useCallback(() => {
+    if (userId) fetchUserData(userId);
+  }, [fetchUserData, userId]);
+
+  useGameEventAlerts({
+    enabled: status === 'authenticated' && Boolean(userId),
+    addEventListener,
+    removeEventListener,
+    onStateChanged: refreshAfterGameEvent,
+  });
+
   useEffect(() => {
     if (pathName === '/auth/logout') {
+      awayAlertsShown.current = false;
       setUser(null);
       setUnreadMessages([]);
       setLoading(false);
@@ -268,6 +284,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       logInfo('User authenticated. Requesting user data via API...');
       fetchUserData(userId);
     } else if (status === 'unauthenticated') {
+      awayAlertsShown.current = false;
       setUser(null);
       setUnreadMessages([]);
       setLoading(false);

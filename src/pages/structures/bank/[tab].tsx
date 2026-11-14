@@ -140,20 +140,7 @@ export default function Bank() {
     },
     {
       label: t('bank.bankedGold'),
-      value: (
-        <>
-          {formatGold(user?.goldInBank, locale)}
-          <Text
-            component="span"
-            size="xs"
-            fw={400}
-            c="var(--ot-muted)"
-            display="block"
-          >
-            {t('bank.capacity', { amount: formatGold(user?.bankCap, locale) })}
-          </Text>
-        </>
-      ),
+      value: formatGold(user?.goldInBank, locale),
       icon: <FontAwesomeIcon icon={faBuildingColumns} />,
     },
     {

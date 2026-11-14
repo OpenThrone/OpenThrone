@@ -90,6 +90,7 @@
     "cancel": "Cancelar",
     "verificationFailedError": "Error en la verificación",
     "emailUpdatedSuccessfully": "Correo electrónico actualizado exitosamente",
+    "emailUpdatedSignIn": "Correo actualizado. Inicia sesión con tu nueva dirección.",
     "failedToUpdateEmail": "Error al actualizar el correo electrónico"
   },
   "passwordReset": {

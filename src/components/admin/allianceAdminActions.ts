@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+import {
+  ALLIANCE_DUES_MAX,
+  ALLIANCE_DUES_PERIODS,
+  ALLIANCE_JOIN_FEE_MAX,
+} from '@/constants/allianceDues';
+import {
+  ALLIANCE_LEVEL_MAX,
+  ALLIANCE_LEVEL_MIN,
+} from '@/constants/allianceLevels';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
 
 /**
@@ -8,6 +17,19 @@ import { toBigIntSafe } from '@/utils/jsonHelpers';
  */
 
 const id = z.coerce.number().int().positive();
+
+/** Whole gold, not coerced: null or '' must not silently become 0. */
+const gold = (max: bigint) =>
+  z
+    .number()
+    .int()
+    .min(0)
+    .max(Number(max))
+    .transform((value) => BigInt(value));
+
+const HIGHEST_DUES = Object.values(ALLIANCE_DUES_MAX).reduce((a, b) =>
+  a > b ? a : b,
+);
 
 /** Same limit as the player-side alliance name (UpdateAllianceSchema). */
 export const ALLIANCE_NAME_MAX = 100;
@@ -26,9 +48,44 @@ export const AllianceAdminActionSchema = z.discriminatedUnion('action', [
   // Era lifecycle (#13): staff can reserve an alliance or reactivate it free.
   z.object({ action: z.literal('reserve') }),
   z.object({ action: z.literal('reactivate') }),
+  // Alliance Hall level (allianceLevels.ts): staff set it directly, free.
+  z.object({
+    action: z.literal('set_hall_level'),
+    // Not coerced: null or '' must not silently become level 0.
+    level: z.number().int().min(ALLIANCE_LEVEL_MIN).max(ALLIANCE_LEVEL_MAX),
+    /** The level the admin saw; a different current level refuses (stale). */
+    fromLevel: z
+      .number()
+      .int()
+      .min(ALLIANCE_LEVEL_MIN)
+      .max(ALLIANCE_LEVEL_MAX)
+      .optional(),
+  }),
+  // Join fee and membership dues (allianceDues.ts), same bounds as players.
+  // The per-period maximum and the amount/period pairing are checked by
+  // validateAllianceDuesSettings in the route (a discriminated union member
+  // cannot carry a refinement).
+  z.object({
+    action: z.literal('set_dues'),
+    joinFee: gold(ALLIANCE_JOIN_FEE_MAX),
+    duesAmount: gold(HIGHEST_DUES),
+    duesPeriod: z.enum(ALLIANCE_DUES_PERIODS),
+    /** The fee and dues the admin saw; changed values refuse (stale edit). */
+    expected: z
+      .object({
+        joinFee: gold(ALLIANCE_JOIN_FEE_MAX),
+        duesAmount: gold(HIGHEST_DUES),
+        duesPeriod: z.enum(ALLIANCE_DUES_PERIODS),
+      })
+      .optional(),
+  }),
 ]);
 
 export type AllianceAdminAction = z.infer<typeof AllianceAdminActionSchema>;
+/** What the drawer sends (gold amounts as JSON numbers, before transforms). */
+export type AllianceAdminActionInput = z.input<
+  typeof AllianceAdminActionSchema
+>;
 export type AllianceAdminActionName = AllianceAdminAction['action'];
 
 /** Audit action name for each admin alliance action. */
@@ -45,6 +102,8 @@ export const ALLIANCE_ADMIN_AUDIT_ACTIONS: Record<
   end_war: 'ADMIN_ALLIANCE_END_WAR',
   reserve: 'ADMIN_ALLIANCE_RESERVE',
   reactivate: 'ADMIN_ALLIANCE_REACTIVATE',
+  set_hall_level: 'ADMIN_ALLIANCE_SET_HALL_LEVEL',
+  set_dues: 'ADMIN_ALLIANCE_SET_DUES',
 };
 
 /** Loan statuses that still carry a balance (AllianceLoan.service OPEN_STATUSES). */

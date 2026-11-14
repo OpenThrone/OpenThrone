@@ -12,7 +12,6 @@ import {
   Textarea,
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -21,6 +20,7 @@ import { GameCard } from '@/components/game/GameCard';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const BansDashboardPage = () => {
   const [bans, setBans] = useState<any[]>([]);

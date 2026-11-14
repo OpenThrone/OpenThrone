@@ -50,6 +50,8 @@ beforeEach(() => {
   mockPrisma.alliance_bank_history = {
     create: vi.fn(async () => ({})),
     aggregate: vi.fn(async () => ({ _sum: { amount: null } })),
+    // Deposits in the rolling 24-hour window (Alliance Hall slots).
+    findMany: vi.fn(async () => []),
   } as any;
   mockPrisma.users = {
     findUnique: vi.fn(async () => ({ id: 1, gold: 1000n, gold_in_bank: 500n })),
@@ -177,10 +179,10 @@ describe('bank withdraw is a conditional debit', () => {
   });
 });
 
-describe('hand-to-bank bank capacity', () => {
-  // A level 0 economy (Farm) banks up to 10,000,000 gold.
-  const FARM_CAP = 10_000_000n;
-
+describe('hand-to-bank has no bank capacity', () => {
+  // v0.13.0 refused deposits past an economy-tier capacity (10,000,000 on the
+  // Farm). The owner repealed it: the balance has no upper limit
+  // (docs/decisions/no-bank-capacity.md).
   const setUser = (user: Record<string, unknown>) => {
     mockPrisma.users.findUnique = vi.fn(async () => ({
       id: 1,
@@ -189,35 +191,15 @@ describe('hand-to-bank bank capacity', () => {
     }));
   };
 
-  test('allows a deposit that exactly fills the bank', async () => {
-    setUser({ gold_in_bank: FARM_CAP - 1000n });
-    await depositGold(1, 1000);
+  test('a Farm player already holding more than 10,000,000 can deposit more', async () => {
+    setUser({ gold_in_bank: 15_900_515n, economy_level: 0 });
+    await depositGold(1, 50_000_000);
     expect(mockPrisma.users.updateMany).toHaveBeenCalled();
   });
 
-  test('refuses a deposit past the capacity, before moving any gold', async () => {
-    setUser({ gold_in_bank: FARM_CAP - 1000n });
-    await expect(depositGold(1, 1001)).rejects.toThrow(
-      'has room for 1,000 more',
-    );
-    expect(mockPrisma.users.updateMany).not.toHaveBeenCalled();
-  });
-
-  test('a balance already over capacity stays, but cannot grow', async () => {
-    setUser({ gold_in_bank: FARM_CAP + 5000n });
-    await expect(depositGold(1, 1)).rejects.toThrow('has room for 0 more');
-    expect(mockPrisma.users.updateMany).not.toHaveBeenCalled();
-  });
-
-  test('economy upgrades raise the capacity', async () => {
-    setUser({ gold_in_bank: FARM_CAP, economy_level: 1 });
-    await depositGold(1, 1000);
-    expect(mockPrisma.users.updateMany).toHaveBeenCalled();
-  });
-
-  test('over-capacity gold can still be withdrawn', async () => {
-    setUser({ gold_in_bank: FARM_CAP + 5000n });
-    await withdrawGold(1, 1000);
+  test('a deposit can take a Farm balance past 10,000,000', async () => {
+    setUser({ gold_in_bank: 9_999_000n, economy_level: 0 });
+    await depositGold(1, 1001);
     expect(mockPrisma.users.updateMany).toHaveBeenCalled();
   });
 });

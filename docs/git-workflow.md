@@ -7,7 +7,7 @@ How every change moves through Git, from a feature branch to a public release. I
 | Remote | Role |
 | --- | --- |
 | `origin` | Internal Forgejo. The real history, pull requests, issues and tags. |
-| `github` | Public mirror. One squashed commit per production release, nothing else. |
+| `github` | Public mirror. One squashed commit per production release, nothing else, and only when the owner explicitly asks for that release. |
 
 | Branch | Role |
 | --- | --- |
@@ -45,13 +45,13 @@ git remote set-head origin alpha
 
 ## Releases
 
-A release is finished only when every step below is done. Skipping steps 4 to 7 leaves the public mirror and the version numbers behind production.
+A release is finished when steps 1 to 4, 6 and 7 are done; skipping them leaves the tags and version numbers behind production. Step 5, the GitHub mirror, is opt-in: nothing is pushed to GitHub unless the owner explicitly approves GitHub for that release. A general approval of the release does not cover it.
 
 1. **Version pull request into `alpha`.** Set `version` in `package.json` and `package-lock.json` to `X.Y.Z` (drop `-alpha`) and turn the `CHANGELOG.md` heading into `## vX.Y.Z (<date>)`.
 2. **Release pull request from `alpha` into `master`.** Complete the release documentation gate ([AGENTS.md](../AGENTS.md) section 16). It merges only with the owner's go-ahead.
 3. **Deploy production** and confirm the footer shows `vX.Y.Z` and the release merge commit.
 4. **Tag Forgejo.** Create the tag `vX.Y.Z` on the release merge commit, with the message `Release vX.Y.Z (production)`. Agents create it through the Forgejo tags API under their bot login, because `agent-forgejo` does not push tags.
-5. **Mirror to GitHub.** One commit per release, whose parent is the previous release on `github/master` and whose tree is exactly Forgejo `master`'s tree:
+5. **Mirror to GitHub (only with the owner's explicit go-ahead for this release).** Ask separately; skip this step otherwise. One commit per release, whose parent is the previous release on `github/master` and whose tree is exactly Forgejo `master`'s tree:
 
    ```bash
    git fetch origin master && git fetch github master
@@ -63,9 +63,9 @@ A release is finished only when every step below is done. Skipping steps 4 to 7 
    gh release create vX.Y.Z -R OpenThrone/OpenThrone --verify-tag --latest --notes-file notes.md
    ```
 
-   The message is `Release vX.Y.Z`, the Forgejo commit and tree it snapshots, what the release includes, and how it was validated. The commit is authored by the repository owner, set through `GIT_AUTHOR_*` and `GIT_COMMITTER_*` variables for that one command; never change Git configuration. The release notes are the version's `CHANGELOG.md` entry. A release missed earlier gets its own commit, in order, before the newer one.
+   The message is `Release vX.Y.Z`, the Forgejo commit and tree it snapshots, what the release includes, and how it was validated. The commit is authored by the repository owner, set through `GIT_AUTHOR_*` and `GIT_COMMITTER_*` variables for that one command; never change Git configuration. The release notes are the version's `CHANGELOG.md` entry. A release that was not mirrored is folded into the next approved mirror commit unless the owner asks for its own.
 6. **Start the next pre-release.** A pull request into `alpha` sets `version` to `X.(Y+1).0-alpha` in both package files and adds `## vX.(Y+1).0-alpha (unreleased)` to the top of `CHANGELOG.md`, so alpha's footer stops showing the production version.
-7. **Check all three.** Forgejo `master`, Forgejo `alpha` and `github/master` show the expected versions (`git show <ref>:package.json`), both remotes have the tag, and `gh release list` shows `vX.Y.Z` as Latest.
+7. **Check the versions.** Forgejo `master` and Forgejo `alpha` show the expected versions (`git show <ref>:package.json`) and Forgejo has the tag. If the release was mirrored, also check `github/master`, the GitHub tag, and that `gh release list` shows `vX.Y.Z` as Latest.
 
 ## Cleaning up
 

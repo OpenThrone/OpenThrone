@@ -24,8 +24,10 @@ import { ALLIANCE_NOTE_MAX_LENGTH } from '@/constants/allianceTreasury';
 import { useUser } from '@/context/users';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
+import type { Locales } from '@/types/typings';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
 import { toLocale } from '@/utils/numberFormatting';
+import { wholeGoldSeparators } from '@/utils/wholeGoldInput';
 
 const STATUS_COLORS: Record<string, string> = {
   REQUESTED: 'yellow',
@@ -59,7 +61,7 @@ export const LoanSection = ({
   onChanged,
   refreshKey,
 }: LoanSectionProps) => {
-  const { t } = useTranslation('allianceTreasury');
+  const { t, i18n } = useTranslation('allianceTreasury');
   const { config } = useRuntimeConfig();
   const { user, forceUpdate } = useUser();
   const [amount, setAmount] = useState<bigint>(0n);
@@ -185,7 +187,7 @@ export const LoanSection = ({
           {t('loan.terms', {
             days: terms.termDays,
             interest: terms.interestPct,
-            cap: toLocale(terms.dailyCap),
+            cap: toLocale(terms.dailyCap, i18n.language as Locales),
           })}
         </Text>
         <Text size="sm" c="dimmed">
@@ -208,9 +210,9 @@ export const LoanSection = ({
             />
             <Text size="sm">
               {t('loan.progressText', {
-                repaid: toLocale(repaid),
-                owed: toLocale(owed),
-                left: toLocale(left),
+                repaid: toLocale(repaid, i18n.language as Locales),
+                owed: toLocale(owed, i18n.language as Locales),
+                left: toLocale(left, i18n.language as Locales),
               })}
             </Text>
             {myOpen.due_at && (
@@ -249,7 +251,9 @@ export const LoanSection = ({
         ) : myPending ? (
           <Group mt="md" justify="space-between">
             <Text size="sm">
-              {t('loan.pending', { amount: toLocale(myPending.principal) })}
+              {t('loan.pending', {
+                amount: toLocale(myPending.principal, i18n.language as Locales),
+              })}
             </Text>
             <Button
               size="compact-sm"
@@ -267,15 +271,18 @@ export const LoanSection = ({
               description={t('loan.requestHint', {
                 owed: toLocale(
                   amount + (amount * BigInt(terms.interestPct) + 99n) / 100n,
+                  i18n.language as Locales,
                 ),
               })}
               min={0}
               value={amount.toString()}
               onChange={(val) => setAmount(toBigIntSafe(val))}
-              thousandSeparator=","
+              {...wholeGoldSeparators(i18n.language)}
               error={
                 amount > toBigIntSafe(terms.dailyCap)
-                  ? t('loan.overCap', { cap: toLocale(terms.dailyCap) })
+                  ? t('loan.overCap', {
+                      cap: toLocale(terms.dailyCap, i18n.language as Locales),
+                    })
                   : undefined
               }
             />
@@ -319,11 +326,13 @@ export const LoanSection = ({
               {live.map((loan) => (
                 <Table.Tr key={loan.id}>
                   <Table.Td>{loan.borrower?.display_name}</Table.Td>
-                  <Table.Td>{toLocale(loan.principal)}</Table.Td>
+                  <Table.Td>
+                    {toLocale(loan.principal, i18n.language as Locales)}
+                  </Table.Td>
                   <Table.Td>
                     {loan.status === 'REQUESTED'
                       ? '-'
-                      : `${toLocale(owedLeft(loan))} / ${toLocale(loan.amount_owed)}`}
+                      : `${toLocale(owedLeft(loan), i18n.language as Locales)} / ${toLocale(loan.amount_owed, i18n.language as Locales)}`}
                   </Table.Td>
                   <Table.Td>
                     <Badge variant="light" color={STATUS_COLORS[loan.status]}>

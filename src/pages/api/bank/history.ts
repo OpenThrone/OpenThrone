@@ -2,8 +2,7 @@ import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
-import { getBankHistory } from '@/services/Bank.service';
-import { ensureActiveEra } from '@/services/Era.service';
+import { getBankHistoryForUser } from '@/services/Bank.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import { publicErrorMessage } from '@/utils/publicError';
@@ -45,176 +44,28 @@ const historyHandler = async (
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const {
-    deposits,
-    withdraws,
-    war_spoils,
-    transfers,
-    sale,
-    training,
-    economy,
-    recruitment,
-    fortification,
-    daily,
-    friend_transfers,
-    page,
-    limit,
-  } = validatedQuery.data;
-  const conditions = [];
-  const transactionConditions = [];
-
-  if (deposits === 'true') {
-    transactionConditions.push({
-      from_user_account_type: 'HAND',
-      to_user_id: session.user.id,
-      to_user_account_type: 'BANK',
-      from_user_id: session.user.id,
-      history_type: 'PLAYER_TRANSFER',
-    });
-  }
-
-  if (withdraws === 'true') {
-    transactionConditions.push({
-      from_user_account_type: 'BANK',
-      to_user_id: session.user.id,
-      to_user_account_type: 'HAND',
-      from_user_id: session.user.id,
-      history_type: 'PLAYER_TRANSFER',
-    });
-  }
-
-  if (war_spoils === 'true') {
-    transactionConditions.push({
-      history_type: 'WAR_SPOILS',
-    });
-  }
-
-  if (transfers === 'true') {
-    transactionConditions.push({
-      history_type: 'PLAYER_TRANSFER',
-      AND: [
-        {
-          OR: [
-            { from_user_id: session.user.id },
-            { to_user_id: session.user.id },
-          ],
-        },
-        {
-          NOT: [{ from_user_id: session.user.id, to_user_id: session.user.id }],
-        },
-      ],
-    });
-  }
-
-  if (economy === 'true') {
-    transactionConditions.push({
-      history_type: 'ECONOMY',
-      to_user_id: session.user.id,
-    });
-  }
-
-  if (fortification === 'true') {
-    transactionConditions.push({
-      history_type: 'FORT_REPAIR',
-      from_user_id: session.user.id,
-    });
-  }
-
-  if (recruitment === 'true') {
-    transactionConditions.push({
-      history_type: 'RECRUITMENT',
-      to_user_id: session.user.id,
-    });
-  }
-
-  if (sale === 'true') {
-    transactionConditions.push({
-      history_type: 'SALE',
-      stats: {
-        path: ['type'],
-        string_contains: 'ARMORY',
-      },
-    });
-    transactionConditions.push({
-      history_type: 'SALE',
-      stats: {
-        path: ['type'],
-        // Structure purchases (FORTIFICATIONS_UPGRADE, SPY_UPGRADE, ...) and
-        // battle upgrades (BATTLE_UPGRADES_BUY) both contain this (#346).
-        string_contains: '_UPGRADE',
-      },
-    });
-    transactionConditions.push({
-      history_type: 'SALE',
-      stats: {
-        path: ['action'],
-        string_contains: '_upgrade',
-      },
-    });
-  }
-
-  if (training === 'true') {
-    transactionConditions.push({
-      history_type: { in: ['SALE'] },
-      stats: {
-        path: ['type'],
-        string_contains: 'TRAINING_',
-      },
-    });
-    transactionConditions.push({
-      history_type: { in: ['SALE'] },
-      stats: {
-        path: ['type'],
-        string_contains: '_MERCENARY',
-      },
-    });
-  }
-
-  if (daily === 'true') {
-    transactionConditions.push({
-      history_type: 'DAILY_RECRUIT',
-      to_user_id: session.user.id,
-    });
-  }
-
-  if (friend_transfers === 'true') {
-    transactionConditions.push({
-      history_type: { in: ['FRIEND_TRANSFER', 'FRIEND_REQUEST'] },
-      OR: [{ from_user_id: session.user.id }, { to_user_id: session.user.id }],
-    });
-  }
-
-  if (transactionConditions.length > 0) {
-    conditions.push({
-      OR: transactionConditions,
-    });
-  }
-
-  conditions.push({
-    OR: [{ from_user_id: session.user.id }, { to_user_id: session.user.id }],
-  });
-
-  // console.log('conditions: ', JSON.stringify(conditions));
   try {
-    const era = await ensureActiveEra();
-    conditions.push({
-      date_time: { gte: era.startDate },
-    });
-
-    const { rows, total } = await getBankHistory(
-      conditions,
-      Number(limit),
-      Math.max(0, Number(page)) * Number(limit),
+    // The zod schema defaults page/limit, so the fallbacks never fire; they
+    // only satisfy the (optional-typed) inferred schema output.
+    const { page, limit, ...filterFlags } = validatedQuery.data;
+    const currentPage = page ?? 0;
+    const pageSize = limit ?? 10;
+    // getBankHistoryForUser takes the raw skip offset (see Bank.service);
+    // master's v0.4.1 fix paginates by page * limit.
+    const skip = Math.max(0, currentPage) * pageSize;
+    const { rows, total } = await getBankHistoryForUser(
+      Number(session.user.id),
+      { ...filterFlags, page: skip, limit: pageSize },
     );
     // We can calculate totalPages if desired, as:
-    const totalPages = Math.ceil(total / Number(limit));
+    const totalPages = Math.ceil(total / pageSize);
 
     return res.status(200).json({
       rows: stringifyObj(rows),
       total,
       totalPages,
-      currentPage: Number(page),
-      limit: Number(limit),
+      currentPage,
+      limit: pageSize,
     });
   } catch (error) {
     return res.status(400).json({ error: publicErrorMessage(error) });

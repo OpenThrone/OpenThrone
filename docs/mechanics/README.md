@@ -45,6 +45,8 @@ Each doc states when it was last checked against the code, and at which commit. 
 | [Bots](bots.md) | Bot players |
 | [Balance simulation](balance-simulation.md) | `src/sim`, personas and balance gates |
 | [Runtime settings](runtime-settings.md) | The settings registry and how to add a setting |
+| [Site analytics](../features/site-analytics.md) | Consent-gated Google Analytics and the traffic admin page |
+| [Decision models](../features/decision-models.md) | Provider layer and shadow-mode chat moderation |
 
 ## Writing a mechanics doc
 

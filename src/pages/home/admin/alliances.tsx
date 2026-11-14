@@ -8,7 +8,6 @@ import {
   Table,
   TextInput,
 } from '@mantine/core';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -17,8 +16,10 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import { AllianceDetailDrawer } from '@/components/admin/AllianceDetailDrawer';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
+import { getAllianceLevel } from '@/constants/allianceLevels';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const AllianceAdminPage = () => {
   const { t } = useTranslation('admin-game');
@@ -133,6 +134,7 @@ const AllianceAdminPage = () => {
                     <Table.Th>Name</Table.Th>
                     <Table.Th>{t('leader')}</Table.Th>
                     <Table.Th>{t('members')}</Table.Th>
+                    <Table.Th>{tAlliance('colHallLevel')}</Table.Th>
                     <Table.Th>{tAlliance('colStatus')}</Table.Th>
                     <Table.Th>{t('created')}</Table.Th>
                     <Table.Th>{t('actions')}</Table.Th>
@@ -146,7 +148,17 @@ const AllianceAdminPage = () => {
                       <Table.Td>
                         {a.leader?.display_name || '—'} (ID: {a.leader_id})
                       </Table.Td>
-                      <Table.Td>{a._count?.members ?? '—'}</Table.Td>
+                      <Table.Td>
+                        {a._count?.members ?? '—'} /{' '}
+                        {getAllianceLevel(a.hall_level).maxMembers}
+                      </Table.Td>
+                      <Table.Td>
+                        {getAllianceLevel(a.hall_level).level} (
+                        {tAlliance(
+                          `hallLevels.${getAllianceLevel(a.hall_level).level}`,
+                        )}
+                        )
+                      </Table.Td>
                       <Table.Td>
                         {a.status === 'RESERVED'
                           ? tAlliance('statusReserved')
@@ -226,6 +238,7 @@ export const getServerSideProps = async (context: any) => {
         'navigation',
         'admin-game',
         'admin-alliances',
+        'alliances',
       ])),
     },
   };

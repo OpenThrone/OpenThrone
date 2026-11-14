@@ -177,63 +177,100 @@ export class CheatDetectionService {
       where: {
         occurredAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
       },
-      select: { userId: true, ipHash: true, deviceHash: true },
+      select: {
+        userId: true,
+        ipHash: true,
+        ipPrefixHash: true,
+        deviceHash: true,
+        kind: true,
+        occurredAt: true,
+      },
       take: 5000,
       orderBy: { occurredAt: 'desc' },
     });
 
-    const ipToUsers = new Map<string, Set<number>>();
-    const deviceToUsers = new Map<string, Set<number>>();
+    type Group = {
+      users: Set<number>;
+      kinds: Set<string>;
+      first: Date;
+      last: Date;
+    };
+    const groups = new Map<'ip' | 'device' | 'range', Map<string, Group>>();
     const addUser = (
-      map: Map<string, Set<number>>,
+      via: 'ip' | 'device' | 'range',
       key: string,
-      userId: number,
+      login: { userId: number; kind: string; occurredAt: Date },
     ) => {
-      const users = map.get(key) ?? new Set<number>();
-      users.add(userId);
-      map.set(key, users);
+      let byKey = groups.get(via);
+      if (!byKey) {
+        byKey = new Map();
+        groups.set(via, byKey);
+      }
+      let group = byKey.get(key);
+      if (!group) {
+        group = {
+          users: new Set(),
+          kinds: new Set(),
+          first: login.occurredAt,
+          last: login.occurredAt,
+        };
+        byKey.set(key, group);
+      }
+      group.users.add(login.userId);
+      group.kinds.add(login.kind);
+      if (login.occurredAt < group.first) group.first = login.occurredAt;
+      if (login.occurredAt > group.last) group.last = login.occurredAt;
     };
 
     // Our own proxy's address is everyone's address, not a shared network.
     const proxyHashes = proxyLoginIpHashes();
     for (const login of recentLogins) {
-      if (login.ipHash && proxyHashes.has(login.ipHash)) continue;
+      const isProxy = !!login.ipHash && proxyHashes.has(login.ipHash);
+      if (isProxy) continue;
       if (login.ipHash) {
-        addUser(ipToUsers, login.ipHash, login.userId);
+        addUser('ip', login.ipHash, login);
       }
       if (login.deviceHash) {
-        addUser(deviceToUsers, login.deviceHash, login.userId);
+        addUser('device', login.deviceHash, login);
+      }
+      // Null for proxy-resolved addresses, so a range never forms from them.
+      if (login.ipPrefixHash) {
+        addUser('range', login.ipPrefixHash, login);
       }
     }
 
+    // Staff see pairs: two accounts on one network is worth context even
+    // though it takes `abuse.network.minAccounts` to raise a signal.
+    const MIN_STAFF_GROUP = 2;
+    const TYPE_BY_VIA = {
+      ip: 'IP',
+      device: 'NETWORK_BROWSER',
+      range: 'IP_RANGE',
+    } as const;
     const clusters: Array<{
-      type: 'IP' | 'NETWORK_BROWSER';
+      type: 'IP' | 'NETWORK_BROWSER' | 'IP_RANGE';
       hash: string;
       userIds: number[];
       userNames: Record<number, string>;
+      kinds: string[];
+      firstSeen: Date;
+      lastSeen: Date;
     }> = [];
-
-    for (const [ip, users] of ipToUsers) {
-      if (users.size >= 3) {
+    for (const [via, byKey] of groups) {
+      for (const [hash, group] of byKey) {
+        if (group.users.size < MIN_STAFF_GROUP) continue;
         clusters.push({
-          type: 'IP',
-          hash: ip,
-          userIds: Array.from(users),
+          type: TYPE_BY_VIA[via],
+          hash,
+          userIds: Array.from(group.users).sort((a, b) => a - b),
           userNames: {},
+          kinds: Array.from(group.kinds).sort(),
+          firstSeen: group.first,
+          lastSeen: group.last,
         });
       }
     }
-
-    for (const [device, users] of deviceToUsers) {
-      if (users.size >= 3) {
-        clusters.push({
-          type: 'NETWORK_BROWSER',
-          hash: device,
-          userIds: Array.from(users),
-          userNames: {},
-        });
-      }
-    }
+    clusters.sort((a, b) => b.userIds.length - a.userIds.length);
 
     const allUserIds = new Set(clusters.flatMap((c) => c.userIds));
     const nameMap: Record<number, string> = {};

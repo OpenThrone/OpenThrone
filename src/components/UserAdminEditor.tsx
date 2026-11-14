@@ -36,6 +36,7 @@ import UserOperations, {
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { EconomyUpgrades, Fortifications, HouseUpgrades } from '@/constants';
+import { ALLIANCE_DUES_ARREARS_MAX } from '@/constants/allianceDues';
 import { useUser } from '@/context/users';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import type { StaffRole } from '@/lib/prisma-exports';
@@ -124,7 +125,16 @@ interface UserRecord {
   currentEraId: number | null;
   eraJoinedAt: string | null;
   protectionForfeitedEraId: number | null;
-  alliances: { allianceId: number; name: string; role: string | null }[];
+  alliances: {
+    allianceId: number;
+    name: string;
+    role: string | null;
+    /** Leaders pay no dues; their arrears are not editable. */
+    isLeader?: boolean;
+    /** Unpaid alliance dues in whole gold (allianceDues.ts). */
+    duesArrears?: string;
+    duesPaidThrough?: string | null;
+  }[];
   statusHistory: {
     id: number;
     status: string;
@@ -227,6 +237,22 @@ export function buildUserPatch(loaded: UserData, edited: UserData) {
   };
   const units = changedRows(loaded.army.units, edited.army.units);
   const items = changedRows(loaded.items.items, edited.items.items);
+  // Dues arrears per alliance membership; the loaded value guards each edit.
+  const duesEdits = edited.record.alliances.flatMap((membership) => {
+    const before = loaded.record.alliances.find(
+      (m) => m.allianceId === membership.allianceId,
+    );
+    const after = membership.duesArrears ?? '0';
+    if (!before || (before.duesArrears ?? '0') === after || after === '')
+      return [];
+    return [
+      {
+        allianceId: membership.allianceId,
+        duesArrears: after,
+        before: before.duesArrears ?? '0',
+      },
+    ];
+  });
   const sameSet = (a: string[], b: string[]) =>
     a.length === b.length && a.every((value) => b.includes(value));
   const permissionsChanged = !sameSet(
@@ -242,6 +268,7 @@ export function buildUserPatch(loaded: UserData, edited: UserData) {
     Object.keys(fields).length === 0 &&
     units.rows.length === 0 &&
     items.rows.length === 0 &&
+    duesEdits.length === 0 &&
     !permissionsChanged &&
     !rolesChanged
   )
@@ -253,6 +280,16 @@ export function buildUserPatch(loaded: UserData, edited: UserData) {
     ...(Object.keys(gameplay).length > 0 ? { gameplay } : {}),
     army: { units: units.rows },
     items: { items: items.rows },
+    ...(duesEdits.length > 0
+      ? {
+          alliances: {
+            memberships: duesEdits.map(({ allianceId, duesArrears }) => ({
+              allianceId,
+              duesArrears,
+            })),
+          },
+        }
+      : {}),
     ...(permissionsChanged ? { permissions: edited.permissions } : {}),
     ...(rolesChanged ? { staffRoles: edited.staffRoles } : {}),
     expected: {
@@ -260,6 +297,16 @@ export function buildUserPatch(loaded: UserData, edited: UserData) {
       fields,
       units: units.expected,
       items: items.expected,
+      ...(duesEdits.length > 0
+        ? {
+            duesArrears: Object.fromEntries(
+              duesEdits.map(({ allianceId, before }) => [
+                String(allianceId),
+                before,
+              ]),
+            ),
+          }
+        : {}),
       ...(permissionsChanged
         ? { permissions: loaded.permissions.permissions }
         : {}),
@@ -294,7 +341,7 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
   onSaved,
   isAdministrator,
 }) => {
-  const { t } = useTranslation('admin-users');
+  const { t, i18n } = useTranslation('admin-users');
   const { user: viewer } = useUser();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -486,6 +533,21 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
   const updateMoney = (field: 'gold' | 'goldInBank', value: string) => {
     if (!userData || !/^\d*$/.test(value)) return;
     setUserData({ ...userData, stats: { ...userData.stats, [field]: value } });
+  };
+
+  const updateDuesArrears = (allianceId: number, value: string) => {
+    if (!userData || !/^\d*$/.test(value)) return;
+    setUserData({
+      ...userData,
+      record: {
+        ...userData.record,
+        alliances: userData.record.alliances.map((membership) =>
+          membership.allianceId === allianceId
+            ? { ...membership, duesArrears: value }
+            : membership,
+        ),
+      },
+    });
   };
 
   const updateGameplay = <K extends keyof UserGameplay>(
@@ -786,14 +848,64 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
                     {t('states.noAlliances', { defaultValue: 'No alliance' })}
                   </Text>
                 ) : (
-                  <Group gap="xs" mt="xs">
-                    {rec.alliances.map((alliance) => (
-                      <Badge key={alliance.allianceId} variant="light">
-                        {alliance.name}
-                        {alliance.role ? ` · ${alliance.role}` : ''}
-                      </Badge>
-                    ))}
-                  </Group>
+                  <Stack gap="xs" mt="xs">
+                    {rec.alliances.map((alliance) => {
+                      const tooLarge =
+                        /^\d+$/.test(alliance.duesArrears ?? '0') &&
+                        BigInt(alliance.duesArrears ?? '0') >
+                          ALLIANCE_DUES_ARREARS_MAX;
+                      return (
+                        <Group
+                          key={alliance.allianceId}
+                          align="end"
+                          gap="sm"
+                          wrap="wrap"
+                        >
+                          <Badge variant="light">
+                            {alliance.name}
+                            {alliance.role ? ` · ${alliance.role}` : ''}
+                          </Badge>
+                          {alliance.isLeader ? (
+                            <Text size="xs" c="dimmed">
+                              {t('fields.duesLeaderExempt', {
+                                defaultValue: 'Leader: pays no dues',
+                              })}
+                            </Text>
+                          ) : (
+                            <TextInput
+                              size="xs"
+                              label={t('fields.duesArrears', {
+                                defaultValue: 'Dues arrears (gold)',
+                              })}
+                              description={t('fields.duesArrearsHelp', {
+                                defaultValue:
+                                  'Unpaid dues, collected before new dues. 0 clears them.',
+                              })}
+                              inputMode="numeric"
+                              value={alliance.duesArrears ?? '0'}
+                              readOnly={isReadOnly}
+                              error={
+                                tooLarge
+                                  ? t('fields.duesArrearsMax', {
+                                      defaultValue: 'At most {{max}} gold',
+                                      max: ALLIANCE_DUES_ARREARS_MAX.toLocaleString(
+                                        i18n.language,
+                                      ),
+                                    })
+                                  : undefined
+                              }
+                              onChange={(event) =>
+                                updateDuesArrears(
+                                  alliance.allianceId,
+                                  event.currentTarget.value,
+                                )
+                              }
+                            />
+                          )}
+                        </Group>
+                      );
+                    })}
+                  </Stack>
                 )}
                 <Title order={5} mt="md">
                   {t('sections.statusHistory', {

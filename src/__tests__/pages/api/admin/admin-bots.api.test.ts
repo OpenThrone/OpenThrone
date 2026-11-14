@@ -85,7 +85,7 @@ describe('admin bot operation registry validation', () => {
     expect(provisionBotsFromManifest).not.toHaveBeenCalled();
   });
 
-  it('rejects a schedule that is not in the on-disk registry', async () => {
+  it('rejects a schedule that is not in the bundled registry', async () => {
     const response = makeResponse();
     await runNowHandler(
       {

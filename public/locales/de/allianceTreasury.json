@@ -78,7 +78,7 @@
       "CANCELLED": "Zurückgezogen"
     },
     "overCap": "Kredite sind auf {{cap}} Gold begrenzt.",
-    "reserved": "Rückzahlungen ruhen, solange diese Allianz reserviert ist. Dein Kredit läuft weiter, sobald sie reaktiviert wird."
+    "reserved": "Rückzahlungen ruhen, solange diese Allianz reserviert ist. Ihr Kredit läuft weiter, sobald sie reaktiviert wird."
   },
   "settings": {
     "title": "Regeln der Schatzkammer",
@@ -89,5 +89,10 @@
     "dailyCapHint": "100.000 bis 50.000.000 Gold",
     "save": "Regeln speichern",
     "saved": "Regeln der Schatzkammer aktualisiert."
-  }
+  },
+  "depositOverRoom": "Die Schatzkammer kann höchstens noch {{room}} Gold aufnehmen",
+  "depositSlots": "{{level}}: {{left}} von {{limit}} Einzahlungen in den letzten 24 Stunden übrig",
+  "depositNextSlot": "Ihre nächste Einzahlung ist ab {{time}} möglich.",
+  "depositRoom": "Platz in der Schatzkammer: {{room}} Gold (Obergrenze {{cap}})",
+  "depositRaiseLimits": "Diese Grenzen unter Ausbau erhöhen"
 }

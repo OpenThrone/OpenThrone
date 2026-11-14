@@ -1,6 +1,5 @@
 import type { NextApiResponse } from 'next';
 
-import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -31,10 +30,9 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       action,
     });
 
-    const io = getSocketIO();
-    await emitSocialCountUpdate(io, userId);
+    await emitSocialCountUpdate(userId);
     if (request?.playerId) {
-      await emitSocialCountUpdate(io, request.playerId);
+      await emitSocialCountUpdate(request.playerId);
     }
 
     return res.status(200).json(result);

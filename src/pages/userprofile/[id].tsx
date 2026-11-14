@@ -1,4 +1,5 @@
 import {
+  Alert,
   Badge,
   Button,
   Group,
@@ -30,17 +31,20 @@ import { ProfileHero } from '@/components/profile/ProfileHero';
 import type { ProfileStat } from '@/components/profile/ProfileStatTiles';
 import { ProfileStatTiles } from '@/components/profile/ProfileStatTiles';
 import actionClasses from '@/components/ProfileActions.module.css';
+import { ReportPlayerModal } from '@/components/ReportPlayerModal';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import SpyMissionsModal from '@/components/spyMissionsModal';
 import { Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { useRecruitmentStatus } from '@/hooks/useRecruitmentStatus';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
+import { useSupporterStatus } from '@/hooks/useSupporterStatus';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { alertService } from '@/services/Alert.service';
 import { AllianceService } from '@/services/Alliance.service';
+import type { Locales } from '@/types/typings';
 import {
   hasParticipatedInEra,
   tookPartInArchivedEra,
@@ -73,6 +77,7 @@ const Index = ({
   const { config, error: configError } = useRuntimeConfig();
   const { t, i18n } = useTranslation('common');
   const { t: tAlliances } = useTranslation('alliances');
+  const { t: tSupporter } = useTranslation('supporter');
   const hideSidebar = !user;
   const userStatus = users.status;
 
@@ -88,6 +93,10 @@ const Index = ({
     profile.id,
     profile.displayName,
   );
+  const { data: supporterStatus } = useSupporterStatus(!!user && !isOwnProfile);
+  const sharedAlliances = visibleAlliances.filter(
+    (alliance) => alliance.sharedWithViewer && alliance.status !== 'RESERVED',
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const [lastActive, setLastActive] = useState<string | null>(null);
@@ -102,6 +111,7 @@ const Index = ({
   } | null>(null);
   const [isFriendLoading, setIsFriendLoading] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [enemyRelationship, setEnemyRelationship] = useState(null);
   const [isEnemyLoading, setIsEnemyLoading] = useState(false);
@@ -244,13 +254,17 @@ const Index = ({
 
       if (!isNaN(lastActiveTimestamp)) {
         setIsOnline((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
-        setLastActive(lastActiveDate.toDateString());
+        setLastActive(
+          lastActiveDate.toLocaleDateString(i18n.language, {
+            dateStyle: 'medium',
+          }),
+        );
       } else {
         setIsOnline(false);
         setLastActive(null);
       }
     }
-  }, [profile, users, user]);
+  }, [profile, users, user, i18n.language]);
 
   if (!profile) return <p>{t('profileSummary.notFound')}</p>;
 
@@ -526,13 +540,19 @@ const Index = ({
     {
       key: 'population',
       label: t('profileSummary.population', { defaultValue: 'Population' }),
-      value: toLocale(users?.populationTotal ?? profile?.population ?? 0),
+      value: toLocale(
+        users?.populationTotal ?? profile?.population ?? 0,
+        i18n.language as Locales,
+      ),
       icon: 'double-team',
     },
     {
       key: 'armySize',
       label: t('profileSummary.armySize', { defaultValue: 'Army Size' }),
-      value: toLocale(users?.armySizeTotal ?? profile?.armySize ?? 0),
+      value: toLocale(
+        users?.armySizeTotal ?? profile?.armySize ?? 0,
+        i18n.language as Locales,
+      ),
       icon: 'crossed-swords',
     },
     {
@@ -552,7 +572,7 @@ const Index = ({
           {
             key: 'gold',
             label: t('profileSummary.gold', { defaultValue: 'Gold' }),
-            value: toLocale(profile?.gold),
+            value: toLocale(profile?.gold, i18n.language as Locales),
             icon: 'gold-bar',
           },
         ]),
@@ -563,7 +583,10 @@ const Index = ({
     ? ERA_RECORD_FIELDS.map(({ key, label, icon }) => ({
         key,
         label: t(`profileSummary.${key}`, { defaultValue: label }),
-        value: toLocale(users.latestUserEra.achievements?.[key] ?? 0),
+        value: toLocale(
+          users.latestUserEra.achievements?.[key] ?? 0,
+          i18n.language as Locales,
+        ),
         icon,
       }))
     : [];
@@ -682,6 +705,24 @@ const Index = ({
             </div>
           ) : (
             <div className={actionClasses.list}>
+              {sharedAlliances.length > 0 && (
+                <Alert
+                  color="yellow"
+                  variant="light"
+                  role="status"
+                  icon={<RpgAwesomeIcon icon="double-team" />}
+                  title={tAlliances('profile.sharedTitle', {
+                    defaultValue: 'Same alliance',
+                  })}
+                >
+                  {tAlliances('profile.sharedBody', {
+                    defaultValue:
+                      'You and {{name}} are both in {{alliances}}. You can still attack them, but it is an infighting battle.',
+                    name: profile?.displayName,
+                    alliances: sharedAlliances.map((a) => a.name).join(', '),
+                  })}
+                </Alert>
+              )}
               <Button
                 component={Link}
                 href={{
@@ -716,19 +757,6 @@ const Index = ({
               >
                 {t('profileActions.attack')}
               </Button>
-              {!isOwnProfile && user?.id && (
-                <Button
-                  component={Link}
-                  href={`/report?userId=${profile?.id}&username=${encodeURIComponent(profile?.display_name ?? '')}`}
-                  classNames={actionClassNames}
-                  variant="subtle"
-                  leftSection={<RpgAwesomeIcon icon="trumpet-flag" />}
-                >
-                  {t('profileActions.report', {
-                    defaultValue: 'Report player',
-                  })}
-                </Button>
-              )}
               {!isOwnProfile && user?.id && (
                 <AllianceListBadge targetUserId={profile.id} />
               )}
@@ -798,6 +826,36 @@ const Index = ({
                 >
                   {t('profileActions.recruit')}
                 </Button>
+              )}
+              {supporterStatus?.isActive && (
+                <Button
+                  component={Link}
+                  href="/auto-recruit"
+                  classNames={actionClassNames}
+                  leftSection={<RpgAwesomeIcon icon="double-team" />}
+                >
+                  {tSupporter('openAutoRecruit')}
+                </Button>
+              )}
+              {user?.id && (
+                <Button
+                  type="button"
+                  onClick={() => setIsReportModalOpen(true)}
+                  classNames={actionClassNames}
+                  leftSection={<RpgAwesomeIcon icon="trumpet-flag" />}
+                >
+                  {t('profileActions.report', {
+                    defaultValue: 'Report Player',
+                  })}
+                </Button>
+              )}
+              {user?.id && (
+                <ReportPlayerModal
+                  opened={isReportModalOpen}
+                  onClose={() => setIsReportModalOpen(false)}
+                  userId={profile.id}
+                  username={profile.displayName}
+                />
               )}
               {socialEnabled && (
                 <>

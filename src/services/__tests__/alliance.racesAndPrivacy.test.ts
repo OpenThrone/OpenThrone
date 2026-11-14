@@ -374,6 +374,10 @@ describe('acceptJoinRequest re-checks inside a locked transaction (ALL-04)', () 
         create: vi.fn(async () => ({})),
       },
       alliance_roles: { findFirst: vi.fn(async () => ({ id: 1 })) },
+      // The join fee is read on the locked alliance row; none here.
+      alliances: {
+        findUnique: vi.fn(async () => ({ join_fee: 0n, dues_period: 'NONE' })),
+      },
     };
     installSerializedTransactions(tx);
   });

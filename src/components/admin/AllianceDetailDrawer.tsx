@@ -5,6 +5,7 @@ import {
   Drawer,
   Group,
   Loader,
+  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -19,15 +20,30 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import {
-  type AllianceAdminAction,
+  type AllianceAdminActionInput,
   canForceEndWar,
   loanAdminAction,
   loanRemaining,
 } from '@/components/admin/allianceAdminActions';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import {
+  ALLIANCE_DUES_MAX,
+  ALLIANCE_DUES_PERIODS,
+  ALLIANCE_JOIN_FEE_MAX,
+  type AllianceDuesPeriod,
+  isAllianceDuesPeriod,
+  validateAllianceDuesSettingsDetailed,
+} from '@/constants/allianceDues';
+import { ALLIANCE_LEVELS, getAllianceLevel } from '@/constants/allianceLevels';
 import { alertService } from '@/services/Alert.service';
+import { allianceErrorText } from '@/utils/allianceErrorMessage';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
+import {
+  wholeGoldInput,
+  wholeGoldSeparators,
+  wholeGoldValue,
+} from '@/utils/wholeGoldInput';
 
 type UserRef = { id: number; display_name: string } | null;
 type Row = Record<string, any>;
@@ -53,7 +69,7 @@ interface AllianceDetail {
 }
 
 interface PendingAction {
-  input: AllianceAdminAction;
+  input: AllianceAdminActionInput;
   title: string;
   message: string;
   destructive: boolean;
@@ -65,10 +81,11 @@ const who = (user: UserRef | undefined, fallbackId?: number | null) =>
     : fallbackId
       ? `#${fallbackId}`
       : '—';
-const when = (value?: string | null) =>
-  value ? new Date(value).toLocaleString() : '—';
-const gold = (value?: string | number | null) =>
-  value == null ? '—' : toBigIntSafe(value).toLocaleString();
+// Dates and gold in the admin page's language, like the inputs above them.
+const when = (value?: string | null, locale?: string) =>
+  value ? new Date(value).toLocaleString(locale) : '—';
+const gold = (value?: string | number | null, locale?: string) =>
+  value == null ? '—' : toBigIntSafe(value).toLocaleString(locale);
 
 const SimpleTable = ({
   label,
@@ -117,7 +134,7 @@ export const AllianceDetailDrawer = ({
   /** Called after a successful action so the list can refresh. */
   onChanged: () => void;
 }) => {
-  const { t } = useTranslation('admin-alliances');
+  const { t, i18n } = useTranslation('admin-alliances');
   const [detail, setDetail] = useState<AllianceDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -125,6 +142,12 @@ export const AllianceDetailDrawer = ({
   const [submitting, setSubmitting] = useState(false);
   const [newName, setNewName] = useState('');
   const [newLeader, setNewLeader] = useState<string | null>(null);
+  const [hallLevel, setHallLevel] = useState<string | null>(null);
+  const [dues, setDues] = useState<{
+    joinFee: number | '';
+    duesAmount: number | '';
+    duesPeriod: AllianceDuesPeriod;
+  } | null>(null);
 
   const load = useCallback(async () => {
     if (allianceId === null) return;
@@ -137,6 +160,8 @@ export const AllianceDetailDrawer = ({
       setDetail(data);
       setNewName(data.alliance.name);
       setNewLeader(null);
+      setHallLevel(null);
+      setDues(null);
     } catch (err) {
       logError('Failed to load alliance detail:', err);
       setLoadError(true);
@@ -183,7 +208,7 @@ export const AllianceDetailDrawer = ({
   };
 
   const ask = (
-    input: AllianceAdminAction,
+    input: AllianceAdminActionInput,
     title: string,
     message: string,
     destructive = true,
@@ -192,6 +217,36 @@ export const AllianceDetailDrawer = ({
   const a = detail?.alliance;
   const leaderId = a?.leader_id;
   const none = t('none');
+  // Loaded fee and dues; `dues` holds the admin's unsaved edit.
+  const storedDues = {
+    joinFee: Number(toBigIntSafe(a?.join_fee ?? 0)),
+    duesAmount: Number(toBigIntSafe(a?.dues_amount ?? 0)),
+    duesPeriod: isAllianceDuesPeriod(a?.dues_period)
+      ? a.dues_period
+      : ('NONE' as AllianceDuesPeriod),
+  };
+  // `editedDues` is what the inputs show (a cleared field stays empty);
+  // `duesInput` is what it means, an empty field counting as 0.
+  const editedDues = dues ?? storedDues;
+  const duesInput = {
+    joinFee: wholeGoldValue(editedDues.joinFee),
+    duesAmount: wholeGoldValue(editedDues.duesAmount),
+    duesPeriod: editedDues.duesPeriod,
+  };
+  const duesRefusalDetail = validateAllianceDuesSettingsDetailed({
+    joinFee: BigInt(duesInput.joinFee),
+    duesAmount: BigInt(duesInput.duesAmount),
+    duesPeriod: duesInput.duesPeriod,
+  });
+  const duesRefusal = duesRefusalDetail
+    ? allianceErrorText(duesRefusalDetail)
+    : null;
+  const duesChanged =
+    duesInput.joinFee !== storedDues.joinFee ||
+    duesInput.duesAmount !== storedDues.duesAmount ||
+    duesInput.duesPeriod !== storedDues.duesPeriod;
+  const setDuesField = (patch: Partial<NonNullable<typeof dues>>) =>
+    setDues({ ...editedDues, ...patch });
 
   return (
     <Drawer
@@ -334,6 +389,143 @@ export const AllianceDetailDrawer = ({
                   {a.status === 'RESERVED' ? t('reactivate') : t('reserve')}
                 </Button>
               </Group>
+              <Group align="end" gap="xs" wrap="nowrap">
+                <Select
+                  label={t('hallLevelLabel')}
+                  description={t('hallLevelHint', {
+                    members: detail.members.length,
+                    cap: getAllianceLevel(a.hall_level).maxMembers,
+                  })}
+                  data={ALLIANCE_LEVELS.map((level) => ({
+                    value: String(level.level),
+                    label: `${level.level} · ${t(`hallLevels.${level.level}`)}`,
+                  }))}
+                  value={
+                    hallLevel ?? String(getAllianceLevel(a.hall_level).level)
+                  }
+                  onChange={setHallLevel}
+                  allowDeselect={false}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  disabled={
+                    hallLevel === null ||
+                    Number(hallLevel) === getAllianceLevel(a.hall_level).level
+                  }
+                  onClick={() =>
+                    hallLevel !== null &&
+                    ask(
+                      {
+                        action: 'set_hall_level',
+                        level: Number(hallLevel),
+                        fromLevel: getAllianceLevel(a.hall_level).level,
+                      },
+                      t('hallLevelLabel'),
+                      t('hallLevelConfirm', {
+                        name: a.name,
+                        from: getAllianceLevel(a.hall_level).level,
+                        to: hallLevel,
+                      }),
+                      false,
+                    )
+                  }
+                >
+                  {t('hallLevelSet')}
+                </Button>
+              </Group>
+              <Stack gap="xs">
+                <Text fw={700}>{t('duesHeading')}</Text>
+                <SimpleGrid cols={{ base: 1, sm: 3 }}>
+                  <NumberInput
+                    label={t('duesJoinFee')}
+                    description={t('duesMax', {
+                      max: ALLIANCE_JOIN_FEE_MAX.toLocaleString(i18n.language),
+                    })}
+                    min={0}
+                    max={Number(ALLIANCE_JOIN_FEE_MAX)}
+                    allowDecimal={false}
+                    allowNegative={false}
+                    {...wholeGoldSeparators(i18n.language)}
+                    value={editedDues.joinFee}
+                    onChange={(v) =>
+                      setDuesField({ joinFee: wholeGoldInput(v) })
+                    }
+                  />
+                  <Select
+                    label={t('duesPeriod')}
+                    data={ALLIANCE_DUES_PERIODS.map((period) => ({
+                      value: period,
+                      label: t(`duesPeriods.${period}`),
+                    }))}
+                    value={editedDues.duesPeriod}
+                    onChange={(v) =>
+                      isAllianceDuesPeriod(v) &&
+                      setDuesField({
+                        duesPeriod: v,
+                        ...(v === 'NONE' ? { duesAmount: 0 } : {}),
+                      })
+                    }
+                    allowDeselect={false}
+                  />
+                  <NumberInput
+                    label={t('duesAmount')}
+                    description={
+                      editedDues.duesPeriod === 'NONE'
+                        ? t('duesAmountNone')
+                        : t('duesMax', {
+                            max: ALLIANCE_DUES_MAX[
+                              editedDues.duesPeriod
+                            ].toLocaleString(i18n.language),
+                          })
+                    }
+                    min={0}
+                    max={
+                      editedDues.duesPeriod === 'NONE'
+                        ? 0
+                        : Number(ALLIANCE_DUES_MAX[editedDues.duesPeriod])
+                    }
+                    disabled={editedDues.duesPeriod === 'NONE'}
+                    allowDecimal={false}
+                    allowNegative={false}
+                    {...wholeGoldSeparators(i18n.language)}
+                    value={editedDues.duesAmount}
+                    onChange={(v) =>
+                      setDuesField({ duesAmount: wholeGoldInput(v) })
+                    }
+                  />
+                </SimpleGrid>
+                {duesChanged && duesRefusal && (
+                  <Text size="sm" c="red" role="alert">
+                    {duesRefusal}
+                  </Text>
+                )}
+                <Group>
+                  <Button
+                    disabled={!duesChanged || !!duesRefusal}
+                    onClick={() =>
+                      ask(
+                        {
+                          action: 'set_dues',
+                          ...duesInput,
+                          expected: storedDues,
+                        },
+                        t('duesHeading'),
+                        t('duesConfirm', {
+                          name: a.name,
+                          fee: duesInput.joinFee.toLocaleString(i18n.language),
+                          amount: duesInput.duesAmount.toLocaleString(
+                            i18n.language,
+                          ),
+                          period: t(`duesPeriods.${editedDues.duesPeriod}`),
+                        }),
+                        false,
+                      )
+                    }
+                  >
+                    {t('duesSave')}
+                  </Button>
+                </Group>
+              </Stack>
               <SimpleTable
                 label={t('membersHeading')}
                 emptyText={none}
@@ -341,6 +533,7 @@ export const AllianceDetailDrawer = ({
                   t('colMember'),
                   t('colRank'),
                   t('colJoined'),
+                  t('colDuesArrears'),
                   t('colActions'),
                 ]}
                 rows={detail.members.map((m) => {
@@ -356,7 +549,10 @@ export const AllianceDetailDrawer = ({
                       )}
                     </>,
                     m.role?.name ?? '—',
-                    when(m.created_at),
+                    when(m.created_at, i18n.language),
+                    m.user_id === leaderId
+                      ? '—'
+                      : gold(m.dues_arrears ?? 0, i18n.language),
                     m.user_id === leaderId ? (
                       '—'
                     ) : (
@@ -411,7 +607,7 @@ export const AllianceDetailDrawer = ({
                 rows={detail.cooldowns.map((c) => [
                   who(c.user, c.user_id),
                   c.type,
-                  when(c.expires_at),
+                  when(c.expires_at, i18n.language),
                   <Button
                     key="clear"
                     size="xs"
@@ -444,7 +640,9 @@ export const AllianceDetailDrawer = ({
           <Tabs.Panel value="treasury">
             <Stack gap="md">
               <Text size="lg" fw={700}>
-                {t('balance', { amount: gold(detail.treasury.balance) })}
+                {t('balance', {
+                  amount: gold(detail.treasury.balance, i18n.language),
+                })}
               </Text>
               <Text fw={700}>{t('loansHeading')}</Text>
               <SimpleTable
@@ -461,15 +659,18 @@ export const AllianceDetailDrawer = ({
                 ]}
                 rows={detail.treasury.loans.map((l) => {
                   const action = loanAdminAction(l.status);
-                  const outstanding = gold(loanRemaining(l).toString());
+                  const outstanding = gold(
+                    loanRemaining(l).toString(),
+                    i18n.language,
+                  );
                   const forgive = action === 'forgive_loan';
                   return [
                     l.id,
                     who(l.borrower, l.borrower_id),
                     l.status,
-                    gold(l.principal),
+                    gold(l.principal, i18n.language),
                     outstanding,
-                    when(l.due_at),
+                    when(l.due_at, i18n.language),
                     action ? (
                       <Button
                         size="xs"
@@ -508,10 +709,10 @@ export const AllianceDetailDrawer = ({
                 rows={detail.treasury.goldRequests.map((g) => [
                   g.id,
                   who(g.requester, g.requester_id),
-                  gold(g.amount),
+                  gold(g.amount, i18n.language),
                   g.status,
                   who(g.decider, g.decided_by),
-                  when(g.created_at),
+                  when(g.created_at, i18n.language),
                 ])}
               />
               <Text fw={700}>{t('feesHeading')}</Text>
@@ -521,8 +722,8 @@ export const AllianceDetailDrawer = ({
                 head={[t('colFrequency'), t('colAmount'), t('colNextRun')]}
                 rows={detail.treasury.fees.map((f) => [
                   f.frequency,
-                  gold(f.amount),
-                  when(f.next_run_at),
+                  gold(f.amount, i18n.language),
+                  when(f.next_run_at, i18n.language),
                 ])}
               />
               <Text fw={700}>{t('historyHeading')}</Text>
@@ -538,9 +739,9 @@ export const AllianceDetailDrawer = ({
                   t('colNotes'),
                 ]}
                 rows={detail.treasury.bankHistory.map((h) => [
-                  when(h.created_at),
+                  when(h.created_at, i18n.language),
                   h.transaction_type,
-                  gold(h.amount),
+                  gold(h.amount, i18n.language),
                   who(h.performed_by_user, h.performed_by_user_id),
                   who(h.related_user, h.related_user_id),
                   h.notes ?? '—',
@@ -573,7 +774,7 @@ export const AllianceDetailDrawer = ({
                       .map((tg: Row) => who(tg.target_user, tg.target_user_id))
                       .join(', ')
                   : '—',
-                when(w.start_at),
+                when(w.start_at, i18n.language),
                 canForceEndWar(w.status) ? (
                   <Button
                     size="xs"
@@ -611,7 +812,7 @@ export const AllianceDetailDrawer = ({
                   r.alliance?.name,
                   r.other_alliance?.name,
                   r.status,
-                  when(r.accepted_at ?? r.created_at),
+                  when(r.accepted_at ?? r.created_at, i18n.language),
                 ])}
               />
               <Text fw={700}>{t('callsHeading')}</Text>
@@ -628,7 +829,7 @@ export const AllianceDetailDrawer = ({
                   c.call_type,
                   who(c.target_user, c.target_user_id),
                   c.note ?? '—',
-                  when(c.created_at),
+                  when(c.created_at, i18n.language),
                 ])}
               />
               <Text size="sm">
@@ -642,7 +843,7 @@ export const AllianceDetailDrawer = ({
                 rows={detail.joinRequests.map((j) => [
                   who(j.user, j.user_id),
                   j.kind,
-                  when(j.created_at),
+                  when(j.created_at, i18n.language),
                 ])}
               />
               <Text fw={700}>{t('upgradesHeading')}</Text>
@@ -653,7 +854,7 @@ export const AllianceDetailDrawer = ({
                 rows={detail.upgrades.map((u) => [
                   u.upgrade_key,
                   u.tier,
-                  when(u.purchased_at),
+                  when(u.purchased_at, i18n.language),
                 ])}
               />
             </Stack>

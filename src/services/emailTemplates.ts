@@ -32,6 +32,10 @@ export interface EmailTemplateVars {
   claimToken?: string;
   /** Inactivity emails: signed one-click erasure link (no sign-in needed). */
   erasureToken?: string;
+  /** Password reset and email change: the single-use token for the link. */
+  resetToken?: string;
+  /** Password reset: the account address, prefilled by the reset page. */
+  email?: string;
 }
 export interface RenderEmailInput {
   kind:
@@ -39,7 +43,9 @@ export interface RenderEmailInput {
     | 'ATTACK_NOTIFICATION'
     | 'SUPPORTER_RECEIPT'
     | 'SUPPORTER_CANCELED'
-    | 'VETERAN_CLAIM';
+    | 'VETERAN_CLAIM'
+    | 'PASSWORD_RESET'
+    | 'EMAIL_CHANGE';
   locale: string;
   vars: EmailTemplateVars;
 }
@@ -64,14 +70,21 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
   const copy = language === 'es' ? es : language === 'de' ? de : en;
   const root = process.env.NEXT_PUBLIC_URL_ROOT;
   if (!root) throw new Error('NEXT_PUBLIC_URL_ROOT is required for email');
-  if (new URL(root).protocol !== 'https:')
+  const rootUrl = new URL(root);
+  const loopback = ['localhost', '127.0.0.1'].includes(rootUrl.hostname);
+  if (
+    rootUrl.protocol !== 'https:' &&
+    !(loopback && rootUrl.protocol === 'http:')
+  )
     throw new Error('Email links must use HTTPS');
   const absolute = (path: string) => new URL(path, root).href;
   const category =
     vars.category ??
     (kind === 'SUPPORTER_RECEIPT' ||
     kind === 'SUPPORTER_CANCELED' ||
-    kind === 'VETERAN_CLAIM'
+    kind === 'VETERAN_CLAIM' ||
+    kind === 'PASSWORD_RESET' ||
+    kind === 'EMAIL_CHANGE'
       ? 'TRANSACTIONAL'
       : kind === 'ATTACK_NOTIFICATION'
         ? 'ATTACK_NOTIFICATION'
@@ -120,6 +133,19 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
     newsLink: absolute(`/community/news/${vars.newsId ?? ''}`),
     claimLink: absolute(
       `/account/veteran-claim?token=${encodeURIComponent(vars.claimToken ?? '')}`,
+    ),
+    // Tokens ride in the URL fragment: browsers never send it to the server
+    // or in Referer headers, and the page clears it after reading it.
+    resetLink: absolute(
+      `/account/password-reset/verify#${new URLSearchParams({
+        token: vars.resetToken ?? '',
+        email: vars.email ?? '',
+      })}`,
+    ),
+    emailChangeLink: absolute(
+      `/account/email-verify#${new URLSearchParams({
+        token: vars.resetToken ?? '',
+      })}`,
     ),
   };
   let subject: string;
@@ -178,6 +204,18 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
       subject = copy.veteranClaimSubject;
       body = interpolate(copy.veteranClaim, values);
       break;
+    case 'PASSWORD_RESET':
+      if (!vars.resetToken || !vars.email)
+        throw new Error('Password reset email requires a token and address');
+      subject = copy.passwordResetSubject;
+      body = interpolate(copy.passwordReset, values);
+      break;
+    case 'EMAIL_CHANGE':
+      if (!vars.resetToken)
+        throw new Error('Email change email requires a token');
+      subject = copy.emailChangeSubject;
+      body = interpolate(copy.emailChange, values);
+      break;
     default:
       throw new Error('Unknown email template');
   }
@@ -194,12 +232,22 @@ export function renderEmail({ kind, locale, vars }: RenderEmailInput): {
             ? [values.manageLink, values.termsLink, values.refundsLink]
             : kind === 'VETERAN_CLAIM'
               ? [values.claimLink]
-              : [];
+              : kind === 'PASSWORD_RESET'
+                ? [values.resetLink]
+                : kind === 'EMAIL_CHANGE'
+                  ? [values.emailChangeLink]
+                  : [];
+  // Token links read as a labelled action in HTML instead of a long URL.
+  const linkLabels: Record<string, string> = {
+    [values.resetLink]: copy.passwordResetAction,
+    [values.emailChangeLink]: copy.emailChangeAction,
+  };
   const linkParagraph = (paragraph: string) => {
     let html = escapeEmailHtml(paragraph).replace(/\n/g, '<br>');
     for (const link of bodyLinks) {
       const escaped = escapeEmailHtml(link);
-      html = html.split(escaped).join(`<a href="${escaped}">${escaped}</a>`);
+      const label = escapeEmailHtml(linkLabels[link] ?? link);
+      html = html.split(escaped).join(`<a href="${escaped}">${label}</a>`);
     }
     return `<p>${html}</p>`;
   };

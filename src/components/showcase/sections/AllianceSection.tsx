@@ -6,8 +6,18 @@ import { AllianceArtworkEditor } from '@/components/alliance/AllianceArtworkEdit
 import { AllianceCard } from '@/components/alliance/AllianceCard';
 import { transactionTypeLabel } from '@/components/alliance/allianceLabels';
 import { AllianceMembers } from '@/components/alliance/AllianceMembers';
+import {
+  AllianceDuesCard,
+  AllianceDuesSettingsCard,
+  type AllianceDuesStatusView,
+  duesTermsOf,
+} from '@/components/alliance/AllianceMembershipDues';
 import { AllianceOverview } from '@/components/alliance/AllianceOverview';
 import { AllianceRanks } from '@/components/alliance/AllianceRanks';
+import {
+  type AllianceUpgradeStatusView,
+  AllianceUpgradesView,
+} from '@/components/alliance/AllianceUpgrades';
 import {
   type ReactivationProgressView,
   ReservedAllianceNotice,
@@ -81,6 +91,8 @@ const ROLES: AllianceRole[] = [
       share_reports: true,
       call_targets: true,
       view_list: true,
+      upgrade_alliance: true,
+      set_dues: true,
     },
   },
   {
@@ -108,34 +120,37 @@ const roleNamed = (name: string) => {
 };
 
 const MEMBERS: AllianceMember[] = [
-  [LEADER_ID, 'Lady Morwen', 'ELF', 'FIGHTER', 'Leader', 0],
-  [303, 'Thalia Dawnspear', 'HUMAN', 'CLERIC', 'Officer', 2],
-  [404, 'Brannoc Ironhand', 'HUMAN', 'FIGHTER', 'Veteran', 26],
-  [405, 'Ysolde of the Mire', 'UNDEAD', 'ASSASSIN', 'Member', 72],
-  [406, 'Skrit', 'GOBLIN', 'THIEF', 'Member', null],
-].map(([userId, name, race, playerClass, roleName, hoursAgo], index) => {
-  const role = roleNamed(roleName as string);
-  return {
-    id: 500 + index,
-    alliance_id: ALLIANCE_ID,
-    user_id: userId as number,
-    role_id: role.id,
-    created_at: FOUNDED,
-    updated_at: FOUNDED,
-    user: {
-      id: userId as number,
-      display_name: name as string,
-      race: race as string,
-      class: playerClass as string,
-      avatar: 'SHIELD',
-      last_active:
-        hoursAgo === null
-          ? null
-          : new Date(NOW.getTime() - (hoursAgo as number) * 3_600_000),
-    },
-    role,
-  };
-});
+  [LEADER_ID, 'Lady Morwen', 'ELF', 'FIGHTER', 'Leader', 0, 0],
+  [303, 'Thalia Dawnspear', 'HUMAN', 'CLERIC', 'Officer', 2, 0],
+  [404, 'Brannoc Ironhand', 'HUMAN', 'FIGHTER', 'Veteran', 26, 0],
+  [405, 'Ysolde of the Mire', 'UNDEAD', 'ASSASSIN', 'Member', 72, 180_000],
+  [406, 'Skrit', 'GOBLIN', 'THIEF', 'Member', null, 500_000],
+].map(
+  ([userId, name, race, playerClass, roleName, hoursAgo, arrears], index) => {
+    const role = roleNamed(roleName as string);
+    return {
+      id: 500 + index,
+      alliance_id: ALLIANCE_ID,
+      user_id: userId as number,
+      role_id: role.id,
+      created_at: FOUNDED,
+      updated_at: FOUNDED,
+      dues_arrears: `${arrears}n`,
+      user: {
+        id: userId as number,
+        display_name: name as string,
+        race: race as string,
+        class: playerClass as string,
+        avatar: 'SHIELD',
+        last_active:
+          hoursAgo === null
+            ? null
+            : new Date(NOW.getTime() - (hoursAgo as number) * 3_600_000),
+      },
+      role,
+    };
+  },
+);
 
 /** The alliance as a member (here the leader) receives it from the API. */
 const ALLIANCE: AllianceInfo = {
@@ -150,6 +165,10 @@ const ALLIANCE: AllianceInfo = {
   closed_enrollment: false,
   roster_visibility: 'PUBLIC',
   gold_in_bank: '18450000',
+  hall_level: 1,
+  join_fee: '250000n',
+  dues_amount: '100000n',
+  dues_period: 'WEEKLY',
   created_at: FOUNDED,
   updated_at: NOW,
   slug: 'silver-court',
@@ -226,15 +245,52 @@ function MockRequests({
   return <div onClickCapture={onClickCapture}>{children}</div>;
 }
 
+/** Alliance Hall status as `/api/alliances/upgrades` returns it. */
+const HALL_READY: AllianceUpgradeStatusView = {
+  allianceId: ALLIANCE_ID,
+  status: 'ACTIVE',
+  hallLevel: 1,
+  memberCount: 12,
+  treasury: '18450000n',
+  canUpgrade: true,
+  deposits: { used: 1, limit: 3, nextSlotAt: null },
+};
+const HALL_BLOCKED: AllianceUpgradeStatusView = {
+  ...HALL_READY,
+  hallLevel: 0,
+  memberCount: 3,
+  treasury: '760000n',
+  canUpgrade: false,
+  deposits: { used: 2, limit: 2, nextSlotAt: NOW.toISOString() },
+};
+
+/** Membership dues as `/api/alliances/dues/status` returns them. */
+const DUES_OWING: AllianceDuesStatusView = {
+  allianceId: ALLIANCE_ID,
+  status: 'ACTIVE',
+  joinFee: '250000n',
+  duesAmount: '100000n',
+  duesPeriod: 'WEEKLY',
+  nextCollectionAt: '2026-10-26T04:00:00.000Z',
+  member: { isLeader: false, arrears: '180000n', paidThrough: null },
+  canSetDues: false,
+};
+const DUES_LEADER: AllianceDuesStatusView = {
+  ...DUES_OWING,
+  member: { isLeader: true, arrears: '0n', paidThrough: null },
+  canSetDues: true,
+};
+
 const LIVE_ONLY_PANELS = [
   'AllianceAnnouncements and the latest-announcement card on Overview',
   'AllianceBank',
   'AllianceWar',
   'AllianceLists',
   'AllianceDiplomacy',
-  'AllianceIntel',
+  'AllianceIntel (call form with PlayerNameAutocomplete, which searches live players)',
   'AllianceInternalBattles',
-  'AllianceSettings and AllianceInvites',
+  'AllianceSettings and AllianceInvites (member count against the hall cap)',
+  'DepositForm (deposit slots and treasury room from the Alliance Hall)',
 ];
 
 export default function AllianceSection() {
@@ -297,6 +353,46 @@ export default function AllianceSection() {
           status="RESERVED"
           joinMode="OPEN"
           onJoin={async () => {}}
+        />
+      </Specimen>
+      <Specimen
+        framed={false}
+        name="Alliance directory card: join fee and dues"
+        usedOn={['/alliances/browse']}
+        note="A player outside the alliance sees the join fee and dues before joining; Join opens a confirmation on the real page."
+      >
+        <AllianceCard
+          id={ALLIANCE_ID}
+          name="The Silver Court"
+          members={5}
+          description="Strength through unity"
+          imgsrc={getPureCrest('ELF')}
+          bannerimgsrc={resolveArtworkSource(
+            '/assets/images/ui/public/war-table.webp',
+          )}
+          joinMode="OPEN"
+          joinTerms={duesTermsOf(ALLIANCE)}
+          onJoin={async () => mockAction('Join alliance')()}
+        />
+      </Specimen>
+      <Specimen
+        framed={false}
+        name="Alliance directory card: full"
+        usedOn={['/alliances/browse']}
+        note="Members are shown against the Alliance Hall cap; a full alliance says nobody can join until the hall is upgraded."
+      >
+        <AllianceCard
+          id={ALLIANCE_ID}
+          name="The Silver Court"
+          members={10}
+          memberCap={10}
+          description="Strength through unity"
+          imgsrc={getPureCrest('ELF')}
+          bannerimgsrc={resolveArtworkSource(
+            '/assets/images/ui/public/war-table.webp',
+          )}
+          joinMode="OPEN"
+          onJoin={async () => mockAction('Join alliance')()}
         />
       </Specimen>
       <Specimen
@@ -402,6 +498,46 @@ export default function AllianceSection() {
 
       <Specimen
         framed={false}
+        name="AllianceDuesCard: member in arrears"
+        usedOn={[
+          `${PAGE} (Overview tab)`,
+          `${PAGE} (Bank tab)`,
+          `${PAGE} (Settings tab)`,
+        ]}
+        note="Join fee, dues and period, next collection, what the member owes and Pay dues (mocked), with the link to where the leader changes it."
+      >
+        <AllianceDuesCard
+          allianceId={ALLIANCE_ID}
+          mockStatus={DUES_OWING}
+          mockPay={mockAction('Pay dues')}
+        />
+      </Specimen>
+
+      <Specimen
+        framed={false}
+        name="AllianceDuesCard: leader"
+        usedOn={[`${PAGE} (Overview tab)`, `${PAGE} (Settings tab)`]}
+        note="The leader pays no dues."
+      >
+        <AllianceDuesCard allianceId={ALLIANCE_ID} mockStatus={DUES_LEADER} />
+      </Specimen>
+
+      <Specimen
+        framed={false}
+        name="AllianceDuesSettingsCard"
+        usedOn={[`${PAGE} (Settings tab)`]}
+        note="Leader and Set join fee and dues ranks. Lists the maximum per period; saving is mocked."
+        wide
+      >
+        <AllianceDuesSettingsCard
+          allianceId={ALLIANCE_ID}
+          terms={duesTermsOf(ALLIANCE)}
+          mockAction={mockAction('Save fee and dues')}
+        />
+      </Specimen>
+
+      <Specimen
+        framed={false}
         name="AllianceMembers: hidden roster"
         usedOn={[PAGE]}
         note="A non-member viewing a members-only roster."
@@ -463,6 +599,32 @@ export default function AllianceSection() {
             ))}
           </StyledTable>
         </GameCard>
+      </Specimen>
+
+      <Specimen
+        framed={false}
+        name="AllianceUpgradesView: next level buyable"
+        usedOn={[`${PAGE} (Upgrades tab)`, 'AllianceUpgrades']}
+        note="A leader at Hall (level 1) with enough members and treasury gold for Great Hall. Buy opens the real confirmation; confirming is mocked."
+        wide
+      >
+        <AllianceUpgradesView
+          status={HALL_READY}
+          onBuy={async () => mockAction('Buy alliance upgrade')()}
+        />
+      </Specimen>
+
+      <Specimen
+        framed={false}
+        name="AllianceUpgradesView: blocked"
+        usedOn={[`${PAGE} (Upgrades tab)`, 'AllianceUpgrades']}
+        note="A member without the Buy upgrades rank permission at Camp: the Buy button is disabled with its reason. The deposit form and invite panel read the same status live."
+        wide
+      >
+        <AllianceUpgradesView
+          status={HALL_BLOCKED}
+          onBuy={async () => mockAction('Buy alliance upgrade')()}
+        />
       </Specimen>
 
       <Specimen

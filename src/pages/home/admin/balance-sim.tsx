@@ -27,7 +27,6 @@ import {
 } from '@mantine/core';
 import type { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -56,6 +55,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { alertService } from '@/services/Alert.service';
 import { getDefaultBattleConstants } from '@/utils/attackFunctions';
 import { isAdmin, isImpersonatedSession } from '@/utils/authorization';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 interface SimConfig {
   populationSize: number;

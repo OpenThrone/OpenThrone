@@ -1,6 +1,6 @@
 # Kingdom morale and fatigue
 
-Last verified against code: 2026-11-06 (alpha 43c5fff7)
+Last verified against code: 2026-11-12 (alpha 8ffa50de)
 
 Two separate things tire a kingdom. Kingdom morale is a slow 0 to 100 meter that follows how well you defend and how often you play; when it gets low, people leave. Garrison fatigue is a same-day penalty on a defender who is attacked again and again. The attacker's own tiredness comes from the away-army penalty (below) and from stamina (see [stamina.md](stamina.md)).
 

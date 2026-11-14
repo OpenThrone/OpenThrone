@@ -1,6 +1,6 @@
 # Runtime settings
 
-Last verified against code: 2026-11-06 (alpha a365a67d)
+Last verified against code: 2026-11-12 (alpha 3d0785d1)
 
 Runtime settings are the game values and switches that staff can change while the server runs, without a deploy: feature switches, login and registration access, maintenance mode, combat and economy limits, stamina rules, recruiting caps, alliance limits, account housekeeping and abuse-signal thresholds. A single registry defines every one of them. Nothing outside the registry can be changed through this system.
 
@@ -13,7 +13,7 @@ The registry is [runtimeSettings.ts](../../src/constants/runtimeSettings.ts). Re
 Each key maps to:
 
 - `group`: one of `features`, `access`, `combat`, `stamina`, `recruiting`, `economy`, `mercenaries`, `alliances`, `accounts`, `abuse`. The admin page lists settings by group.
-- `type`: `NUMBER`, `BOOLEAN` or `JSON` (only `MAINTENANCE_MODE` is JSON: an `enabled` flag and a message of up to 1,000 characters).
+- `type`: `NUMBER`, `BOOLEAN`, `STRING` or `JSON` (only `MAINTENANCE_MODE` is JSON: an `enabled` flag and a message of up to 1,000 characters; only `recruit.captchaProvider` is a STRING: `altcha` or `turnstile`, shown as a dropdown).
 - `label`: stored with the row.
 - `isPublic`: stored with the row. See Known gaps for what it does and does not do.
 - `schema`: a Zod schema. Its bounds are the real limits (for example `stamina.recoveryIntervalMinutes` is a whole number from 1 to 1,440; `era.protectionDurationDays` is a whole number from 1 to 60).
@@ -67,7 +67,7 @@ Rules enforced on write:
 4. Add the label under `settings.labels.<key>` in the English, German and Spanish `admin-system.json` files. A test fails if any locale lacks one.
 5. Update the pinned key list in [runtimeSettings.test.ts](../../src/constants/runtimeSettings.test.ts), and add tests for the bounds and default.
 6. Read the value through `getRuntimeConfig()` where it is used; never read the database row or environment directly. Pass a transaction handle when reading inside a transaction.
-7. The admin page shows a plain number box for any `NUMBER`, a switch for any `BOOLEAN`, and special inputs only for a few keys. A new setting works with no page change; add a custom input only if a plain box is not enough. The server, not the box, enforces the bounds.
+7. The admin page shows a plain number box for any `NUMBER`, a switch for any `BOOLEAN`, and special inputs only for a few keys (a `STRING` needs its own input, as `recruit.captchaProvider` has). A new setting works with no page change; add a custom input only if a plain box is not enough. The server, not the box, enforces the bounds.
 8. If related settings must stay consistent (like a minimum and maximum), extend `validateRuntimeSettingConsistency` and the lock logic in the admin route.
 9. If a change must settle state first, as stamina does, add that to the route's write path.
 

@@ -89,8 +89,10 @@ export interface AllianceEraBoundaryResult {
  * - wars in progress are ended and kept as history;
  * - pending join requests and invitations are cancelled (recruiting is
  *   reserved-state gated);
- * - alliance XP and upgrades are cleared: they are era progression, the same
- *   baseline the current-era reset already applies.
+ * - alliance XP and upgrades are cleared and the Alliance Hall returns to
+ *   level 0 (Camp): they are era progression, the same baseline the
+ *   current-era reset already applies;
+ * - membership dues arrears are cleared (fee and dues settings are kept).
  *
  * Per-player era state (deployed forces, force obligations, reserves) is
  * reset by resetUserRelations and the forceReserve/forceDuesRule passes of
@@ -111,7 +113,16 @@ export const reserveAlliancesForEraBoundary = async (
   });
   // Old-era treasury is discarded, not paid out: the same boundary resets
   // every member's gold, so a payout would mint new-era gold from nothing.
-  await tx.alliances.updateMany({ data: { gold_in_bank: 0n } });
+  // The Alliance Hall level was bought with that treasury, so it is era
+  // progression too and returns to Camp (alliances above the Camp member cap
+  // keep their members but cannot add more until they upgrade again).
+  await tx.alliances.updateMany({ data: { gold_in_bank: 0n, hall_level: 0 } });
+  // Unpaid membership dues are old-era debt, like the treasury they were owed
+  // to. The fee and dues settings stay; the first dues of the new era fall
+  // at the first boundary after the alliance is reactivated.
+  await tx.alliance_memberships.updateMany({
+    data: { dues_arrears: 0n, dues_paid_through: null },
+  });
 
   // Repayments parked on ANY loan (even repaid ones) are old-era treasury
   // gold: settleLoanTreasuryCredits would otherwise credit them back later.

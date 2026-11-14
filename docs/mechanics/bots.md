@@ -1,6 +1,6 @@
 # Bots
 
-Last verified against code: 2026-11-06 (alpha a365a67d)
+Last verified against code: 2026-11-13 (alpha 4138222f)
 
 Bots are server-controlled player accounts that keep a quiet baseline of activity in the world. They are ordinary account rows marked `isBot`. Once a day they recruit themselves or train units, and that is all. They never attack, spy, bank, upgrade structures or join alliances.
 
@@ -10,14 +10,14 @@ Bots are server-controlled player accounts that keep a quiet baseline of activit
 
 - A bot is a `users` row with `isBot = true`, a persona, an empty `botConfig`, a creation time, a last-run time and a `botStats` history (the last 30 run results).
 - Bots are created through the normal registration path, so the usual sign-up checks apply. Each also gets an `ACTIVE` account status.
-- Bots are provisioned from a manifest in [config/bots/manifests](../../config/bots/manifests). The default manifest asks for 35 bots with an even split of the four races (ELF, HUMAN, GOBLIN, UNDEAD) and four classes (FIGHTER, CLERIC, ASSASSIN, THIEF), and persona weights: 15% each for `FARMER_GREEDY`, `FARMER_CAUTIOUS`, `FARMER_ADAPTIVE` and `BALANCED`, 20% each for `AGGRESSIVE` and `DEFENSIVE`. A manifest may instead list bots one by one.
+- Bots are provisioned from a manifest in [config/bots/manifests](../../config/bots/manifests). Manifests and schedules are JSON files bundled at build time: [config.ts](../../src/botUsers/config.ts) imports each one and registers it by name, so a new file is only usable once it is added there. Only `default` exists today. The default manifest asks for 35 bots with an even split of the four races (ELF, HUMAN, GOBLIN, UNDEAD) and four classes (FIGHTER, CLERIC, ASSASSIN, THIEF), and persona weights: 15% each for `FARMER_GREEDY`, `FARMER_CAUTIOUS`, `FARMER_ADAPTIVE` and `BALANCED`, 20% each for `AGGRESSIVE` and `DEFENSIVE`. A manifest may instead list bots one by one.
 - Names are `<prefix><n>` (default prefix `Bot`), emails use a non-routable local domain. Provisioning needs the `BOT_DEFAULT_PASSWORD` environment value (at least 8 characters). An existing bot with the same email or name is skipped. A name or email taken by a non-bot account is a failure for that entry. Race, class and persona draws for a distribution manifest are random, not seeded.
 
 ### The daily tick
 
 The tick runs once a day through the bot endpoint or the admin "run now" action. For one tick:
 
-1. Load a schedule from [config/bots/schedules](../../config/bots/schedules). The default allocates 30% of bots to recruit, 20% to train workers, 15% to train offense, 15% to train defense and 20% to idle. Allocations must sum to 1.
+1. Load a bundled schedule from [config/bots/schedules](../../config/bots/schedules). An unknown name fails the tick. The default allocates 30% of bots to recruit, 20% to train workers, 15% to train offense, 15% to train defense and 20% to idle. Allocations must sum to 1.
 2. Take every bot that has not run since the start of the current game day (see [world-clock-and-jobs.md](world-clock-and-jobs.md)). A bot that already ran today is skipped.
 3. Count slots per action as `floor(bots × share)`; leftovers become idle slots.
 4. Shuffle the bots with a seed derived from the server's local date, then give each bot its persona's preferred training slot if one is left, otherwise the first free slot in the order recruit, train workers, train offense, train defense, idle. Preferences: all three farmer personas and `BALANCED` prefer train workers, `AGGRESSIVE` prefers train offense, `DEFENSIVE` prefers train defense.
@@ -42,8 +42,8 @@ Bots are filtered out of the admin abuse and investigation signals, login teleme
 
 ## Admin and settings
 
-- **Administration → Bots** ([bots.tsx](../../src/pages/home/admin/bots.tsx)): roster and last-run summary.
-- Admin-session endpoints (administrators only): `POST /api/admin/bots/provision` (`manifest`, `dryRun`), `GET /api/admin/bots/status`, `POST /api/admin/bots/run-now` (`schedule`). Manifest and schedule names must match an existing file. Provision and run-now are audit-logged.
+- **Administration → Bots** ([bots.tsx](../../src/pages/home/admin/bots.tsx)): roster, last-run summary and the bundled manifest and schedule names.
+- Admin-session endpoints (administrators only): `POST /api/admin/bots/provision` (`manifest`, `dryRun`), `GET /api/admin/bots/status`, `POST /api/admin/bots/run-now` (`schedule`). Manifest and schedule names must match one registered in [config.ts](../../src/botUsers/config.ts); anything else is refused with 400. Provision and run-now are audit-logged.
 - Scheduled endpoint: `POST /api/cronJobs/bots` (flag `DO_BOT_UPDATES`, optional `?schedule=<name>`). It is recorded in the cron run log as `bots`; the admin "run now" action is not.
 - Command line: `bun run scripts/seed-bots.ts` (`--dry-run`, `--manifest <name>`).
 - Bots have no runtime settings.
@@ -54,15 +54,15 @@ Bots are filtered out of the admin abuse and investigation signals, login teleme
 - [BotExecutor.ts](../../src/botUsers/BotExecutor.ts): the three actions.
 - [BotDecisionEngine.ts](../../src/botUsers/BotDecisionEngine.ts): slot to action.
 - [BotFactory.ts](../../src/botUsers/BotFactory.ts): manifest expansion and provisioning.
-- [config.ts](../../src/botUsers/config.ts), [constants.ts](../../src/botUsers/constants.ts), [types.ts](../../src/botUsers/types.ts): manifest and schedule schema, defaults.
+- [config.ts](../../src/botUsers/config.ts), [constants.ts](../../src/botUsers/constants.ts), [types.ts](../../src/botUsers/types.ts): bundled manifests and schedules, their schema, defaults.
 - [bots.ts](../../src/pages/api/cronJobs/bots.ts), [provision.ts](../../src/pages/api/admin/bots/provision.ts), [status.ts](../../src/pages/api/admin/bots/status.ts), [run-now.ts](../../src/pages/api/admin/bots/run-now.ts), [seed-bots.ts](../../scripts/seed-bots.ts).
 
 ## Tests
 
 - [BotDecisionEngine.test.ts](../../src/botUsers/__tests__/BotDecisionEngine.test.ts): slot to action, persona default.
 - [constants.test.ts](../../src/botUsers/__tests__/constants.test.ts): persona preferences, distributions sum to 1.
-- [config.test.ts](../../src/botUsers/__tests__/config.test.ts): default manifest and schedule load and validate.
-- [admin-bots.api.test.ts](../../src/__tests__/pages/api/admin/admin-bots.api.test.ts): manifest and schedule names are validated, status output.
+- [config.test.ts](../../src/botUsers/__tests__/config.test.ts): default manifest and schedule load and validate; unknown names throw.
+- [admin-bots.api.test.ts](../../src/__tests__/pages/api/admin/admin-bots.api.test.ts): manifest and schedule names are checked against the registered ones, status output lists only registered names.
 - [cron-run-logging.api.test.ts](../../src/__tests__/pages/api/cronJobs/cron-run-logging.api.test.ts): the bot cron response and run logging.
 
 ## Known gaps

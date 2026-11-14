@@ -15,7 +15,6 @@ export const EconomyUpgrades = [
     cost: 0,
     index: 0,
     level: 1,
-    bankCap: 10000000,
   },
   {
     name: 'Produce Market',
@@ -27,7 +26,6 @@ export const EconomyUpgrades = [
     cost: 500000,
     index: 1,
     level: 2,
-    bankCap: 25000000,
   },
   {
     name: 'Livestock Market',
@@ -39,7 +37,6 @@ export const EconomyUpgrades = [
     cost: 2000000,
     index: 2,
     level: 3,
-    bankCap: 50000000,
   },
   {
     name: 'Coal Mine',
@@ -51,7 +48,6 @@ export const EconomyUpgrades = [
     cost: 5000000,
     index: 3,
     level: 4,
-    bankCap: 100000000,
   },
   {
     name: 'Tavern',
@@ -63,7 +59,6 @@ export const EconomyUpgrades = [
     cost: 15000000,
     index: 4,
     level: 5,
-    bankCap: 200000000,
   },
   {
     name: 'Copper Mine',
@@ -75,11 +70,12 @@ export const EconomyUpgrades = [
     cost: 37500000,
     index: 5,
     level: 6,
-    bankCap: 350000000,
   },
   {
     name: 'Meat Market',
-    fortLevel: 23, // Empire Level 2
+    // Kingdom Level 3 (player level 100). Empire Level 2 needed level 110,
+    // above the level cap, so the tier could never be bought.
+    fortLevel: 21,
     goldPerWorker: 80,
     depositsPerDay: 9,
     goldTransferRec: 500000,
@@ -87,7 +83,6 @@ export const EconomyUpgrades = [
     cost: 100000000,
     index: 6,
     level: 7,
-    bankCap: 500000000,
   },
 ];
 

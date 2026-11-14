@@ -1,6 +1,6 @@
 # Economy
 
-Last verified against code: 2026-11-06 (alpha 43c5fff7)
+Last verified against code: 2026-11-13 (alpha 4138222f)
 
 Gold comes from Workers and the fort, paid every turn tick. Citizens come from Housing and recruiting, added every daily tick. The Bank keeps gold out of raiders' reach but limits how often and how much you can deposit.
 
@@ -44,7 +44,7 @@ Each daily growth writes a `DAILY_RECRUIT` bank-history row with the numbers use
 Gold on hand can be plundered. Gold in the bank cannot: combat code never reads or changes the bank balance.
 
 - **Deposit.** A single deposit may not exceed `bank.depositCapPercent` (default 80) of the gold on hand, rounded down. It needs the gold on hand and at least one free deposit slot.
-- **Capacity.** Each economy tier sets how much the bank can hold (`bankCap`: 10,000,000 on the Farm, up to 500,000,000). A deposit that would pass it is refused. A balance already above it stays and can be withdrawn, but cannot grow until it falls below the limit. Admin edits to the balance ignore the capacity.
+- **No capacity.** The balance has no upper limit, at any economy level. v0.13.0 refused deposits past a per-tier capacity (10,000,000 on the Farm); v0.13.1 removed it ([decision](../decisions/no-bank-capacity.md)).
 - **Deposit slots.** The economy level sets deposits per day (3 on the Farm, up to 9). The count is a rolling window of one game day (24 hours by default), not a calendar reset: a slot frees 24 hours after the deposit that used it. Deposits made before the current era started do not count. The Bank page shows the countdown to the next free slot.
 - **Withdraw.** Any amount up to the bank balance. There is no limit on how often and no fee.
 - **Blocked while in default.** A player with a defaulted alliance loan cannot deposit.
@@ -56,7 +56,7 @@ Gold transfers between friends, the alliance bank and loans have their own rules
 
 ### Turn tick
 
-`POST /api/cronJobs/turns` runs on an external scheduler. It must match `TURN_INTERVAL_MINUTES` (default 30). For each participating account, in order of overall rank score, under that account's row lock:
+`POST /api/cronJobs/turns` runs on an external scheduler. It must match `TURN_INTERVAL_MINUTES` (default 30). A repeated call within two thirds of the interval of a successful or still-running tick is skipped, so a duplicate delivery does not pay twice (details in [world-clock-and-jobs.md](world-clock-and-jobs.md)). For each participating account, in order of overall rank score, under that account's row lock:
 
 1. Pay gold per turn (history row `ECONOMY`).
 2. Add 1 attack turn, plus `extraTurnsPerTick` from running events. No cap on stored turns is applied.
@@ -67,13 +67,13 @@ Afterwards it moves diverted loan repayments into alliance treasuries and queues
 
 ### Daily tick
 
-`POST /api/cronJobs/daily` (`DO_DAILY_UPDATES`). Per participating account, in order:
+`POST /api/cronJobs/daily` (`DO_DAILY_UPDATES`). A second call in the same game day, after a successful or still-running daily, is skipped, so citizen growth is not granted twice (details in [world-clock-and-jobs.md](world-clock-and-jobs.md)). Per participating account, in order:
 
 1. Expire mercenary contracts and heal a share of wounded units (35% of each group, at least 1).
 2. Add daily citizens (see above).
 3. Run the kingdom morale pass.
 
-Then global work: fold expiring attack and recruit logs into era totals (see [era-reset.md](era-reset.md)), then delete attack logs, bank history and recruit history older than 20 days; process overdue alliance loans; free captives held past 7 days or whose captor lost the dungeon (see [reanimation-and-captives.md](reanimation-and-captives.md)); run the inactivity sweep, abuse detection and privacy erasure; run supporter housekeeping. After the response is decided, the daily item check runs (see [armory.md](armory.md)).
+Then global work: fold expiring attack and recruit logs into era totals (see [era-reset.md](era-reset.md)), then delete attack logs, bank history and recruit history older than 20 days; process overdue alliance loans; free captives held past 7 days or whose captor lost the dungeon (see [reanimation-and-captives.md](reanimation-and-captives.md)); run the inactivity sweep, abuse detection and privacy erasure; run supporter housekeeping; collect alliance membership dues (see [alliances.md](alliances.md#join-fee-and-membership-dues)). After the response is decided, the daily item check runs (see [armory.md](armory.md)).
 
 ### Who the ticks reach
 
@@ -95,12 +95,12 @@ Daily rules use the game day: a calendar day in `America/New_York`, or a shorter
 - Administration, System: Runtime Settings: `bank.depositCapPercent`, `friend.dailyReceivedCap`, `friend.transferMinLevel`, `alliance.loanIncomeSharePercent`.
 - Administration, Events (rules in [game-events.md](game-events.md)): bonuses for gold, daily citizens, citizen multiplier and extra turns per tick. Replaces the former `era.dailyCitizenBonus` server settings (a migration moved them into events).
 - Administration, Economy: totals and top holders.
-- Administration, Cron run log: last run of the turn, daily and item check jobs, with counts and failures.
+- Administration, Cron run log: last run of the turn, daily, supporter, alliance dues and item check jobs, with counts and failures.
 - Environment only: `TURN_INTERVAL_MINUTES`, `GAME_DAY_MINUTES`, `DO_TURN_UPDATES`, `DO_DAILY_UPDATES`.
 
 ## Source
 
-- [Bank.service.ts](../../src/services/Bank.service.ts)
+- [Bank.service.ts](../../src/services/Bank.service.ts) (deposits, withdrawals, deposit status and the history filters)
 - [bankLimits.ts](../../src/utils/bankLimits.ts)
 - [UserEconomyService.ts](../../src/services/UserEconomyService.ts)
 - [CronJob.service.ts](../../src/services/CronJob.service.ts)
@@ -120,10 +120,13 @@ Daily rules use the game day: a calendar day in `America/New_York`, or a shorter
 - [bankAndSpyRules.test.ts](../../src/services/__tests__/bankAndSpyRules.test.ts): deposit cap from `bank.depositCapPercent` and the rolling 24-hour window.
 - [bankAndSpyRules.test.ts](../../src/services/__tests__/bankAndSpyRules.test.ts): conditional debits, deposit count read under the lock, over-withdrawal refused.
 - [bankLimits.test.ts](../../src/utils/bankLimits.test.ts): 80% cap math with exact bigint rounding.
+- [bankAndSpyRules.test.ts](../../src/services/__tests__/bankAndSpyRules.test.ts): no bank capacity: a Farm player above 10,000,000 can still deposit.
+- [liveRules.test.ts](../../src/sim/liveRules.test.ts): the balance simulator deposits without a balance cap, like the live game.
 - [bankDepositCap.test.ts](../../test/integration/bankDepositCap.test.ts): concurrent deposits never exceed the daily count.
-- [history.structures.api.test.ts](../../src/__tests__/pages/api/bank/history.structures.api.test.ts): structure purchases appear under the Sale filter, and mercenary hires and renewals under Training.
+- [history.structures.api.test.ts](../../src/__tests__/pages/api/bank/history.structures.api.test.ts): the history filter builder puts structure purchases under the Sale filter, and mercenary hires and renewals under Training.
 - [UserEconomyService.test.ts](../../src/services/__tests__/UserEconomyService.test.ts): income breakdown rows add up to the total.
 - [cronJob.concurrency.test.ts](../../src/services/__tests__/cronJob.concurrency.test.ts): turn tick math, relative gold and turn writes, event turns, daily citizens, event bonuses and activity window, stale-era skip, wounded healing.
+- [cron-run-logging.api.test.ts](../../src/__tests__/pages/api/cronJobs/cron-run-logging.api.test.ts): a repeated turn or daily delivery is skipped, `?force=true` runs anyway.
 - [allianceLoans.test.ts](../../src/services/__tests__/allianceLoans.test.ts): loans divert income and block deposits while defaulted.
 
 ## Known gaps

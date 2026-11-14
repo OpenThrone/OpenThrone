@@ -161,5 +161,6 @@
     "externalLink": "Open link in a new tab",
     "internalLink": "Open link in this tab",
     "toolbar": "Message formatting"
-  }
+  },
+  "readOnlyNotice": "Realtime is disabled: messaging is read-only. You can read conversations, but sending messages and reactions are unavailable."
 }

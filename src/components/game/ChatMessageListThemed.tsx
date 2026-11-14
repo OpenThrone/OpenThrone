@@ -44,15 +44,25 @@ import { useUser } from '@/context/users';
 import { useChatOutbox } from '@/hooks/useChatOutbox';
 import useChatTyping from '@/hooks/useChatTyping';
 import useSocket from '@/hooks/useSocket';
+import { resolveRealtimeTransport } from '@/lib/realtimeTransport';
 import { alertService } from '@/services/Alert.service';
 import type { ChatMessage, FrontendRoom } from '@/types/typings';
 import { mergeChatMessages } from '@/utils/chatDelivery';
 import { logError, logInfo } from '@/utils/logger';
+import { resolveAvatarSrc } from '@/utils/utilities';
 
 import ChatMembersPopover from './ChatMembersPopover';
 import ChatMessageGroupThemed from './ChatMessageGroupThemed';
 import ChatMessageInputThemed from './ChatMessageInputThemed';
 import styles from './ChatThemed.module.css';
+
+// NEXT_PUBLIC_* inlines at build time; only a resolved 'off' transport hides
+// send/reaction UI (the 'do' pilot keeps it live).
+const REALTIME_DISABLED =
+  resolveRealtimeTransport(
+    process.env.NEXT_PUBLIC_REALTIME_TRANSPORT,
+    process.env.NEXT_PUBLIC_DISABLE_SOCKET,
+  ) === 'off';
 
 interface ChatMessageListThemedProps {
   selectedRoomId: number | null;
@@ -107,10 +117,11 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
             id: user.id,
             display_name: user.displayName,
             avatar: user.avatar,
+            race: user.race,
             is_online: true,
           }
         : undefined,
-    [user?.id, user?.displayName, user?.avatar],
+    [user?.id, user?.displayName, user?.avatar, user?.race],
   );
   const { outbox, send, retry } = useChatOutbox({
     socket,
@@ -324,7 +335,7 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
         ? new Date(message.sentAt).getTime()
         : 0;
       const previousSentAt = previousMessage?.sentAt
-        ? new Date(previousMessage.sentAt).getTime()
+        ? new Date(previousMessage?.sentAt).getTime()
         : 0;
       const timeDiff =
         previousMessage && currentSentAt && previousSentAt
@@ -527,6 +538,7 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
             setReplyingToMessage={setReplyingToMessage}
             renderMessageContent={renderMessageContent}
             messageElementRefs={messageElementRefs}
+            reactionsDisabled={REALTIME_DISABLED}
             onJumpToMessage={handleJumpToMessage}
             firstUnreadMessageId={firstUnreadMessageId}
             onRetry={retry}
@@ -586,10 +598,15 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
               <Avatar
                 size="md"
                 radius="xl"
-                src={
-                  roomInfo?.participants?.find((p) => p.id !== currentUserId)
-                    ?.avatar
-                }
+                src={(() => {
+                  const other = roomInfo?.participants?.find(
+                    (p) => p.id !== currentUserId,
+                  );
+                  return resolveAvatarSrc(
+                    other?.avatar,
+                    (other as { race?: string } | undefined)?.race,
+                  );
+                })()}
               >
                 {(
                   roomInfo?.participants
@@ -739,6 +756,7 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
             ?.canWrite ?? false
         }
         onTyping={onTyping}
+        hidden={REALTIME_DISABLED}
       />
 
       <NewMessageModal
@@ -775,7 +793,14 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
               <Table.Tr key={participant.id}>
                 <Table.Td>
                   <Group gap="xs">
-                    <Avatar src={participant.avatar} size="sm" radius="xl">
+                    <Avatar
+                      src={resolveAvatarSrc(
+                        participant.avatar,
+                        (participant as { race?: string }).race,
+                      )}
+                      size="sm"
+                      radius="xl"
+                    >
                       {(participant.display_name || '?')
                         .charAt(0)
                         .toUpperCase()}

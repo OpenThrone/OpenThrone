@@ -1,20 +1,288 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "openthrone",
-  "main": ".open-next/worker.js",
-  "compatibility_date": "2025-04-01",
-  "compatibility_flags": [
-    "nodejs_compat",
-    "global_fetch_strictly_public"
-  ],
-  "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS"
-  },
-  "services": [
-    {
-      "binding": "WORKER_SELF_REFERENCE",
-      "service": "openthrone"
-    }
-  ]
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "openthrone",
+	// Custom entry: re-exports the OpenNext handler and adds the scheduled()
+	// Cron Trigger fan-out to /api/cronJobs/* (see worker.ts).
+	"main": "worker.ts",
+	// worker.ts warms the Prisma client at startup (src/lib/prismaClients.ts).
+	// Prisma's ESM runtime calls fileURLToPath(import.meta.url) at import time,
+	// and import.meta.url is undefined in this bundle; its CommonJS build does
+	// not. The OpenNext handler already inlines its own copy, so only
+	// worker.ts's imports are affected.
+	"alias": {
+		"@prisma/client/runtime/client": "./node_modules/@prisma/client/runtime/client.js"
+	},
+	// 2026-06-01: matches the installed workerd line (1.20260630). Kept below
+	// 2026-08-04 so nodejs_compat stays an explicit flag; newer dates flip to
+	// nodejs_compat_v2 semantics automatically.
+	"compatibility_date": "2026-06-01",
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
+	// Cron Triggers run on UTC. Daily fires at 04:00 and 05:00 and runs only on
+	// the one that is midnight in New York (src/lib/workerCron.ts).
+	"triggers": {
+		"crons": [
+			"*/30 * * * *",
+			"0 4 * * *",
+			"0 5 * * *",
+			"30 4 * * *"
+		]
+	},
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"services": [
+		{
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "openthrone"
+		}
+	],
+	// Realtime pilot (#23): one ChatRoomDO instance per chat room
+	// (idFromName "room:<id>") plus one user mailbox per user
+	// ("user:<id>"). SQLite-backed: the DO only persists its identity and
+	// per-socket attachments (KV-style storage), but new_sqlite_classes is
+	// the supported class form and keeps the free-tier path open.
+	// durable_objects is NOT inherited by named environments — each env
+	// block below repeats the binding; the migration stays top-level and is
+	// applied to each Worker on its deploy.
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "CHAT_ROOM_DO",
+				"class_name": "ChatRoomDO"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"ChatRoomDO"
+			]
+		}
+	],
+	// PostgreSQL access from the worker. `id` must be replaced with the real
+	// resource id after `wrangler hyperdrive create openthrone-db
+	// --connection-string=...` (deployment fails on the placeholder).
+	// `localConnectionString` is only used by `wrangler dev` — point it at your
+	// local database; it is never used for deployed environments.
+	"hyperdrive": [
+		{
+			"binding": "HYPERDRIVE",
+			"id": "87241402f42049869c75764882aa64ec",
+			"localConnectionString": "postgres://postgres:postgres@127.0.0.1:5432/openthrone"
+		}
+	],
+	// Named environments. Both inherit the top-level config; each needs its
+	// Hyperdrive `id` replaced with a real resource id before first deploy.
+	// Preview deliberately runs NO cron triggers — if it points at the same
+	// database as production, scheduled turns/daily jobs would double-apply.
+	"env": {
+		"preview": {
+			"name": "openthrone-preview",
+			"services": [
+				{
+					"binding": "WORKER_SELF_REFERENCE",
+					"service": "openthrone-preview"
+				},
+				{
+					// Legacy m=65536 password hashes verify in this small
+					// sidecar isolate (see argon2-worker.ts).
+					"binding": "ARGON2_VERIFY",
+					"service": "openthrone-argon2"
+				}
+			],
+			"triggers": {
+				"crons": []
+			},
+			// Not inherited from the top-level block — see the note there.
+			"durable_objects": {
+				"bindings": [
+					{
+						"name": "CHAT_ROOM_DO",
+						"class_name": "ChatRoomDO"
+					}
+				]
+			},
+			// Hyperdrive is not inherited by named environments, so preview
+			// declares its own binding. 2026-10-14: openthrone-db-lan2
+			// (b123976b, caching disabled) over VPC service openthrone-pg →
+			// private-lan tunnel → PgBouncer TLS on db-host → 192.0.2.10
+			// (otdev_stage). Non-prod databases live on the homelab; only
+			// production uses Supabase. The 2026-10-14 login failures were
+			// the Workers Free plan CPU limit, not this path
+			// (docs/database-reliability.md).
+			"hyperdrive": [
+				{
+					"binding": "HYPERDRIVE",
+					"id": "b123976bd2444441b2e372c330bc8a00",
+					"localConnectionString": "postgres://postgres:postgres@127.0.0.1:5432/openthrone"
+				}
+			],
+				"vars": {
+					"NEXTAUTH_URL": "https://openthrone-preview.example.workers.dev",
+					"NEXT_PUBLIC_URL_ROOT": "https://openthrone-preview.example.workers.dev",
+					"NEXT_PUBLIC_DISABLE_SOCKET": "true",
+					// Preview-only forensics: logs isolate memory at each
+					// per-request Prisma client creation (src/lib/prisma.ts).
+					"PRISMA_MEM_DEBUG": "1",
+					// Realtime pilot (#23) live on the preview: the explicit `do`
+					// wins over the legacy kill switch above (the build env sets
+					// the same flag — NEXT_PUBLIC_* values are inlined by
+					// `next build`, so BOTH must be set; see
+					// src/lib/realtimeTransport.ts).
+					"NEXT_PUBLIC_REALTIME_TRANSPORT": "do",
+				"NEXT_PUBLIC_ARTWORK_BASE_URL": "https://assets.openthrone.dev",
+				"NEXT_PUBLIC_ARTWORK_MODE": "remote",
+				"DISABLE_TURNSTILE": "true",
+				"NEXT_PUBLIC_DISABLE_TURNSTILE": "true",
+				"MAIL_DRIVER": "noop",
+				// Per docs/operations.md: staff without enrolled 2FA cannot
+				// sign in while enforcement is on — allow initial enrollment
+				// on the preview (flip back after enrolling).
+				"OT_ENFORCE_PRIVILEGED_2FA": "false"
+			}
+		},
+		// Production-connected rehearsal, served as https://stage.openthrone.dev
+		// (a mirror of production on the production database): no scheduler,
+		// and no outbox delivery. The route sits on the proxied stage hostname,
+		// so its old DNS record no longer reaches an origin. workers.dev stays on
+		// for the readiness check.
+		"rehearsal": {
+			"name": "openthrone-rehearsal",
+			"workers_dev": true,
+			"routes": [{ "pattern": "stage.openthrone.dev/*", "zone_name": "openthrone.dev" }],
+			"services": [
+				{ "binding": "WORKER_SELF_REFERENCE", "service": "openthrone-rehearsal" },
+				{ "binding": "ARGON2_VERIFY", "service": "openthrone-argon2" }
+			],
+			"triggers": { "crons": [] },
+			"durable_objects": {
+				"bindings": [{ "name": "CHAT_ROOM_DO", "class_name": "ChatRoomDO" }]
+			},
+			"hyperdrive": [
+				{ "binding": "HYPERDRIVE", "id": "0f7061aa847b44bbb942e989bb349137", "localConnectionString": "postgres://postgres:postgres@127.0.0.1:5432/openthrone" }
+			],
+			"send_email": [
+				{ "name": "EMAIL", "allowed_sender_addresses": ["no-reply@openthrone.dev"] }
+			],
+			"vars": {
+				"NEXTAUTH_URL": "https://stage.openthrone.dev",
+				"NEXT_PUBLIC_URL_ROOT": "https://stage.openthrone.dev",
+				"OT_NOINDEX": "true",
+				"NEXT_PUBLIC_DISABLE_SOCKET": "true",
+				// Realtime pilot (#23) enabled on the rehearsal 2026-10-16
+				// (user-approved): explicit `do` wins over the kill switch
+				// above; the build env sets the same flag (NEXT_PUBLIC_*
+				// values are inlined by `next build`, so BOTH must be set).
+				// Writes go through the same validated services as the HTTP
+				// API against the production Supabase database; automated
+				// checks here stay on /__rehearsal/health per
+				// docs/cloudflare-modernization.md.
+				"NEXT_PUBLIC_REALTIME_TRANSPORT": "do",
+				"NEXT_PUBLIC_ARTWORK_BASE_URL": "https://assets.openthrone.dev",
+				"NEXT_PUBLIC_ARTWORK_MODE": "remote",
+				"NEXT_PUBLIC_USE_AWS": "true",
+				"NEXT_PUBLIC_AWS_S3_ENDPOINT": "https://assets.openthrone.dev",
+				"NEXT_PUBLIC_DISABLE_REGISTRATION": "true",
+				// Cloudflare Email Service through the EMAIL binding below; the
+				// production host keeps sending queued mail over SMTP.
+				"MAIL_DRIVER": "cloudflare",
+				"MAIL_FROM": "no-reply@openthrone.dev",
+				"DISABLE_TURNSTILE": "false",
+				"NEXT_PUBLIC_DISABLE_TURNSTILE": "false",
+				"NEXT_PUBLIC_USE_CAPTCHA": "true",
+				"NEXT_PUBLIC_TURNSTILE_SITE_ID": "0x4AAAAAAAJJlPwUwDISclq0",
+				"OT_REHEARSAL_HEALTH_ENABLED": "true",
+				// Match the current LXC policy during the manual rehearsal.
+				"OT_ENFORCE_PRIVILEGED_2FA": "false",
+				"DO_TURN_UPDATES": "false",
+				"DO_DAILY_UPDATES": "false",
+				"DO_BOT_UPDATES": "false"
+			}
+		},
+		// Production Worker for openthrone.dev, which it serves through the
+		// route below since 2026-11-12; the production host stays up as the
+		// rollback origin. Roll back by swapping the route for the parking
+		// route (docs/operations.md, "Domain routing"): an empty `routes`
+		// list leaves the live route in place.
+		"production": {
+			"name": "openthrone",
+			// The production scheduler since 2026-11-11 (replacing the production
+			// host's crontab). No workers.dev address: Cron Triggers reach the
+			// cron endpoints through WORKER_SELF_REFERENCE.
+			"workers_dev": false,
+			"routes": [{ "pattern": "openthrone.dev/*", "zone_name": "openthrone.dev" }],
+			// Same jobs and times as the crontab it replaces: turns and account
+			// status every 30 minutes, daily at midnight New York time. No bots:
+			// production does not run them (DO_BOT_UPDATES stays false).
+			"triggers": { "crons": ["*/30 * * * *", "0 4 * * *", "0 5 * * *"] },
+			// Account status and daily take 15-27 s of wall time on the old host,
+			// mostly database waits; the cap keeps a slow day from cutting a run.
+			"limits": { "cpu_ms": 300000 },
+			// Run next to the database (Supabase, AWS us-east-1). Cron Triggers
+			// otherwise run in whichever data center is quiet: on 2026-11-11 a
+			// far one turned a 7 s turns tick into 47-56 s of query round trips
+			// (1.9 s CPU, the rest waiting).
+			"placement": { "mode": "targeted", "region": "aws:us-east-1" },
+			"services": [
+				{
+					"binding": "WORKER_SELF_REFERENCE",
+					"service": "openthrone"
+				},
+				{
+					"binding": "ARGON2_VERIFY",
+					"service": "openthrone-argon2"
+				}
+			],
+			// Not inherited from the top-level block — see the note there.
+			"durable_objects": {
+				"bindings": [
+					{
+						"name": "CHAT_ROOM_DO",
+						"class_name": "ChatRoomDO"
+					}
+				]
+			},
+			"hyperdrive": [
+				{
+					"binding": "HYPERDRIVE",
+					"id": "0f7061aa847b44bbb942e989bb349137",
+					// Local emulation only (opennextjs-cloudflare deploy starts
+					// miniflare and refuses a binding without one); never used remotely.
+					"localConnectionString": "postgres://postgres:postgres@127.0.0.1:5432/openthrone"
+				}
+			],
+			"send_email": [
+				{ "name": "EMAIL", "allowed_sender_addresses": ["no-reply@openthrone.dev"] }
+			],
+			// Runtime values; the build-time NEXT_PUBLIC_* set lives in
+			// config/cloudflare/production.env (both must agree).
+			"vars": {
+				"NEXTAUTH_URL": "https://openthrone.dev",
+				"NEXT_PUBLIC_URL_ROOT": "https://openthrone.dev",
+				"NEXT_PUBLIC_DISABLE_SOCKET": "true",
+				"NEXT_PUBLIC_REALTIME_TRANSPORT": "do",
+				"NEXT_PUBLIC_ARTWORK_BASE_URL": "https://assets.openthrone.dev",
+				"NEXT_PUBLIC_ARTWORK_MODE": "remote",
+				"NEXT_PUBLIC_USE_AWS": "true",
+				"NEXT_PUBLIC_AWS_S3_ENDPOINT": "https://assets.openthrone.dev",
+				"NEXT_PUBLIC_DISABLE_REGISTRATION": "true",
+				"MAIL_DRIVER": "cloudflare",
+				"MAIL_FROM": "no-reply@openthrone.dev",
+				"DISABLE_TURNSTILE": "false",
+				"NEXT_PUBLIC_DISABLE_TURNSTILE": "false",
+				"NEXT_PUBLIC_USE_CAPTCHA": "true",
+				"NEXT_PUBLIC_TURNSTILE_SITE_ID": "0x4AAAAAAAJJlPwUwDISclq0",
+				"OT_REHEARSAL_HEALTH_ENABLED": "true",
+				"OT_ENFORCE_PRIVILEGED_2FA": "false",
+				"DO_TURN_UPDATES": "true",
+				"DO_DAILY_UPDATES": "true",
+				"DO_BOT_UPDATES": "false"
+			}
+		}
+	}
 }

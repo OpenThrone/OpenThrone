@@ -15,7 +15,15 @@ let emailSpy: ReturnType<typeof vi.spyOn>;
 afterEach(() => emailSpy?.mockRestore());
 
 describe('AccountService', () => {
+  // Emailed links need an absolute HTTPS root (renderEmail refuses otherwise).
+  const savedUrlRoot = process.env.NEXT_PUBLIC_URL_ROOT;
+  afterEach(() => {
+    if (savedUrlRoot === undefined) delete process.env.NEXT_PUBLIC_URL_ROOT;
+    else process.env.NEXT_PUBLIC_URL_ROOT = savedUrlRoot;
+  });
+
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_URL_ROOT = 'https://example.test';
     resetMockPrisma();
     mockPrisma.$queryRaw = vi.fn(async () => [{ id: 1 }]);
     mockPrisma.$transaction.mockImplementation(async (cb: any) =>
@@ -59,9 +67,9 @@ describe('AccountService', () => {
       });
 
       // Mock argon2 verification to return true
-      const argon2 = require('argon2');
-      vi.spyOn(argon2, 'verify').mockResolvedValue(true);
-      vi.spyOn(argon2, 'hash').mockResolvedValue(
+      const passwordHash = require('@/lib/passwordHash');
+      vi.spyOn(passwordHash, 'verifyPassword').mockResolvedValue(true);
+      vi.spyOn(passwordHash, 'hashPassword').mockResolvedValue(
         '$argon2id$v=19$m=65536,t=3,p=4$newhash1234567890123456789012$newhash',
       );
 

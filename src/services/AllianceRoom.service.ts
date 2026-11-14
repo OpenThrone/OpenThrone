@@ -1,3 +1,4 @@
+import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 
 type Tx = Prisma.TransactionClient;
@@ -70,4 +71,32 @@ export async function postToAllianceRoom(
     data: { roomId, senderId, content: content.slice(0, 4000) },
   });
   return { roomId, recipients: memberIds.filter((id) => id !== senderId) };
+}
+
+/**
+ * Opens the alliance conversation for a member, creating the room and syncing
+ * its participants first (the room otherwise exists only after the first
+ * announcement or call). Returns the room id for /messaging?roomId=.
+ */
+export async function openAllianceChatRoom(userId: number, allianceId: number) {
+  return prisma.$transaction(async (tx) => {
+    const alliance = await tx.alliances.findUnique({
+      where: { id: allianceId },
+      select: { id: true, name: true, leader_id: true, status: true },
+    });
+    if (!alliance) throw new Error('Alliance not found');
+    if (alliance.status === 'RESERVED') {
+      throw new Error('This alliance is reserved and has no chat');
+    }
+    const membership = await tx.alliance_memberships.findFirst({
+      where: { alliance_id: allianceId, user_id: userId },
+      select: { id: true },
+    });
+    if (!membership && alliance.leader_id !== userId) {
+      throw new Error('You are not a member of this alliance');
+    }
+    const roomId = await getOrCreateAllianceRoom(tx, alliance, userId);
+    await syncAllianceRoomParticipants(tx, allianceId, roomId);
+    return { roomId };
+  });
 }

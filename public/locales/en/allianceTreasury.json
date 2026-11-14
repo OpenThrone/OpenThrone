@@ -89,5 +89,10 @@
     "dailyCapHint": "100,000 to 50,000,000 gold",
     "save": "Save Treasury Rules",
     "saved": "Treasury rules updated."
-  }
+  },
+  "depositOverRoom": "The treasury can take at most {{room}} more gold",
+  "depositSlots": "{{level}}: {{left}} of {{limit}} deposits left in the last 24 hours",
+  "depositNextSlot": "Your next deposit opens at {{time}}.",
+  "depositRoom": "Treasury room: {{room}} gold (cap {{cap}})",
+  "depositRaiseLimits": "Raise these limits in Upgrades"
 }

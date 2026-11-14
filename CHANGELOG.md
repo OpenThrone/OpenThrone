@@ -4,6 +4,181 @@ OpenThrone follows [Semantic Versioning](https://semver.org/) on the 0.x line:
 each production release raises the minor version and hotfixes raise the patch
 version. Alpha builds carry the next version with an `-alpha` suffix.
 
+## v0.14.2 (2026-11-14)
+
+### Fixed
+- **Recruit links work again for visitors without an account:** since the
+  move to Cloudflare, the site could not see visitors' addresses, so a recruit
+  link opened by someone without an account only said "Client address
+  unavailable." It now works, and the per-connection recruit limits, sign-in
+  protection and abuse checks see each visitor's real address again.
+
+## v0.14.1 (2026-11-13)
+
+### Fixed
+- **Live attack and spy alerts are back:** when another player attacks you,
+  when your sentries stop an enemy spy, or when someone sends you gold or a
+  friend or gold request, an open game tab shows a notice right away, in
+  your language, with a link to the report or request. Your stats refresh at
+  the same time, and the friends badge updates without waiting. The
+  "attacked while you were away" notice now shows once when you open the
+  game instead of repeating, and is translated.
+- **Successful spy missions stay secret:** a spy mission that gets past
+  your sentries is no longer visible to you through its report page, the
+  attack lists or your data export, matching War History.
+- **Daily updates recover from a crash:** if the midnight daily update is
+  interrupted, the next scheduled run now completes it instead of waiting
+  for the following night.
+
+## v0.14.0 (2026-11-12)
+
+### Added
+- **Sharper multi-account detection (staff):** sign-up and a once-a-day
+  visit record now leave the same one-way fingerprints as sign-ins, so
+  accounts created together, or played without signing in again, still link
+  up. Clusters can group by shared network range (/24 or /64) as weaker
+  evidence - labelled as such, never raising a signal on its own - and the
+  Administration view shows groups from two accounts up, with the event
+  kinds (sign-up, sign-in, visit) and first/last seen. Multiple accounts
+  remain allowed; all of this is review context only. Fingerprints are
+  still hashes only, kept 30 days, as the privacy policy now states.
+- **Optional Google Analytics with a cookie banner:** the site can now
+  measure aggregate traffic, but only after you accept analytics in the
+  cookie banner or in "Cookie settings" (site footer). Google only ever
+  sees sanitized page-route patterns - never accounts, player names, ids
+  or URLs with tokens - and withdrawing consent deletes its cookies.
+  Global Privacy Control signals are honored. Staff can see the traffic
+  and the opt-in rate under Administration → Analytics → Site Traffic.
+  Analytics and the privacy policy text that describes it stay off until
+  an administrator turns on the "Site analytics" setting, so the policy
+  change can be announced before it takes effect.
+- **Shadow chat moderation (staff):** a new Administration → Moderation →
+  "Chat Shadow Moderation" page shows how an automated check would have
+  treated recent chat messages (allow, flag, would block) next to the
+  message, so moderators can mark each call right or wrong and see the
+  false-positive rate. It only measures: nothing is hidden, deleted or
+  sanctioned, and it is off until an administrator turns on "Shadow chat
+  moderation" in Server settings.
+
+### Changed
+- **OpenThrone runs on Cloudflare:** the site is now served from
+  Cloudflare's network, close to wherever you play from, and live chat and
+  unread badges use a new connection built for it. Your account, kingdom
+  and history are unchanged, and you stay signed in. `www.openthrone.dev`
+  now forwards to `openthrone.dev`.
+- **Recruiting verification is faster and private:** recruit links and
+  auto-recruit now use a short check that runs in your browser and starts as
+  the page loads, so it is usually finished before you click. It is hosted by
+  us and sends nothing to a third party, and the privacy policy says so.
+  Sign-up, sign-in and appeals still use Cloudflare Turnstile. Staff can
+  switch recruiting back to Turnstile, and tune the check, in Administration
+  → System → Server settings (Recruiting). No recruiting limit or reward
+  changed.
+
+### Changed (balance)
+- **Alliance Halls: alliances now have levels.** Every alliance starts at
+  Camp and can upgrade its Alliance Hall with treasury gold, one level at a
+  time, up to Stronghold (level 5), from the new **Upgrades** tab. Each level
+  raises three limits:
+  - **Members:** 10 at Camp, then 20, 35, 50, 75 and 100. A full alliance
+    takes no new members until it upgrades; nobody is ever removed.
+  - **Deposits:** each member may deposit 2 times per 24 hours at Camp, then
+    3, 4, 5, 6 and 8, so alliance deposits follow the same idea as the
+    personal bank's deposits per day.
+  - **Treasury:** deposits can fill the treasury up to 5,000,000 gold at
+    Camp, then 25 million, 100 million, 500 million, 2 billion and
+    10 billion. Loan repayments and dues still arrive above it.
+
+  Levels cost 2 million, 10 million, 50 million, 250 million and 1 billion
+  treasury gold and need 5, 10, 20, 30 and 50 members. The leader buys them,
+  or any rank given the new "Buy upgrades" permission. The deposit form,
+  the invite panel and the Overview show how close you are to each limit,
+  with a link to the Upgrades tab. A new era returns the hall to Camp along
+  with the treasury. No alliance is near any Camp limit today.
+- **Alliance join fees and membership dues.** An alliance can now charge a
+  one-time join fee (up to 10,000,000 gold) and membership dues collected
+  daily, weekly or monthly (up to 1,000,000, 5,000,000 or 20,000,000 gold per
+  member). Both are paid from gold on hand into the treasury, and both start
+  switched off. The leader, or a rank given the new "Set join fee and dues"
+  permission, sets them on the alliance's **Settings** tab, which lists the
+  maximum for each period.
+  - You see the fee and dues on the alliance card, the alliance page and
+    invitations, and confirm them before you join. A join request pays the
+    fee in force when it is accepted.
+  - Dues are taken at the start of each day, week (Monday) or month, from
+    every member except the leader, and never for time before you joined.
+    If you cannot pay in full you pay what you have and owe the rest; it is
+    taken first next time, or you can pay it from the Overview or Bank tab.
+    Nobody is removed for unpaid dues.
+  - Members see the fee, the dues, the next collection and what they owe on
+    the Overview and Bank tabs; the leader and ranks that manage the bank or
+    set dues see what each member owes on the Members tab. A new era clears unpaid dues and keeps
+    the settings.
+- **Alliance pages are easier to use:** page tabs now look like buttons,
+  the alliance description is called "About Us" everywhere, and Invite
+  players sits beside Join Requests, which only appears when the alliance
+  uses Request to Join. Members get an "Open alliance chat" button on the
+  Overview, and Hit / Farm / Recon targets and invitations suggest players
+  as you type. A player's profile now warns you when you share an
+  alliance with them, offers Auto-Recruit to supporters, and lists
+  "Report Player" as a button under Recruit.
+
+### Fixed
+- **Alliance refusals and numbers in your language:** limit, upgrade, join fee
+  and dues messages now appear in English, German or Spanish with the page,
+  and gold amounts on alliance screens are written in full in the page
+  language instead of mixing formats.
+- **Report Player knows who you are reporting:** the button on a profile now
+  opens a report window with that player already filled in. The full page
+  (`/report`) still works as a fallback, and no longer drops the player's name
+  when it is opened from a link.
+- **Duplicate open calls:** opening a second Hit, Farm or Recon call on the
+  same target while one is open is refused instead of listing it twice.
+- **Chat shows player shields again:** players without an uploaded picture
+  now appear with their race's shield in conversations, message threads and
+  the member list, instead of a blank letter.
+
+## v0.13.2 (2026-11-09)
+
+### Changed
+- **The top forts fit under the level cap:** Kingdom Level 2 now needs level 92
+  (was 95) and Kingdom Level 3 level 94 (was 100). Empire, Empire Level 2 and
+  Empire Level 3 need levels 96, 98 and 100; before, they needed 105 to 115,
+  above the level cap, so nobody could build them.
+
+### Fixed
+- **Housing Level 6, Ballistas and Forging can be bought:** they unlock with
+  Empire, which a level 96 player can now build.
+
+## v0.13.1 (2026-11-09)
+
+### Changed
+- **The bank holds any amount again:** v0.13.0 stopped deposits once your
+  bank held more than your Economy upgrade allowed (10,000,000 gold on the
+  Farm), and nothing showed how to raise that limit. The limit is gone. Each
+  deposit is still limited to a share of the gold you hold, and Economy
+  upgrades still add deposits per day.
+
+### Fixed
+- **Meat Market can be bought:** the top Economy upgrade needed Empire Level
+  2, a fort that needs player level 110, but levels stop at 100. It now needs
+  Kingdom Level 3 (player level 100).
+
+## v0.13.0 (2026-11-08)
+
+### Changed
+- **Password reset in one click:** the reset email now has a "Reset your
+  password" link instead of a long code to copy. It opens the reset page
+  already filled in and checked, so you only choose a new password. The link
+  works once and expires after 3 hours. Reset and email-change emails now come
+  in English, German or Spanish to match your language.
+
+### Fixed
+- **Changing your email:** the email-change link now fills in its code, the
+  change no longer fails at the first step, and the confirmation shows your
+  current address. Afterwards you are signed out and asked to sign in with the
+  new address.
+
 ## v0.12.1 (2026-11-08)
 
 ### Changed

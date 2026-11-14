@@ -43,10 +43,10 @@ describe('development seed safety', () => {
   it('requires deliberate development opt-in for remote hosts and query overrides', () => {
     const remote = {
       ...localEnv,
-      POSTGRES_PRISMA_URL: 'postgresql://user:secret@192.168.5.110/dev_stage',
+      POSTGRES_PRISMA_URL: 'postgresql://user:secret@192.0.2.10/dev_stage',
     };
     expect(() => validateSeedConfig(remote)).toThrow('non-loopback');
-    expect(validateSeedConfig(remote, true).host).toBe('192.168.5.110');
+    expect(validateSeedConfig(remote, true).host).toBe('192.0.2.10');
     expect(() =>
       validateSeedConfig({ ...remote, NODE_ENV: 'test' }, true),
     ).toThrow('NODE_ENV=development');
@@ -60,7 +60,7 @@ describe('development seed safety', () => {
       validateSeedConfig(
         {
           ...localEnv,
-          POSTGRES_PRISMA_URL: `${localEnv.POSTGRES_PRISMA_URL}?hostaddr=192.168.5.110`,
+          POSTGRES_PRISMA_URL: `${localEnv.POSTGRES_PRISMA_URL}?hostaddr=192.0.2.10`,
         },
         true,
       ),

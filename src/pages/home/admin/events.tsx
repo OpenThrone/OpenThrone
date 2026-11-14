@@ -18,7 +18,6 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -40,6 +39,7 @@ import {
 import { GameEventType } from '@/lib/prisma-browser-exports';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 interface GameEvent {
   id: number;

@@ -18,10 +18,11 @@
 | [Operations](operations.md) | Cron endpoints and bot setup |
 | [Battle and spy source guide](battle-spy-workflow-reference.md) | Where the code lives |
 | [API v1 compatibility](api-v1-compat-matrix.md) | Wrapper routes and inherited behavior |
-| [Git workflow](git-workflow.md) | Branches, worktrees, merging, cleanup, releases and the GitHub mirror |
+| [Git workflow](git-workflow.md) | Branches, worktrees, merging, cleanup, releases and the opt-in GitHub mirror |
 | [Credential privacy](credential-privacy.md) | Current access limits and proposed secret isolation |
 | [Optional artwork](artwork.md) | Cloudflare R2 artwork, CSS/icon fallback, and source migration |
 | [Abuse signals](abuse-signals.md) | How abuse detection reports to staff |
+| [Decision models](features/decision-models.md) | Typed decision providers and shadow-mode chat moderation |
 | [Privacy self-service](privacy-self-service.md) | Player data export and erasure |
 | [Report sharing](report-sharing.md) | Sharing battle and spy reports |
 | [Battle notification emails](battle-notification-emails.md) | Battle email behavior |

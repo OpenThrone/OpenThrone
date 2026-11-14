@@ -19,7 +19,7 @@
         "Account details: your email address, display name, password (stored only as a one-way hash), and, if you turn on two-factor sign-in, your authenticator secret (stored encrypted).",
         "Game and profile data: your kingdom, race and class, settings, optional bio and avatar image, battles, bank and recruiting history, alliance activity, and reports you file.",
         "Messages: private messages and chat messages you send.",
-        "Technical data: your IP address and browser details when you use the site. We use them for security, abuse and cheat prevention, and rate limiting. Sign-in records keep only one-way fingerprints of your IP address and browser, not the values themselves.",
+        "Technical data: your IP address and browser details when you use the site. We use them for security, abuse and cheat prevention, and rate limiting. Sign-up, sign-in and a once-a-day visit record while you are signed in keep only one-way fingerprints of your IP address, network range and browser, never the values themselves, for 30 days; we use them for security and to detect multiple accounts.",
         "Payments, if you support OpenThrone: Stripe handles checkout, and your full card number and security code never reach us. We keep Stripe's reference IDs, amounts, currency and tax, your billing country and state, payment status and dates, the terms you agreed to at checkout, and which kingdom or alliance a payment was for.",
         "Discord, if you link it: your Discord user ID and username, your alert settings, and the alert messages we queue for you.",
         "Email: which emails we send you and your email preferences."
@@ -40,7 +40,7 @@
       "body": [
         "We use one essential cookie to keep you signed in, plus short-lived cookies that protect sign-in. We do not use analytics or advertising cookies.",
         "Your browser's local storage keeps display preferences, such as your color scheme and battle simulator settings. It stays on your device.",
-        "Cloudflare's security check (Turnstile), shown on sign-up, sign-in and some forms, may set its own cookies to tell people from bots. Our fonts are served from our own site."
+        "Cloudflare's security check (Turnstile), shown on sign-up, sign-in and some forms, may set its own cookies to tell people from bots. Recruiting uses a different check that we host ourselves: it runs in your browser, sets no cookies and sends nothing to a third party. Turnstile still protects sign-up and sign-in. Our fonts are served from our own site."
       ]
     },
     "share": {
@@ -63,7 +63,7 @@
       "body": [
         "Account and game data: while your account exists.",
         "Battle, bank and recruiting logs: 20 days.",
-        "Sign-in fingerprints: 30 days.",
+        "Sign-up, sign-in and visit fingerprints: 30 days.",
         "IP addresses in our administration audit log: 90 days. The record of the action itself is kept for security.",
         "Discord alert messages: 14 days after they are sent.",
         "Payment records: as long as tax and accounting law requires, including after an account is deleted (they then appear under the random name).",
@@ -109,6 +109,45 @@
       "title": "Changes to this policy",
       "body": [
         "We update this policy when what we do changes. The date at the top shows the latest version. For important changes, we will announce them in the game or by email before they take effect."
+      ]
+    }
+  },
+  "analyticsSections": {
+    "collect": {
+      "body": [
+        "Account details: your email address, display name, password (stored only as a one-way hash), and, if you turn on two-factor sign-in, your authenticator secret (stored encrypted).",
+        "Game and profile data: your kingdom, race and class, settings, optional bio and avatar image, battles, bank and recruiting history, alliance activity, and reports you file.",
+        "Messages: private messages and chat messages you send.",
+        "Technical data: your IP address and browser details when you use the site. We use them for security, abuse and cheat prevention, and rate limiting. Sign-up, sign-in and a once-a-day visit record while you are signed in keep only one-way fingerprints of your IP address, network range and browser, never the values themselves, for 30 days; we use them for security and to detect multiple accounts.",
+        "Optional analytics: only if you accept analytics cookies, Google Analytics 4 records, in aggregate, the page route you view (route patterns only), your device and browser type, the site that linked you here, and your approximate country, which Google derives from your IP address. GA4 does not store your IP address, and it never receives your account, player name or any player ids.",
+        "Payments, if you support OpenThrone: Stripe handles checkout, and your full card number and security code never reach us. We keep Stripe's reference IDs, amounts, currency and tax, your billing country and state, payment status and dates, the terms you agreed to at checkout, and which kingdom or alliance a payment was for.",
+        "Discord, if you link it: your Discord user ID and username, your alert settings, and the alert messages we queue for you.",
+        "Email: which emails we send you and your email preferences."
+      ]
+    },
+    "use": {
+      "body": [
+        "To run your account and the game, including showing your kingdom to other players and delivering messages. This is needed to provide the service you signed up for.",
+        "To keep the game fair and safe: detecting cheating and multiple accounts, preventing abuse, moderating chat and reports, and securing accounts. We do this because we have a legitimate interest in a fair, secure game.",
+        "To send email: account and security emails (needed for the service); news and announcements (you can unsubscribe at any time); and battle alerts, only if you turn them on.",
+        "To process payments and keep the records that tax and accounting law requires.",
+        "We do not sell your personal data or share it for cross-context behavioral (targeted) advertising, and we do not build advertising profiles. We use Google Analytics 4 only with your consent, to understand in aggregate which pages are visited and how the site is used; you can withdraw that consent at any time."
+      ]
+    },
+    "cookies": {
+      "body": [
+        "We use one essential cookie to keep you signed in, plus short-lived cookies that protect sign-in. Advertising cookies are never used. Analytics cookies are set only after you accept them, and our own ot_consent cookie (180 days) remembers your choice.",
+        "Your browser's local storage keeps display preferences, such as your color scheme and battle simulator settings. It stays on your device.",
+        "Cloudflare's security check (Turnstile), shown on sign-up, sign-in and some forms, may set its own cookies to tell people from bots. Recruiting uses a different check that we host ourselves: it runs in your browser, sets no cookies and sends nothing to a third party. Turnstile still protects sign-up and sign-in. Our fonts are served from our own site.",
+        "If you accept analytics, Google Analytics 4 helps us understand how the site is used. It starts only after your choice, and receives the page route pattern you are on, your device and browser type, the site that linked you here (origin and path only), and your approximate country, which Google derives from your IP address; GA4 does not store the IP address itself and never receives your account, player name or any player ids. Google then sets its _ga and _ga_<measurement id> cookies (up to 2 years, renewed on return visits) and processes this data for us as a processor, on our instructions only. You can change or withdraw your choice at any time via 'Cookie settings' in the site footer; withdrawing also deletes the Google cookies from your device. If your browser sends the Global Privacy Control signal and you have not made a choice, we treat analytics as declined."
+      ]
+    },
+    "share": {
+      "body": [
+        "Other players see what the game shows publicly: your display name, profile, kingdom details, rankings, alliance, and battle reports you or others share.",
+        "Our moderators and administrators can see account and game data, and can read messages and chat when needed for moderation. Their access is logged.",
+        "Service providers who process data for us: Cloudflare (network protection, the Turnstile security check, and image storage), Supabase (database hosting in the United States), Stripe (payments, if you support us), Discord (alerts and bot replies, only if you link your account), and Google (aggregate analytics measurements, only if you accepted analytics cookies). We send email from our own mail server.",
+        "We may disclose data when the law requires it, or to protect players, the game, or our rights."
       ]
     }
   }

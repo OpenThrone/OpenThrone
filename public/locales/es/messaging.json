@@ -161,5 +161,6 @@
     "externalLink": "Abrir enlace en otra pestaña",
     "internalLink": "Abrir enlace en esta pestaña",
     "toolbar": "Formato del mensaje"
-  }
+  },
+  "readOnlyNotice": "El tiempo real está desactivado: la mensajería es de solo lectura. Puedes leer las conversaciones, pero no se pueden enviar mensajes ni reacciones."
 }

@@ -10,7 +10,7 @@ vi.mock('@/services/RecruitmentCaptcha.service', () => ({
   verifyRecruitmentCaptcha: vi.fn(
     async (token: unknown) => token !== 'invalid',
   ),
-  isRecruitmentCaptchaRequired: () => true,
+  getRecruitmentCaptcha: async () => ({ required: true, provider: 'altcha' }),
 }));
 vi.mock('@/middleware/auth', () => ({
   withAuth: (handler: unknown) => handler,
@@ -104,6 +104,7 @@ describe('recruit link route', () => {
     expect(res.json).toHaveBeenCalledWith({
       eligible: false,
       showCaptcha: false,
+      captchaProvider: null,
       code: 'LOGIN_REQUIRED',
     });
   });
@@ -132,6 +133,7 @@ describe('recruit link route', () => {
     expect(res.json).toHaveBeenCalledWith({
       eligible: true,
       showCaptcha: true,
+      captchaProvider: 'altcha',
     });
   });
 
@@ -164,6 +166,7 @@ describe('recruit link route', () => {
     expect(res.json).toHaveBeenCalledWith({
       eligible: true,
       showCaptcha: true,
+      captchaProvider: 'altcha',
     });
   });
 });

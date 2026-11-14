@@ -149,6 +149,9 @@
     "supporterOnly": "Auto-Recruit is a Patron perk. It recruits up to the same daily limit as recruiting by hand.",
     "becomeSupporter": "Become a Patron",
     "doneForToday": "You've recruited every kingdom you can today. Recruits reset at the start of the next game day.",
-    "dailyCapReached": "You've reached your daily recruit limit. It resets at the start of the next game day."
+    "dailyCapReached": "You've reached your daily recruit limit. It resets at the start of the next game day.",
+    "verifyToStartAltcha": "Your browser is running a quick check before the session starts.",
+    "verificationExpired": "Verification expired. Please try again.",
+    "retryVerification": "Try again"
   }
 }

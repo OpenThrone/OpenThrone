@@ -15,7 +15,7 @@ const nextAuthNext = require('next-auth/next');
 const getServerSession = vi.spyOn(nextAuthNext, 'getServerSession');
 
 const handler = require('../../../../pages/api/account/disable-2fa').default;
-const argon2 = require('argon2');
+const passwordHash = require('@/lib/passwordHash');
 
 const TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
 const session = { user: { id: 125, email: 'player@example.com' } };
@@ -44,7 +44,9 @@ describe('disable 2FA requires proof of the account holder', () => {
     process.env.OT_ENFORCE_PRIVILEGED_2FA = 'false';
     mockPrisma.users.findUnique = vi.fn(async () => enrolledAccount);
     mockPrisma.users.update = vi.fn(async () => ({}));
-    verifySpy = vi.spyOn(argon2, 'verify').mockResolvedValue(false);
+    verifySpy = vi
+      .spyOn(passwordHash, 'verifyPassword')
+      .mockResolvedValue(false);
   });
 
   afterEach(() => {

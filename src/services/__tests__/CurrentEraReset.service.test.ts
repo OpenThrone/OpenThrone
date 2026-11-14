@@ -91,6 +91,7 @@ describe('resetCurrentEra', () => {
       },
       alliance_xp: { deleteMany: vi.fn() },
       alliance_upgrades: { deleteMany: vi.fn() },
+      alliance_memberships: { updateMany: vi.fn(async () => ({ count: 0 })) },
       responseCache: { deleteMany: vi.fn() },
       auditLog: { create: vi.fn() },
     };
@@ -188,8 +189,13 @@ describe('resetCurrentEra', () => {
         data: expect.objectContaining({ status: 'RESERVED', status_era_id: 7 }),
       }),
     );
+    // The treasury is discarded and the Alliance Hall returns to Camp.
     expect(tx.alliances.updateMany).toHaveBeenCalledWith({
-      data: { gold_in_bank: 0n },
+      data: { gold_in_bank: 0n, hall_level: 0 },
+    });
+    // Unpaid membership dues are old-era debt; fee and dues settings stay.
+    expect(tx.alliance_memberships.updateMany).toHaveBeenCalledWith({
+      data: { dues_arrears: 0n, dues_paid_through: null },
     });
     expect(tx.alliances.delete).not.toHaveBeenCalled();
     expect(result).toMatchObject({

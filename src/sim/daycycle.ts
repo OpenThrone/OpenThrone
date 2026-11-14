@@ -79,6 +79,7 @@ import type {
   DayResult,
   PlayerState,
   PopulationMetrics,
+  SimAdvisorContext,
   SimulationConfig,
   SimulationState,
 } from './types';
@@ -605,7 +606,7 @@ async function processTurnTick(
       (player) =>
         !live || player === currentPlayer || !areAllied(currentPlayer, player),
     );
-    const legacyDecision = makeDailyDecisions(currentPlayer, population, {
+    const baseDecision = makeDailyDecisions(currentPlayer, population, {
       attackLevelRange,
       currentDay: state.day,
       random,
@@ -614,6 +615,22 @@ async function processTurnTick(
         ? createLivePowerEstimator(currentPlayer, defenseCache)
         : undefined,
     });
+    const advisor = state.config.decisionAdvisor;
+    const advisorContext: SimAdvisorContext | undefined = advisor
+      ? {
+          player: currentPlayer,
+          population,
+          legacyDecision: baseDecision,
+          attackLevelRange,
+          day: state.day,
+          tick: currentTick,
+          live,
+        }
+      : undefined;
+    const legacyDecision =
+      advisor && advisorContext
+        ? await advisor.advise(advisorContext)
+        : baseDecision;
     // Live players buy structures and bank through liveRules instead.
     const managedDecision = {
       ...legacyDecision,
@@ -993,6 +1010,9 @@ async function processTurnTick(
     assertPlayerGold(currentPlayer, invariantContext);
     sanitizePlayerState(currentPlayer);
     assertPlayerGold(currentPlayer, invariantContext);
+    if (advisor?.afterRound && advisorContext) {
+      advisor.afterRound(advisorContext, decision);
+    }
     return acted;
   };
 

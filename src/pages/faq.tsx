@@ -22,6 +22,8 @@ const QUESTIONS = {
     'protection',
     'stamina',
     'allianceEra',
+    'allianceHall',
+    'allianceDues',
   ],
   help: ['access', 'password', 'data', 'report'],
 } as const;

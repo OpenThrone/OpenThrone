@@ -3,9 +3,14 @@ import type { NextApiResponse } from 'next';
 
 import { withApiGuard } from '@/middleware/apiGuard';
 import { CronJobService } from '@/services';
-import { withCronRunLog } from '@/services/CronRun.service';
+import {
+  hasRecentCronRun,
+  isForcedCronRequest,
+  withCronRunLog,
+} from '@/services/CronRun.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { getTurnIntervalMinutes } from '@/utils/timefunctions';
 
 const guardedHandler = withApiGuard({
   methods: ['POST'],
@@ -36,6 +41,19 @@ const isAuthorizedTaskRequest = (
 const turnCron = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (!isAuthorizedTaskRequest(req, process.env.DO_TURN_UPDATES === 'true')) {
     return res.status(401).json({ message: 'Unauthorized or Disabled Task' });
+  }
+
+  // A repeated delivery inside the same interval (two thirds of it, so a
+  // late-but-legitimate tick still runs) is skipped, not applied twice.
+  const windowMs = (getTurnIntervalMinutes() * 60_000 * 2) / 3;
+  if (
+    !isForcedCronRequest(req.query) &&
+    (await hasRecentCronRun('turns', windowMs))
+  ) {
+    return res.status(200).json({
+      message: 'Turn updates already ran this interval; skipped.',
+      skipped: true,
+    });
   }
 
   try {

@@ -34,7 +34,7 @@ mock.module('@/middleware/apiGuard', () => ({
 }));
 
 const route = require('../../../../pages/api/appeals/index').default;
-const argon2 = require('argon2');
+const passwordHash = require('@/lib/passwordHash');
 
 const STAFF_ID = 3;
 const PLAYER_ID = 7;
@@ -121,7 +121,9 @@ describe('ban appeals', () => {
     mockPrisma.users.findUnique = vi.fn(async ({ where }: any) =>
       where.id ? { email: `user${where.id}@example.com` } : player,
     );
-    verifySpy = vi.spyOn(argon2, 'verify').mockResolvedValue(true);
+    verifySpy = vi
+      .spyOn(passwordHash, 'verifyPassword')
+      .mockResolvedValue(true);
   });
 
   afterEach(() => {

@@ -23,7 +23,7 @@
     "mottoPlaceholder": "Lema corto",
     "avatar": "URL del Avatar (opcional)",
     "avatarPlaceholder": "https://...",
-    "comments": "Comentarios (opcional)",
+    "comments": "Sobre nosotros (opcional)",
     "commentsPlaceholder": "Describe tu alianza",
     "create": "Crear Alianza",
     "creating": "Creando alianza...",
@@ -37,7 +37,7 @@
     "commentsTooLong": "Los comentarios deben tener 1000 caracteres o menos",
     "cost": "Costo: 100 Millones de Oro",
     "levelRequired": "Debes ser al menos nivel {{level}} para crear una alianza.",
-    "goldRequired": "Crear una alianza cuesta {{cost}} oro.",
+    "goldRequired": "Crear una alianza cuesta {{cost}} de oro.",
     "joinMode": "Modo de acceso",
     "joinModeOpen": "Abierto (cualquiera puede unirse)",
     "joinModeRequest": "Solicitud para unirse",
@@ -75,7 +75,9 @@
     "settings": "Ajustes",
     "loadError": "No se pudo cargar la alianza",
     "bannerAlt": "Estandarte de la alianza",
-    "infighting": "Luchas internas"
+    "infighting": "Luchas internas",
+    "troops": "Tropas de la alianza",
+    "upgrades": "Mejoras"
   },
   "mine": {
     "title": "Mis alianzas",
@@ -94,7 +96,9 @@
   },
   "profile": {
     "title": "Alianzas",
-    "leaderOf": "Líder de {{name}}"
+    "leaderOf": "Líder de {{name}}",
+    "sharedTitle": "Misma alianza",
+    "sharedBody": "Tú y {{name}} estáis en {{alliances}}. Aún puedes atacarle, pero cuenta como una batalla interna de la alianza."
   },
   "members": {
     "rosterHidden": "Esta alianza solo muestra su lista de miembros a sus miembros.",
@@ -154,7 +158,9 @@
       "edit_list": "Editar lista",
       "view_list": "Ver lista",
       "share_reports": "Compartir informes",
-      "call_targets": "Designar objetivos"
+      "call_targets": "Designar objetivos",
+      "upgrade_alliance": "Comprar mejoras",
+      "set_dues": "Fijar cuota de ingreso y aportaciones"
     }
   },
   "invites": {
@@ -168,7 +174,9 @@
     "accept": "Aceptar",
     "decline": "Rechazar",
     "accepted": "Te has unido a la alianza.",
-    "declined": "Invitación rechazada."
+    "declined": "Invitación rechazada.",
+    "cap": "Miembros: {{members}} de {{cap}} ({{level}}). Cuando la alianza esté llena, nadie podrá unirse hasta mejorar el Salón de la alianza.",
+    "capFull": "La alianza está llena ({{members}} de {{cap}} en {{level}}): no se pueden aceptar invitaciones ni solicitudes hasta mejorar el Salón de la alianza."
   },
   "war": {
     "end": "Terminar guerra",
@@ -200,7 +208,12 @@
     "leader": "Líder",
     "members": "Miembros",
     "created": "Fundada",
-    "gold": "Tesoro"
+    "gold": "Tesoro",
+    "hall": "Salón de la alianza",
+    "fullHint": "La alianza está llena: nadie puede unirse hasta mejorar el Salón de la alianza.",
+    "chatTitle": "Chat de la alianza",
+    "chatHelp": "Una conversación privada para todos los miembros, en tus mensajes.",
+    "chatOpen": "Abrir el chat de la alianza"
   },
   "player": {
     "races": {
@@ -228,10 +241,11 @@
     "types": {
       "DEPOSIT": "Depósito",
       "WITHDRAWAL": "Retiro",
-      "TAX": "Impuesto",
-      "FEE": "Comisión",
+      "TAX": "Aportaciones e impuestos",
+      "FEE": "Cuota de ingreso",
       "LOAN": "Préstamo",
-      "LOAN_REPAYMENT": "Pago de préstamo"
+      "LOAN_REPAYMENT": "Pago de préstamo",
+      "UPGRADE": "Mejora del salón"
     }
   },
   "settings": {
@@ -244,7 +258,8 @@
     "level": "Nv. {{level}}",
     "generalTitle": "Ajustes generales",
     "save": "Guardar cambios",
-    "updateSuccess": "Ajustes guardados correctamente"
+    "updateSuccess": "Ajustes guardados correctamente",
+    "aboutUs": "Sobre nosotros"
   },
   "internalBattles": {
     "title": "Ataques entre miembros",
@@ -318,5 +333,119 @@
     "error": "No se pudo reactivar la alianza.",
     "leave": "Abandonar alianza",
     "leaveHint": "Puedes abandonarla en cualquier momento; el líder no necesita reactivarla antes."
+  },
+  "upgrades": {
+    "title": "Salón de la alianza",
+    "intro": "Mejora el Salón de la alianza con oro del tesoro para admitir más miembros, permitir que cada miembro deposite más a menudo y aumentar cuánto oro puede guardar el tesoro. Los niveles se compran de uno en uno, por el líder o un rango con «Comprar mejoras».",
+    "currentLevel": "Nivel actual",
+    "levelLabel": "{{name}} (nivel {{level}})",
+    "members": "Miembros",
+    "treasury": "Tesoro",
+    "yourDeposits": "Tus depósitos (últimas 24 h)",
+    "ofCap": "{{value}} / {{cap}}",
+    "colLevel": "Nivel",
+    "colCost": "Coste (tesoro)",
+    "colNeedsMembers": "Miembros necesarios",
+    "colMaxMembers": "Máx. miembros",
+    "colDeposits": "Depósitos por miembro / 24 h",
+    "colTreasuryCap": "Límite del tesoro",
+    "blockReserved": "La alianza está reservada hasta que el líder la reactive.",
+    "blockPermission": "Solo el líder o un rango con «Comprar mejoras» puede comprar.",
+    "blockMembers": "Necesita {{need}} miembros (la alianza tiene {{have}}).",
+    "blockGold": "Al tesoro le faltan {{missing}} de oro.",
+    "unlockAfter": "Compra primero {{name}}.",
+    "footnote": "El coste se paga del tesoro. Los depósitos se cuentan por miembro durante las últimas 24 horas. Solo los depósitos están sujetos al límite del tesoro; los reembolsos de préstamos y las cuotas siguen llegando. Las alianzas por encima del límite de miembros conservan a sus miembros, pero no pueden añadir más. Una nueva era devuelve el salón a Campamento.",
+    "maxed": "El Salón de la alianza está en su nivel máximo.",
+    "confirmTitle": "Mejorar el Salón de la alianza",
+    "confirmMessage": "¿Mejorar a {{name}} (nivel {{level}}) por {{cost}} de oro del tesoro?",
+    "bought": "El Salón de la alianza ahora es {{name}}.",
+    "loadError": "No se pudo cargar el Salón de la alianza.",
+    "raiseLink": "Auméntalo en Mejoras",
+    "levels": {
+      "0": "Campamento",
+      "1": "Salón",
+      "2": "Gran salón",
+      "3": "Torreón",
+      "4": "Ciudadela",
+      "5": "Fortaleza"
+    }
+  },
+  "memberDues": {
+    "title": "Cuota y aportaciones",
+    "loading": "Cargando cuota y aportaciones…",
+    "loadError": "No se pudieron cargar la cuota y las aportaciones.",
+    "joinFee": "Cuota de ingreso",
+    "noFee": "Sin cuota de ingreso",
+    "dues": "Aportación de miembro",
+    "none": "Sin aportaciones",
+    "amountPer": "{{amount}} {{period}}",
+    "period": {
+      "label": "Se cobra",
+      "NONE": "Sin aportaciones",
+      "DAILY": "al día",
+      "WEEKLY": "a la semana",
+      "MONTHLY": "al mes"
+    },
+    "periodOption": {
+      "NONE": "Sin aportaciones",
+      "DAILY": "Diaria",
+      "WEEKLY": "Semanal",
+      "MONTHLY": "Mensual"
+    },
+    "nextCollection": "Próximo cobro",
+    "youOwe": "Debes",
+    "leaderExempt": "Como líder no pagas aportaciones.",
+    "arrearsHelp": "Las aportaciones pendientes se cobran primero en el próximo cobro. Págalas ahora con tu oro en mano.",
+    "payAmount": "Oro a pagar",
+    "payInvalid": "Introduce al menos 1 y no más de lo que debes.",
+    "pay": "Pagar aportación",
+    "paid": "Has pagado {{amount}} de aportaciones.",
+    "whereSetter": "Fijas la cuota y las aportaciones en",
+    "whereMember": "El líder, o un rango con «Fijar cuota de ingreso y aportaciones», las cambia en la pestaña Ajustes.",
+    "settingsLink": "Ajustes",
+    "settingsTitle": "Cuota de ingreso y aportaciones",
+    "settingsHelp": "Los nuevos miembros pagan la cuota de ingreso una vez con su oro en mano. Las aportaciones se cobran a todos los miembros salvo al líder al inicio de cada periodo (00:00 OT; las semanas empiezan el lunes y los meses el día 1). Quien no puede pagar todo paga lo que tiene y debe el resto; nadie es expulsado por aportaciones impagadas.",
+    "maxValue": "Como máximo {{max}}",
+    "choosePeriod": "Elige primero cada cuánto se cobra",
+    "duesPerMember": "Aportación por miembro",
+    "maxTitle": "Aportación máxima por miembro",
+    "maxPerMember": "Máximo por miembro",
+    "settingsFootnote": "Una cuota nueva solo se aplica a quienes ingresen después. Las aportaciones nuevas empiezan en el próximo periodo; nunca se cobra por el tiempo anterior al ingreso. Cuotas y aportaciones entran en el tesoro aunque superen el límite del tesoro del Salón de la alianza.",
+    "save": "Guardar cuota y aportaciones",
+    "saved": "Cuota y aportaciones guardadas",
+    "joinTerms": "Cuota de ingreso: {{fee}} · Aportación: {{dues}}",
+    "confirmFee": "Unirse a {{name}} cuesta una cuota de ingreso de {{fee}}, que se toma de tu oro en mano.",
+    "confirmNoFee": "{{name}} no cobra cuota de ingreso.",
+    "confirmDues": "Los miembros pagan una aportación de {{dues}} con su oro en mano; lo que no puedas pagar lo deberás hasta que lo pagues.",
+    "confirmTitle": "¿Unirse a {{name}}?",
+    "confirmJoin": "Pagar y unirse",
+    "confirmRequestNote": "En una solicitud de ingreso, la cuota se cobra cuando se acepta, con el importe vigente entonces.",
+    "acceptFeeNote": "Aceptar una solicitud toma la cuota de ingreso de {{fee}} del oro en mano del solicitante; quien no puede pagar sigue pendiente.",
+    "arrearsColumn": "Aportaciones debidas"
+  },
+  "errors": {
+    "ALLIANCE_FULL": "La alianza está llena ({{count, number}}/{{max, number}} miembros en {{levelName}}). Mejora el Salón de la alianza para ampliar el límite.",
+    "ALLIANCE_DEPOSIT_LIMIT": "Límite de depósitos alcanzado: {{levelName}} permite {{limit, number}} depósitos por miembro cada 24 horas. Tu próximo depósito se abre en {{wait}}. Mejora el Salón de la alianza para ampliar el límite.",
+    "ALLIANCE_TREASURY_CAP": "Límite del tesoro alcanzado: {{levelName}} guarda como máximo {{cap, number}} de oro, así que puedes depositar como máximo {{room, number}} más. Mejora el Salón de la alianza para ampliar el límite.",
+    "ALLIANCE_NOT_MEMBER": "No eres miembro de esta alianza.",
+    "ALLIANCE_NOT_FOUND": "Alianza no encontrada.",
+    "ALLIANCE_UPGRADE_FORBIDDEN": "No tienes permiso para comprar mejoras de la alianza.",
+    "ALLIANCE_UPGRADE_MAXED": "El Salón de la alianza ya está en su nivel más alto.",
+    "ALLIANCE_UPGRADE_STALE": "El Salón de la alianza está en el nivel {{current}}; solo se puede comprar el nivel {{next}}. Recarga la página.",
+    "ALLIANCE_UPGRADE_MEMBERS": "{{levelName}} necesita al menos {{min, number}} miembros; la alianza tiene {{count, number}}.",
+    "ALLIANCE_UPGRADE_FUNDS": "No hay suficiente oro en el tesoro: {{levelName}} cuesta {{cost, number}} de oro.",
+    "ALLIANCE_DUES_FORBIDDEN": "No tienes permiso para fijar la cuota de ingreso y las aportaciones.",
+    "ALLIANCE_DUES_NONE_OWED": "No debes aportaciones.",
+    "ALLIANCE_DUES_NEED_GOLD": "Necesitas {{pay, number}} de oro en mano para pagar estas aportaciones.",
+    "ALLIANCE_DUES_CHANGED": "Tus aportaciones han cambiado; recarga e inténtalo de nuevo.",
+    "ALLIANCE_JOIN_FEE_UNPAID_SELF": "La cuota de ingreso es de {{fee, number}} de oro, que se paga con el oro en mano. No tienes suficiente oro en mano.",
+    "ALLIANCE_JOIN_FEE_UNPAID_APPLICANT": "La cuota de ingreso es de {{fee, number}} de oro, que se paga con el oro en mano, y el solicitante no tiene suficiente oro en mano.",
+    "ALLIANCE_JOIN_FEE_CHANGED": "La cuota de ingreso es ahora de {{fee, number}} de oro. Revísala y confirma de nuevo.",
+    "ALLIANCE_DUES_NEGATIVE": "La cuota y las aportaciones no pueden ser negativas.",
+    "ALLIANCE_DUES_FEE_MAX": "La cuota de ingreso puede ser como máximo de {{max, number}} de oro.",
+    "ALLIANCE_DUES_NEED_PERIOD": "Elige cada cuánto se cobran las aportaciones, o ponlas a 0.",
+    "ALLIANCE_DUES_NEED_AMOUNT": "Fija una aportación mayor que 0 o elige «Sin aportaciones».",
+    "ALLIANCE_DUES_AMOUNT_MAX": "Las aportaciones pueden ser como máximo de {{max, number}} de oro por miembro ({{periodName}}).",
+    "ALLIANCE_CALL_DUPLICATE": "Ya hay una orden de {{callTypeName}} abierta sobre {{name}}."
   }
 }

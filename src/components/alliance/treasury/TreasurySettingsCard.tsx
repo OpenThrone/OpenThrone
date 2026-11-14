@@ -18,6 +18,7 @@ import {
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
+import { wholeGoldSeparators } from '@/utils/wholeGoldInput';
 
 interface TreasurySettingsCardProps {
   alliance: AllianceInfo;
@@ -29,7 +30,7 @@ export const TreasurySettingsCard = ({
   alliance,
   onUpdate,
 }: TreasurySettingsCardProps) => {
-  const { t } = useTranslation('allianceTreasury');
+  const { t, i18n } = useTranslation('allianceTreasury');
   const stored = alliance as unknown as {
     loan_term_days?: number;
     loan_interest_pct?: number;
@@ -115,7 +116,7 @@ export const TreasurySettingsCard = ({
           min={capMin}
           max={capMax}
           allowDecimal={false}
-          thousandSeparator=","
+          {...wholeGoldSeparators(i18n.language)}
           value={cap}
           onChange={(v) => setCap(Number(v))}
         />

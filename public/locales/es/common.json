@@ -108,7 +108,7 @@
     "action": "Acción",
     "amount": "Cantidad",
     "type": "Tipo",
-    "owned": "Poseído",
+    "owned": "Adquirido",
     "buy": "Comprar",
     "sell": "Vender",
     "max": "Máx.",
@@ -252,10 +252,32 @@
     "operator": "AIOXperts IT Solutions LLC opera OpenThrone.dev.",
     "version": "Versión {{version}}"
   },
+  "consent": {
+    "banner": {
+      "regionLabel": "Consentimiento de cookies",
+      "title": "Cookies: tu decisión",
+      "text": "Usamos cookies propias para el juego. Con tu permiso, Google Analytics también cuenta las visitas para mejorar el sitio. Nunca recibe tu cuenta, tu nombre de jugador ni IDs.",
+      "privacyLink": "Política de privacidad",
+      "accept": "Aceptar analítica",
+      "decline": "Rechazar"
+    },
+    "settings": {
+      "title": "Ajustes de cookies",
+      "text": "La analítica es opcional y está desactivada hasta que la permitas. Solo ve rutas de páginas, tipo de dispositivo y aproximadamente de dónde vienen las visitas; nunca tu cuenta, nombre de jugador ni IDs.",
+      "privacyLink": "Política de privacidad",
+      "analyticsLabel": "Google Analytics",
+      "stateUnset": "Sin decidir: la analítica está desactivada.",
+      "stateGranted": "Permitida. Puedes desactivarla cuando quieras.",
+      "stateDenied": "Bloqueada. Google Analytics no se ejecuta.",
+      "gpcNote": "Tu navegador envía la señal Global Privacy Control, así que la analítica permanece desactivada hasta que la permitas aquí."
+    },
+    "footerLink": "Ajustes de cookies"
+  },
   "errors": {
     "stillSignedIn": "No se pudo conectar con el servidor. Sigues con la sesión iniciada; inténtalo de nuevo en un momento.",
     "failedToFetchGitInfo": "Error al obtener información de git",
-    "failedToFetchOnlinePlayerInfo": "Error al obtener información de jugadores en línea"
+    "failedToFetchOnlinePlayerInfo": "Error al obtener información de jugadores en línea",
+    "userDataFailed": "No se pudieron cargar los datos de tu reino. Recarga la página para volver a intentarlo."
   },
   "recruit": {
     "externalAllowance": "Este reino tiene {{remaining}} de {{limit}} reclutamientos externos disponibles hoy. Esta conexión puede reclutar {{ipRemaining}} más, hasta {{ipLimit}} por reino cada día.",
@@ -296,7 +318,9 @@
     "blockedRecruiter": "Has usado los {{limit}} reclutamientos diarios. Se restablece a las {{time}}.",
     "blockedTarget": "{{name}} alcanzó su límite diario de {{limit}} reclutamientos. Se restablece a las {{time}}.",
     "targetTitle": "Objetivo de reclutamiento",
-    "targetSummary": "{{name}} es un {{race}} {{class}} de nivel {{level}}."
+    "targetSummary": "{{name}} es un {{race}} {{class}} de nivel {{level}}.",
+    "pleaseWaitAltcha": "Por favor, espera mientras tu navegador completa una comprobación rápida a continuación.",
+    "captchaPolicyAltcha": "Usamos una comprobación alojada por nosotros que se ejecuta en tu navegador y no envía nada a terceros para prevenir el spam y el abuso. Tarda un momento; al dejar que termine, nos ayudas a mantener el juego justo y divertido para todos."
   },
   "ariaLabels": {
     "closeAlert": "Cerrar alerta",
@@ -908,5 +932,33 @@
   "veteran": {
     "badge": "Probador de la Era 1",
     "since": "Jugando desde {{date}}"
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "description": "La sala del trono que buscas no existe. Puede que la página haya sido movida o destruida en un asedio.",
+    "backHome": "Volver al trono"
+  },
+  "gameAlerts": {
+    "someone": "Alguien",
+    "attackTitle": "Te han atacado",
+    "attack": "Un ejército enemigo ha golpeado tu reino.",
+    "viewReport": "Ver informe de batalla",
+    "spyTitle": "Espía capturado",
+    "spy": "Tus centinelas frenaron una {{mission}} enemiga.",
+    "missions": {
+      "INTEL": "misión de espionaje",
+      "ASSASSINATE": "tentativa de asesinato",
+      "INFILTRATE": "infiltración"
+    },
+    "goldTitle": "Oro recibido",
+    "gold": "{{name}} te ha enviado {{amount}} de oro.",
+    "viewBank": "Ver historial del banco",
+    "friendTitle": "Solicitud de amistad",
+    "friend": "{{name}} te ha enviado una solicitud de amistad.",
+    "goldRequestTitle": "Solicitud de oro",
+    "goldRequest": "{{name}} te ha pedido oro.",
+    "viewRequests": "Ver solicitudes",
+    "awayAttacked": "Te atacaron mientras estabas fuera. Revisa tu historial de batallas.",
+    "awaySpy": "Tus centinelas atraparon a un espía mientras estabas fuera."
   }
 }

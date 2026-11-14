@@ -1,6 +1,6 @@
-import argon2 from 'argon2';
 import { randomBytes } from 'crypto';
 
+import { hashPassword } from '@/lib/passwordHash';
 import prisma from '@/lib/prisma';
 import type {
   IdentityBlockKind,
@@ -340,7 +340,7 @@ export class AccountAnonymizationService {
         email: `${userId}-deleted@deleted.local`,
         anonymizedAt: now,
         display_name: pseudonym,
-        password_hash: await argon2.hash(randomBytes(24).toString('hex')),
+        password_hash: await hashPassword(randomBytes(24).toString('hex')),
         twoFactorSecret: null,
         avatar: null,
         bio: '',

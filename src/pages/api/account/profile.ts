@@ -1,12 +1,22 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import formidable from 'formidable';
-import fs from 'fs';
-import imageSize from 'image-size';
 import mime from 'mime-types';
 import type { NextApiResponse } from 'next';
 import path from 'path';
 import { z } from 'zod';
 
+import {
+  localAvatarStorageAvailable,
+  resolveAvatarStorageDriver,
+} from '@/lib/avatarUpload';
+import type { MultipartForm } from '@/lib/imageUpload';
+import {
+  inspectImage,
+  InvalidMultipartError,
+  parseMultipartForm,
+  putPublicObject,
+  sha256Hex,
+  UploadTooLargeError,
+  writeLocalFile,
+} from '@/lib/imageUpload';
 import { withAuth } from '@/middleware/auth';
 import { AccountService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -15,76 +25,22 @@ import { sanitizeAvatarFraming } from '@/utils/avatarFraming';
 import {
   avatarExtensionFromImageType,
   buildAvatarFileName,
-  hashFileSha256,
   resolveAvatarPath,
 } from '@/utils/avatarStorage';
 import { logError, logInfo } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { publicErrorMessage } from '@/utils/publicError';
 
-// Function to save the uploaded file to the local file system.
-// fileName is server-generated; the client filename is never used for storage.
-const saveToLocal = async (
-  file: formidable.File,
-  userId: number,
-  fileName: string,
-): Promise<string> => {
-  const uploadDir = path.join(
-    process.cwd(),
-    'public',
-    `users/${userId}/avatar`,
-  );
-
-  // Ensure the directory exists
-  fs.mkdirSync(uploadDir, { recursive: true });
-
-  const filePath = resolveAvatarPath(uploadDir, fileName);
-
-  // Move the file to the upload directory
-  await fs.promises.rename(file.filepath, filePath);
-
-  return `/users/${userId}/avatar/${fileName}`;
-};
-
-// AWS S3 upload function (key built from the server-generated name only)
-const uploadToS3 = async (
-  file: formidable.File,
-  uId: number,
-  fileName: string,
-): Promise<{ Key: string }> => {
-  const s3 = new S3Client({
-    endpoint: process.env.AWS_S3_ENDPOINT,
-    region: process.env.AWS_REGION ?? 'auto',
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? '',
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? '',
-    },
-    forcePathStyle: true,
-  });
-
-  const fileStream = fs.createReadStream(file.filepath);
-  const contentType = mime.lookup(fileName) || 'application/octet-stream'; // Fallback to application/octet-stream if the MIME type is unknown
-
-  const key = `users/${uId}/avatar/${fileName}`;
-
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME ?? '',
-      Key: key,
-      Body: fileStream,
-      ACL: 'public-read',
-      ContentType: contentType,
-    }),
-  );
-
-  return { Key: key };
-};
-
 export const config = {
   api: {
-    bodyParser: false, // Disable body parsing, use formidable
+    bodyParser: false, // Multipart is parsed in memory by parseMultipartForm
   },
 };
+
+const MAX_AVATAR_BYTES = 1.5 * 1024 * 1024;
+// Room for the multipart envelope and the text fields around the file.
+const MAX_BODY_BYTES = MAX_AVATAR_BYTES + 64 * 1024;
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 const ProfileSchema = z.object({
   bio: z.string().optional(),
@@ -107,114 +63,85 @@ const parseAvatarFraming = (
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method === 'POST') {
-    const form = formidable({
-      multiples: false,
-      maxFileSize: 1.5 * 1024 * 1024,
-    });
-    form.uploadDir = path.join(process.cwd(), 'temp');
-    form.keepExtensions = true; // Keep file extension
+    const storage = resolveAvatarStorageDriver();
+    // Local-disk storage needs a writable filesystem; on runtimes without one
+    // answer with a clean 503. S3 storage works everywhere.
+    if (storage === 'local' && !(await localAvatarStorageAvailable())) {
+      logError('Local avatar storage is unavailable in this runtime');
+      return res.status(503).json({ error: 'avatar_upload_unavailable' });
+    }
 
-    form.parse(req, async (err, fields, files) => {
-      if (err) {
-        logError('Error parsing the form: ', err);
-        return res.status(500).json({ error: publicErrorMessage(err) });
+    let form: MultipartForm;
+    try {
+      form = await parseMultipartForm(req, { maxBytes: MAX_BODY_BYTES });
+    } catch (err) {
+      if (err instanceof UploadTooLargeError) {
+        return res
+          .status(400)
+          .json({ error: 'Image files must be at most 1.5 MB.' });
       }
-
-      const normalizedFields: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(fields)) {
-        normalizedFields[key] = Array.isArray(value) ? value[0] : value;
+      if (err instanceof InvalidMultipartError) {
+        return res.status(400).json({ error: 'Invalid upload' });
       }
+      logError('Error parsing the form: ', err);
+      return res.status(500).json({ error: publicErrorMessage(err) });
+    }
 
-      const validatedFields = ProfileSchema.safeParse(normalizedFields);
-      if (!validatedFields.success) {
+    const normalizedFields = Object.fromEntries(
+      Object.entries(form.fields).map(([key, [first]]) => [key, first]),
+    );
+
+    const validatedFields = ProfileSchema.safeParse(normalizedFields);
+    if (!validatedFields.success) {
+      return res.status(400).json({
+        error: 'Invalid fields',
+        details: validatedFields.error.flatten().fieldErrors,
+      });
+    }
+
+    const { bio } = validatedFields.data;
+    const avatarFraming = parseAvatarFraming(
+      validatedFields.data.avatarFraming,
+    );
+    if (avatarFraming === false) {
+      return res.status(400).json({ error: 'Invalid avatar framing' });
+    }
+    const file = form.files.avatar?.[0];
+
+    let avatarPath: string | undefined;
+
+    if (file) {
+      // The client filename only gates the allow-list; storage uses content.
+      const mimeType = mime.lookup(file.name || '') || '';
+      if (!ALLOWED_TYPES.includes(mimeType)) {
         return res.status(400).json({
-          error: 'Invalid fields',
-          details: validatedFields.error.flatten().fieldErrors,
+          error: 'Only image files (jpg, png, gif, webp) are allowed.',
         });
       }
-
-      const { bio } = validatedFields.data;
-      const avatarFraming = parseAvatarFraming(
-        validatedFields.data.avatarFraming,
-      );
-      if (avatarFraming === false) {
-        return res.status(400).json({ error: 'Invalid avatar framing' });
-      }
-      const file = Array.isArray(files.avatar) ? files.avatar[0] : files.avatar;
-
-      let avatarPath: string | undefined;
-
-      if (file) {
-        // Check MIME type
-        const allowedTypes = [
-          'image/jpeg',
-          'image/png',
-          'image/gif',
-          'image/webp',
-        ];
-        const mimeType = mime.lookup(file.originalFilename || '') || '';
-        if (!allowedTypes.includes(mimeType)) {
-          return res.status(400).json({
-            error: 'Only image files (jpg, png, gif, webp) are allowed.',
-          });
-        }
-
-        // Check image dimensions
-        let dimensions;
-        try {
-          dimensions = imageSize(file.filepath);
-        } catch {
-          return res
-            .status(400)
-            .json({ error: 'Uploaded file is not a valid image.' });
-        }
-        if (dimensions.width > 450 || dimensions.height > 450) {
-          return res
-            .status(400)
-            .json({ error: 'Image dimensions must not exceed 450x450px.' });
-        }
-
-        // Extension comes from the decoded image, and the stored name from user ID plus content hash
-        const extension = avatarExtensionFromImageType(dimensions.type);
-        if (!extension) {
-          return res.status(400).json({
-            error: 'Only image files (jpg, png, gif, webp) are allowed.',
-          });
-        }
-
-        try {
-          const userId =
-            typeof req.session?.user?.id === 'string'
-              ? parseInt(req.session.user.id, 10)
-              : Number(req.session?.user?.id ?? 0);
-          const fileName = buildAvatarFileName(
-            userId,
-            await hashFileSha256(file.filepath),
-            extension,
-          );
-
-          if (process.env.NEXT_PUBLIC_USE_AWS === 'true') {
-            // Upload the file to S3
-            const result = await uploadToS3(file, userId, fileName);
-            avatarPath = `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/${result.Key}`;
-          } else {
-            // Save the file to the local file system
-            const filePath = await saveToLocal(file, userId, fileName);
-            logInfo('File uploaded to:', filePath);
-            avatarPath = filePath;
-          }
-        } catch (uploadError) {
-          logError('Error uploading avatar:', uploadError);
-          return res.status(500).json({ error: 'Error uploading avatar' });
-        }
+      if (file.size > MAX_AVATAR_BYTES) {
+        return res
+          .status(400)
+          .json({ error: 'Image files must be at most 1.5 MB.' });
       }
 
-      const hasBio = typeof bio === 'string';
-      const hasAvatar = !!file;
-      const hasFraming = avatarFraming !== undefined;
+      const dimensions = inspectImage(file.bytes);
+      if (!dimensions) {
+        return res
+          .status(400)
+          .json({ error: 'Uploaded file is not a valid image.' });
+      }
+      if (dimensions.width > 450 || dimensions.height > 450) {
+        return res
+          .status(400)
+          .json({ error: 'Image dimensions must not exceed 450x450px.' });
+      }
 
-      if (!hasBio && !hasAvatar && !hasFraming) {
-        return res.status(400).json({ error: 'No data to update' });
+      // Extension comes from the decoded image, and the stored name from user ID plus content hash
+      const extension = avatarExtensionFromImageType(dimensions.type);
+      if (!extension) {
+        return res.status(400).json({
+          error: 'Only image files (jpg, png, gif, webp) are allowed.',
+        });
       }
 
       try {
@@ -222,21 +149,67 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
           typeof req.session?.user?.id === 'string'
             ? parseInt(req.session.user.id, 10)
             : Number(req.session?.user?.id ?? 0);
+        const fileName = buildAvatarFileName(
+          userId,
+          sha256Hex(file.bytes),
+          extension,
+        );
+        const key = `users/${userId}/avatar/${fileName}`;
 
-        const result = await AccountService.updateProfile(userId, {
-          bio: hasBio ? bio : undefined,
-          avatarFile: avatarPath,
-          avatarFraming,
-        });
-
-        return res
-          .status(200)
-          .json({ status: 'success', data: stringifyObj(result) });
-      } catch (updateError) {
-        logError('Error updating user:', updateError);
-        return res.status(500).json({ error: 'Error updating user profile' });
+        if (storage === 's3') {
+          await putPublicObject(
+            key,
+            file.bytes,
+            mime.lookup(fileName) || 'application/octet-stream',
+          );
+          avatarPath = `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/${key}`;
+        } else {
+          const uploadDir = path.join(
+            process.cwd(),
+            'public',
+            `users/${userId}/avatar`,
+          );
+          await writeLocalFile(
+            uploadDir,
+            resolveAvatarPath(uploadDir, fileName),
+            file.bytes,
+          );
+          avatarPath = `/${key}`;
+          logInfo('File uploaded to:', avatarPath);
+        }
+      } catch (uploadError) {
+        logError('Error uploading avatar:', uploadError);
+        return res.status(500).json({ error: 'Error uploading avatar' });
       }
-    });
+    }
+
+    const hasBio = typeof bio === 'string';
+    const hasAvatar = !!file;
+    const hasFraming = avatarFraming !== undefined;
+
+    if (!hasBio && !hasAvatar && !hasFraming) {
+      return res.status(400).json({ error: 'No data to update' });
+    }
+
+    try {
+      const userId =
+        typeof req.session?.user?.id === 'string'
+          ? parseInt(req.session.user.id, 10)
+          : Number(req.session?.user?.id ?? 0);
+
+      const result = await AccountService.updateProfile(userId, {
+        bio: hasBio ? bio : undefined,
+        avatarFile: avatarPath,
+        avatarFraming,
+      });
+
+      return res
+        .status(200)
+        .json({ status: 'success', data: stringifyObj(result) });
+    } catch (updateError) {
+      logError('Error updating user:', updateError);
+      return res.status(500).json({ error: 'Error updating user profile' });
+    }
   } else {
     res.setHeader('Allow', ['POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);

@@ -10,7 +10,6 @@ import {
 } from '@mantine/core';
 import type { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -29,6 +28,7 @@ import {
   resolveEraStartSettings,
 } from '@/utils/eraStartSettings';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 interface EraManagementPageProps {
   /** Starting an era is administrator-only; MANAGE_ERAS holders may only view. */

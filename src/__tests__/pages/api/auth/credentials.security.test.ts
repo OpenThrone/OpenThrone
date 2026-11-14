@@ -42,7 +42,7 @@ const CLIENT_IP = '203.0.113.9';
 const authorizeFrom = (clientIp?: string) =>
   createAuthOptions({ clientIp }).providers[0].options.authorize;
 const authorize = authorizeFrom(CLIENT_IP);
-const argon2 = require('argon2');
+const passwordHash = require('@/lib/passwordHash');
 
 const DASHBOARD_TEST_ORIGIN = 'https://dashboard-test.openthrone.dev';
 const TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
@@ -96,13 +96,17 @@ describe('credential login hardening', () => {
     process.env.NEXT_PUBLIC_URL_ROOT = 'http://localhost:3000';
 
     captchaFetch = vi.fn(
-      async () => ({ json: async () => ({ success: true }) }) as any,
+      // verifyLoginCaptcha calls Cloudflare siteverify directly and checks
+      // response.ok before reading the JSON verdict.
+      async () => ({ ok: true, json: async () => ({ success: true }) }) as any,
     );
     globalThis.fetch = captchaFetch as any;
 
     mockPrisma.users.findUnique = vi.fn(async () => account);
     mockPrisma.users.update = vi.fn(async () => account);
-    verifySpy = vi.spyOn(argon2, 'verify').mockResolvedValue(true);
+    verifySpy = vi
+      .spyOn(passwordHash, 'verifyPassword')
+      .mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -213,7 +217,8 @@ describe('credential login hardening', () => {
         ).rejects.toThrow('Captcha token required');
       }
       captchaFetch.mockImplementation(
-        async () => ({ json: async () => ({ success: false }) }) as any,
+        async () =>
+          ({ ok: true, json: async () => ({ success: false }) }) as any,
       );
       await expect(authorize(credentials(), { headers: {} })).rejects.toThrow(
         'Captcha verification failed',

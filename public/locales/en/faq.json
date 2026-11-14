@@ -57,7 +57,7 @@
     },
     "password": {
       "title": "How do I recover a forgotten password?",
-      "answer": "Use the password-reset page and follow its email instructions. Check your spam folder if the message does not arrive. Never post a reset link, password, or two-factor code in a public channel. If recovery still fails, describe the problem to support without including those secrets."
+      "answer": "Request a reset on the password-reset page, then open the link in the email: it opens the page ready for you to choose a new password. The link works once and expires after 3 hours. Check your spam folder if the message does not arrive. Never post a reset link, password, or two-factor code in a public channel. If recovery still fails, describe the problem to support without including those secrets."
     },
     "data": {
       "title": "How do I get a copy of my data or delete my account?",
@@ -70,6 +70,14 @@
     "allianceEra": {
       "title": "What happens to my alliance when a new era starts?",
       "answer": "Your alliance is kept but reserved. Its name, roster, ranks and artwork stay, while its treasury, loans, troop contracts and wars end with the old era and its features stay locked. You can leave at any time, even before the leader acts. Only the leader can reactivate it, once they have reached level 10 in the new era and pay 10,000,000 gold."
+    },
+    "allianceHall": {
+      "title": "How do alliance upgrades work?",
+      "answer": "Your alliance's Alliance Hall sets three limits: how many members it holds, how often each member may deposit per 24 hours and how much the treasury can be filled by deposits. A new alliance starts at Camp: 10 members, 2 deposits per member per 24 hours and a 5,000,000 gold treasury. The leader, or a rank given \"Buy upgrades\", buys the next level with treasury gold on the Upgrades tab, which shows each level's cost, how many members it needs and its limits. A full alliance keeps every member but takes no new ones until it upgrades. A new era returns the hall to Camp."
+    },
+    "allianceDues": {
+      "title": "Do alliances charge a fee or dues?",
+      "answer": "An alliance may charge a one-time join fee (up to 10,000,000 gold) and membership dues collected daily (up to 1,000,000), weekly (up to 5,000,000) or monthly (up to 20,000,000 gold per member). Both come from your gold on hand and go to the treasury. The fee and dues show on the alliance card, the alliance page and the invitation, and you confirm them before you join. Dues are taken at each period start, never for time before you joined; if you cannot pay in full you pay what you have and owe the rest, which is taken first next time or can be paid from the alliance's Overview or Bank tab. Nobody is removed for unpaid dues, and the leader pays none. The leader, or a rank given \"Set join fee and dues\", changes them on the Settings tab. A new era clears unpaid dues."
     }
   }
 }

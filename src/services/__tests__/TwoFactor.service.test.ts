@@ -117,8 +117,10 @@ describe('two-factor enrollment', () => {
   });
 
   it('refuses to disable 2FA without the password or a current code', async () => {
-    const argon2 = require('argon2');
-    const verify = vi.spyOn(argon2, 'verify').mockResolvedValue(false);
+    const passwordHash = require('@/lib/passwordHash');
+    const verify = vi
+      .spyOn(passwordHash, 'verifyPassword')
+      .mockResolvedValue(false);
     mockPrisma.users.findUnique.mockResolvedValue({
       password_hash: '$argon2id$synthetic-placeholder',
       twoFactorSecret: AUTHENTICATOR_SECRET,
@@ -137,8 +139,10 @@ describe('two-factor enrollment', () => {
   });
 
   it('disables 2FA with the correct password and honors enforced staff policy', async () => {
-    const argon2 = require('argon2');
-    const verify = vi.spyOn(argon2, 'verify').mockResolvedValue(true);
+    const passwordHash = require('@/lib/passwordHash');
+    const verify = vi
+      .spyOn(passwordHash, 'verifyPassword')
+      .mockResolvedValue(true);
     mockPrisma.users.findUnique.mockResolvedValue({
       password_hash: '$argon2id$synthetic-placeholder',
       twoFactorSecret: AUTHENTICATOR_SECRET,

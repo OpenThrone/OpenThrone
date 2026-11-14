@@ -7,6 +7,7 @@ const userService = require('@/services/User.service');
 
 const transportConstructionSpy = vi.spyOn(nodemailer, 'createTransport');
 const service = require('@/services/Email.service');
+const mailer = require('@/lib/mailer');
 
 const transportsAtImport = transportConstructionSpy.mock.calls.length;
 transportConstructionSpy.mockRestore();
@@ -32,12 +33,7 @@ beforeEach(() => {
     .spyOn(userService, 'getLoginBlockingStatuses')
     .mockResolvedValue(new Map());
   sendSpy = vi
-    .spyOn(
-      Object.getPrototypeOf(
-        nodemailer.createTransport({ jsonTransport: true }),
-      ),
-      'sendMail',
-    )
+    .spyOn(mailer, 'sendMail')
     .mockResolvedValue({ messageId: 'test' });
   claimed = [];
   mockPrisma.users.findMany = vi

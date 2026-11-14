@@ -1,6 +1,5 @@
-import type { SendMailOptions } from 'nodemailer';
-import nodemailer from 'nodemailer';
-
+import type { SendMailInput } from '@/lib/mailer';
+import { sendMail } from '@/lib/mailer';
 import prisma from '@/lib/prisma';
 import type { EmailCategory, EmailOutbox, Prisma } from '@/lib/prisma-exports';
 import { getLoginBlockingStatuses } from '@/services/User.service';
@@ -18,20 +17,9 @@ export function smtpTransportOptions() {
     socketTimeout: 60_000,
   };
 }
-let transport: ReturnType<typeof nodemailer.createTransport> | undefined;
-function getTransport() {
-  return (transport ??= nodemailer.createTransport(smtpTransportOptions()));
-}
-
-export type ImmediateMessage = Pick<
-  SendMailOptions,
-  'to' | 'subject' | 'text' | 'html' | 'headers'
->;
+export type ImmediateMessage = SendMailInput;
 export function sendImmediate(message: ImmediateMessage) {
-  return getTransport().sendMail({
-    ...message,
-    from: `OpenThrone <${process.env.SMTP_FROM_EMAIL}>`,
-  });
+  return sendMail(message);
 }
 
 export type EmailQueueItem = Pick<

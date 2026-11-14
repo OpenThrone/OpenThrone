@@ -57,7 +57,7 @@
     },
     "password": {
       "title": "¿Cómo recupero una contraseña olvidada?",
-      "answer": "Usa la página de restablecimiento de contraseña y sigue las instrucciones del correo. Revisa la carpeta de spam si no llega. Nunca publiques un enlace de restablecimiento, una contraseña ni un código de doble factor. Si la recuperación sigue fallando, describe el problema al soporte sin incluir esos secretos."
+      "answer": "Pide el restablecimiento en la página de restablecimiento de contraseña y abre el enlace del correo: abre la página lista para que elijas una contraseña nueva. El enlace funciona una sola vez y caduca a las 3 horas. Revisa la carpeta de spam si no llega. Nunca publiques un enlace de restablecimiento, una contraseña ni un código de doble factor. Si la recuperación sigue fallando, describe el problema al soporte sin incluir esos secretos."
     },
     "data": {
       "title": "¿Cómo obtengo una copia de mis datos o elimino mi cuenta?",
@@ -70,6 +70,14 @@
     "allianceEra": {
       "title": "¿Qué pasa con mi alianza cuando empieza una nueva era?",
       "answer": "Tu alianza se conserva, pero queda reservada. Su nombre, miembros, rangos e imágenes permanecen, mientras que su tesorería, préstamos, contratos de tropas y guerras terminan con la era anterior y sus funciones siguen bloqueadas. Puedes abandonarla en cualquier momento, incluso antes de que el líder actúe. Solo el líder puede reactivarla, cuando haya alcanzado el nivel 10 en la nueva era y pague 10.000.000 de oro."
+    },
+    "allianceHall": {
+      "title": "¿Cómo funcionan las mejoras de la alianza?",
+      "answer": "El Salón de tu alianza fija tres límites: cuántos miembros admite, cuántas veces puede depositar cada miembro cada 24 horas y hasta cuánto pueden llenar el tesoro los depósitos. Una alianza nueva empieza en Campamento: 10 miembros, 2 depósitos por miembro cada 24 horas y un tesoro de 5.000.000 de oro. El líder, o un rango con «Comprar mejoras», compra el siguiente nivel con oro del tesoro en la pestaña Mejoras, que muestra el coste de cada nivel, cuántos miembros necesita y sus límites. Una alianza llena conserva a todos sus miembros, pero no admite nuevos hasta mejorar. Una nueva era devuelve el salón a Campamento."
+    },
+    "allianceDues": {
+      "title": "¿Las alianzas cobran cuota o aportaciones?",
+      "answer": "Una alianza puede cobrar una cuota de ingreso única (hasta 10.000.000 de oro) y aportaciones de miembro cobradas a diario (hasta 1.000.000), cada semana (hasta 5.000.000) o cada mes (hasta 20.000.000 de oro por miembro). Ambas salen de tu oro en mano y van al tesoro. La cuota y las aportaciones aparecen en la tarjeta de la alianza, en su página y en la invitación, y las confirmas antes de ingresar. Las aportaciones se cobran al inicio de cada periodo, nunca por el tiempo anterior a tu ingreso; si no puedes pagar todo pagas lo que tienes y debes el resto, que se cobra primero la próxima vez o puedes pagar en la pestaña Resumen o Banco. Nadie es expulsado por aportaciones impagadas y el líder no paga. El líder, o un rango con «Fijar cuota de ingreso y aportaciones», las cambia en la pestaña Ajustes. Una era nueva borra las deudas de aportaciones."
     }
   }
 }

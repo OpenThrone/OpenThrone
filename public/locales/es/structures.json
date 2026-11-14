@@ -166,8 +166,6 @@
     "depositMaxAria": "Depositar cantidad máxima",
     "withdrawMaxAria": "Retirar cantidad máxima",
     "depositOverCap": "La cantidad supera el {{percent}}% de tu oro disponible",
-    "depositOverCapacity": "Tu banco tiene espacio para {{amount}} más. Las mejoras de economía aumentan este límite.",
-    "capacity": "Capacidad: hasta {{amount}}",
     "transactionTypes": {
       "armoryPurchase": "Compra de equipo",
       "armorySale": "Venta de equipo",

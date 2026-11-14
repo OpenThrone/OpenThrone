@@ -15,7 +15,6 @@ import {
 import { DatePickerInput } from '@mantine/dates';
 import type { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
@@ -25,6 +24,7 @@ import { GameCard } from '@/components/game/GameCard';
 import prisma from '@/lib/prisma';
 import { alertService } from '@/services/Alert.service';
 import { getAdminRequestError } from '@/utils/adminRequests';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 type Notice = {
   warnedAt: string;

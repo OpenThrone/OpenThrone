@@ -20,6 +20,8 @@ export const ALLIANCE_PERMISSION_KEYS = [
   'view_list',
   'share_reports',
   'call_targets',
+  'upgrade_alliance',
+  'set_dues',
 ] as const;
 
 export type AlliancePermissionKey = (typeof ALLIANCE_PERMISSION_KEYS)[number];
@@ -76,6 +78,14 @@ export const ALLIANCE_PERMISSION_LABELS: Record<
   call_targets: {
     key: 'ranks.perm.call_targets',
     fallback: 'Call hit, farm and recon targets',
+  },
+  upgrade_alliance: {
+    key: 'ranks.perm.upgrade_alliance',
+    fallback: 'Buy alliance upgrades with treasury gold',
+  },
+  set_dues: {
+    key: 'ranks.perm.set_dues',
+    fallback: 'Set join fee and dues',
   },
 };
 

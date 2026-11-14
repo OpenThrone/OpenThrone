@@ -16,6 +16,7 @@ import {
   useImpersonation,
 } from '@/hooks/useImpersonation';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
+import useSocialCountPush from '@/hooks/useSocialCountPush';
 import { useSupporterStatus } from '@/hooks/useSupporterStatus';
 import type { PlayerRace } from '@/types/typings';
 import {
@@ -343,6 +344,11 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
       // keep existing count on failure
     }
   }, [user, socialEnabled]);
+
+  useSocialCountPush(
+    Boolean(user && socialEnabled),
+    setSocialNotificationCount,
+  );
 
   useEffect(() => {
     fetchSocialNotifications();

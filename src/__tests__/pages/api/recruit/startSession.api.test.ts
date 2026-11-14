@@ -8,12 +8,18 @@ import { silenceLogger } from 'test/utils/silenceLogger';
 
 installMockPrisma(vi);
 
-const captcha = { required: true };
+const captcha = {
+  required: true,
+  provider: 'altcha' as 'altcha' | 'turnstile',
+};
 vi.mock('@/services/RecruitmentCaptcha.service', () => ({
   verifyRecruitmentCaptcha: vi.fn(
     async (token: unknown) => token === 'valid-token',
   ),
-  isRecruitmentCaptchaRequired: () => captcha.required,
+  getRecruitmentCaptcha: async () =>
+    captcha.required
+      ? { required: true, provider: captcha.provider }
+      : { required: false, provider: null },
 }));
 vi.mock('@/services/AutoRecruitAccess.service', () => ({
   AUTO_RECRUIT_DISABLED: { error: 'disabled' },
@@ -57,6 +63,7 @@ describe('startSession captcha', () => {
   beforeEach(() => {
     resetMockPrisma();
     captcha.required = true;
+    captcha.provider = 'altcha';
     tx.autoRecruitSession.create.mockClear();
     mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(tx));
   });
@@ -65,9 +72,23 @@ describe('startSession captcha', () => {
     const res = await run({});
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ code: 'CAPTCHA_REQUIRED' }),
+      expect.objectContaining({
+        code: 'CAPTCHA_REQUIRED',
+        captchaProvider: 'altcha',
+      }),
     );
     expect(tx.autoRecruitSession.create).not.toHaveBeenCalled();
+  });
+
+  it('names the Turnstile provider when the setting is switched back', async () => {
+    captcha.provider = 'turnstile';
+    const res = await run({});
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'CAPTCHA_REQUIRED',
+        captchaProvider: 'turnstile',
+      }),
+    );
   });
 
   it('refuses a failed verification', async () => {

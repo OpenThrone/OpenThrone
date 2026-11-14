@@ -71,6 +71,8 @@ const seed = async () => {
       name: 'Reserve alliance',
       leader_id: leaderId,
       gold_in_bank: TREASURY,
+      // Alliance Hall level is era progression: it returns to Camp (0).
+      hall_level: 2,
       avatar: 'https://example.test/crest.png',
       alliance_roles: {
         create: {
@@ -175,6 +177,7 @@ describe('ordinary era rollover reserves alliances', () => {
 
     // Treasury, loans, gold requests, join requests and wars belong to the old era.
     expect(alliance.gold_in_bank).toBe(0n);
+    expect(alliance.hall_level).toBe(0);
     expect((await prisma.alliance_loans.findFirstOrThrow()).status).toBe(
       'WRITTEN_OFF',
     );
@@ -213,7 +216,11 @@ describe('ordinary era rollover reserves alliances', () => {
     const alliance = await prisma.alliances.findUniqueOrThrow({
       where: { id: allianceId },
     });
-    expect(alliance).toMatchObject({ status: 'RESERVED', gold_in_bank: 0n });
+    expect(alliance).toMatchObject({
+      status: 'RESERVED',
+      gold_in_bank: 0n,
+      hall_level: 0,
+    });
     expect(await prisma.alliance_memberships.count()).toBe(3);
     // The ordinary phrase never authorises a factory restore.
     await expect(

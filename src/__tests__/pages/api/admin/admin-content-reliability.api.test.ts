@@ -2,6 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'bun:test';
 import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 
 installMockPrisma(vi);
+// auditLogger is module-mocked rather than spied: bun runs every suite in one
+// process, and interleaved vi.spyOn restores on this shared module left
+// logActionStrict as a plain value for later files in full-suite runs.
+vi.mock('@/utils/auditLogger', () => ({
+  logActionStrict: vi.fn(async () => undefined),
+  logAction: vi.fn(async () => undefined),
+  AuditWriteError: class AuditWriteError extends Error {},
+  getRequestIp: () => '127.0.0.1',
+  toAuditTargetUserId: () => null,
+}));
 const {
   handleMassMessages,
 } = require('@/pages/api/admin/content/mass-messages');
@@ -22,8 +32,8 @@ beforeEach(() => {
     vi
       .spyOn(runtime, 'getRuntimeConfig')
       .mockResolvedValue({ emailOutboxEnabled: false }),
-    vi.spyOn(audit, 'logActionStrict').mockResolvedValue(undefined),
   ];
+  (audit.logActionStrict as ReturnType<typeof vi.fn>).mockClear();
   mockPrisma.users = {
     findUnique: vi
       .fn()

@@ -158,5 +158,49 @@
       "SPY": "Spy",
       "SENTRY": "Sentry"
     }
+  },
+  "traffic": {
+    "title": "Site traffic",
+    "range": "Range",
+    "days7": "Last 7 days",
+    "days30": "Last 30 days",
+    "days90": "Last 90 days",
+    "loadError": "Could not load traffic analytics",
+    "retryHint": "Try again in a moment.",
+    "gaError": "Google Analytics is not answering",
+    "setup": {
+      "title": "Google Analytics is not configured",
+      "intro": "Set these environment variables (names only, values live in your secret store) to see traffic here:",
+      "steps": "Setup: create a GA4 property, create a Google Cloud service account, enable the Google Analytics Data API, add the service account email as Viewer on the property, then set the variables above and deploy."
+    },
+    "totals": {
+      "activeUsers": "Active users",
+      "newUsers": "New users",
+      "sessions": "Sessions",
+      "screenPageViews": "Page views",
+      "averageSessionDuration": "Avg. session",
+      "engagementRate": "Engagement",
+      "realtime": "Active now (30 min)"
+    },
+    "trendTitle": "Traffic trend",
+    "topPages": "Top pages",
+    "pagePath": "Page",
+    "views": "Views",
+    "users": "Users",
+    "sources": "Traffic sources",
+    "source": "Source / medium",
+    "countries": "Countries",
+    "country": "Country",
+    "devices": "Devices",
+    "device": "Device",
+    "empty": "No data in this range.",
+    "consent": {
+      "title": "Cookie consent",
+      "granted": "Accepted",
+      "denied": "Declined",
+      "optInRate": "Opt-in rate",
+      "noChoices": "—",
+      "note": "Google Analytics only counts visitors who accepted analytics cookies; the tally above counts every explicit choice."
+    }
   }
 }

@@ -1,6 +1,6 @@
 # Armory
 
-Last verified against code: 2026-11-06 (alpha d59b12d9)
+Last verified against code: 2026-11-12 (alpha 8ffa50de)
 
 The Armory is where you buy weapons and armor for your troops, sell them back, and upgrade stock to a higher tier. Which items you can buy depends on your Armory structure level and your race. Every change to your item counts is also recorded in the item ledger, which a daily check uses to catch bugs.
 
@@ -55,7 +55,7 @@ The mercenary hire and dismiss routes under `/api/armory` forward to the mercena
 
 Every change to a player's item counts writes a signed row to the item ledger next to the balance change, in the same transaction. The reasons are `ARMORY_BUY`, `ARMORY_SELL`, `ARMORY_UPGRADE`, `ADMIN_EDIT`, `ADMIN_GRANT`, `FORCE_CONTRIBUTION` (items given to a temporary force) and `ACCOUNT_RESET`. Writers record what the operation meant to do, not a diff of the saved rows.
 
-Once per OT calendar day, after the daily cron request (even if the daily pass failed), the check runs on one consistent database snapshot:
+Once per OT calendar day, after the daily cron request (even if the daily pass failed), the check runs. A daily request skipped as a repeat delivery (see [world-clock-and-jobs.md](world-clock-and-jobs.md)) does not start it. The check works on one consistent database snapshot:
 
 - The first ever run is a baseline: it stores every non-zero balance as a checkpoint and reports nothing.
 - Later runs compare each balance with `checkpoint + changes recorded since`. A missing row and a zero row are the same balance.

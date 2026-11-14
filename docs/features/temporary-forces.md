@@ -1,6 +1,6 @@
 # Temporary forces (#10)
 
-Last verified against code: 2026-11-06 (alpha 43c5fff7)
+Last verified against code: 2026-11-12 (alpha 8ffa50de)
 
 ## Player gameplay
 

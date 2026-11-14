@@ -1,14 +1,15 @@
-import argon2 from 'argon2';
 import { createHash, randomBytes } from 'crypto';
 import { z } from 'zod';
 
 import { Fortifications } from '@/constants';
 import { DefaultLevelBonus } from '@/constants/Bonuses';
+import { hashPassword, verifyPassword } from '@/lib/passwordHash';
 import prisma from '@/lib/prisma';
 import type { BonusPointsType } from '@/lib/prisma-exports';
 import { rateLimiter } from '@/lib/rate-limiter';
 import UserModel from '@/models/Users';
 import { sendImmediate } from '@/services/Email.service';
+import { renderEmail } from '@/services/emailTemplates';
 import type { AvatarFraming } from '@/utils/avatarFraming';
 import { withAvatarFraming } from '@/utils/avatarFraming';
 import { logError } from '@/utils/logger';
@@ -172,7 +173,7 @@ export class AccountService {
       }
 
       // Verify current password
-      const passwordMatches = await argon2.verify(
+      const passwordMatches = await verifyPassword(
         user.password_hash,
         validatedData.currentPassword,
       );
@@ -181,7 +182,7 @@ export class AccountService {
       }
 
       // Hash and update new password
-      const newPasswordHash = await argon2.hash(validatedData.newPassword);
+      const newPasswordHash = await hashPassword(validatedData.newPassword);
       await prisma.users.update({
         where: { id: userId },
         data: { password_hash: newPasswordHash },
@@ -330,18 +331,16 @@ export class AccountService {
 
       // Send email
       try {
-        await sendImmediate({
-          to: user.email,
-          subject: 'Email Change',
-          text: `Your email change token is: ${resetToken}\n 
-      Please use this token to reset your email here: ${process.env.NEXT_PUBLIC_URL_ROOT}/account/email-verify?token=${resetToken}\n
-      If you were not expecting this email, please ignore it.`,
-          html: `
-        <p>Your email change token is: <strong>${resetToken}</strong></p>
-        <p>Please use this token to reset your email <a href="${process.env.NEXT_PUBLIC_URL_ROOT}/account/email-verify?token=${resetToken}">here</a>.</p>
-        <p>If you were not expecting this email, please ignore it.</p>
-      `,
+        const { subject, text, html } = renderEmail({
+          kind: 'EMAIL_CHANGE',
+          locale: user.locale ?? 'en',
+          vars: {
+            userId: user.id,
+            display_name: user.display_name ?? '',
+            resetToken,
+          },
         });
+        await sendImmediate({ to: user.email, subject, text, html });
 
         return {
           status: true,
@@ -392,7 +391,7 @@ export class AccountService {
       }
 
       const hashedCode = hashResetToken(validatedData.verificationCode);
-      const passwordHash = await argon2.hash(validatedData.newPassword);
+      const passwordHash = await hashPassword(validatedData.newPassword);
       await prisma.$transaction(async (tx) => {
         const consumeResult = await tx.passwordReset.updateMany({
           where: {
@@ -659,7 +658,7 @@ export class AccountService {
         }
 
         // Verify password
-        const passwordMatches = await argon2.verify(
+        const passwordMatches = await verifyPassword(
           user.password_hash,
           validatedData.password,
         );
@@ -718,7 +717,7 @@ export class AccountService {
           throw new Error('User not found or password hash missing.');
         }
 
-        const passwordMatches = await argon2.verify(
+        const passwordMatches = await verifyPassword(
           user.password_hash,
           validatedData.password,
         );

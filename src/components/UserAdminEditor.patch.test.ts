@@ -47,6 +47,27 @@ const loaded = {
 } as any;
 
 describe('buildUserPatch', () => {
+  it('sends changed dues arrears with the loaded value as the expectation', () => {
+    const base = structuredClone(loaded);
+    base.record.alliances = [
+      {
+        allianceId: 4,
+        name: 'Tollkeepers',
+        role: 'Member',
+        duesArrears: '300',
+      },
+      { allianceId: 5, name: 'Other', role: 'Member', duesArrears: '0' },
+    ];
+    const edited = structuredClone(base);
+    edited.record.alliances[0].duesArrears = '0';
+    const patch = buildUserPatch(base, edited);
+    expect(patch?.alliances).toEqual({
+      memberships: [{ allianceId: 4, duesArrears: '0' }],
+    });
+    expect(patch?.expected.duesArrears).toEqual({ '4': '300' });
+    expect(buildUserPatch(base, structuredClone(base))).toBeNull();
+  });
+
   it('sends the loaded permission and role sets when they change', () => {
     const edited = structuredClone(loaded);
     edited.permissions.permissions = ['MANAGE_USERS'];

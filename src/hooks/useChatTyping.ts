@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Socket } from 'socket.io-client';
+
+import type { RealtimeClientSocket } from '@/lib/realtimeTransport';
 
 type TypingUpdate = {
   roomId: number;
@@ -14,7 +15,7 @@ const IDLE_STOP_MS = 3000;
 
 /** Handles ephemeral room typing presence; message content is never sent. */
 export default function useChatTyping(
-  socket: Socket | null,
+  socket: RealtimeClientSocket | null,
   roomId: number | null,
   currentUserId: number | null,
   enabled: boolean,

@@ -19,7 +19,7 @@
         "Kontodaten: deine E-Mail-Adresse, dein Anzeigename, dein Passwort (nur als nicht umkehrbarer Hash gespeichert) und, wenn du die Zwei-Faktor-Anmeldung aktivierst, dein Authenticator-Geheimnis (verschlüsselt gespeichert).",
         "Spiel- und Profildaten: dein Königreich, Volk und Klasse, Einstellungen, optionale Biografie und Avatarbild, Schlachten, Bank- und Rekrutierungsverlauf, Allianzaktivität und von dir eingereichte Meldungen.",
         "Nachrichten: private Nachrichten und Chatnachrichten, die du sendest.",
-        "Technische Daten: deine IP-Adresse und Browserdaten, wenn du die Seite nutzt. Wir verwenden sie für Sicherheit, zur Verhinderung von Missbrauch und Betrug sowie zur Begrenzung von Anfragen. Anmeldeprotokolle speichern nur nicht umkehrbare Fingerabdrücke deiner IP-Adresse und deines Browsers, nicht die Werte selbst.",
+        "Technische Daten: deine IP-Adresse und Browserdaten, wenn du die Seite nutzt. Wir verwenden sie für Sicherheit, zur Verhinderung von Missbrauch und Betrug sowie zur Begrenzung von Anfragen. Registrierung, Anmeldung und ein täglicher Besuchsdatensatz während du angemeldet bist speichern nur nicht umkehrbare Fingerabdrücke deiner IP-Adresse, deines Netzbereichs und deines Browsers, nie die Werte selbst, für 30 Tage; wir nutzen sie für Sicherheit und zur Erkennung von Mehrfachkonten.",
         "Zahlungen, wenn du OpenThrone unterstützt: Stripe wickelt den Bezahlvorgang ab, und deine vollständige Kartennummer und der Sicherheitscode erreichen uns nie. Wir speichern die Referenz-IDs von Stripe, Beträge, Währung und Steuern, dein Rechnungsland und deinen Bundesstaat, Zahlungsstatus und Daten, die beim Bezahlen akzeptierten Bedingungen sowie für welches Königreich oder welche Allianz eine Zahlung war.",
         "Discord, wenn du es verknüpfst: deine Discord-Benutzer-ID und deinen Benutzernamen, deine Benachrichtigungseinstellungen und die Benachrichtigungen, die wir für dich in die Warteschlange stellen.",
         "E-Mail: welche E-Mails wir dir senden und deine E-Mail-Einstellungen."
@@ -40,7 +40,7 @@
       "body": [
         "Wir verwenden ein notwendiges Cookie, um dich angemeldet zu halten, sowie kurzlebige Cookies, die die Anmeldung schützen. Wir verwenden keine Analyse- oder Werbe-Cookies.",
         "Der lokale Speicher deines Browsers hält Anzeigeeinstellungen, etwa dein Farbschema und die Einstellungen des Kampfsimulators. Er bleibt auf deinem Gerät.",
-        "Die Sicherheitsprüfung von Cloudflare (Turnstile) bei Registrierung, Anmeldung und einigen Formularen kann eigene Cookies setzen, um Menschen von Bots zu unterscheiden. Unsere Schriften liefern wir von unserer eigenen Seite aus."
+        "Die Sicherheitsprüfung von Cloudflare (Turnstile) bei Registrierung, Anmeldung und einigen Formularen kann eigene Cookies setzen, um Menschen von Bots zu unterscheiden. Unsere Schriften liefern wir von unserer eigenen Seite aus. Beim Rekrutieren verwenden wir eine andere Prüfung, die wir selbst betreiben: Sie läuft in Ihrem Browser, setzt keine Cookies und sendet nichts an Dritte. Turnstile schützt weiterhin Registrierung und Anmeldung."
       ]
     },
     "share": {
@@ -63,7 +63,7 @@
       "body": [
         "Konto- und Spieldaten: solange dein Konto besteht.",
         "Kampf-, Bank- und Rekrutierungsprotokolle: 20 Tage.",
-        "Anmelde-Fingerabdrücke: 30 Tage.",
+        "Fingerabdrücke aus Registrierung, Anmeldung und Besuchen: 30 Tage.",
         "IP-Adressen in unserem Administrations-Auditprotokoll: 90 Tage. Der Eintrag zur Aktion selbst bleibt aus Sicherheitsgründen erhalten.",
         "Discord-Benachrichtigungen: 14 Tage nach dem Versand.",
         "Zahlungsaufzeichnungen: so lange, wie das Steuer- und Handelsrecht es verlangt, auch nach einer Kontolöschung (sie erscheinen dann unter dem zufälligen Namen).",
@@ -109,6 +109,45 @@
       "title": "Änderungen dieser Erklärung",
       "body": [
         "Wir aktualisieren diese Erklärung, wenn sich ändert, was wir tun. Das Datum oben zeigt die aktuelle Fassung. Wichtige Änderungen kündigen wir vor ihrem Inkrafttreten im Spiel oder per E-Mail an."
+      ]
+    }
+  },
+  "analyticsSections": {
+    "collect": {
+      "body": [
+        "Kontodaten: deine E-Mail-Adresse, dein Anzeigename, dein Passwort (nur als nicht umkehrbarer Hash gespeichert) und, wenn du die Zwei-Faktor-Anmeldung aktivierst, dein Authenticator-Geheimnis (verschlüsselt gespeichert).",
+        "Spiel- und Profildaten: dein Königreich, Volk und Klasse, Einstellungen, optionale Biografie und Avatarbild, Schlachten, Bank- und Rekrutierungsverlauf, Allianzaktivität und von dir eingereichte Meldungen.",
+        "Nachrichten: private Nachrichten und Chatnachrichten, die du sendest.",
+        "Technische Daten: deine IP-Adresse und Browserdaten, wenn du die Seite nutzt. Wir verwenden sie für Sicherheit, zur Verhinderung von Missbrauch und Betrug sowie zur Begrenzung von Anfragen. Registrierung, Anmeldung und ein täglicher Besuchsdatensatz während du angemeldet bist speichern nur nicht umkehrbare Fingerabdrücke deiner IP-Adresse, deines Netzbereichs und deines Browsers, nie die Werte selbst, für 30 Tage; wir nutzen sie für Sicherheit und zur Erkennung von Mehrfachkonten.",
+        "Optionale Analysen: Nur wenn du Analyse-Cookies akzeptierst, erfasst Google Analytics 4 aggregiert, welche Seitenroute du ansiehst (nur Routenmuster), deinen Geräte- und Browsertyp, die Seite, von der du kommst, und dein ungefähres Land, das Google aus deiner IP-Adresse ableitet. GA4 speichert deine IP-Adresse nicht und erhält nie dein Konto, deinen Spielernamen oder irgendwelche Spieler-IDs.",
+        "Zahlungen, wenn du OpenThrone unterstützt: Stripe wickelt den Bezahlvorgang ab, und deine vollständige Kartennummer und der Sicherheitscode erreichen uns nie. Wir speichern die Referenz-IDs von Stripe, Beträge, Währung und Steuern, dein Rechnungsland und deinen Bundesstaat, Zahlungsstatus und Daten, die beim Bezahlen akzeptierten Bedingungen sowie für welches Königreich oder welche Allianz eine Zahlung war.",
+        "Discord, wenn du es verknüpfst: deine Discord-Benutzer-ID und deinen Benutzernamen, deine Benachrichtigungseinstellungen und die Benachrichtigungen, die wir für dich in die Warteschlange stellen.",
+        "E-Mail: welche E-Mails wir dir senden und deine E-Mail-Einstellungen."
+      ]
+    },
+    "use": {
+      "body": [
+        "Um dein Konto und das Spiel zu betreiben, einschließlich der Anzeige deines Königreichs für andere Spieler und der Zustellung von Nachrichten. Das ist nötig, um den Dienst zu erbringen, für den du dich angemeldet hast.",
+        "Um das Spiel fair und sicher zu halten: Betrug und Mehrfachkonten erkennen, Missbrauch verhindern, Chat und Meldungen moderieren und Konten schützen. Wir tun das, weil wir ein berechtigtes Interesse an einem fairen, sicheren Spiel haben.",
+        "Um E-Mails zu senden: Konto- und Sicherheits-E-Mails (für den Dienst nötig); Neuigkeiten und Ankündigungen (du kannst dich jederzeit abmelden); und Kampfmeldungen, nur wenn du sie aktivierst.",
+        "Um Zahlungen abzuwickeln und die Aufzeichnungen aufzubewahren, die das Steuer- und Handelsrecht verlangt.",
+        "Wir verkaufen deine personenbezogenen Daten nicht und geben sie nicht für seitenübergreifende (zielgerichtete) Werbung weiter, und wir erstellen keine Werbeprofile. Wir nutzen Google Analytics 4 nur mit deiner Einwilligung, um aggregiert zu verstehen, welche Seiten besucht werden und wie die Seite genutzt wird; diese Einwilligung kannst du jederzeit widerrufen."
+      ]
+    },
+    "cookies": {
+      "body": [
+        "Wir verwenden ein essentielles Cookie, das dich angemeldet hält, dazu kurzlebige Cookies, die die Anmeldung schützen. Werbe-Cookies werden nie verwendet. Analyse-Cookies werden erst gesetzt, wenn du sie akzeptierst; unsere eigene Cookie ot_consent (180 Tage) merkt sich deine Wahl.",
+        "Der lokale Speicher deines Browsers hält Anzeigeeinstellungen, etwa dein Farbschema und die Einstellungen des Kampfsimulators. Er bleibt auf deinem Gerät.",
+        "Die Sicherheitsprüfung von Cloudflare (Turnstile) bei Registrierung, Anmeldung und einigen Formularen kann eigene Cookies setzen, um Menschen von Bots zu unterscheiden. Unsere Schriften liefern wir von unserer eigenen Seite aus. Beim Rekrutieren verwenden wir eine andere Prüfung, die wir selbst betreiben: Sie läuft in Ihrem Browser, setzt keine Cookies und sendet nichts an Dritte. Turnstile schützt weiterhin Registrierung und Anmeldung.",
+        "Wenn du Analysen akzeptierst, hilft uns Google Analytics 4 zu verstehen, wie die Seite genutzt wird. Es beginnt erst nach deiner Entscheidung und erhält das Routenmuster der aktuellen Seite, deinen Geräte- und Browsertyp, die Seite, von der du kommst (nur Ursprung und Pfad) sowie dein ungefähres Land, das Google aus deiner IP-Adresse ableitet; GA4 speichert die IP-Adresse selbst nicht und erhält nie dein Konto, deinen Spielernamen oder irgendwelche Spieler-IDs. Google setzt dann seine _ga- und _ga_<Mess-ID>-Cookies (bis zu 2 Jahre, bei Rückkehr erneuert) und verarbeitet diese Daten für uns als Auftragsverarbeiter, ausschließlich nach unseren Weisungen. Deine Wahl kannst du jederzeit über „Cookie-Einstellungen“ im Seitenfuß ändern oder widerrufen; beim Widerruf werden die Google-Cookies auch von deinem Gerät gelöscht. Sendet dein Browser das Global-Privacy-Control-Signal und hast du noch nicht gewählt, behandeln wir Analysen als abgelehnt."
+      ]
+    },
+    "share": {
+      "body": [
+        "Andere Spieler sehen, was das Spiel öffentlich zeigt: deinen Anzeigenamen, dein Profil, Königreichsdaten, Ranglisten, deine Allianz und Kampfberichte, die du oder andere teilen.",
+        "Unsere Moderatoren und Administratoren können Konto- und Spieldaten sehen und Nachrichten und Chats lesen, wenn die Moderation es erfordert. Ihr Zugriff wird protokolliert.",
+        "Dienstleister, die Daten für uns verarbeiten: Cloudflare (Netzwerkschutz, der Turnstile-Sicherheitscheck und Bildspeicherung), Supabase (Datenbank-Hosting in den USA), Stripe (Zahlungen, falls du uns unterstützt), Discord (Alarme und Bot-Antworten, nur wenn du dein Konto verknüpfst) sowie Google (aggregierte Analysemesswerte, nur wenn du Analyse-Cookies akzeptiert hast). E-Mails versenden wir von unserem eigenen Mailserver.",
+        "Wir können Daten offenlegen, wenn das Gesetz es verlangt oder um Spieler, das Spiel oder unsere Rechte zu schützen."
       ]
     }
   }

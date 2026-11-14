@@ -292,3 +292,55 @@ export async function pruneOldCronRuns(
     return 0;
   }
 }
+
+/**
+ * True when `job` already has a run that succeeded or is still running and
+ * started at or after `since`. Scheduled endpoints use it to skip a repeated
+ * delivery (a duplicate Cron Trigger, or two schedulers overlapping during a
+ * switchover) instead of applying a tick twice. Failed runs never count, so a
+ * failed tick can be re-run at once. A RUNNING row older than
+ * CRON_RUN_STALE_AFTER_MS lost its finish (the process died mid-run) and no
+ * longer counts either, so a crashed daily does not block the rest of the
+ * game day. A lookup error never blocks the job: it is logged and treated as
+ * "no run".
+ *
+ * Not atomic: two deliveries arriving at the same instant can both pass.
+ * Per-user row locks in CronJob.service.ts still keep each write consistent.
+ */
+export async function hasCronRunSince(
+  job: string,
+  since: Date,
+  now: Date = new Date(),
+): Promise<boolean> {
+  const liveSince = new Date(
+    Math.max(since.getTime(), now.getTime() - CRON_RUN_STALE_AFTER_MS),
+  );
+  try {
+    const recent = await prisma.cronRun.findFirst({
+      where: {
+        job,
+        OR: [
+          { status: 'SUCCESS', startedAt: { gte: since } },
+          { status: 'RUNNING', startedAt: { gte: liveSince } },
+        ],
+      },
+      select: { id: true },
+    });
+    return Boolean(recent);
+  } catch (error) {
+    logError(`Could not check recent cron runs for ${job}`, { error });
+    return false;
+  }
+}
+
+/** hasCronRunSince for the last `windowMs` milliseconds. */
+export const hasRecentCronRun = (
+  job: string,
+  windowMs: number,
+  now: Date = new Date(),
+): Promise<boolean> =>
+  hasCronRunSince(job, new Date(now.getTime() - windowMs), now);
+
+/** `?force=true` on a scheduled endpoint bypasses the recent-run check. */
+export const isForcedCronRequest = (query: unknown): boolean =>
+  (query as { force?: unknown } | undefined)?.force === 'true';

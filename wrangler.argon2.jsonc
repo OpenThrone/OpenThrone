@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Argon2 verification sidecar (see argon2-worker.ts). Deployed as its own
+  // worker so legacy m=65536 hashes verify in a small isolate instead of
+  // tipping the main app over the 128 MiB limit. Not publicly routable.
+  "name": "openthrone-argon2",
+  "main": "argon2-worker.ts",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false
+}

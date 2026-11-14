@@ -1,10 +1,10 @@
 import { Tabs } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import AbuseSignalsPanel from '@/components/admin/AbuseSignalsPanel';
 import AdminLayout from '@/components/admin/AdminLayout';
 import InvestigationSignals from '@/components/admin/InvestigationSignals';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const CheatSignalsPage = () => {
   const { t } = useTranslation('admin-abuse');

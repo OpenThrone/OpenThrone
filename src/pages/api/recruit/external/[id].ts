@@ -11,7 +11,7 @@ import {
   resolveRecruitmentContext,
 } from '@/services/Recruitment.service';
 import {
-  isRecruitmentCaptchaRequired,
+  getRecruitmentCaptcha,
   verifyRecruitmentCaptcha,
 } from '@/services/RecruitmentCaptcha.service';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -38,10 +38,14 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         ownerId: owner.id,
         ipAddress,
       });
+      const captcha = status.code
+        ? { required: false, provider: null }
+        : await getRecruitmentCaptcha();
       return res.status(status.code ? 409 : 200).json({
         ...status,
         eligible: !status.code,
-        showCaptcha: !status.code && isRecruitmentCaptchaRequired(),
+        showCaptcha: captcha.required,
+        captchaProvider: captcha.provider,
       });
     }
     if (!(await verifyRecruitmentCaptcha(req.body?.captchaToken, ipAddress))) {

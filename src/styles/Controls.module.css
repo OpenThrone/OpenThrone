@@ -156,6 +156,38 @@
   border-color: var(--ot-accent);
 }
 
+/* ---- outline (default page tabs): each tab reads as a raised plate ---- */
+.tabList[data-variant='outline'] {
+  gap: 6px;
+  padding-bottom: 8px;
+}
+
+.tabList[data-variant='outline'] .tab {
+  color: var(--ot-body);
+  background: linear-gradient(180deg, var(--ot-surface-2), var(--ot-inset));
+  border: 1px solid var(--ot-line);
+  border-radius: 4px;
+  padding-inline: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.tabList[data-variant='outline'] .tab:hover:not([data-active], [data-disabled]) {
+  color: var(--ot-heading);
+  border-color: var(--ot-accent);
+}
+
+.tabList[data-variant='outline'] .tab[data-active] {
+  color: var(--ot-heading);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ot-accent) 30%, var(--ot-surface-2)),
+    var(--ot-inset)
+  );
+  border-color: var(--ot-accent);
+}
+
 /* ---- pills only: recessed stone well + inlaid brass plaque ---- */
 .tabList[data-variant='pills'] {
   /* neutralize Mantine's yellow list fill, build the well */

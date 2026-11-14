@@ -53,6 +53,43 @@ function CaptchaPlaceholder() {
   );
 }
 
+/**
+ * Stand-in for the self-hosted ALTCHA widget (the real one fetches a signed
+ * challenge from the API, which guide specimens never do). It mirrors the
+ * widget's checkbox row and uses the same race-themed surface and accent.
+ */
+function AltchaPlaceholder({ label }: { label: string }) {
+  return (
+    <Box
+      aria-label="ALTCHA challenge placeholder"
+      style={{
+        width: 300,
+        maxWidth: '100%',
+        border: '1px solid var(--ot-border)',
+        borderRadius: 4,
+        background: 'var(--ot-surface-2)',
+        padding: '14px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+      }}
+    >
+      <Box
+        aria-hidden
+        style={{
+          width: 20,
+          height: 20,
+          border: '2px solid var(--ot-accent)',
+          borderRadius: 3,
+        }}
+      />
+      <Text size="sm" c="var(--ot-body)">
+        {label}
+      </Text>
+    </Box>
+  );
+}
+
 function FlowState({
   children,
   label,
@@ -105,9 +142,9 @@ export default function RecruitmentSection() {
       </Specimen>
 
       <Specimen
-        name="External visit — verification pending"
+        name="External visit — Turnstile pending"
         usedOn={['/recruit/[id]']}
-        note="The challenge stays centered below the shield with its height reserved while loading. Solving submits automatically; expiry and errors return to a refusal."
+        note="The fallback provider. The challenge stays centered below the shield with its height reserved while loading. Solving submits automatically; expiry and errors return to a refusal."
       >
         <RecruitmentFlowView
           isExternal
@@ -117,10 +154,60 @@ export default function RecruitmentSection() {
           succeeded={false}
           ready
           showCaptcha
+          captchaProvider="turnstile"
           allowance={ALLOWANCE}
           userInfo={VISITOR}
           formRef={{ current: null }}
           captchaSlot={<CaptchaPlaceholder />}
+          onSubmit={submit}
+          onRetry={mockAction('Try again')}
+          onRegister={mockAction('Register')}
+        />
+      </Specimen>
+
+      <Specimen
+        name="External visit — ALTCHA check running"
+        usedOn={['/recruit/[id]', '/auto-recruit']}
+        note="The default check for recruiting. It is self-hosted, runs in the browser and starts as the page loads, so it is usually finished before the visitor acts; solving submits automatically. Turnstile (above) stays selectable in admin settings and still guards sign-up and sign-in."
+      >
+        <RecruitmentFlowView
+          isExternal
+          signedIn={false}
+          submitting={false}
+          error={null}
+          succeeded={false}
+          ready
+          showCaptcha
+          captchaProvider="altcha"
+          allowance={ALLOWANCE}
+          userInfo={VISITOR}
+          formRef={{ current: null }}
+          captchaSlot={<AltchaPlaceholder label="Verifying…" />}
+          onSubmit={submit}
+          onRetry={mockAction('Try again')}
+          onRegister={mockAction('Register')}
+        />
+      </Specimen>
+
+      <Specimen
+        name="External visit — ALTCHA check failed"
+        usedOn={['/recruit/[id]', '/auto-recruit']}
+        note="A failed, expired or already-used check ends the attempt with a translated message and a Try again button that loads a fresh challenge. Auto-recruit never solves again on its own."
+      >
+        <RecruitmentFlowView
+          isExternal
+          signedIn={false}
+          submitting={false}
+          error={t('recruit.verificationFailed')}
+          succeeded={false}
+          ready
+          showCaptcha={false}
+          captchaProvider="altcha"
+          retryable
+          allowance={ALLOWANCE}
+          userInfo={VISITOR}
+          formRef={{ current: null }}
+          captchaSlot={null}
           onSubmit={submit}
           onRetry={mockAction('Try again')}
           onRegister={mockAction('Register')}

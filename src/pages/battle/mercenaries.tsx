@@ -1,6 +1,5 @@
 import { Alert, Loader } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type {
@@ -14,6 +13,7 @@ import { MercenaryBarracks } from '@/components/game/MercenaryBarracks';
 import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 export default function Mercenaries() {
   const { t } = useTranslation('mercenaries');

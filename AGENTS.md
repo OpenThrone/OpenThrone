@@ -435,6 +435,7 @@ A change is complete only if:
 - [ ] Design file re-synced (`bun run design:sync`) once a visual change is merged and deployed to alpha
 - [ ] Feature touchpoints listed in the PR; new player state is viewable and editable in admin Edit Player (section 14)
 - [ ] Docs updated in this PR and a `Docs:` line added to its description (section 16)
+- [ ] Gameplay rule changes approved by the owner, measured on production, shipped in their own `(balance)` PR, with each limit showing how to raise it (section 17)
 - [ ] After merge: `merged: true` confirmed, then the remote branch, local branch and worktree removed ([git workflow](docs/git-workflow.md))
 
 ---
@@ -465,9 +466,23 @@ Reviewers reject a PR into `alpha` with no `Docs:` line, or whose line does not 
 2. **Re-verify stale docs.** `bun run docs:check --release` must pass. It fails on any doc whose linked source changed since its `Last verified` commit. Read each one against the code, fix what is wrong, and update the line. Do not bump the line without reading the code.
 3. **Check player copy.** How to Play, the FAQ and guides match the release in `en`, `de` and `es`, and `CHANGELOG.md` has the release entry.
 4. **Check the indexes.** `docs/README.md`, `docs/mechanics/README.md` and `docs/ideas.md` list what exists, and shipped ideas are gone from `docs/ideas.md`.
-5. **Check it is safe to publish.** `master` is the source of public GitHub releases, so docs must hold no hostnames, credentials, player data or undisclosed security problems. Security gaps go in a Forgejo issue, not a doc.
+5. **Check it is safe to publish.** `master` may be published to GitHub when the owner asks, so docs must hold no hostnames, credentials, player data or undisclosed security problems. Security gaps go in a Forgejo issue, not a doc.
 
 Add a `Docs:` section to the release PR description stating the result of each step and the docs re-verified. The release PR does not merge until it is there.
+
+---
+
+## 17) Gameplay Rules Need the Owner
+
+A gameplay rule is anything that sets what a player can do, earn or keep: limits, caps, costs, prices, rates, requirements, cooldowns, odds and rewards. Changing one, in either direction, is the owner's design decision, never a bug fix. v0.13.0 shipped a bank capacity as one of "six audit bugs": players could no longer deposit past 10,000,000 gold and nothing showed how to raise it, until v0.13.1 repealed it ([decision](docs/decisions/no-bank-capacity.md)).
+
+- **The code is the live rule.** When How to Play, a doc or an unused constant describes a rule the code does not enforce, fix the text (section 16) or ask the owner. Never start enforcing it as a fix.
+- **Ask before building.** A new, tighter or looser gameplay rule merges only with the owner's explicit approval, recorded in the PR description.
+- **Measure it on production first.** Before asking, check production read-only and in aggregate: how many active players the rule affects today, and how soon a typical player reaches it. Put the numbers in the question and in the PR. "May bite late-game players" without data is not an impact check.
+- **Ship it visibly.** A gameplay change gets its own PR, titled with `(balance)` in its type (for example `feat(balance):`), its own `CHANGELOG.md` entry, and never sits inside a batch of fixes.
+- **Show every limit where it bites and where it is raised.** At the limit, the player sees the current value, what happens when it is reached, what raises it and a link to that place. The screen that raises it lists the value for every tier. A limit with no visible way to raise it does not ship.
+- **Keep every tier reachable.** Each upgrade tier must be buyable at the level cap; `src/constants/upgradeReachability.test.ts` enforces it.
+- **Reviewers reject** a PR that changes a gameplay rule without the owner's recorded approval, or that adds a limit without its visible way to raise it.
 
 ---
 
@@ -480,7 +495,7 @@ Branch model: `master` is production (`openthrone.dev`) and `alpha` is the alpha
 - Branch from a freshly fetched `origin/alpha` (`<type>/<short-name>`); stage explicit paths, never generated files (`prisma/generated`, `node_modules`, `bun.lock`, `design/openthrone.figcraft`).
 - After `tea pr merge`, read the PR back and confirm `merged: true` before deploying or deleting the branch.
 - Once merged and deployed, delete the remote branch (`agent-forgejo branch-delete`), the local branch and the worktree in the same session. Never leave a worktree with uncommitted changes; commit them or save a patch.
-- A release is not finished until Forgejo is tagged, GitHub has its release commit and Release, and `alpha` is bumped to the next `-alpha` version (see Versioning and releases). Do not deploy to production without the user's explicit go-ahead. Server hostnames, deploy steps, rollback and production data rules are kept outside this repository; ask the user for them before touching alpha or production.
+- A release is not finished until Forgejo is tagged and `alpha` is bumped to the next `-alpha` version (see Versioning and releases). Never push to GitHub (commit, tag or Release) without the owner's explicit go-ahead for that release. Do not deploy to production without the user's explicit go-ahead. Server hostnames, deploy steps, rollback and production data rules are kept outside this repository; ask the user for them before touching alpha or production.
 
 ### Local validation before alpha
 
@@ -498,15 +513,15 @@ Local checks prove the change works against a fresh database. They do not replac
 
 ## Versioning and releases
 
-OpenThrone uses Semantic Versioning on the 0.x line (`CHANGELOG.md` explains the rules). Every production release runs all seven steps in [docs/git-workflow.md](docs/git-workflow.md#releases); the release is not done until the last one passes:
+OpenThrone uses Semantic Versioning on the 0.x line (`CHANGELOG.md` explains the rules). Every production release runs the steps in [docs/git-workflow.md](docs/git-workflow.md#releases); the release is not done until the last one passes. Step 5 (GitHub) runs only when the owner explicitly approves it for that release:
 
 1. Version PR into `alpha`: `version` in `package.json` and `package-lock.json` set to the release (for example `0.5.0`, dropping `-alpha`), and its player-facing `CHANGELOG.md` entry.
 2. Release PR from `alpha` into `master` after the release documentation gate (section 16); merge only with the user's go-ahead.
 3. Deploy production, as above, and confirm the footer shows the new version.
 4. Tag the release merge commit `vX.Y.Z` on Forgejo, through the tags API under the bot's `tea` login (`agent-forgejo` cannot push tags).
-5. Mirror to GitHub: one squashed `Release vX.Y.Z` commit on `github/master` whose tree equals Forgejo `master`, the same tag, and a GitHub Release with the changelog entry, marked Latest. A release missed earlier gets its own commit first.
+5. Only with the owner's explicit go-ahead for this release (ask separately; a general release approval does not cover it): mirror to GitHub as one squashed `Release vX.Y.Z` commit on `github/master` whose tree equals Forgejo `master`, the same tag, and a GitHub Release with the changelog entry, marked Latest.
 6. PR into `alpha` bumping both package files to the next pre-release (for example `0.6.0-alpha`).
-7. Check that Forgejo `master`, Forgejo `alpha` and `github/master` show the expected versions and both remotes have the tag.
+7. Check that Forgejo `master` and Forgejo `alpha` show the expected versions and Forgejo has the tag (and, if mirrored, `github/master` and the GitHub tag).
 
 The footer shows the version and build commit, so bug reports can name the exact build.
 

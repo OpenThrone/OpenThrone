@@ -31,9 +31,29 @@ export interface AttackLogAccessSubject {
   id: number;
   attacker_id: number;
   defender_id: number;
+  /** `attack`, or the spy mission (`INTEL`, `INFILTRATE`, `ASSASSINATE`). */
+  type: string;
+  winner: number | null;
   /** When omitted, the ACL is loaded from the database. */
   acl?: AttackLogAclEntry[] | null;
 }
+
+/**
+ * A spy mission that got through stays hidden from its target: the defender
+ * learns only of missions their sentries stopped (docs/mechanics/spying.md).
+ */
+export const isHiddenFromDefender = (
+  log: Pick<AttackLogAccessSubject, 'type' | 'winner' | 'defender_id'>,
+): boolean =>
+  SPY_MISSION_TYPES.includes(log.type) && log.winner !== log.defender_id;
+
+/** Prisma filter for the logs a defender may see as the defender. */
+export const defenderVisibleLogsWhere = (
+  userId: number,
+): Prisma.attack_logWhereInput => ({
+  defender_id: userId,
+  OR: [{ type: 'attack' }, { winner: userId }],
+});
 
 /** Prisma select for the ACL fields used by read checks. */
 export const ATTACK_LOG_ACL_SELECT = {
@@ -71,7 +91,11 @@ export async function getAttackLogViewerRole(
 ): Promise<AttackLogViewerRole | null> {
   if (!log) return null;
   if (log.attacker_id === userId) return 'attacker';
-  if (log.defender_id === userId) return 'defender';
+  // The target of a mission that got through only reads it if the spy
+  // shared it with them (checked below like any other reader).
+  if (log.defender_id === userId && !isHiddenFromDefender(log)) {
+    return 'defender';
+  }
 
   const acl =
     log.acl ??
@@ -128,7 +152,7 @@ export function readableAttackLogWhere(
 ): Prisma.attack_logWhereInput {
   const or: Prisma.attack_logWhereInput[] = [
     { attacker_id: userId },
-    { defender_id: userId },
+    defenderVisibleLogsWhere(userId),
     { acl: { some: { shared_with_user_id: userId } } },
   ];
   if (allianceIds.length > 0) {

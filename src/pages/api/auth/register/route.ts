@@ -4,6 +4,7 @@ import { ZodError } from 'zod';
 import { RegisterSchema } from '@/lib/validation';
 import { withCors } from '@/middleware/cors';
 import { AuthService } from '@/services';
+import { recordSignUpTelemetry } from '@/services/LoginTelemetry.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { resolveClientIp } from '@/utils/ipUtils';
 import { stringifyObj } from '@/utils/jsonHelpers';
@@ -137,6 +138,17 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
         race,
         class: userClass,
         ip,
+      });
+
+      // Same salted hashes as a sign-in, so accounts created from one network
+      // link up in the multi-account view even before their first sign-in.
+      // Best effort: registration never fails on telemetry.
+      await recordSignUpTelemetry({
+        userId: user.id,
+        ip,
+        userAgent: Array.isArray(req.headers['user-agent'])
+          ? req.headers['user-agent'][0]
+          : req.headers['user-agent'],
       });
 
       return res.status(200).json(stringifyObj(user));

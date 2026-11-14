@@ -252,10 +252,32 @@
     "operator": "OpenThrone.dev is operated by AIOXperts IT Solutions LLC.",
     "version": "Version {{version}}"
   },
+  "consent": {
+    "banner": {
+      "regionLabel": "Cookie consent",
+      "title": "Cookies: your choice",
+      "text": "We use our own cookies to run the game. With your OK, Google Analytics also counts visits so we can improve the site. It never gets your account, player name or ids.",
+      "privacyLink": "Privacy Policy",
+      "accept": "Accept analytics",
+      "decline": "Decline"
+    },
+    "settings": {
+      "title": "Cookie settings",
+      "text": "Analytics is optional and off until you allow it. It only ever sees page routes, device type and roughly where visitors come from - never your account, player name or ids.",
+      "privacyLink": "Privacy Policy",
+      "analyticsLabel": "Google Analytics",
+      "stateUnset": "Not chosen yet - analytics is off.",
+      "stateGranted": "Allowed. You can switch it off any time.",
+      "stateDenied": "Blocked. Google Analytics does not run.",
+      "gpcNote": "Your browser sends the Global Privacy Control signal, so analytics stays off until you allow it here."
+    },
+    "footerLink": "Cookie settings"
+  },
   "errors": {
     "stillSignedIn": "Couldn't reach the server. You're still signed in; try again in a moment.",
     "failedToFetchGitInfo": "Failed to fetch git info",
-    "failedToFetchOnlinePlayerInfo": "Failed to fetch online player info"
+    "failedToFetchOnlinePlayerInfo": "Failed to fetch online player info",
+    "userDataFailed": "Your kingdom's data could not be loaded. Refresh the page to try again."
   },
   "recruit": {
     "externalAllowance": "This kingdom has {{remaining}} of {{limit}} external recruits left today. This connection can recruit {{ipRemaining}} more, up to {{ipLimit}} per kingdom each day.",
@@ -296,7 +318,9 @@
     "blockedRecruiter": "You have used all {{limit}} of your daily recruits. Resets at {{time}}.",
     "blockedTarget": "{{name}} has reached their daily limit of {{limit}} recruits. Resets at {{time}}.",
     "targetTitle": "Recruitment Target",
-    "targetSummary": "{{name}} is a level {{level}} {{race}} {{class}}."
+    "targetSummary": "{{name}} is a level {{level}} {{race}} {{class}}.",
+    "pleaseWaitAltcha": "Please wait while your browser completes a quick check below.",
+    "captchaPolicyAltcha": "We use a self-hosted check that runs in your browser and sends nothing to a third party to prevent spam and abuse. It takes a moment; by letting it finish, you are helping us keep the game fair and fun for everyone."
   },
   "ariaLabels": {
     "closeAlert": "Close alert",
@@ -457,7 +481,7 @@
     "outOfRange": "This player is outside your mission range (within {{range}} levels of your own).",
     "attackingDisabled": "Attacking is currently disabled by the server.",
     "spyDisabled": "All spy mission types are currently disabled by the server.",
-    "report": "Report player",
+    "report": "Report Player",
     "message": "Message this player",
     "recruit": "Recruit this Player",
     "joinNow": "Join Now",
@@ -915,5 +939,33 @@
   "veteran": {
     "badge": "Era 1 Tester",
     "since": "Playing since {{date}}"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The throne room you seek does not exist. The page may have been moved or destroyed in a siege.",
+    "backHome": "Return to the throne"
+  },
+  "gameAlerts": {
+    "someone": "Someone",
+    "attackTitle": "You were attacked",
+    "attack": "An enemy army struck your kingdom.",
+    "viewReport": "View battle report",
+    "spyTitle": "Spy caught",
+    "spy": "Your sentries stopped an enemy {{mission}}.",
+    "missions": {
+      "INTEL": "intelligence mission",
+      "ASSASSINATE": "assassination",
+      "INFILTRATE": "infiltration"
+    },
+    "goldTitle": "Gold received",
+    "gold": "{{name}} sent you {{amount}} gold.",
+    "viewBank": "View bank history",
+    "friendTitle": "Friend request",
+    "friend": "{{name}} sent you a friend request.",
+    "goldRequestTitle": "Gold request",
+    "goldRequest": "{{name}} asked you for gold.",
+    "viewRequests": "View requests",
+    "awayAttacked": "You were attacked while you were away. Check your battle history.",
+    "awaySpy": "Your sentries caught a spy while you were away."
   }
 }

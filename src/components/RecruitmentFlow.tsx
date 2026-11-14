@@ -3,6 +3,9 @@ import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 
+import AltchaChallenge, {
+  type AltchaFailure,
+} from '@/components/AltchaChallenge';
 import MainArea from '@/components/MainArea';
 import RecruitmentFlowView from '@/components/RecruitmentFlowView';
 import { useUser } from '@/context/users';
@@ -48,6 +51,7 @@ const ERROR_CODE_KEYS: Record<string, string> = {
   EXTERNAL_DAILY_CAP_REACHED: 'recruit.externalCapReached',
   IP_DAILY_CAP_REACHED: 'recruit.ipCapReached',
   NO_RECRUITABLE_USERS_FOUND: 'recruit.noMoreTargets',
+  CAPTCHA_FAILED: 'recruit.verificationFailed',
 };
 
 const wait = (ms: number) =>
@@ -102,6 +106,10 @@ export default function RecruitmentFlow({
   const [succeeded, setSucceeded] = useState(false);
   const [retry, setRetry] = useState(0);
   const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captchaProvider, setCaptchaProvider] = useState<
+    'altcha' | 'turnstile' | null
+  >(null);
+  const [captchaFailed, setCaptchaFailed] = useState(false);
   const [ready, setReady] = useState(false);
   const [allowance, setAllowance] = useState<{
     dailyCap?: number;
@@ -140,6 +148,7 @@ export default function RecruitmentFlow({
   const stopWith = useCallback(
     (message: string) => {
       setShowCaptcha(false);
+      setCaptchaFailed(false);
       setError(message);
       if (isAutoRecruit) {
         alertService.error(
@@ -199,6 +208,8 @@ export default function RecruitmentFlow({
         return;
       }
       stopWith(messageFor(result));
+      // A refused challenge (used, expired, wrong provider) is retried with a new one.
+      if (code === 'CAPTCHA_FAILED') setCaptchaFailed(true);
     },
     [autoRecruit, isAutoRecruit, messageFor, skips, stopWith],
   );
@@ -208,6 +219,7 @@ export default function RecruitmentFlow({
     let cancelled = false;
     setError(null);
     setShowCaptcha(false);
+    setCaptchaFailed(false);
     setSucceeded(false);
     setReady(false);
     setAllowance({});
@@ -227,6 +239,9 @@ export default function RecruitmentFlow({
             perIpRemaining: allowanceNumber(result.data.perIpRemaining),
           });
           setReady(true);
+          setCaptchaProvider(
+            result.data.captchaProvider === 'altcha' ? 'altcha' : 'turnstile',
+          );
           setShowCaptcha(Boolean(result.data.showCaptcha));
           return;
         }
@@ -349,15 +364,35 @@ export default function RecruitmentFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recruitAgain, ready, showCaptcha, succeeded, error, submitting]);
 
+  /** A challenge that failed or expired ends the attempt with a retry button. */
+  const failCaptcha = (reason: AltchaFailure) => {
+    stopWith(
+      t(
+        reason === 'expired'
+          ? 'recruit.verificationExpired'
+          : 'recruit.verificationFailed',
+      ),
+    );
+    setCaptchaFailed(true);
+  };
+
   const captchaSlot = showCaptcha ? (
-    <Turnstile
-      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
-      onSuccess={(token) => {
-        return handleCaptchaSuccess(undefined, token);
-      }}
-      onExpire={() => stopWith(t('recruit.verificationExpired'))}
-      onError={() => stopWith(t('recruit.verificationFailed'))}
-    />
+    captchaProvider === 'altcha' ? (
+      <AltchaChallenge
+        key={retry}
+        onVerified={(payload) => handleCaptchaSuccess(undefined, payload)}
+        onFailed={failCaptcha}
+      />
+    ) : (
+      <Turnstile
+        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
+        onSuccess={(token) => {
+          return handleCaptchaSuccess(undefined, token);
+        }}
+        onExpire={() => stopWith(t('recruit.verificationExpired'))}
+        onError={() => stopWith(t('recruit.verificationFailed'))}
+      />
+    )
   ) : null;
 
   const pairLeft =
@@ -385,6 +420,8 @@ export default function RecruitmentFlow({
       succeeded={succeeded}
       ready={ready}
       showCaptcha={showCaptcha}
+      captchaProvider={captchaProvider}
+      retryable={captchaFailed}
       allowance={allowance}
       userInfo={userInfo}
       targetName={targetName}

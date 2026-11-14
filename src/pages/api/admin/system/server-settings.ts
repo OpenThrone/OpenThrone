@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { DEFAULT_ABUSE_CONFIG } from '@/constants/abuseSignals';
 import {
+  ALTCHA_DIFFICULTY_DEFAULT,
   isRuntimeSettingKey,
   RUNTIME_SETTING_KEYS,
   RUNTIME_SETTING_REGISTRY,
@@ -52,6 +53,9 @@ function runtimeValue(config: RuntimeConfig, key: string): unknown {
     'recruit.dailyCap': config.externalRecruitDailyCap ?? 25,
     'recruit.internalDailyCap': config.recruitDailyCap ?? 250,
     'recruit.externalIpDailyCap': config.externalRecruitIpDailyCap ?? 5,
+    'recruit.captchaProvider': config.recruitCaptchaProvider ?? 'altcha',
+    'recruit.altchaDifficulty':
+      config.recruitAltchaDifficulty ?? ALTCHA_DIFFICULTY_DEFAULT,
     'era.protectionDurationDays': config.protectionDurationDays ?? 14,
     'mercenary.hireMultiplier': config.mercenaryHireMultiplier,
     'mercenary.dailyPriceRate': config.mercenaryDailyPriceRate,
@@ -92,6 +96,8 @@ function runtimeValue(config: RuntimeConfig, key: string): unknown {
     'abuse.fresh.accountAgeDays': abuse.fresh.accountAgeDays,
     'abuse.fresh.windowDays': abuse.fresh.windowDays,
     'abuse.fresh.minAttacks': abuse.fresh.minAttacks,
+    'moderation.shadowEnabled': config.moderationShadowEnabled ?? false,
+    'moderation.shadowBatchSize': config.moderationShadowBatchSize ?? 25,
     ENABLE_SUPPORTER: config.enableSupporter,
     'stamina.penaltyThreshold': (config.stamina ?? DEFAULT_STAMINA_RULES)
       .penaltyThreshold,
@@ -120,6 +126,7 @@ function runtimeValue(config: RuntimeConfig, key: string): unknown {
     ENABLE_GARRISON_FATIGUE: config.enableGarrisonFatigue,
     SHOW_KINGDOM_MORALE: config.showKingdomMorale,
     SHOW_DUNGEON: config.showDungeon,
+    ENABLE_SITE_ANALYTICS: config.enableSiteAnalytics,
     DISABLE_LOGIN: config.disableLogin,
     DISABLE_REGISTRATION: config.disableRegistration,
     MAINTENANCE_MODE: config.maintenance,

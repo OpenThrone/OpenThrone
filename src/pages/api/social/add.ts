@@ -1,6 +1,5 @@
 import type { NextApiResponse } from 'next';
 
-import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -34,12 +33,11 @@ const addSocialRelation = async (
     });
 
     if (relationshipType === 'FRIEND') {
-      const io = getSocketIO();
-      await emitFriendRequestNotification(io, {
+      await emitFriendRequestNotification({
         senderId: playerId,
         recipientId: Number(friendId),
       });
-      await emitSocialCountUpdate(io, Number(friendId));
+      await emitSocialCountUpdate(Number(friendId));
     }
 
     res.status(200).json(result);

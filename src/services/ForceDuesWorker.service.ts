@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { ItemTypes, UnitTypes } from '@/constants';
 import prisma from '@/lib/prisma';
-import { evictUserFromAllianceChatRooms } from '@/lib/socket';
+import { evictUserFromAllianceChatRooms } from '@/lib/realtime';
 import { lockAllianceThenUsers } from '@/services/AllianceBank.service';
 import { cancelPendingGoldRequests } from '@/services/AllianceGoldRequest.service';
 import { settleLoansOnExit } from '@/services/AllianceLoan.service';

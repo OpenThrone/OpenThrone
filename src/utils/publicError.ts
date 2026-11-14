@@ -28,3 +28,36 @@ export function publicErrorMessage(
   }
   return message;
 }
+
+/**
+ * JSON body for a refused alliance request: the safe English message plus the
+ * refusal's stable `code` and numeric `params` when it is an alliance rule
+ * error, so the browser can show the refusal in the player's language.
+ */
+export function publicErrorBody(
+  error: unknown,
+  fallback: string = GENERIC_ERROR_MESSAGE,
+): {
+  error: string;
+  code?: string;
+  params?: Record<string, string | number>;
+} {
+  const body: ReturnType<typeof publicErrorBody> = {
+    error: publicErrorMessage(error, fallback),
+  };
+  const { code, params } = (error ?? {}) as {
+    code?: unknown;
+    params?: unknown;
+  };
+  if (typeof code === 'string' && /^ALLIANCE_[A-Z_]+$/.test(code)) {
+    body.code = code;
+    if (
+      params &&
+      typeof params === 'object' &&
+      Object.keys(params).length > 0
+    ) {
+      body.params = params as Record<string, string | number>;
+    }
+  }
+  return body;
+}

@@ -1,6 +1,6 @@
 # Balance simulation
 
-Last verified against code: 2026-11-06 (alpha d59b12d9)
+Last verified against code: 2026-11-12 (alpha 8ffa50de)
 
 `src/sim` is an offline simulator that plays a population of fake players against each other so staff can compare balance settings before changing the live game. It reuses the live battle and spy code. Everything around that (who logs in, what they buy, who they pick as a target) is a model, not a measurement. Its results compare one setting against another; they are not a forecast of the live game.
 
@@ -14,9 +14,12 @@ Last verified against code: 2026-11-06 (alpha d59b12d9)
 | Population day cycle | `generatePopulation`, `simulateDay`, `runPopulationSimulation` ([daycycle.ts](../../src/sim/daycycle.ts)) | A population over many days: turns, income, recruiting, training, attacks, spy intel, XP. Without `live` it uses a simplified legacy model. |
 | Live-rules mode | `SimulationConfig.live` ([liveRules.ts](../../src/sim/liveRules.ts), [liveEconomy.ts](../../src/sim/liveEconomy.ts), [liveForces.ts](../../src/sim/liveForces.ts)) | Players log in on a schedule by activity type (casual, regular, active, grinder), pay live structure prices, unlock unit tiers with their fort, heal wounded units, lose battle protection, use kingdom morale, mercenaries, dungeon and alliances. This is what the admin Balance Simulator runs. |
 | ERA mode | `runEraSimulation` ([eraIntegration.ts](../../src/sim/eraIntegration.ts)) | A long run (730 days by default) of a mixed cohort that starts from the fresh-era defaults. |
+| AI-guided playtest | `runDecisionPlaytest` ([decisionPlaytest.ts](../../src/sim/decisionPlaytest.ts)) | A decision model or random-legal baseline picks each bot's round action from engine-legal options and the run reports violations and per race x objective outcomes. It runs the population day cycle without `live`, so it uses the legacy model. See [decision models](../features/decision-models.md#playtesting-phase-b). |
 | Autonomous and closed-loop tuning | `runAllBalancePersonas`, `runClosedLoopBalance` ([autonomous.ts](../../src/sim/autonomous.ts), [closedLoop.ts](../../src/sim/closedLoop.ts)) | Repeated runs that nudge combat parameters (attacker damage, defender counter damage, pillage share) toward target ranges for win rate, attacks per active player and loot to production. |
 
 All randomness comes from a seeded generator ([random.ts](../../src/sim/random.ts)), so the same seed and settings give the same run. The simulator also asserts invariants such as finite, non-negative gold and throws on a bad configuration ([invariants.ts](../../src/sim/invariants.ts)).
+
+The day cycle takes an optional decision hook, `SimulationConfig.decisionAdvisor` ([types.ts](../../src/sim/types.ts)). It is called once per player round after the built-in decision is made and returns the decision to run; the engine still applies and checks it. An optional `afterRound` callback sees the result. Without a hook the run is unchanged.
 
 A simulated day is 48 half-hour ticks in ERA mode. Live-rules mode derives its ticks per day from the configured turn interval.
 
@@ -53,6 +56,7 @@ All commands run from the project root with Bun.
 - **Admin Balance Simulator:** **Administration → Balance simulator** ([balance-sim.tsx](../../src/pages/home/admin/balance-sim.tsx)) posts to the admin simulation endpoint, which runs live-rules mode with the population size, level range, days, turn interval, activity mix, optional game event, dungeon, alliance share, balance overrides and seed you set. It is admin-only and every run is audit-logged before it starts ([run.ts](../../src/pages/api/admin/simulation/run.ts)).
 - **ERA matrix:** `bun scripts/run-era-simulation.ts --manifest smoke|exhaustive|<path> --output <dir>`, with optional `--resume`, `--overwrite`, `--max-workers 1|2`, `--per-run-timeout <ms>`, `--matrix-timeout <ms>`, `--max-output-bytes <n>` and `--enforce-balance-gates`. `smoke` is one 730-day cell; `exhaustive` crosses three rulesets, four recruitment bands, four alliance modes and 30 seeds, plus two extra population sizes. Each cell writes a JSON report, a cohort CSV and a Markdown report, with checksums, atomically ([run-era-simulation.ts](../../scripts/run-era-simulation.ts)).
 - **Persona tuning:** `bun scripts/run-balance-agents.ts` runs the four autonomous personas and writes reports under a timestamped `temp/balance-reports` folder. `bun scripts/run-closed-loop-balance.ts` runs the closed-loop tuner.
+- **AI-guided playtest:** `bun run sim:playtest -- --kingdoms 16 --days 7 --seed 42 --mode model|random-legal|legacy` ([run-decision-playtest.ts](../../scripts/run-decision-playtest.ts)). Flags and cost are in [decision models](../features/decision-models.md#playtesting-phase-b).
 - **Quick checks:** `bun scripts/test-sim.ts` (fixed battle matchups), `bun scripts/test-population-sim.ts` (50 players for 7 days), and the probes in [scripts/balance](../../scripts/balance) (battle, fort, early-game and war experiments).
 - **Tests:** `bun test src/sim`.
 
@@ -102,6 +106,7 @@ May not claim:
 - [liveRules.test.ts](../../src/sim/liveRules.test.ts): schedule, structures, units, protection, banking, alliances in live-rules mode.
 - [invariants.test.ts](../../src/sim/invariants.test.ts), [random.test.ts](../../src/sim/random.test.ts): invariants and seeded randomness.
 - [lifecycle.test.ts](../../src/sim/lifecycle.test.ts), [personas](../../src/sim/personas), [alliances.test.ts](../../src/sim/alliances.test.ts), [spyBehavior.test.ts](../../src/sim/spyBehavior.test.ts), [cohortMetrics.test.ts](../../src/sim/cohortMetrics.test.ts): the model parts.
+- [decisionPlaytest.test.ts](../../src/sim/decisionPlaytest.test.ts): the decision hook leaves a run unchanged when it passes the built-in decision through, legal options only, fallbacks and the call budget, race x objective report, and findings.
 - [run-era-simulation.test.ts](../../scripts/run-era-simulation.test.ts): manifest cell counts, worker limit, atomic output, resume and overwrite.
 
 ## Known gaps

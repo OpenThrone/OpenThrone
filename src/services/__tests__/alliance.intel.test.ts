@@ -297,6 +297,27 @@ describe('target calls', () => {
     );
   });
 
+  it('refuses a second open call of the same type on the same target', async () => {
+    const original = mockPrisma.alliance_target_calls.findFirst;
+    mockPrisma.alliance_target_calls.findFirst = vi.fn(
+      async ({ where }: any) =>
+        where.status === 'OPEN' && where.target_user_id === ENEMY
+          ? { id: 5 }
+          : null,
+    );
+    expect(await call(CALLER)).toBe('A hit call on P77 is already open');
+    // Coded, so the call form shows it in the player's language.
+    const refusal = await AllianceIntelService.createCall(CALLER, {
+      allianceId: A,
+      callType: 'HIT',
+      targetUserId: ENEMY,
+    }).catch((e) => e);
+    expect(refusal.code).toBe('ALLIANCE_CALL_DUPLICATE');
+    expect(refusal.params).toEqual({ name: 'P77', callType: 'HIT' });
+    expect(mockPrisma.alliance_target_calls.create).not.toHaveBeenCalled();
+    mockPrisma.alliance_target_calls.findFirst = original;
+  });
+
   it('keeps Recon off the lists', async () => {
     expect(await call(CALLER, { callType: 'RECON' })).toBeNull();
     expect(listEntries).toHaveLength(0);

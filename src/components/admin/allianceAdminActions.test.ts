@@ -35,6 +35,60 @@ describe('AllianceAdminActionSchema', () => {
     );
   });
 
+  it('accepts Alliance Hall levels 0..5 only, without coercion', () => {
+    expect(
+      AllianceAdminActionSchema.parse({ action: 'set_hall_level', level: 0 }),
+    ).toEqual({ action: 'set_hall_level', level: 0 });
+    expect(
+      AllianceAdminActionSchema.parse({ action: 'set_hall_level', level: 5 }),
+    ).toEqual({ action: 'set_hall_level', level: 5 });
+    for (const level of [6, -1, 1.5, '2', null, undefined]) {
+      expect(
+        AllianceAdminActionSchema.safeParse({ action: 'set_hall_level', level })
+          .success,
+      ).toBe(false);
+    }
+    expect(ALLIANCE_ADMIN_AUDIT_ACTIONS.set_hall_level).toBe(
+      'ADMIN_ALLIANCE_SET_HALL_LEVEL',
+    );
+  });
+
+  it('accepts the join fee and dues as whole gold within the bounds', () => {
+    expect(
+      AllianceAdminActionSchema.parse({
+        action: 'set_dues',
+        joinFee: 10_000_000,
+        duesAmount: 20_000_000,
+        duesPeriod: 'MONTHLY',
+      }),
+    ).toEqual({
+      action: 'set_dues',
+      joinFee: 10_000_000n,
+      duesAmount: 20_000_000n,
+      duesPeriod: 'MONTHLY',
+    });
+    for (const patch of [
+      { joinFee: 10_000_001 },
+      { joinFee: -1 },
+      { joinFee: '5' },
+      { duesAmount: 1.5 },
+      { duesPeriod: 'YEARLY' },
+    ]) {
+      expect(
+        AllianceAdminActionSchema.safeParse({
+          action: 'set_dues',
+          joinFee: 0,
+          duesAmount: 0,
+          duesPeriod: 'NONE',
+          ...patch,
+        }).success,
+      ).toBe(false);
+    }
+    expect(ALLIANCE_ADMIN_AUDIT_ACTIONS.set_dues).toBe(
+      'ADMIN_ALLIANCE_SET_DUES',
+    );
+  });
+
   it('rejects unknown actions, blank names and bad ids', () => {
     expect(
       AllianceAdminActionSchema.safeParse({ action: 'nuke' }).success,

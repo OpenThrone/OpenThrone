@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+import {
+  allianceFullError,
+  getAllianceLevel,
+} from '@/constants/allianceLevels';
 import type {
   AlliancePermissionKey,
   AlliancePermissions,
@@ -18,11 +22,12 @@ import { WarStatus } from '@/lib/prisma-exports';
 import {
   evictUserFromAllianceChatRooms,
   evictUserFromChatRoom,
-} from '@/lib/socket';
+} from '@/lib/realtime';
 import {
   ALLIANCE_BANK_TX_OPTIONS,
   lockAllianceThenUsers,
 } from '@/services/AllianceBank.service';
+import { chargeJoinFeeInTx } from '@/services/AllianceDues.service';
 import { cancelPendingGoldRequests } from '@/services/AllianceGoldRequest.service';
 import {
   distributeTreasuryOnDisband,
@@ -59,6 +64,8 @@ export interface CreateAllianceData {
 /** Describes the join alliance data contract. */
 export interface JoinAllianceData {
   allianceId: number;
+  /** The join fee the player confirmed; a different current fee refuses. */
+  expectedFee?: bigint | string | number | null;
 }
 
 const AllianceJoinMode = {
@@ -137,6 +144,12 @@ export interface AllianceInfo {
   status?: string;
   status_changed_at?: Date | string | null;
   status_era_id?: number | null;
+  /** Alliance Hall level 0..5 (allianceLevels.ts); missing means Camp. */
+  hall_level?: number;
+  /** Join fee and membership dues in gold (allianceDues.ts); public. */
+  join_fee?: bigint | string;
+  dues_amount?: bigint | string;
+  dues_period?: string;
   /** Treasury; only present for alliance members (ALL-08). */
   gold_in_bank?: bigint | string;
   created_at: Date;
@@ -161,6 +174,9 @@ export interface AllianceMember {
   role_id: number;
   created_at: Date;
   updated_at: Date;
+  /** Unpaid dues; only sent to the member, the leader, manage_bank and set_dues. */
+  dues_arrears?: bigint | string;
+  dues_paid_through?: Date | string | null;
   user: {
     id: number;
     display_name: string;
@@ -186,6 +202,49 @@ export interface AllianceRole {
   permissions: any;
   rank_order: number;
 }
+
+/**
+ * Removes each member's dues arrears and paid-through date unless the viewer
+ * may see them: the leader and ranks with manage_bank or set_dues see every
+ * member's, other members see only their own, everyone else sees none.
+ */
+export const redactMemberDuesForViewer = <T extends Record<string, any>>(
+  alliance: T,
+  viewerId: number | null | undefined,
+): T => {
+  if (!Array.isArray(alliance?.members)) return alliance;
+  const viewerMembership = alliance.members.find(
+    (member: any) => viewerId != null && member?.user_id === viewerId,
+  );
+  const seesAll =
+    viewerId != null &&
+    (alliance.leader_id === viewerId ||
+      hasAlliancePermission(
+        alliance.leader_id,
+        viewerId,
+        viewerMembership?.role ?? null,
+        'manage_bank',
+      ) ||
+      hasAlliancePermission(
+        alliance.leader_id,
+        viewerId,
+        viewerMembership?.role ?? null,
+        'set_dues',
+      ));
+  return {
+    ...alliance,
+    members: alliance.members.map((member: any) => {
+      if (seesAll || (viewerId != null && member?.user_id === viewerId))
+        return member;
+      const {
+        dues_arrears: _arrears,
+        dues_paid_through: _paidThrough,
+        ...rest
+      } = member ?? {};
+      return rest;
+    }),
+  };
+};
 
 /** Describes the alliance search filters data contract. */
 export interface AllianceSearchFilters {
@@ -219,6 +278,7 @@ const UpdateAllianceSchema = z.object({
 
 const JoinAllianceSchema = z.object({
   allianceId: z.number().int().positive(),
+  expectedFee: z.coerce.bigint().min(0n).nullish(),
 });
 
 const LeaveAllianceSchema = z.object({
@@ -316,6 +376,36 @@ export const redactAllianceForViewer = <T extends Record<string, any>>(
       return { ...member, role };
     }),
   } as unknown as T;
+};
+
+/**
+ * Refuses to add a member when the alliance holds its hall level's member cap.
+ * Alliances already above the cap (an admin lowered the level) keep every
+ * member but cannot add more. Called inside the joining transaction after the
+ * alliance row is locked, and as an early check before invites and requests.
+ */
+export const assertAllianceHasRoom = async (
+  db: Pick<Prisma.TransactionClient, 'alliances' | 'alliance_memberships'>,
+  allianceId: number,
+  known?: { hall_level?: number | null; memberCount?: number },
+): Promise<void> => {
+  const hallLevel =
+    known && 'hall_level' in known
+      ? known.hall_level
+      : (
+          await db.alliances.findUnique({
+            where: { id: allianceId },
+            select: { hall_level: true },
+          })
+        )?.hall_level;
+  const memberCount =
+    known?.memberCount ??
+    (await db.alliance_memberships.count({
+      where: { alliance_id: allianceId },
+    }));
+  if (memberCount >= getAllianceLevel(hallLevel).maxMembers) {
+    throw allianceFullError(memberCount, hallLevel ?? 0);
+  }
 };
 
 /** A membership candidate for the erasure succession (#318). */
@@ -595,7 +685,8 @@ export class AllianceService {
       return stringifyObj(alliances).map((alliance) =>
         redactAllianceForViewer(
           {
-            ...alliance,
+            // The directory never shows anyone's dues arrears.
+            ...redactMemberDuesForViewer(alliance, null),
             // The premium mark is a perk: withheld while RESERVED (#13).
             isPremium:
               isAllianceActive(alliance) &&
@@ -726,7 +817,11 @@ export class AllianceService {
     const alliance = await this.getAllianceById(allianceId);
     const isMember = isAllianceMember(alliance, viewerId);
     return {
-      alliance: redactAllianceForViewer(alliance, isMember),
+      // Dues are redacted first, while role permissions are still present.
+      alliance: redactAllianceForViewer(
+        redactMemberDuesForViewer(alliance, isMember ? viewerId : null),
+        isMember,
+      ),
       isMember,
     };
   }
@@ -1049,9 +1144,11 @@ export class AllianceService {
       await audit(tx, alliance);
       return result;
     }, ALLIANCE_BANK_TX_OPTIONS);
-    memberIds.forEach((userId) =>
-      roomIds.forEach((roomId) => evictUserFromChatRoom(userId, roomId)),
-    );
+    for (const memberUserId of memberIds) {
+      for (const roomId of roomIds) {
+        await evictUserFromChatRoom(memberUserId, roomId);
+      }
+    }
     return { message: 'Alliance dissolved' };
   }
 
@@ -1136,9 +1233,11 @@ export class AllianceService {
         return AllianceService.teardownAlliance(tx, allianceId, leaderId);
       }, ALLIANCE_BANK_TX_OPTIONS);
 
-      memberIds.forEach((userId) =>
-        roomIds.forEach((roomId) => evictUserFromChatRoom(userId, roomId)),
-      );
+      for (const memberUserId of memberIds) {
+        for (const roomId of roomIds) {
+          await evictUserFromChatRoom(memberUserId, roomId);
+        }
+      }
 
       return { message: 'Alliance disbanded' };
     } catch (error: any) {
@@ -1353,10 +1452,24 @@ export class AllianceService {
           throw new Error('This alliance is private');
         }
 
+        await assertAllianceHasRoom(tx, alliance.id, {
+          hall_level: alliance.hall_level,
+          memberCount: alliance._count?.members,
+        });
+
         const defaultRole = alliance.alliance_roles[0];
         if (!defaultRole) {
           throw new Error('No default member role found');
         }
+
+        // The join fee is paid from gold on hand in this transaction; a
+        // player who cannot pay is refused and nothing is written.
+        const { duesPaidThrough } = await chargeJoinFeeInTx(tx, {
+          allianceId: validatedData.allianceId,
+          userId,
+          payer: 'self',
+          expectedFee: validatedData.expectedFee,
+        });
 
         // Add user to alliance
         return tx.alliance_memberships.create({
@@ -1364,6 +1477,7 @@ export class AllianceService {
             alliance_id: validatedData.allianceId,
             user_id: userId,
             role_id: defaultRole.id,
+            dues_paid_through: duesPaidThrough,
           },
           include: {
             user: {
@@ -1787,6 +1901,8 @@ export class AllianceService {
           name: a.name,
           isLeader: a.leader_id === targetUserId,
           status: a.status,
+          // True when the viewer belongs to this alliance too.
+          sharedWithViewer: viewerAllianceIds.has(a.id),
         }));
     } catch (error: any) {
       logError('Error getting visible alliances for player', {
@@ -2180,12 +2296,16 @@ export class AllianceService {
       // A reserved alliance accepts no applications or invitations (#13).
       const alliance = await prisma.alliances.findUnique({
         where: { id: allianceId },
-        select: { status: true },
+        select: { status: true, hall_level: true },
       });
       if (!alliance) {
         throw new Error('Alliance not found');
       }
       assertAllianceActive(alliance);
+      // Early refusal; acceptJoinRequest re-checks under the alliance lock.
+      await assertAllianceHasRoom(prisma, allianceId, {
+        hall_level: alliance.hall_level,
+      });
 
       // Check if user is already in this alliance
       const isMember = await prisma.alliance_memberships.findUnique({
@@ -2333,6 +2453,11 @@ export class AllianceService {
           );
         }
 
+        // The alliance row is locked, so the member count is committed.
+        await assertAllianceHasRoom(tx, request.alliance_id, {
+          hall_level: acceptorMembership.alliance.hall_level,
+        });
+
         // Create membership
         // Use default role "Member"
         const defaultRole = await tx.alliance_roles.findFirst({
@@ -2341,11 +2466,20 @@ export class AllianceService {
 
         if (!defaultRole) throw new Error('Default role not found');
 
+        // The applicant pays the join fee current at acceptance, from gold
+        // on hand; without it the request stays pending.
+        const { duesPaidThrough } = await chargeJoinFeeInTx(tx, {
+          allianceId: request.alliance_id,
+          userId: request.user_id,
+          payer: 'applicant',
+        });
+
         await tx.alliance_memberships.create({
           data: {
             alliance_id: request.alliance_id,
             user_id: request.user_id,
             role_id: defaultRole.id,
+            dues_paid_through: duesPaidThrough,
           },
         });
 
@@ -2498,6 +2632,8 @@ export class AllianceService {
       }),
     ]);
     if (isMember) throw new Error(`${target.display_name} is already a member`);
+    // Early refusal; respondToInvite re-checks under the alliance lock.
+    await assertAllianceHasRoom(prisma, allianceId);
     if (membershipCount >= MAX_ALLIANCE_MEMBERSHIPS) {
       throw new Error(
         `${target.display_name} is already in ${MAX_ALLIANCE_MEMBERSHIPS} alliances`,
@@ -2563,7 +2699,16 @@ export class AllianceService {
     const invites = await prisma.alliance_join_requests.findMany({
       where: { user_id: userId, status: 'PENDING', kind: 'INVITE' },
       include: {
-        alliance: { select: { id: true, name: true, motto: true } },
+        alliance: {
+          select: {
+            id: true,
+            name: true,
+            motto: true,
+            join_fee: true,
+            dues_amount: true,
+            dues_period: true,
+          },
+        },
       },
       orderBy: { created_at: 'desc' },
     });
@@ -2583,6 +2728,7 @@ export class AllianceService {
     inviteId: number,
     userId: number,
     accept: boolean,
+    expectedFee?: bigint | null,
   ) {
     const invite = await prisma.alliance_join_requests.findUnique({
       where: { id: inviteId },
@@ -2629,16 +2775,24 @@ export class AllianceService {
           `You can only be a member of ${MAX_ALLIANCE_MEMBERSHIPS} alliances`,
         );
       }
+      await assertAllianceHasRoom(tx, invite.alliance_id);
       const memberRole = await tx.alliance_roles.findFirst({
         where: { alliance_id: invite.alliance_id, name: 'Member' },
         select: { id: true },
       });
       if (!memberRole) throw new Error('Default role not found');
+      const { duesPaidThrough } = await chargeJoinFeeInTx(tx, {
+        allianceId: invite.alliance_id,
+        userId,
+        payer: 'self',
+        expectedFee,
+      });
       await tx.alliance_memberships.create({
         data: {
           alliance_id: invite.alliance_id,
           user_id: userId,
           role_id: memberRole.id,
+          dues_paid_through: duesPaidThrough,
         },
       });
     }, ALLIANCE_BANK_TX_OPTIONS);

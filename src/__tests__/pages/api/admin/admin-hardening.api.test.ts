@@ -231,9 +231,20 @@ const makeUserDetails = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-afterEach(() => transportSpy?.mockRestore());
+// Reset emails link back to the site and need an absolute HTTPS root.
+const savedUrlRoot = process.env.NEXT_PUBLIC_URL_ROOT;
+afterEach(() => {
+  transportSpy?.mockRestore();
+  delete process.env.MAIL_DRIVER;
+  if (savedUrlRoot === undefined) delete process.env.NEXT_PUBLIC_URL_ROOT;
+  else process.env.NEXT_PUBLIC_URL_ROOT = savedUrlRoot;
+});
 
 beforeEach(() => {
+  // Mail-sending routes go through the mailer facade; select the SMTP driver
+  // so delivery reaches the mocked nodemailer transport below.
+  process.env.MAIL_DRIVER = 'smtp';
+  process.env.NEXT_PUBLIC_URL_ROOT = 'https://example.test';
   sendMail.mockReset();
   sendMail.mockResolvedValue({ messageId: 'synthetic' });
   transportSpy = vi
@@ -441,6 +452,7 @@ describe('ADM-04: staff email takeover and admin-on-admin edits are blocked', ()
         : {}),
       ...('eraId' in overrides ? { eraId: overrides.eraId } : {}),
       ...(overrides.permissions ? { permissions: overrides.permissions } : {}),
+      ...(overrides.duesArrears ? { duesArrears: overrides.duesArrears } : {}),
     };
   };
 
@@ -457,6 +469,8 @@ describe('ADM-04: staff email takeover and admin-on-admin edits are blocked', ()
       userOverrides?: Record<string, unknown>;
       /** Sent verbatim instead of the editor-style expectations. */
       rawExpected?: unknown;
+      /** Extra transaction models (e.g. alliance memberships). */
+      models?: Record<string, Record<string, any>>;
     } = {},
   ) => {
     const targetId = options.targetId ?? TARGET_ID;
@@ -482,6 +496,7 @@ describe('ADM-04: staff email takeover and admin-on-admin edits are blocked', ()
     const grantUpdateMany = vi.fn(async () => ({ count: 0 }));
     const grantDeleteMany = vi.fn(async () => ({ count: 0 }));
     const tx = makeTx({
+      ...options.models,
       users: {
         findUnique: vi.fn(async () => target),
         // Post-edit reload used to recompute stored strength stats.
@@ -770,6 +785,79 @@ describe('ADM-04: staff email takeover and admin-on-admin edits are blocked', ()
       IP,
       expect.objectContaining({ reason: 'stale_edit', staleFields: ['gold'] }),
     );
+  });
+
+  describe('alliance dues arrears (allianceDues.ts)', () => {
+    const memberships = () => {
+      const rows = [{ id: 5, alliance_id: 4, dues_arrears: 200_000n }];
+      return {
+        rows,
+        model: {
+          findMany: vi.fn(async () => rows),
+          updateMany: vi.fn(async ({ where, data }: any) => {
+            const row = rows.find((r) => r.alliance_id === where.alliance_id);
+            if (row) row.dues_arrears = data.dues_arrears;
+            return { count: row ? 1 : 0 };
+          }),
+        },
+      };
+    };
+    const arrearsPut = (
+      duesArrears: unknown,
+      expected: Record<string, string>,
+      allianceId = 4,
+    ) => {
+      const store = memberships();
+      return runPut(ADMIN_ID, [], 'target@example.com', 'target@example.com', {
+        models: { alliance_memberships: store.model },
+        extraBody: {
+          alliances: { memberships: [{ allianceId, duesArrears }] },
+          expected: { duesArrears: expected },
+        },
+      }).then((result) => ({ ...result, store }));
+    };
+
+    it('edits arrears and audits the before and after', async () => {
+      const { res, store } = await arrearsPut('50000', { '4': '200000' });
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(store.rows[0].dues_arrears).toBe(50_000n);
+      expect(logActionStrict).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'ADMIN_USER_UPDATE',
+          details: expect.objectContaining({
+            changes: expect.objectContaining({
+              duesArrears: { '4': { before: '200000', after: '50000' } },
+            }),
+          }),
+        }),
+        expect.anything(),
+      );
+    });
+
+    it('rejects a stale arrears edit with 409', async () => {
+      const { res, store } = await arrearsPut('0', { '4': '100000' });
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(store.rows[0].dues_arrears).toBe(200_000n);
+    });
+
+    it.each([['-1'], ['1.5'], [1_000_000_001], ['abc']])(
+      'rejects arrears %p with 422',
+      async (value) => {
+        const { res, store } = await arrearsPut(value, { '4': '200000' });
+        expect(res.status).toHaveBeenCalledWith(422);
+        expect(store.rows[0].dues_arrears).toBe(200_000n);
+      },
+    );
+
+    it('needs the loaded arrears as an expectation', async () => {
+      const { res } = await arrearsPut('0', {});
+      expect(res.status).toHaveBeenCalledWith(422);
+    });
+
+    it('refuses arrears for an alliance the player is not in', async () => {
+      const { res } = await arrearsPut('0', { '9': '0' }, 9);
+      expect(res.status).toHaveBeenCalledWith(409);
+    });
   });
 
   it('rejects an update without expected values with 422', async () => {

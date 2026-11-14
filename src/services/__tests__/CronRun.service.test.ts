@@ -12,6 +12,8 @@ silenceLogger();
 const {
   CRON_LOG_TIMEOUT_MS,
   CRON_RUN_RETENTION_DAYS,
+  CRON_RUN_STALE_AFTER_MS,
+  hasCronRunSince,
   pruneOldCronRuns,
   sanitizeSummary,
   truncateErrorMessage,
@@ -442,5 +444,52 @@ describe('pruneOldCronRuns', () => {
   it('returns 0 instead of throwing when the delete fails', async () => {
     mockPrisma.cronRun.deleteMany.mockRejectedValue(new Error('db down'));
     await expect(pruneOldCronRuns()).resolves.toBe(0);
+  });
+});
+
+describe('hasCronRunSince', () => {
+  beforeEach(() => {
+    resetMockPrisma();
+    mockPrisma.cronRun.findFirst = vi.fn(async () => null);
+  });
+
+  const now = new Date('2026-11-13T15:00:00Z');
+  const dayStart = new Date('2026-11-13T05:00:00Z');
+
+  it('counts successes since the start and only live RUNNING rows', async () => {
+    await hasCronRunSince('daily', dayStart, now);
+
+    const { where } = mockPrisma.cronRun.findFirst.mock.calls[0][0];
+    expect(where.job).toBe('daily');
+    expect(where.OR).toEqual([
+      { status: 'SUCCESS', startedAt: { gte: dayStart } },
+      {
+        status: 'RUNNING',
+        startedAt: {
+          gte: new Date(now.getTime() - CRON_RUN_STALE_AFTER_MS),
+        },
+      },
+    ]);
+  });
+
+  it('keeps the window start for RUNNING rows inside a short window', async () => {
+    const since = new Date(now.getTime() - 20 * 60 * 1000);
+    await hasCronRunSince('turns', since, now);
+
+    const { where } = mockPrisma.cronRun.findFirst.mock.calls[0][0];
+    expect(where.OR[1]).toEqual({
+      status: 'RUNNING',
+      startedAt: { gte: since },
+    });
+  });
+
+  it('reports a run when one matches and never blocks on a lookup error', async () => {
+    mockPrisma.cronRun.findFirst = vi.fn(async () => ({ id: 3 }));
+    expect(await hasCronRunSince('daily', dayStart, now)).toBe(true);
+
+    mockPrisma.cronRun.findFirst = vi.fn(async () => {
+      throw new Error('db down');
+    });
+    expect(await hasCronRunSince('daily', dayStart, now)).toBe(false);
   });
 });

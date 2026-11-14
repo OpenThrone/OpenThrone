@@ -8,6 +8,8 @@ import type {
   PrivacyView,
 } from '@/components/admin/PrivacyRequestsPanel';
 import { PrivacyRequestsView } from '@/components/admin/PrivacyRequestsPanel';
+import { ConsentBannerView } from '@/components/analytics/ConsentBannerView';
+import { CookieSettingsView } from '@/components/analytics/CookieSettingsView';
 import {
   PrivacyControlsView,
   PrivacyCredentialsForm,
@@ -125,8 +127,40 @@ export default function PrivacySection() {
     <ShowcaseSection
       id="privacy"
       title="Your data"
-      description="Download my data, account-erasure request, its email confirmation page and the staff view. Mock data and mock actions only."
+      description="Cookie consent, download my data, account-erasure request, its email confirmation page and the staff view. Mock data and mock actions only."
     >
+      <Specimen
+        name="Cookie consent banner"
+        usedOn={['every page, before a choice']}
+        framed={false}
+        note="Shown once when no choice is stored and Google Analytics is configured. Equal-weight buttons; nothing loads before the choice."
+      >
+        <ConsentBannerView
+          docked={false}
+          onAccept={mockAction('accept analytics')}
+          onDecline={mockAction('decline analytics')}
+        />
+      </Specimen>
+      {(['unset', 'granted', 'denied'] as const).map((state) => (
+        <Specimen
+          key={state}
+          name={`Cookie settings: ${state}`}
+          usedOn={['footer > Cookie settings']}
+          note={
+            state === 'unset'
+              ? 'No choice yet; analytics stays off.'
+              : 'The switch saves immediately; withdrawing also deletes the Google cookies.'
+          }
+        >
+          <CookieSettingsView
+            analytics={state}
+            onChange={mockAction(
+              `set analytics ${state === 'granted' ? 'denied' : 'granted'}`,
+            )}
+            globalPrivacyControl={state === 'unset'}
+          />
+        </Specimen>
+      ))}
       <Specimen
         name="Your data card"
         usedOn={['/home/settings']}

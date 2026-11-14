@@ -43,6 +43,8 @@ beforeEach(() => {
   mockPrisma.alliance_bank_history = {
     create: vi.fn(async () => ({})),
     aggregate: vi.fn(async () => ({ _sum: { amount: null } })),
+    // Deposits in the rolling 24-hour window (Alliance Hall slots).
+    findMany: vi.fn(async () => []),
   };
   mockPrisma.users = {
     findUnique: vi.fn(async () => ({ gold: 1_000n })),

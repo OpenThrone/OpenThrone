@@ -501,17 +501,14 @@ export function buyNextStructure(player: PlayerState): number {
 
 /**
  * Banks gold before logging off, as many times as the rolling deposit limit
- * allows. Each deposit is capped at the live share of gold on hand and the
- * economy's bank cap. Returns the gold deposited.
+ * allows. Each deposit is capped at the live share of gold on hand; the bank
+ * balance has no upper limit. Returns the gold deposited.
  */
 export function bankBeforeLogoff(
   player: PlayerState,
   currentTick: number,
   ticksPerDay: number,
 ): number {
-  const economy =
-    EconomyUpgrades.find((upgrade) => upgrade.level === player.economyLevel) ??
-    EconomyUpgrades[0];
   // Spread the day's deposits: bank once a deposit's share of daily income is on hand.
   const threshold =
     (calculateTurnIncome(player) * ticksPerDay) /
@@ -521,10 +518,7 @@ export function bankBeforeLogoff(
     player.bankDepositHistory.length < player.maximumBankDeposits &&
     player.gold >= threshold
   ) {
-    const room = Math.max(0, economy.bankCap - player.goldInBank);
-    const amount = Math.floor(
-      Math.min((player.gold * DEPOSIT_CAP_PERCENT) / 100, room),
-    );
+    const amount = Math.floor((player.gold * DEPOSIT_CAP_PERCENT) / 100);
     if (amount <= 0) break;
     player.gold -= amount;
     player.goldInBank += amount;

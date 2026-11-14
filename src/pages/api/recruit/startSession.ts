@@ -7,7 +7,7 @@ import {
   canAutoRecruit,
 } from '@/services/AutoRecruitAccess.service';
 import {
-  isRecruitmentCaptchaRequired,
+  getRecruitmentCaptcha,
   verifyRecruitmentCaptcha,
 } from '@/services/RecruitmentCaptcha.service';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -21,20 +21,23 @@ const handler = async (req: AuthenticatedRequest, res) => {
       .status(405)
       .json({ error: 'Method not allowed', code: 'METHOD_NOT_FOUND' });
   }
-  // One Turnstile check opens the session; recruits inside it are tied to
+  // One captcha check opens the session; recruits inside it are tied to
   // this session in the reward transaction and skip the per-recruit check.
-  if (isRecruitmentCaptchaRequired()) {
+  const captcha = await getRecruitmentCaptcha();
+  if (captcha.required) {
     const token = req.body?.captchaToken;
     if (typeof token !== 'string' || !token) {
       return res.status(400).json({
         error: 'Verification is required to start a session.',
         code: 'CAPTCHA_REQUIRED',
+        captchaProvider: captcha.provider,
       });
     }
     if (!(await verifyRecruitmentCaptcha(token, getIpAddress(req)))) {
       return res.status(400).json({
         error: 'Captcha verification failed.',
         code: 'CAPTCHA_FAILED',
+        captchaProvider: captcha.provider,
       });
     }
   }

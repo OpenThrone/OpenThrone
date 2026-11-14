@@ -4,6 +4,7 @@ import {
   Code,
   Group,
   NumberInput,
+  Select,
   Stack,
   Switch,
   Table,
@@ -12,18 +13,19 @@ import {
 } from '@mantine/core';
 import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import {
+  RECRUIT_CAPTCHA_PROVIDERS,
   RUNTIME_SETTING_GROUPS,
   RUNTIME_SETTING_KEYS,
   RUNTIME_SETTING_REGISTRY,
   type RuntimeSettingKey,
 } from '@/constants/runtimeSettings';
 import { alertService } from '@/services/Alert.service';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 type SettingRow = {
   id: number;
@@ -456,6 +458,26 @@ const ServerSettingsPage = () => {
                                   onBlur={() =>
                                     save(key, externalIpRecruitCapDraft)
                                   }
+                                />
+                              ) : key === 'recruit.captchaProvider' ? (
+                                <Select
+                                  aria-label={t(`settings.labels.${key}`)}
+                                  allowDeselect={false}
+                                  data={RECRUIT_CAPTCHA_PROVIDERS.map(
+                                    (provider) => ({
+                                      value: provider,
+                                      label: t(
+                                        `settings.captchaProviders.${provider}`,
+                                      ),
+                                    }),
+                                  )}
+                                  value={
+                                    typeof value === 'string' ? value : null
+                                  }
+                                  disabled={savingKey === key}
+                                  onChange={(next) => {
+                                    if (next) save(key, next);
+                                  }}
                                 />
                               ) : meta.type === 'NUMBER' ? (
                                 <NumberInput

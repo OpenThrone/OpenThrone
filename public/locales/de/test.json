@@ -26,6 +26,7 @@
     "duplicateMessage": "Duplikate Nachrichtenbenachrichtigung:",
     "friendRequestSent": "{{email}} hat Ihnen eine Freundschaftsanfrage gesendet!",
     "enemyDeclared": "{{email}} hat Sie als Feind erklärt!",
-    "newMessage": "Sie haben eine neue Nachricht von {{email}}!"
+    "newMessage": "Sie haben eine neue Nachricht von {{email}}!",
+    "realtimeDisabled": "Echtzeit ist deaktiviert (NEXT_PUBLIC_DISABLE_SOCKET), daher wird keine Socket-Verbindung hergestellt."
   }
 }

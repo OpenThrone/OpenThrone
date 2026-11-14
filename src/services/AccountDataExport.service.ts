@@ -1,5 +1,8 @@
 import prisma from '@/lib/prisma';
-import { redactAttackLogForViewer } from '@/services/AttackLogAccess.service';
+import {
+  defenderVisibleLogsWhere,
+  redactAttackLogForViewer,
+} from '@/services/AttackLogAccess.service';
 
 /** One download per player per rolling window. */
 export const EXPORT_WINDOW_HOURS = 24;
@@ -315,7 +318,7 @@ function buildSections(userId: number): Array<[string, () => SectionValue]> {
             prisma.attack_log.findMany({
               where: {
                 id: { gt: afterId },
-                OR: [{ attacker_id: userId }, { defender_id: userId }],
+                OR: [{ attacker_id: userId }, defenderVisibleLogsWhere(userId)],
               },
               orderBy: { id: 'asc' },
               take: PAGE_SIZE,
@@ -484,6 +487,8 @@ function buildSections(userId: number): Array<[string, () => SectionValue]> {
           allianceName: row.alliance?.name ?? null,
           roleName: row.role?.name ?? null,
           joinedAt: row.created_at,
+          duesArrears: row.dues_arrears,
+          duesPaidThrough: row.dues_paid_through,
         }));
       },
     ],

@@ -1,7 +1,7 @@
 import md5 from 'md5';
-import type { Server } from 'socket.io';
 
 import prisma from '@/lib/prisma';
+import { emitToUser } from '@/lib/realtime';
 import { SocialService } from '@/services/Social.service';
 import { logError } from '@/utils/logger';
 
@@ -14,14 +14,10 @@ const resolveSenderName = async (senderId: number) => {
 };
 
 /** Emit social count update. */
-export const emitSocialCountUpdate = async (
-  io: Server | null,
-  userId: number,
-) => {
-  if (!io) return;
+export const emitSocialCountUpdate = async (userId: number) => {
   try {
     const counts = await SocialService.getNotificationCounts(userId);
-    io.to(`user-${userId}`).emit('socialCountUpdate', {
+    await emitToUser(userId, 'socialCountUpdate', {
       count: counts.totalCount,
     });
   } catch (error) {
@@ -30,14 +26,10 @@ export const emitSocialCountUpdate = async (
 };
 
 /** Emit gold request count update. */
-export const emitGoldRequestCountUpdate = async (
-  io: Server | null,
-  userId: number,
-) => {
-  if (!io) return;
+export const emitGoldRequestCountUpdate = async (userId: number) => {
   try {
     const result = await SocialService.countPendingGoldRequests(userId);
-    io.to(`user-${userId}`).emit('goldRequestCountUpdate', {
+    await emitToUser(userId, 'goldRequestCountUpdate', {
       count: result.count || 0,
     });
   } catch (error) {
@@ -46,22 +38,18 @@ export const emitGoldRequestCountUpdate = async (
 };
 
 /** Emit friend request notification. */
-export const emitFriendRequestNotification = async (
-  io: Server | null,
-  {
-    senderId,
-    recipientId,
-  }: {
-    senderId: number;
-    recipientId: number;
-  },
-) => {
-  if (!io) return;
+export const emitFriendRequestNotification = async ({
+  senderId,
+  recipientId,
+}: {
+  senderId: number;
+  recipientId: number;
+}) => {
   try {
     const senderName = await resolveSenderName(senderId);
     const message = `You have received a friend request from ${senderName}`;
     const hash = md5(message + recipientId);
-    io.to(`user-${recipientId}`).emit('friendRequestNotification', {
+    await emitToUser(recipientId, 'friendRequestNotification', {
       message,
       hash,
       senderId,
@@ -73,22 +61,18 @@ export const emitFriendRequestNotification = async (
 };
 
 /** Emit gold request notification. */
-export const emitGoldRequestNotification = async (
-  io: Server | null,
-  {
-    senderId,
-    recipientId,
-  }: {
-    senderId: number;
-    recipientId: number;
-  },
-) => {
-  if (!io) return;
+export const emitGoldRequestNotification = async ({
+  senderId,
+  recipientId,
+}: {
+  senderId: number;
+  recipientId: number;
+}) => {
   try {
     const senderName = await resolveSenderName(senderId);
     const message = `You have received a gold request from ${senderName}`;
     const hash = md5(message + recipientId);
-    io.to(`user-${recipientId}`).emit('goldRequestNotification', {
+    await emitToUser(recipientId, 'goldRequestNotification', {
       message,
       hash,
       senderId,

@@ -20,7 +20,7 @@ const { invalidateRuntimeConfigCache } = require('../RuntimeConfig.service');
 const { authOptions } = require('../../pages/api/auth/[...nextauth]');
 
 const { authorize } = authOptions.providers[0].options;
-const argon2 = require('argon2');
+const passwordHash = require('@/lib/passwordHash');
 
 const originalLogin = process.env.NEXT_PUBLIC_DISABLE_LOGIN;
 const originalCaptcha = process.env.NEXT_PUBLIC_DISABLE_TURNSTILE;
@@ -38,7 +38,9 @@ describe('blocked login has no activity side effects', () => {
 
   beforeEach(() => {
     // The login policy is revealed only after the password matches.
-    verifySpy = vi.spyOn(argon2, 'verify').mockResolvedValue(true);
+    verifySpy = vi
+      .spyOn(passwordHash, 'verifyPassword')
+      .mockResolvedValue(true);
     resetMockPrisma();
     invalidateRuntimeConfigCache();
     logAction.mockClear();

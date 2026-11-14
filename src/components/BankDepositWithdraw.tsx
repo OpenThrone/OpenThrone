@@ -8,11 +8,7 @@ import { PageLoading } from '@/components/game/PageLoading';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import type { Locales } from '@/types/typings';
-import {
-  DEPOSIT_CAP_PERCENT,
-  getBankRoom,
-  getMaxDeposit,
-} from '@/utils/bankLimits';
+import { DEPOSIT_CAP_PERCENT, getMaxDeposit } from '@/utils/bankLimits';
 import type { BankActionResult } from '@/utils/bankResponse';
 import { readBankResponse } from '@/utils/bankResponse';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
@@ -44,15 +40,7 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
   const capPercent = config?.depositCapPercent ?? DEPOSIT_CAP_PERCENT;
   // UserModel exposes the balance as goldInBank; gold_in_bank is the raw column.
   const bankBalance = toBigIntSafe(user?.goldInBank ?? user?.gold_in_bank);
-  const bankRoom =
-    user?.bankCap === undefined
-      ? undefined
-      : getBankRoom(BigInt(user.bankCap), bankBalance);
-  const maxDeposit = getMaxDeposit(
-    toBigIntSafe(user?.gold),
-    capPercent,
-    bankRoom,
-  );
+  const maxDeposit = getMaxDeposit(toBigIntSafe(user?.gold), capPercent);
   useEffect(() => {
     if (user) {
       fetch('/api/bank/history?deposits=true&withdraws=true&limit=10&page=0')
@@ -139,11 +127,7 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
             maxAriaLabel={t('bank.depositMaxAria')}
             error={
               depositAmount > maxDeposit
-                ? bankRoom !== undefined && depositAmount > bankRoom
-                  ? t('bank.depositOverCapacity', {
-                      amount: toLocale(bankRoom, locale as Locales),
-                    })
-                  : t('bank.depositOverCap', { percent: capPercent })
+                ? t('bank.depositOverCap', { percent: capPercent })
                 : undefined
             }
           />

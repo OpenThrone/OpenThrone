@@ -12,13 +12,13 @@ import {
 } from '@mantine/core';
 import type { GetServerSidePropsContext } from 'next';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 type Kind =
   | 'transfers'
@@ -48,6 +48,7 @@ const config = {
       'id',
       'userId',
       'occurredAt',
+      'kind',
       'ipHash',
       'ipPrefixHash',
       'userAgentHash',
@@ -87,6 +88,18 @@ const config = {
   },
 } as const;
 const kinds = Object.keys(config) as Kind[];
+// Ids and event kinds are short; only hashes and timestamps may break anywhere.
+const NOWRAP_COLUMNS = new Set<string>([
+  'id',
+  'userId',
+  'kind',
+  'from_user_id',
+  'to_user_id',
+  'to_user',
+  'from_user',
+  'sourceUserId',
+  'createdByUserId',
+]);
 
 export default function LedgersPage() {
   const { t } = useTranslation('admin-ledgers');
@@ -297,7 +310,12 @@ export default function LedgersPage() {
                             key={column}
                             style={{
                               overflowWrap:
-                                kind === 'drift' ? 'normal' : 'anywhere',
+                                kind === 'drift' || NOWRAP_COLUMNS.has(column)
+                                  ? 'normal'
+                                  : 'anywhere',
+                              whiteSpace: NOWRAP_COLUMNS.has(column)
+                                ? 'nowrap'
+                                : undefined,
                             }}
                           >
                             {String(row[column] ?? '—')}

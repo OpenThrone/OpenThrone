@@ -2,6 +2,7 @@ import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
 import { EconomyUpgrades, Fortifications, HouseUpgrades } from '@/constants';
+import { ALLIANCE_DUES_ARREARS_MAX } from '@/constants/allianceDues';
 import prisma from '@/lib/prisma';
 import {
   ItemType,
@@ -34,6 +35,14 @@ const MoneySchema = z
   .refine((value) => value <= MONEY_MAX, 'Amount is too large');
 export const INT_MAX = 2147483647;
 const QuantitySchema = z.number().int().min(0).max(INT_MAX);
+/** Alliance dues arrears: whole gold, 0..ALLIANCE_DUES_ARREARS_MAX. */
+export const DuesArrearsSchema = z
+  .union([z.string().regex(/^\d+$/), z.number().int().nonnegative().safe()])
+  .transform((value) => BigInt(value))
+  .refine(
+    (value) => value <= ALLIANCE_DUES_ARREARS_MAX,
+    `Dues arrears can be at most ${ALLIANCE_DUES_ARREARS_MAX.toLocaleString('en-US')} gold`,
+  );
 /** Small allowance for the admin's clock running ahead of the server's. */
 const FUTURE_SKEW_MS = 60_000;
 /**
@@ -109,6 +118,8 @@ const ExpectedSchema = z.object({
     .default({}),
   units: z.record(z.string(), z.number().int()).default({}),
   items: z.record(z.string(), z.number().int()).default({}),
+  /** Loaded dues arrears per alliance id, as whole-gold strings. */
+  duesArrears: z.record(z.string(), z.string()).default({}),
   permissions: z.array(z.nativeEnum(PermissionType)).max(100).optional(),
   staffRoles: z.array(z.string()).max(4).optional(),
 });
@@ -124,6 +135,7 @@ export function findMissingExpectations(update: {
   gameplay?: Record<string, unknown>;
   army: { units: { id: string }[] };
   items: { items: { id: string }[] };
+  alliances?: { memberships: { allianceId: number }[] };
   permissions?: unknown;
   staffRoles?: unknown;
   expected: Partial<AdminExpected>;
@@ -133,6 +145,7 @@ export function findMissingExpectations(update: {
     fields: update.expected.fields ?? {},
     units: update.expected.units ?? {},
     items: update.expected.items ?? {},
+    duesArrears: update.expected.duesArrears ?? {},
   };
   const missing: string[] = [];
   const scalarKeys = [
@@ -157,6 +170,9 @@ export function findMissingExpectations(update: {
     if (!(unit.id in expected.units)) missing.push(`unit ${unit.id}`);
   for (const item of update.items.items)
     if (!(item.id in expected.items)) missing.push(`item ${item.id}`);
+  for (const membership of update.alliances?.memberships ?? [])
+    if (!(String(membership.allianceId) in expected.duesArrears))
+      missing.push(`dues arrears ${membership.allianceId}`);
   if (update.permissions && !expected.permissions) missing.push('permissions');
   if (update.staffRoles && !expected.staffRoles) missing.push('staffRoles');
   return missing;
@@ -331,6 +347,19 @@ const AdminUserUpdateSchema = z.object({
       permissions: z.array(z.nativeEnum(PermissionType)).max(100),
     })
     .optional(),
+  /** Alliance dues arrears per membership (allianceDues.ts). */
+  alliances: z
+    .object({
+      memberships: z
+        .array(
+          z.object({
+            allianceId: z.number().int().positive(),
+            duesArrears: DuesArrearsSchema,
+          }),
+        )
+        .max(10),
+    })
+    .optional(),
   gameplay: GameplayPatchSchema.optional(),
   expected: ExpectedSchema,
   staffRoles: z
@@ -393,8 +422,10 @@ async function handler(
           },
           alliance_memberships: {
             select: {
-              alliance: { select: { id: true, name: true } },
+              alliance: { select: { id: true, name: true, leader_id: true } },
               role: { select: { name: true } },
+              dues_arrears: true,
+              dues_paid_through: true,
             },
           },
           permissions: {
@@ -474,6 +505,10 @@ async function handler(
             allianceId: membership.alliance.id,
             name: membership.alliance.name,
             role: membership.role?.name ?? null,
+            isLeader: membership.alliance.leader_id === user.id,
+            duesArrears: String(membership.dues_arrears ?? 0n),
+            duesPaidThrough:
+              membership.dues_paid_through?.toISOString() ?? null,
           })),
           statusHistory: (user.statusHistories ?? []).map((entry) => ({
             id: entry.id,
@@ -553,6 +588,13 @@ async function handler(
         return res.status(422).json({
           error: `Missing expected values for: ${missingExpectations.join(', ')}`,
         });
+      const duesIds = (updateData.alliances?.memberships ?? []).map(
+        (membership) => membership.allianceId,
+      );
+      if (new Set(duesIds).size !== duesIds.length)
+        return res
+          .status(422)
+          .json({ error: 'Duplicate alliance memberships' });
       const unitIds = updateData.army.units.map((unit) => unit.id);
       const itemIds = updateData.items.items.map((item) => item.id);
       if (
@@ -589,6 +631,18 @@ async function handler(
           if (!user) {
             throw new AdminUpdateError(404, 'User not found');
           }
+          const duesMemberships =
+            Object.keys(updateData.expected.duesArrears).length > 0 ||
+            duesIds.length > 0
+              ? await tx.alliance_memberships.findMany({
+                  where: { user_id: userIdNum },
+                  select: {
+                    id: true,
+                    alliance_id: true,
+                    dues_arrears: true,
+                  },
+                })
+              : [];
 
           // Deliberately unfiltered by revokedAt: an account that has ever held
           // a role or grant stays locked, so revoke-then-edit cannot bypass it.
@@ -702,6 +756,15 @@ async function handler(
                 (r) => `${r.type}:${r.usage}:${r.level}` === id,
               );
               if (row?.quantity !== qty) stale.push(`item ${id}`);
+            }
+            for (const [allianceId, arrears] of Object.entries(
+              expected.duesArrears,
+            )) {
+              const row = duesMemberships.find(
+                (m) => String(m.alliance_id) === allianceId,
+              );
+              if (!row || String(row.dues_arrears) !== arrears)
+                stale.push(`dues arrears ${allianceId}`);
             }
             if (expected.eraId !== (user.currentEraId ?? null))
               stale.push('currentEraId');
@@ -830,6 +893,22 @@ async function handler(
             fortHitpoints,
             ...(veteranTouched ? veteran : {}),
           });
+          const duesDiff: FieldDiff = {};
+          for (const edit of updateData.alliances?.memberships ?? []) {
+            const row = duesMemberships.find(
+              (m) => m.alliance_id === edit.allianceId,
+            );
+            if (!row)
+              throw new AdminUpdateError(
+                409,
+                'The player is no longer in that alliance',
+              );
+            if (BigInt(row.dues_arrears) !== edit.duesArrears)
+              duesDiff[String(edit.allianceId)] = {
+                before: String(row.dues_arrears),
+                after: edit.duesArrears.toString(),
+              };
+          }
           const permissionDiff = updateData.permissions
             ? setDiff(
                 (user.permissions ?? []).map((p) => p.type),
@@ -846,6 +925,9 @@ async function handler(
             fields: fieldDiff,
             units: unitDiff,
             items: itemDiff,
+            ...(Object.keys(duesDiff).length > 0
+              ? { duesArrears: duesDiff }
+              : {}),
             ...(permissionDiff ? { permissions: permissionDiff } : {}),
             ...(roleDiff ? { staffRoles: roleDiff } : {}),
           };
@@ -921,6 +1003,12 @@ async function handler(
             });
             if (result.count !== 1)
               throw new AdminUpdateError(409, 'Item no longer exists');
+          }
+          for (const [allianceId, change] of Object.entries(duesDiff)) {
+            await tx.alliance_memberships.updateMany({
+              where: { user_id: userIdNum, alliance_id: Number(allianceId) },
+              data: { dues_arrears: BigInt(String(change.after)) },
+            });
           }
           await recordItemLedger(
             tx,

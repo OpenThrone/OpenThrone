@@ -12,13 +12,18 @@ import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
+import {
+  type AllianceDuesTerms,
+  AllianceJoinTerms,
+  hasDues,
+} from '@/components/alliance/AllianceMembershipDues';
 import { ReservedBadge } from '@/components/alliance/ReservedAllianceNotice';
 import { GameCard } from '@/components/game/GameCard';
 import panelClasses from '@/components/game/Panels.module.css';
 import { PremiumAllianceMark } from '@/components/player/SupporterBadge';
-import { useUser } from '@/context/users';
+import type { Locales } from '@/types/typings';
 import { avatarFramingStyle, splitAvatarFraming } from '@/utils/avatarFraming';
-import { toLocale } from '@/utils/numberFormatting';
+import { formatWhole } from '@/utils/formatWhole';
 
 type AllianceCardProps = {
   id: number;
@@ -38,6 +43,10 @@ type AllianceCardProps = {
   premiumUntil?: string | null;
   /** ACTIVE or RESERVED (#13): a reserved alliance takes no new members. */
   status?: string;
+  /** Join fee and dues, shown to players outside the alliance. */
+  joinTerms?: AllianceDuesTerms;
+  /** Most members the alliance's hall level allows, shown as members / cap. */
+  memberCap?: number;
 };
 
 /** Shared alliance identity, membership and actions for both directories. */
@@ -58,9 +67,10 @@ export const AllianceCard = ({
   isPremium,
   premiumUntil,
   status,
+  joinTerms,
+  memberCap,
 }: AllianceCardProps) => {
-  const { t } = useTranslation('alliances');
-  const { user } = useUser();
+  const { t, i18n } = useTranslation('alliances');
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
@@ -166,16 +176,42 @@ export const AllianceCard = ({
               <Text size="xs" c="dimmed" tt="uppercase">
                 {t('browse.gold')}
               </Text>
-              <Text fw={700}>{toLocale(gold, user?.locale)}</Text>
+              <Text fw={700}>
+                {formatWhole(gold, i18n.language as Locales)}
+              </Text>
             </div>
           )}
           <div>
             <Text size="xs" c="dimmed" tt="uppercase">
               {t('browse.members')}
             </Text>
-            <Text fw={700}>{toLocale(members, user?.locale)}</Text>
+            <Text fw={700}>
+              {memberCap
+                ? t('upgrades.ofCap', {
+                    value: formatWhole(members, i18n.language as Locales),
+                    cap: formatWhole(memberCap, i18n.language as Locales),
+                  })
+                : formatWhole(members, i18n.language as Locales)}
+            </Text>
           </div>
         </Group>
+        {!!memberCap &&
+          members >= memberCap &&
+          !userMembership &&
+          !isLeader && (
+            <Text size="xs" c="var(--ot-muted)">
+              {t(
+                'overview.fullHint',
+                'The alliance is full: nobody can join until the Alliance Hall is upgraded.',
+              )}
+            </Text>
+          )}
+        {joinTerms &&
+          !userMembership &&
+          !isLeader &&
+          (joinTerms.joinFee > 0n || hasDues(joinTerms)) && (
+            <AllianceJoinTerms terms={joinTerms} size="xs" />
+          )}
         <Group gap="xs">
           {userMembership || isLeader ? (
             <Button

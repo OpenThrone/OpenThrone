@@ -95,5 +95,33 @@
   "reserveConfirm": "Reserve {{name}}? Its features close for every member until it is reactivated; members can still leave. Treasury, loans and wars are not touched.",
   "reactivate": "Reactivate",
   "reactivateTitle": "Reactivate alliance",
-  "reactivateConfirm": "Reactivate {{name}} without charging the leader?"
+  "reactivateConfirm": "Reactivate {{name}} without charging the leader?",
+  "colHallLevel": "Hall level",
+  "hallLevelLabel": "Alliance Hall level",
+  "hallLevelHint": "Members: {{members}} of {{cap}} at the current level. Lowering keeps every member and all treasury gold.",
+  "hallLevelSet": "Set level",
+  "hallLevelConfirm": "Set the Alliance Hall of {{name}} from level {{from}} to level {{to}}? No gold is charged or refunded.",
+  "hallLevels": {
+    "0": "Camp",
+    "1": "Hall",
+    "2": "Great Hall",
+    "3": "Keep",
+    "4": "Citadel",
+    "5": "Stronghold"
+  },
+  "duesHeading": "Join fee and dues",
+  "duesJoinFee": "Join fee (gold)",
+  "duesMax": "At most {{max}} gold",
+  "duesPeriod": "Dues collected",
+  "duesPeriods": {
+    "NONE": "No dues",
+    "DAILY": "Daily",
+    "WEEKLY": "Weekly",
+    "MONTHLY": "Monthly"
+  },
+  "duesAmount": "Dues per member (gold)",
+  "duesAmountNone": "Choose a period to set dues",
+  "duesConfirm": "Set {{name}} to a {{fee}} gold join fee and {{amount}} gold dues ({{period}})? A new period starts counting from now; existing arrears are kept.",
+  "duesSave": "Save fee and dues",
+  "colDuesArrears": "Dues owed"
 }

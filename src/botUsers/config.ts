@@ -1,8 +1,11 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { z } from 'zod';
 
-import { CONFIG_ROOT_DIR } from './constants';
+// Static JSON imports: bot manifests and schedules are build-time data, so
+// bundlers inline them and no runtime fs read of config/bots is needed (that
+// read breaks on Cloudflare Workers). Add a new file? Import it here and
+// register it in the matching source map below.
+import defaultManifestJson from '../../config/bots/manifests/default.json';
+import defaultScheduleJson from '../../config/bots/schedules/default.json';
 import type { BotManifest, BotSchedule } from './types';
 import { BOT_CLASSES, BOT_PERSONAS, BOT_RACES } from './types';
 
@@ -63,20 +66,46 @@ const BotScheduleSchema = z.object({
     ),
 });
 
-function resolveConfigRoot(): string {
-  return join(process.cwd(), CONFIG_ROOT_DIR);
-}
+const MANIFEST_SOURCES: Record<string, unknown> = {
+  default: defaultManifestJson,
+};
 
-function readJson(path: string): unknown {
-  return JSON.parse(readFileSync(path, 'utf8'));
-}
+const SCHEDULE_SOURCES: Record<string, unknown> = {
+  default: defaultScheduleJson,
+};
 
 export function loadManifest(name = 'default'): BotManifest {
-  const path = join(resolveConfigRoot(), 'manifests', `${name}.json`);
-  return BotManifestSchema.parse(readJson(path)) as BotManifest;
+  const source = MANIFEST_SOURCES[name];
+  if (source === undefined) {
+    throw new Error(`Unknown bot manifest: ${name}`);
+  }
+  return BotManifestSchema.parse(source) as BotManifest;
 }
 
 export function loadSchedule(name = 'default'): BotSchedule {
-  const path = join(resolveConfigRoot(), 'schedules', `${name}.json`);
-  return BotScheduleSchema.parse(readJson(path)) as BotSchedule;
+  const source = SCHEDULE_SOURCES[name];
+  if (source === undefined) {
+    throw new Error(`Unknown bot schedule: ${name}`);
+  }
+  return BotScheduleSchema.parse(source) as BotSchedule;
+}
+
+/** Names of every statically bundled bot manifest, sorted. */
+export function listBotManifests(): string[] {
+  return Object.keys(MANIFEST_SOURCES).sort();
+}
+
+/** Names of every statically bundled bot schedule, sorted. */
+export function listBotSchedules(): string[] {
+  return Object.keys(SCHEDULE_SOURCES).sort();
+}
+
+/** Whether a bot manifest with this name is bundled. */
+export function isKnownBotManifest(name: string): boolean {
+  return Object.prototype.hasOwnProperty.call(MANIFEST_SOURCES, name);
+}
+
+/** Whether a bot schedule with this name is bundled. */
+export function isKnownBotSchedule(name: string): boolean {
+  return Object.prototype.hasOwnProperty.call(SCHEDULE_SOURCES, name);
 }

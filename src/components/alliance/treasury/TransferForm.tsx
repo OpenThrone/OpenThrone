@@ -6,14 +6,15 @@ import { allianceRequest } from '@/components/alliance/allianceStanding';
 import { GameCard } from '@/components/game/GameCard';
 import {
   ALLIANCE_NOTE_MAX_LENGTH,
-  MEMBER_DAILY_CAP_DEFAULT,
+  memberDailyCapOf,
 } from '@/constants/allianceTreasury';
 import { useUser } from '@/context/users';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
+import { formatWhole } from '@/utils/formatWhole';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
-import { toLocale } from '@/utils/numberFormatting';
+import { wholeGoldSeparators } from '@/utils/wholeGoldInput';
 
 interface TransferFormProps {
   alliance: AllianceInfo;
@@ -22,7 +23,7 @@ interface TransferFormProps {
 
 /** Transfer treasury gold to a member (leader or manage_bank). */
 export const TransferForm = ({ alliance, onDone }: TransferFormProps) => {
-  const { t } = useTranslation('allianceTreasury');
+  const { t, i18n } = useTranslation('allianceTreasury');
   const { config } = useRuntimeConfig();
   const { forceUpdate } = useUser();
   const [targetId, setTargetId] = useState<string | null>(null);
@@ -75,20 +76,21 @@ export const TransferForm = ({ alliance, onDone }: TransferFormProps) => {
         mt="sm"
         label={t('amount')}
         description={t('transferDailyCap', {
-          cap: toLocale(
+          cap: formatWhole(
             Math.min(
-              Number(
+              memberDailyCapOf(
                 (alliance as unknown as { member_daily_cap?: string })
-                  .member_daily_cap ?? MEMBER_DAILY_CAP_DEFAULT,
+                  .member_daily_cap,
               ),
               config?.allianceMemberDailyCapMax ?? 50000000,
             ),
+            i18n.language,
           ),
         })}
         min={0}
         value={amount.toString()}
         onChange={(val) => setAmount(toBigIntSafe(val))}
-        thousandSeparator=","
+        {...wholeGoldSeparators(i18n.language)}
       />
       <TextInput
         mt="sm"

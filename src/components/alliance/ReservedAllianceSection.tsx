@@ -9,9 +9,9 @@ import {
   ReservedAllianceNotice,
 } from '@/components/alliance/ReservedAllianceNotice';
 import ConfirmationModal from '@/components/ConfirmationModal';
-import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
-import { toLocale } from '@/utils/numberFormatting';
+import type { Locales } from '@/types/typings';
+import { formatWhole } from '@/utils/formatWhole';
 
 interface ReservedAllianceSectionProps {
   allianceId: number;
@@ -41,8 +41,7 @@ export const ReservedAllianceSection = ({
   isLeader,
   onChanged,
 }: ReservedAllianceSectionProps) => {
-  const { t } = useTranslation('alliances');
-  const { user } = useUser();
+  const { t, i18n } = useTranslation('alliances');
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -54,7 +53,7 @@ export const ReservedAllianceSection = ({
   );
 
   const cost = progress
-    ? toLocale(progress.requirements.costGold, user?.locale)
+    ? formatWhole(progress.requirements.costGold, i18n.language as Locales)
     : '';
 
   const reactivate = async () => {
@@ -108,7 +107,7 @@ export const ReservedAllianceSection = ({
         onLeave={leave}
         busy={busy}
         error={error}
-        locale={user?.locale}
+        locale={i18n.language as Locales}
       />
       <ConfirmationModal
         isOpen={confirming}

@@ -57,7 +57,7 @@
     },
     "password": {
       "title": "Wie stelle ich ein vergessenes Passwort wieder her?",
-      "answer": "Nutzen Sie die Seite zum Zurücksetzen des Passworts und folgen Sie den E-Mail-Anweisungen. Prüfen Sie den Spamordner, wenn keine Nachricht ankommt. Veröffentlichen Sie niemals einen Reset-Link, ein Passwort oder einen Zwei-Faktor-Code. Beschreiben Sie dem Support das Problem ohne diese Geheimnisse, falls die Wiederherstellung weiterhin scheitert."
+      "answer": "Fordern Sie auf der Seite zum Zurücksetzen des Passworts eine E-Mail an und öffnen Sie den Link darin: Er öffnet die Seite so, dass Sie direkt ein neues Passwort wählen können. Der Link funktioniert einmal und läuft nach 3 Stunden ab. Prüfen Sie den Spamordner, wenn keine Nachricht ankommt. Veröffentlichen Sie niemals einen Reset-Link, ein Passwort oder einen Zwei-Faktor-Code. Beschreiben Sie dem Support das Problem ohne diese Geheimnisse, falls die Wiederherstellung weiterhin scheitert."
     },
     "data": {
       "title": "Wie bekomme ich eine Kopie meiner Daten oder lösche mein Konto?",
@@ -70,6 +70,14 @@
     "allianceEra": {
       "title": "Was passiert mit meiner Allianz, wenn eine neue Ära beginnt?",
       "answer": "Deine Allianz bleibt bestehen, ist aber reserviert. Name, Mitglieder, Ränge und Bilder bleiben, während Schatzkammer, Kredite, Truppenverträge und Kriege mit der alten Ära enden und ihre Funktionen gesperrt bleiben. Du kannst jederzeit austreten, auch bevor der Anführer handelt. Nur der Anführer kann sie reaktivieren, sobald er in der neuen Ära Stufe 10 erreicht hat und 10.000.000 Gold zahlt."
+    },
+    "allianceHall": {
+      "title": "Wie funktioniert der Ausbau einer Allianz?",
+      "answer": "Die Allianzhalle Ihrer Allianz bestimmt drei Grenzen: wie viele Mitglieder sie aufnehmen kann, wie oft jedes Mitglied pro 24 Stunden einzahlen darf und bis zu welcher Summe Einzahlungen die Schatzkammer füllen dürfen. Eine neue Allianz beginnt im Lager: 10 Mitglieder, 2 Einzahlungen pro Mitglied und 24 Stunden und eine Schatzkammer mit 5.000.000 Gold. Der Anführer oder ein Rang mit „Ausbau kaufen“ kauft die nächste Stufe mit Gold aus der Schatzkammer im Reiter Ausbau, der die Kosten, die benötigten Mitglieder und die Grenzen jeder Stufe zeigt. Eine volle Allianz behält alle Mitglieder, nimmt aber keine neuen auf, bis sie ausgebaut wird. Eine neue Ära setzt die Halle auf das Lager zurück."
+    },
+    "allianceDues": {
+      "title": "Verlangen Allianzen eine Gebühr oder Beiträge?",
+      "answer": "Eine Allianz kann eine einmalige Beitrittsgebühr (bis 10.000.000 Gold) und Mitgliedsbeiträge verlangen, die täglich (bis 1.000.000), wöchentlich (bis 5.000.000) oder monatlich (bis 20.000.000 Gold pro Mitglied) eingezogen werden. Beides kommt aus Ihrem Gold auf der Hand und geht in die Schatzkammer. Gebühr und Beiträge stehen auf der Allianzkarte, der Allianzseite und der Einladung, und Sie bestätigen sie vor dem Beitritt. Beiträge werden zu Beginn jedes Zeitraums eingezogen, nie für die Zeit vor Ihrem Beitritt; können Sie nicht voll zahlen, zahlen Sie, was Sie haben, und schulden den Rest, der beim nächsten Mal zuerst eingezogen wird oder auf dem Reiter Übersicht oder Bank bezahlt werden kann. Niemand wird wegen offener Beiträge entfernt, und der Anführer zahlt keine. Der Anführer oder ein Rang mit „Beitrittsgebühr und Beiträge festlegen“ ändert sie im Reiter Einstellungen. Eine neue Ära löscht offene Beiträge."
     }
   }
 }

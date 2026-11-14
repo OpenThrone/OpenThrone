@@ -443,6 +443,8 @@ export interface ChatMessage {
     supporterUntil?: string | null;
     badgeVisible?: boolean;
     avatar: string | null;
+    /** Race, so a "SHIELD" avatar renders the sender's own race shield. */
+    race?: string | null;
     is_online: boolean;
     supporterUntil?: string | null;
   };
@@ -491,6 +493,7 @@ export interface FrontendRoom {
     canWrite: boolean;
     display_name: string;
     avatar: string | null;
+    race?: string | null;
     is_online: boolean;
   }[];
 }

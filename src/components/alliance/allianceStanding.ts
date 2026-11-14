@@ -1,6 +1,7 @@
 import type { AlliancePermissionKey } from '@/constants/alliancePermissions';
 import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import type { AllianceInfo } from '@/services/Alliance.service';
+import { allianceApiError } from '@/utils/allianceErrorMessage';
 
 /** The viewer's leader flag, rank position and permission check. */
 export interface AllianceStanding {
@@ -46,6 +47,6 @@ export const allianceRequest = async (
     body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
+  if (!res.ok) throw allianceApiError(data, res.status);
   return data;
 };

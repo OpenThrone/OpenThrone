@@ -6,6 +6,9 @@ import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
 import React, { useEffect, useRef, useState } from 'react';
 
+import AltchaChallenge, {
+  type AltchaFailure,
+} from '@/components/AltchaChallenge';
 import { GameCard } from '@/components/game/GameCard';
 import { PageLoading } from '@/components/game/PageLoading';
 import MainArea from '@/components/MainArea';
@@ -37,6 +40,13 @@ function AutoRecruiter() {
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [sessionCaptcha, setSessionCaptcha] = useState(false);
   const [captchaKey, setCaptchaKey] = useState(0);
+  const [sessionCaptchaProvider, setSessionCaptchaProvider] = useState<
+    'altcha' | 'turnstile'
+  >('turnstile');
+  // The ALTCHA check failed or expired: wait for the player instead of solving again.
+  const [sessionCaptchaFailure, setSessionCaptchaFailure] =
+    useState<AltchaFailure | null>(null);
+  const startingRef = useRef(false);
   const [isStoppingSession, setIsStoppingSession] = useState(false);
   const [isResumingSession, setIsResumingSession] = useState(false);
   const [isCountdown, setIsCountdown] = useState(false);
@@ -273,7 +283,8 @@ function AutoRecruiter() {
 
   /** Turnstile is checked once when a session starts; recruits inside it reuse that check. */
   const startRecruiting = async (captchaToken?: string) => {
-    if (isStartingSession) return;
+    if (isStartingSession || startingRef.current) return;
+    startingRef.current = true;
     setIsStartingSession(true);
     try {
       const response = await fetch('/api/recruit/startSession', {
@@ -283,9 +294,18 @@ function AutoRecruiter() {
       });
       const data = await response.json();
       if (data.code === 'CAPTCHA_REQUIRED' || data.code === 'CAPTCHA_FAILED') {
+        const altcha = data.captchaProvider === 'altcha';
+        setSessionCaptchaProvider(altcha ? 'altcha' : 'turnstile');
+        setSessionCaptcha(true);
+        if (altcha && data.code === 'CAPTCHA_FAILED') {
+          // A refused ALTCHA payload is not re-solved on its own: if the
+          // server keeps refusing, that would loop. The player retries.
+          setSessionCaptchaFailure('error');
+          return;
+        }
         if (data.code === 'CAPTCHA_FAILED')
           alertService.error(t('autoRecruit.verificationFailed'), false);
-        setSessionCaptcha(true);
+        setSessionCaptchaFailure(null);
         setCaptchaKey((key) => key + 1);
         return;
       }
@@ -296,6 +316,7 @@ function AutoRecruiter() {
       requestRef.current = false;
       sessionIdRef.current = data.sessionId;
       setSessionCaptcha(false);
+      setSessionCaptchaFailure(null);
       pausedRef.current = false;
       previousRef.current = undefined;
       attemptedRef.current = null;
@@ -312,24 +333,62 @@ function AutoRecruiter() {
       logError('Error starting recruitment session:', error);
       alertService.error(t('autoRecruit.errorStartingSession'), false);
       // The challenge token is single-use; render a fresh one for the retry.
-      setCaptchaKey((key) => key + 1);
+      if (sessionCaptchaProvider === 'altcha' && captchaToken)
+        setSessionCaptchaFailure('error');
+      else setCaptchaKey((key) => key + 1);
     } finally {
+      startingRef.current = false;
       setIsStartingSession(false);
     }
   };
 
   const startCaptcha = sessionCaptcha ? (
     <Stack align="center" gap="xs">
-      <Text size="sm">{t('autoRecruit.verifyToStart')}</Text>
-      <Turnstile
-        key={captchaKey}
-        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
-        onSuccess={(token) => startRecruiting(token)}
-        onExpire={() => setCaptchaKey((key) => key + 1)}
-        onError={() =>
-          alertService.error(t('autoRecruit.verificationFailed'), false)
-        }
-      />
+      <Text size="sm">
+        {t(
+          sessionCaptchaProvider === 'altcha'
+            ? 'autoRecruit.verifyToStartAltcha'
+            : 'autoRecruit.verifyToStart',
+        )}
+      </Text>
+      {sessionCaptchaProvider === 'altcha' ? (
+        sessionCaptchaFailure ? (
+          <>
+            <Text role="alert" size="sm">
+              {t(
+                sessionCaptchaFailure === 'expired'
+                  ? 'autoRecruit.verificationExpired'
+                  : 'autoRecruit.verificationFailed',
+              )}
+            </Text>
+            <Button
+              variant="default"
+              onClick={() => {
+                setSessionCaptchaFailure(null);
+                setCaptchaKey((key) => key + 1);
+              }}
+            >
+              {t('autoRecruit.retryVerification')}
+            </Button>
+          </>
+        ) : (
+          <AltchaChallenge
+            key={captchaKey}
+            onVerified={(payload) => startRecruiting(payload)}
+            onFailed={setSessionCaptchaFailure}
+          />
+        )
+      ) : (
+        <Turnstile
+          key={captchaKey}
+          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
+          onSuccess={(token) => startRecruiting(token)}
+          onExpire={() => setCaptchaKey((key) => key + 1)}
+          onError={() =>
+            alertService.error(t('autoRecruit.verificationFailed'), false)
+          }
+        />
+      )}
     </Stack>
   ) : null;
 

@@ -25,6 +25,7 @@ import React from 'react';
 
 import { SupporterBadge } from '@/components/player/SupporterBadge';
 import type { ChatMessage } from '@/types/typings';
+import { resolveAvatarSrc } from '@/utils/utilities';
 
 import styles from './ChatThemed.module.css';
 
@@ -40,6 +41,8 @@ interface ChatMessageGroupThemedProps {
   onJumpToMessage?: (messageId: number) => void;
   firstUnreadMessageId?: number | null;
   messageElementRefs: React.MutableRefObject<Map<number, HTMLElement>>;
+  /** Hides reaction/reply controls (read-only mode when realtime is disabled). */
+  reactionsDisabled?: boolean;
 }
 
 const ChatMessageGroupThemedComponent: React.FC<
@@ -52,6 +55,7 @@ const ChatMessageGroupThemedComponent: React.FC<
   setReplyingToMessage,
   renderMessageContent,
   messageElementRefs,
+  reactionsDisabled = false,
   onRetry,
   canRetry = true,
   onJumpToMessage,
@@ -87,7 +91,10 @@ const ChatMessageGroupThemedComponent: React.FC<
           withBorder
         >
           <Avatar
-            src={group[0].sender?.avatar}
+            src={resolveAvatarSrc(
+              group[0].sender?.avatar,
+              (group[0].sender as { race?: string } | undefined)?.race,
+            )}
             size="md"
             radius="xl"
             alt={group[0].sender?.display_name || t('message.unknownUser')}
@@ -256,6 +263,7 @@ const ChatMessageGroupThemedComponent: React.FC<
                                 aria-label={t('message.reactWith', {
                                   emoji: reaction,
                                 })}
+                                disabled={reactionsDisabled}
                                 onClick={() =>
                                   handleToggleReaction(message.id, reaction)
                                 }
@@ -310,7 +318,8 @@ const ChatMessageGroupThemedComponent: React.FC<
                 );
               })()}
           </Group>
-          {!lastMessageInGroup.deliveryState &&
+          {!reactionsDisabled &&
+            !lastMessageInGroup.deliveryState &&
             !lastMessageInGroup.deletedAt && (
               <Group gap={2} align="center" className={styles.messageActions}>
                 <Tooltip label={t('message.reply')} position="top" withArrow>
@@ -378,7 +387,10 @@ const ChatMessageGroupThemedComponent: React.FC<
           withBorder
         >
           <Avatar
-            src={group[0].sender?.avatar}
+            src={resolveAvatarSrc(
+              group[0].sender?.avatar,
+              (group[0].sender as { race?: string } | undefined)?.race,
+            )}
             size="md"
             radius="xl"
             alt={t('message.you')}

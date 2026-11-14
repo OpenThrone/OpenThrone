@@ -38,6 +38,7 @@
       "ENABLE_GARRISON_FATIGUE": "Garnisonsermüdung",
       "SHOW_KINGDOM_MORALE": "Königreichsmoral anzeigen",
       "SHOW_DUNGEON": "Kerker anzeigen",
+      "ENABLE_SITE_ANALYTICS": "Website-Analyse und ihr Text in der Datenschutzerklärung",
       "DISABLE_LOGIN": "Anmeldung deaktivieren",
       "DISABLE_REGISTRATION": "Registrierung deaktivieren",
       "MAINTENANCE_MODE": "Wartungsmodus",
@@ -50,6 +51,8 @@
       "recruit.dailyCap": "Limit für externe Rekrutierungslinks (wie oft der Link dieses Spielers täglich genutzt werden kann; beeinflusst auch die Bevölkerungsschwelle des Neuspielerschutzes)",
       "recruit.internalDailyCap": "Internes Rekrutierungslimit (Rekruten, die ein Spieler täglich erhalten kann)",
       "recruit.externalIpDailyCap": "Limit externer Links pro IP (wie oft eine IP den Link desselben Spielers täglich nutzen kann)",
+      "recruit.captchaProvider": "Rekrutierungs-Captcha (ALTCHA wird im Browser des Spielers gelöst, ohne Drittanbieter; Turnstile gehört zu Cloudflare. Gilt nur für Rekrutierungslinks und Auto-Rekrutierung; Registrierung, Anmeldung und Einsprüche nutzen immer Turnstile)",
+      "recruit.altchaDifficulty": "ALTCHA-Schwierigkeit bei der Rekrutierung (größter versteckter Zähler; höher bedeutet längere Lösungszeit, 100-200000)",
       "combat": {
         "pairDailyLimit": "Tägliches Angriffslimit pro Gegnerpaar"
       },
@@ -130,7 +133,9 @@
       "abuse.bot.maxVariationPercent": "Bot-Timing: Schwankung der Abstände höchstens (%)",
       "abuse.fresh.accountAgeDays": "Neue Konten: zählt, solange jünger als (Tage)",
       "abuse.fresh.windowDays": "Neue Konten: Zeitraum (Tage)",
-      "abuse.fresh.minAttacks": "Neue Konten: nötige Angriffe eines Spielers"
+      "abuse.fresh.minAttacks": "Neue Konten: nötige Angriffe eines Spielers",
+      "moderation.shadowEnabled": "Schatten-Chatmoderation (nur Aufzeichnung, keine Maßnahmen)",
+      "moderation.shadowBatchSize": "Schatten-Chatmoderation: Nachrichten pro Durchlauf"
     },
     "resetBeforeLogin": "Aktuelle Ära vor Freigabe der Anmeldung zurücksetzen",
     "groups": {
@@ -148,7 +153,11 @@
     "staminaTitle": "Ausdauerregeln",
     "staminaHelp": "Ausdauer bestimmt Aktionskosten, Erholung und den Angriffsabzug unter dem Schwellenwert. Spionage kostet keine Ausdauer.",
     "groupCount_one": "{{count}} Einstellung",
-    "groupCount_other": "{{count}} Einstellungen"
+    "groupCount_other": "{{count}} Einstellungen",
+    "captchaProviders": {
+      "altcha": "ALTCHA (selbst gehostet)",
+      "turnstile": "Cloudflare Turnstile"
+    }
   },
   "maintenance": {
     "title": "System: Wartungsmodus",

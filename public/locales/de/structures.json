@@ -166,8 +166,6 @@
     "depositMaxAria": "Maximalen Betrag einzahlen",
     "withdrawMaxAria": "Maximalen Betrag abheben",
     "depositOverCap": "Betrag übersteigt {{percent}}% Ihres Goldes zur Hand",
-    "depositOverCapacity": "In Ihrer Bank ist noch Platz für {{amount}}. Wirtschafts-Upgrades erhöhen dieses Limit.",
-    "capacity": "Fasst bis zu {{amount}}",
     "transactionTypes": {
       "armoryPurchase": "Ausrüstungskauf",
       "armorySale": "Ausrüstungsverkauf",

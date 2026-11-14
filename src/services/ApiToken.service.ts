@@ -1,6 +1,6 @@
-import argon2 from 'argon2';
 import { createHash, randomBytes } from 'crypto';
 
+import { hashApiTokenSecret, verifyPassword } from '@/lib/passwordHash';
 import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
 
@@ -84,9 +84,7 @@ export class ApiTokenService {
     const prefix = randomBytes(TOKEN_PREFIX_LENGTH).toString('hex').slice(0, 8);
     const secret = randomBytes(TOKEN_SECRET_LENGTH).toString('hex');
     const pepper = process.env.API_TOKEN_PEPPER ?? '';
-    const tokenHash = await argon2.hash(`${secret}${pepper}`, {
-      type: argon2.argon2id,
-    });
+    const tokenHash = await hashApiTokenSecret(`${secret}${pepper}`);
 
     const client = await prisma.apiClient.create({
       data: {
@@ -149,7 +147,7 @@ export class ApiTokenService {
     }
 
     const pepper = process.env.API_TOKEN_PEPPER ?? '';
-    const valid = await argon2.verify(
+    const valid = await verifyPassword(
       token.tokenHash,
       `${parsed.secret}${pepper}`,
     );

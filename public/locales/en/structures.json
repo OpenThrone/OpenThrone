@@ -166,8 +166,6 @@
     "depositMaxAria": "Deposit maximum amount",
     "withdrawMaxAria": "Withdraw maximum amount",
     "depositOverCap": "Amount exceeds {{percent}}% of your gold on hand",
-    "depositOverCapacity": "Your bank has room for {{amount}} more. Economy upgrades raise this limit.",
-    "capacity": "Holds up to {{amount}}",
     "transactionTypes": {
       "armoryPurchase": "Armory Purchase",
       "armorySale": "Armory Sale",

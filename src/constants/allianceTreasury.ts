@@ -24,6 +24,17 @@ export const MEMBER_DAILY_CAP_MIN = 100_000;
 export const MEMBER_DAILY_CAP_MAX = 50_000_000;
 export const MEMBER_DAILY_CAP_DEFAULT = 5_000_000;
 
+/**
+ * The stored member daily cap as a number. The alliance arrives from the API
+ * with BigInts serialized as "5000000n", which Number() reads as NaN.
+ */
+export const memberDailyCapOf = (stored: unknown): number => {
+  const text =
+    typeof stored === 'string' ? stored.trim().replace(/n$/, '') : stored;
+  const cap = Number(text ?? MEMBER_DAILY_CAP_DEFAULT);
+  return Number.isFinite(cap) && text !== '' ? cap : MEMBER_DAILY_CAP_DEFAULT;
+};
+
 /** Share of a borrower's income diverted to the treasury while a loan is open. */
 export const LOAN_INCOME_SHARE_PERCENT = 25;
 

@@ -127,7 +127,11 @@
     "veteranTitleNone": "None",
     "veteranTitleERA1_TESTER": "Era 1 Tester",
     "veteranSince": "Veteran since (original join date)",
-    "veteranSinceHelp": "ISO date of the original account's creation. Cleared when the title is removed."
+    "veteranSinceHelp": "ISO date of the original account's creation. Cleared when the title is removed.",
+    "duesArrears": "Dues arrears (gold)",
+    "duesArrearsHelp": "Unpaid dues, collected before new dues. 0 clears them.",
+    "duesArrearsMax": "At most {{max}} gold",
+    "duesLeaderExempt": "Leader: pays no dues"
   },
   "actions": {
     "edit": "Edit",

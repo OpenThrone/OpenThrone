@@ -23,14 +23,20 @@ import useSWR from 'swr';
 import { AllianceArtworkEditor } from '@/components/alliance/AllianceArtworkEditor';
 import { AllianceInvitePanel } from '@/components/alliance/AllianceInvites';
 import { classLabel, raceLabel } from '@/components/alliance/allianceLabels';
+import {
+  AllianceDuesCard,
+  AllianceDuesSettingsCard,
+  duesTermsOf,
+} from '@/components/alliance/AllianceMembershipDues';
 import { allianceRequest } from '@/components/alliance/allianceStanding';
 import { ConfirmActionModal } from '@/components/alliance/ConfirmActionModal';
 import { TreasurySettingsCard } from '@/components/alliance/treasury/TreasurySettingsCard';
 import { GameCard } from '@/components/game/GameCard';
-import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
-import { toLocale } from '@/utils/numberFormatting';
+import type { Locales } from '@/types/typings';
+import { allianceApiError } from '@/utils/allianceErrorMessage';
+import { formatWhole } from '@/utils/formatWhole';
 
 interface AllianceSettingsProps {
   alliance: AllianceInfo;
@@ -40,6 +46,8 @@ interface AllianceSettingsProps {
   canManageRequests?: boolean;
   /** Rank may edit the public profile (edit_profile). */
   canEditProfile?: boolean;
+  /** Rank may set the join fee and membership dues (set_dues). */
+  canSetDues?: boolean;
   /** Reserved alliance (#13): only leaving, disbanding and succession stay. */
   reserved?: boolean;
 }
@@ -53,12 +61,14 @@ export const AllianceSettings = ({
   isLeader = false,
   canManageRequests = false,
   canEditProfile = false,
+  canSetDues = false,
   reserved = false,
 }: AllianceSettingsProps) => {
   const canManage = !reserved && (isLeader || canManageRequests);
   const canEdit = !reserved && (isLeader || canEditProfile);
-  const { t } = useTranslation('alliances');
-  const { user } = useUser();
+  const canEditDues = !reserved && (isLeader || canSetDues);
+  const duesTerms = duesTermsOf(alliance);
+  const { t, i18n } = useTranslation('alliances');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [exitAction, setExitAction] = useState<'leave' | 'disband' | null>(
@@ -127,7 +137,7 @@ export const AllianceSettings = ({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw allianceApiError(data, res.status);
 
       alertService.success(
         t('settings.updateSuccess', 'Settings updated successfully'),
@@ -146,6 +156,13 @@ export const AllianceSettings = ({
     fetcher,
   );
 
+  // Open alliances take players straight in and invite-only ones ignore
+  // requests, so the card shows only for request-to-join (or leftovers).
+  const showRequests =
+    canManage &&
+    (((alliance as any).join_mode ?? 'OPEN') === 'REQUEST_TO_JOIN' ||
+      (Array.isArray(requests) && requests.length > 0));
+
   const handleRequest = async (
     requestId: number,
     action: 'accept' | 'reject',
@@ -157,7 +174,7 @@ export const AllianceSettings = ({
         body: JSON.stringify({ requestId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw allianceApiError(data, res.status);
 
       alertService.success(
         action === 'accept'
@@ -173,78 +190,99 @@ export const AllianceSettings = ({
 
   return (
     <Stack gap="lg">
-      {canManage && <AllianceInvitePanel allianceId={alliance.id} />}
+      <SimpleGrid
+        cols={{ base: 1, md: showRequests ? 2 : 1 }}
+        style={{ alignItems: 'start' }}
+      >
+        {canManage && <AllianceInvitePanel allianceId={alliance.id} />}
 
-      {/* Join Requests Section */}
-      {canManage && (
-        <GameCard title={t('settings.requestsTitle', 'Join Requests')}>
-          {!requests ? (
-            <Loader size="sm" />
-          ) : !Array.isArray(requests) || requests.length === 0 ? (
-            <Text c="dimmed" size="sm">
-              {t('settings.noRequests', 'No pending requests')}
-            </Text>
-          ) : (
-            <Table.ScrollContainer
-              minWidth={420}
-              aria-label={t('settings.requestsTitle', 'Join Requests')}
-            >
-              <Table>
-                <Table.Tbody>
-                  {requests.map((req: any) => (
-                    <Table.Tr key={req.id}>
-                      <Table.Td>
-                        <Group gap="sm">
-                          {/* Avatar if we had it in join request include, but we only selected user... */}
-                          {/* <Avatar size="sm" /> */}
-                          <Text size="sm" fw={500}>
-                            {req.user.display_name}
+        {/* Join requests only exist when the alliance asks to be asked. */}
+        {showRequests && (
+          <GameCard title={t('settings.requestsTitle', 'Join Requests')}>
+            {duesTerms.joinFee > 0n && (
+              <Text size="xs" c="var(--ot-muted)" mb="sm">
+                {t('memberDues.acceptFeeNote', {
+                  fee: t('currency.goldAmount', {
+                    ns: 'common',
+                    amount: formatWhole(
+                      duesTerms.joinFee,
+                      i18n.language as Locales,
+                    ),
+                  }),
+                })}
+              </Text>
+            )}
+            {!requests ? (
+              <Loader size="sm" />
+            ) : !Array.isArray(requests) || requests.length === 0 ? (
+              <Text c="dimmed" size="sm">
+                {t('settings.noRequests', 'No pending requests')}
+              </Text>
+            ) : (
+              <Table.ScrollContainer
+                minWidth={420}
+                aria-label={t('settings.requestsTitle', 'Join Requests')}
+              >
+                <Table>
+                  <Table.Tbody>
+                    {requests.map((req: any) => (
+                      <Table.Tr key={req.id}>
+                        <Table.Td>
+                          <Group gap="sm">
+                            {/* Avatar if we had it in join request include, but we only selected user... */}
+                            {/* <Avatar size="sm" /> */}
+                            <Text size="sm" fw={500}>
+                              {req.user.display_name}
+                            </Text>
+                          </Group>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge variant="outline" size="sm">
+                            {raceLabel(t, req.user.race)}
+                          </Badge>
+                          <Badge variant="outline" size="sm" ml="xs">
+                            {classLabel(t, req.user.class)}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="xs" c="dimmed">
+                            {t('settings.level', 'Lvl {{level}}', {
+                              level: formatWhole(
+                                req.user.level ?? 0,
+                                i18n.language as Locales,
+                              ),
+                            })}
                           </Text>
-                        </Group>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge variant="outline" size="sm">
-                          {raceLabel(t, req.user.race)}
-                        </Badge>
-                        <Badge variant="outline" size="sm" ml="xs">
-                          {classLabel(t, req.user.class)}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="xs" c="dimmed">
-                          {t('settings.level', 'Lvl {{level}}', {
-                            level: toLocale(req.user.level ?? 0, user?.locale),
-                          })}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td align="right">
-                        <Group gap="xs" justify="flex-end">
-                          <ActionIcon
-                            color="green"
-                            variant="subtle"
-                            onClick={() => handleRequest(req.id, 'accept')}
-                            title={t('settings.accept', 'Accept')}
-                          >
-                            <FontAwesomeIcon icon={faCheck} />
-                          </ActionIcon>
-                          <ActionIcon
-                            color="red"
-                            variant="subtle"
-                            onClick={() => handleRequest(req.id, 'reject')}
-                            title={t('settings.reject', 'Reject')}
-                          >
-                            <FontAwesomeIcon icon={faXmark} />
-                          </ActionIcon>
-                        </Group>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
-          )}
-        </GameCard>
-      )}
+                        </Table.Td>
+                        <Table.Td align="right">
+                          <Group gap="xs" justify="flex-end">
+                            <ActionIcon
+                              color="green"
+                              variant="subtle"
+                              onClick={() => handleRequest(req.id, 'accept')}
+                              title={t('settings.accept', 'Accept')}
+                            >
+                              <FontAwesomeIcon icon={faCheck} />
+                            </ActionIcon>
+                            <ActionIcon
+                              color="red"
+                              variant="subtle"
+                              onClick={() => handleRequest(req.id, 'reject')}
+                              title={t('settings.reject', 'Reject')}
+                            >
+                              <FontAwesomeIcon icon={faXmark} />
+                            </ActionIcon>
+                          </Group>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            )}
+          </GameCard>
+        )}
+      </SimpleGrid>
 
       {canEdit && (
         <AllianceArtworkEditor
@@ -288,7 +326,7 @@ export const AllianceSettings = ({
                 />
               </Group>
               <Textarea
-                label={t('create.comments', 'Description')}
+                label={t('settings.aboutUs', 'About Us')}
                 minRows={3}
                 {...form.getInputProps('comments')}
               />
@@ -338,6 +376,17 @@ export const AllianceSettings = ({
 
       {isLeader && !reserved && (
         <TreasurySettingsCard alliance={alliance} onUpdate={onUpdate} />
+      )}
+
+      {canEditDues && (
+        <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'start' }}>
+          <AllianceDuesSettingsCard
+            allianceId={alliance.id}
+            terms={duesTerms}
+            onSaved={onUpdate}
+          />
+          <AllianceDuesCard allianceId={alliance.id} onPaid={onUpdate} />
+        </SimpleGrid>
       )}
 
       <GameCard

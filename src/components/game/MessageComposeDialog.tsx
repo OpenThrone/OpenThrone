@@ -15,6 +15,7 @@ import {
 import { useTranslation } from 'next-i18next';
 
 import styles from '@/components/game/ChatThemed.module.css';
+import { resolveAvatarSrc } from '@/utils/utilities';
 
 export interface MessageRecipient {
   value: string;
@@ -72,7 +73,7 @@ export default function MessageComposeDialog({
     const { image, label, race, class: userClass } = item.option;
     return (
       <Group gap="sm">
-        <Avatar src={image} radius="xl" size="sm">
+        <Avatar src={resolveAvatarSrc(image, race)} radius="xl" size="sm">
           {label?.[0]?.toUpperCase() || '?'}
         </Avatar>
         <div>

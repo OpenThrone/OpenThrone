@@ -1,6 +1,6 @@
-import * as bcrypt from 'bcryptjs';
 import speakeasy from 'speakeasy';
 
+import { verifyPassword } from '@/lib/passwordHash';
 import type { RateLimitSlot } from '@/lib/postgres-rate-limiter';
 import {
   consumeRateLimitSlot,
@@ -10,8 +10,6 @@ import {
 import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
 import { decryptTwoFactorSecret } from '@/utils/twoFactorSecret';
-
-const argon2 = require('argon2');
 
 const FIFTEEN_MINUTES_MS = 15 * 60_000;
 const TOTP_STEP_SECONDS = 30;
@@ -146,12 +144,21 @@ export function isLoginCaptchaEnforced(): boolean {
   );
 }
 
+/** Cloudflare Turnstile siteverify endpoint, called directly (no self-HTTP hop). */
+const TURNSTILE_VERIFY_ENDPOINT =
+  'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+
 /**
  * Verifies the Turnstile token for a credential check. Throws an Error whose
  * message is safe to show; does nothing when captcha is disabled by env.
+ *
+ * Calls Cloudflare's siteverify endpoint directly (mirroring
+ * /api/captcha/verify) instead of fetching this app's own verification route:
+ * self-referencing fetch is not available on Workers runtimes.
  */
 export async function verifyLoginCaptcha(
   turnstileToken: string | undefined,
+  clientIp?: string,
 ): Promise<void> {
   if (!isLoginCaptchaEnforced()) return;
   if (
@@ -163,14 +170,23 @@ export async function verifyLoginCaptcha(
     throw new Error('Captcha token required');
   }
 
-  const captchaRes = await fetch(
-    `${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: turnstileToken }),
+  const secret =
+    process.env.TURNSTILE_SECRET || process.env.NEXT_PUBLIC_TURNSTILE_SECRET;
+  // remoteip lets Cloudflare reject tokens redeemed from a different address.
+  const remoteip =
+    typeof clientIp === 'string' && clientIp
+      ? `&remoteip=${encodeURIComponent(clientIp)}`
+      : '';
+  const captchaRes = await fetch(TURNSTILE_VERIFY_ENDPOINT, {
+    method: 'POST',
+    body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(turnstileToken)}${remoteip}`,
+    headers: {
+      'content-type': 'application/x-www-form-urlencoded',
     },
-  );
+  });
+  if (!captchaRes.ok) {
+    throw new Error('Captcha verification failed');
+  }
   const captchaData = await captchaRes.json();
   if (!captchaData.success) {
     throw new Error('Captcha verification failed');
@@ -183,8 +199,7 @@ export async function verifyStoredPassword(
   password: string,
 ): Promise<boolean> {
   try {
-    if (hash.startsWith('$2b$')) return await bcrypt.compare(password, hash);
-    return await argon2.verify(hash, password);
+    return await verifyPassword(hash, password);
   } catch {
     return false;
   }

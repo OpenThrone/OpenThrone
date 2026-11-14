@@ -1,6 +1,6 @@
-import type { Socket } from 'socket.io-client';
 import { z } from 'zod';
 
+import type { RealtimeClientSocket } from '@/lib/realtimeTransport';
 import type { ChatSendAcknowledgement, ChatSendPayload } from '@/types/chat';
 import type { ChatMessage } from '@/types/typings';
 import {
@@ -13,7 +13,7 @@ export const CHAT_ACK_TIMEOUT_MS = 10000;
 
 /** A timeout means unconfirmed, not unsaved. Retrying must reuse clientMessageId. */
 export function sendChatWithAcknowledgement(
-  socket: Socket,
+  socket: RealtimeClientSocket,
   payload: ChatSendPayload,
 ): Promise<ChatSendAcknowledgement | null> {
   return new Promise((resolve) => {

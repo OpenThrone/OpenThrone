@@ -158,5 +158,49 @@
       "SPY": "Espionaje",
       "SENTRY": "Centinela"
     }
+  },
+  "traffic": {
+    "title": "Tráfico del sitio",
+    "range": "Periodo",
+    "days7": "Últimos 7 días",
+    "days30": "Últimos 30 días",
+    "days90": "Últimos 90 días",
+    "loadError": "No se pudieron cargar las estadísticas de tráfico",
+    "retryHint": "Inténtalo de nuevo en un momento.",
+    "gaError": "Google Analytics no responde",
+    "setup": {
+      "title": "Google Analytics no está configurado",
+      "intro": "Define estas variables de entorno (solo nombres; los valores viven en tu almacén de secretos) para ver el tráfico aquí:",
+      "steps": "Configuración: crea una propiedad GA4, crea una cuenta de servicio de Google Cloud, habilita la Google Analytics Data API, añade el correo de la cuenta de servicio como Viewer en la propiedad, define las variables anteriores y despliega."
+    },
+    "totals": {
+      "activeUsers": "Usuarios activos",
+      "newUsers": "Usuarios nuevos",
+      "sessions": "Sesiones",
+      "screenPageViews": "Vistas de página",
+      "averageSessionDuration": "Sesión media",
+      "engagementRate": "Interacción",
+      "realtime": "Activos ahora (30 min)"
+    },
+    "trendTitle": "Tendencia de tráfico",
+    "topPages": "Páginas principales",
+    "pagePath": "Página",
+    "views": "Vistas",
+    "users": "Usuarios",
+    "sources": "Fuentes de tráfico",
+    "source": "Fuente / medio",
+    "countries": "Países",
+    "country": "País",
+    "devices": "Dispositivos",
+    "device": "Dispositivo",
+    "empty": "Sin datos en este periodo.",
+    "consent": {
+      "title": "Consentimiento de cookies",
+      "granted": "Aceptado",
+      "denied": "Rechazado",
+      "optInRate": "Tasa de aceptación",
+      "noChoices": "—",
+      "note": "Google Analytics solo cuenta a los visitantes que aceptaron las cookies de analítica; el recuento de arriba registra cada decisión explícita."
+    }
   }
 }

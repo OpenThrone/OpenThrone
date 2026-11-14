@@ -1,6 +1,6 @@
 # Progression
 
-Last verified against code: 2026-11-06 (alpha d59b12d9)
+Last verified against code: 2026-11-12 (alpha 8ffa50de)
 
 Progression is how a kingdom grows over an era: experience (XP) raises your level, each level gives a proficiency point, your race and class give permanent bonuses, and a racial upgrade track adds a perk for your race. Player level and fort level together decide what you can buy and use.
 
@@ -65,7 +65,7 @@ Player level matters directly in these places; everything else uses fort level o
 
 | What | Rule |
 | --- | --- |
-| Fort levels | Fort level N needs player level 5 x (N - 1), so Village at 5, Town at 10, up to level 115 for the last |
+| Fort levels | Fort level N needs player level 5 x (N - 1) up to Kingdom (fort 19, level 90): Village at 5, Town at 10. The last five forts step by 2, to Empire Level 3 at level 100 |
 | Structure Upgrades menu | Player level 5 (the first fort level with a requirement) |
 | New-player protection (see [protection.md](protection.md)) | Ends at level 10 by default (`era.protectionLevelLimit`), or earlier by days or population |
 | Battle upgrades | Player level at least the upgrade's `minUnitLevel` (2) and the structure level 6 |

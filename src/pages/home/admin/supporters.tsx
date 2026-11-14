@@ -12,7 +12,6 @@ import {
   UnstyledButton,
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
@@ -41,6 +40,7 @@ import type {
   SupporterAdminSummary,
   SupporterMembershipRow,
 } from '@/types/supporter';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 type Tab =
   | 'plans'

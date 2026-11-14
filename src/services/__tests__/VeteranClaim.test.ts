@@ -33,7 +33,7 @@ const {
 } = require('@/services/RuntimeConfig.service');
 const userService = require('@/services/User.service');
 const { hashIdentity } = require('@/utils/identityHash');
-const argon2 = require('argon2');
+const passwordHash = require('@/lib/passwordHash');
 
 const EMAIL = 'returning@example.invalid';
 const OLD_NAME = 'GoneCommander';
@@ -75,7 +75,7 @@ beforeEach(() => {
   invalidateRuntimeConfigCache();
   userService.createUser.mockClear();
   process.env.NEXT_PUBLIC_URL_ROOT = 'https://openthrone.test';
-  spies.push(vi.spyOn(argon2, 'hash').mockResolvedValue('x'));
+  spies.push(vi.spyOn(passwordHash, 'hashPassword').mockResolvedValue('x'));
   sendImmediate = vi.spyOn(emailService, 'sendImmediate');
   sendImmediate.mockResolvedValue({ messageId: 'synthetic' });
   spies.push(sendImmediate);

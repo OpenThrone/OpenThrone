@@ -1,12 +1,13 @@
-import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'crypto';
 import { z } from 'zod';
 
+import { hashPassword, verifyPassword } from '@/lib/passwordHash';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { AccountAnonymizationService } from '@/services/AccountAnonymization.service';
 import { cancelInactivityOnLogin } from '@/services/AccountInactivity.service';
 import { sendImmediate } from '@/services/Email.service';
+import { renderEmail } from '@/services/emailTemplates';
 import { recordSuccessfulLogin } from '@/services/LoginTelemetry.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import {
@@ -29,8 +30,6 @@ import { logError } from '@/utils/logger';
 import { canAccessGame } from '@/utils/loginPolicy';
 import { isReservedEmail, RESERVED_EMAIL_MESSAGE } from '@/utils/reservedEmail';
 import { isPrivileged2FAEnforced } from '@/utils/securityPolicies';
-
-const argon2 = require('argon2');
 
 /** Malformed stored hashes make the libraries throw; treat that as a failed match. */
 const comparePassword = async (
@@ -85,7 +84,7 @@ export class AuthService {
    * Updates the password encryption for a user to the latest algorithm (Argon2).
    */
   static async updatePasswordEncryption(email: string, password: string) {
-    const phash = await argon2.hash(password);
+    const phash = await hashPassword(password);
     return prisma.users.update({
       where: { email },
       data: { password_hash: phash },
@@ -130,16 +129,9 @@ export class AuthService {
     // Verify password. A malformed stored hash makes the library throw; that
     // is reported as invalid credentials, not a server error.
     const storedHash = user.password_hash;
-    let passwordMatches = false;
-    if (storedHash.startsWith('$2b$')) {
-      passwordMatches = await comparePassword(() =>
-        bcrypt.compare(validatedData.password, storedHash),
-      );
-    } else {
-      passwordMatches = await comparePassword(() =>
-        argon2.verify(storedHash, validatedData.password),
-      );
-    }
+    const passwordMatches = await comparePassword(() =>
+      verifyPassword(storedHash, validatedData.password),
+    );
 
     if (!passwordMatches) {
       return { error: 'Invalid username or password' };
@@ -282,7 +274,7 @@ export class AuthService {
       throw new Error('That display name is unavailable.');
     }
 
-    const phash = await argon2.hash(password);
+    const phash = await hashPassword(password);
 
     // Create user using the existing service method
     const user = await createUser(
@@ -360,7 +352,7 @@ export class AuthService {
           typeof identifier === 'number'
             ? { id: identifier }
             : { email: identifier },
-        select: { id: true, email: true },
+        select: { id: true, email: true, display_name: true, locale: true },
       });
       if (!user?.email) throw new Error('User not found');
 
@@ -390,15 +382,19 @@ export class AuthService {
     });
 
     try {
-      const verifyUrl = new URL(
-        '/account/password-reset/verify',
-        process.env.NEXT_PUBLIC_URL_ROOT || 'https://openthrone.dev',
-      ).toString();
-      const info = await sendImmediate({
-        to: user.email,
-        subject: 'Password Reset',
-        text: `Your password reset token is: ${resetToken}\nPlease use this token to reset your password here: ${verifyUrl}`,
+      // The link carries the token and address, so the reset page fills
+      // itself in; the email never shows the raw token.
+      const { subject, text, html } = renderEmail({
+        kind: 'PASSWORD_RESET',
+        locale: user.locale ?? 'en',
+        vars: {
+          userId: user.id,
+          display_name: user.display_name ?? '',
+          email: user.email,
+          resetToken,
+        },
       });
+      const info = await sendImmediate({ to: user.email, subject, text, html });
       return {
         status: true,
         message: 'Password reset email sent',

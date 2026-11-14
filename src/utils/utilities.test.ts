@@ -9,6 +9,7 @@ import {
   getGoldTxSymbol,
   getLevelChange,
   getTransactionType,
+  resolveAvatarSrc,
 } from '@/utils/utilities';
 
 // Install deterministic mtRand before importing modules that may use randomness
@@ -207,5 +208,25 @@ describe('structure purchase ledger rows (#346)', () => {
       expect(getGoldTxSymbol(row(type), { id: 5 })).toBe('-');
     }
     expect(getTransactionType(row('ARMORY_UPGRADE'))).toBe('Armory Upgrade');
+  });
+});
+
+describe('resolveAvatarSrc (chat avatars)', () => {
+  it('turns the stored "SHIELD" default into the race shield image, never a bare /SHIELD path', () => {
+    const src = resolveAvatarSrc('SHIELD', 'UNDEAD');
+    expect(src).toBe(getAvatarSrc('SHIELD', 'UNDEAD', '150x150'));
+    expect(src).not.toBe('SHIELD');
+  });
+
+  it('passes uploaded avatar URLs through unchanged', () => {
+    expect(resolveAvatarSrc('/users/2/avatar/2-abc.png', 'ELF')).toBe(
+      '/users/2/avatar/2-abc.png',
+    );
+  });
+
+  it('returns undefined for an empty avatar so the Avatar shows initials', () => {
+    expect(resolveAvatarSrc(null)).toBeUndefined();
+    expect(resolveAvatarSrc('')).toBeUndefined();
+    expect(resolveAvatarSrc(undefined, 'HUMAN')).toBeUndefined();
   });
 });

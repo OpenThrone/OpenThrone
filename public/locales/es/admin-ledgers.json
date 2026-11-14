@@ -42,6 +42,7 @@
     "timestamp": "Fecha",
     "userId": "ID de usuario",
     "occurredAt": "Fecha",
+    "kind": "Evento",
     "ipHash": "Hash de IP",
     "ipPrefixHash": "Hash del prefijo IP",
     "userAgentHash": "Hash del agente de usuario",

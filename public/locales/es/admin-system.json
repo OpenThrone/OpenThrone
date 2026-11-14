@@ -38,6 +38,7 @@
       "ENABLE_GARRISON_FATIGUE": "Fatiga de la guarnición",
       "SHOW_KINGDOM_MORALE": "Mostrar la moral del reino",
       "SHOW_DUNGEON": "Mostrar la mazmorra",
+      "ENABLE_SITE_ANALYTICS": "Analítica del sitio y su texto en la política de privacidad",
       "DISABLE_LOGIN": "Desactivar inicio de sesión",
       "DISABLE_REGISTRATION": "Desactivar registro",
       "MAINTENANCE_MODE": "Modo de mantenimiento",
@@ -50,6 +51,8 @@
       "recruit.dailyCap": "Límite de enlaces de reclutamiento externos (usos diarios del enlace de este jugador; también afecta el límite de población de protección para nuevos jugadores)",
       "recruit.internalDailyCap": "Límite de reclutamiento interno (reclutas que un jugador puede obtener al día)",
       "recruit.externalIpDailyCap": "Límite de enlaces externos por IP (usos diarios del enlace del mismo jugador desde una IP)",
+      "recruit.captchaProvider": "Captcha de reclutamiento (ALTCHA se resuelve en el navegador del jugador sin terceros; Turnstile es de Cloudflare. Solo afecta a los enlaces de reclutamiento y al reclutamiento automático; el registro, el inicio de sesión y las apelaciones siempre usan Turnstile)",
+      "recruit.altchaDifficulty": "Dificultad de ALTCHA en el reclutamiento (contador oculto máximo; más alto significa más tiempo de resolución, 100-200000)",
       "combat": {
         "pairDailyLimit": "Límite diario de ataques por pareja"
       },
@@ -130,7 +133,9 @@
       "abuse.bot.maxVariationPercent": "Ritmo de bot: variación de intervalos como máximo (%)",
       "abuse.fresh.accountAgeDays": "Cuentas nuevas: cuentan si tienen menos de (días)",
       "abuse.fresh.windowDays": "Cuentas nuevas: ventana (días)",
-      "abuse.fresh.minAttacks": "Cuentas nuevas: ataques necesarios de un jugador"
+      "abuse.fresh.minAttacks": "Cuentas nuevas: ataques necesarios de un jugador",
+      "moderation.shadowEnabled": "Moderación de chat en la sombra (solo registra, nunca actúa)",
+      "moderation.shadowBatchSize": "Moderación de chat en la sombra: mensajes por ejecución"
     },
     "resetBeforeLogin": "Reiniciar la era actual antes de habilitar los inicios de sesión",
     "groups": {
@@ -148,7 +153,11 @@
     "staminaTitle": "Reglas de resistencia",
     "staminaHelp": "La resistencia determina los costes, la recuperación y la penalización de ataque bajo el umbral. Espiar no cuesta resistencia.",
     "groupCount_one": "{{count}} ajuste",
-    "groupCount_other": "{{count}} ajustes"
+    "groupCount_other": "{{count}} ajustes",
+    "captchaProviders": {
+      "altcha": "ALTCHA (alojado por nosotros)",
+      "turnstile": "Cloudflare Turnstile"
+    }
   },
   "maintenance": {
     "title": "Sistema: Modo de mantenimiento",

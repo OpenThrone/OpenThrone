@@ -19,7 +19,7 @@ const { invalidateRuntimeConfigCache } = require('../RuntimeConfig.service');
 const { authOptions } = require('../../pages/api/auth/[...nextauth]');
 
 const { authorize } = authOptions.providers[0].options;
-const argon2 = require('argon2');
+const passwordHash = require('@/lib/passwordHash');
 
 const originalCaptcha = process.env.NEXT_PUBLIC_DISABLE_TURNSTILE;
 
@@ -38,7 +38,9 @@ describe('login with a capitalised email', () => {
   let verifySpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    verifySpy = vi.spyOn(argon2, 'verify').mockResolvedValue(true);
+    verifySpy = vi
+      .spyOn(passwordHash, 'verifyPassword')
+      .mockResolvedValue(true);
     resetMockPrisma();
     invalidateRuntimeConfigCache();
     process.env.NEXT_PUBLIC_DISABLE_TURNSTILE = 'true';

@@ -25,9 +25,11 @@ import { ConfirmActionModal } from '@/components/alliance/ConfirmActionModal';
 import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
 import { SupporterBadge } from '@/components/player/SupporterBadge';
+import { toDuesBigInt } from '@/constants/allianceDues';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo, AllianceMember } from '@/services/Alliance.service';
-import type { PlayerRace } from '@/types/typings';
+import type { Locales, PlayerRace } from '@/types/typings';
+import { formatWhole } from '@/utils/formatWhole';
 import { getAvatarSrc } from '@/utils/utilities';
 
 interface AllianceMembersProps {
@@ -48,6 +50,7 @@ export const AllianceMembers = ({
   onUpdate,
 }: AllianceMembersProps) => {
   const { t, i18n } = useTranslation('alliances');
+  const locale = i18n.language as Locales;
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [loading, setLoading] = useState(false);
   const standing = getAllianceStanding(alliance, viewerId);
@@ -110,6 +113,14 @@ export const AllianceMembers = ({
     );
   }
 
+  // Dues arrears reach the browser only for the leader, manage_bank and
+  // set_dues (redactMemberDuesForViewer); show the column to them.
+  const showArrears =
+    viewerId != null &&
+    (standing.isLeader ||
+      standing.can('manage_bank') ||
+      standing.can('set_dues'));
+
   const showActions = alliance.members.some((member) => {
     const actions = actionsFor(member);
     return actions.rank || actions.kick || actions.leader;
@@ -167,6 +178,18 @@ export const AllianceMembers = ({
             })}
           </Text>
         </Table.Td>
+        {showArrears && (
+          <Table.Td>
+            <Text
+              fz="sm"
+              c={toDuesBigInt(member.dues_arrears) > 0n ? 'orange' : 'dimmed'}
+            >
+              {member.user_id === alliance.leader_id
+                ? '—'
+                : formatWhole(toDuesBigInt(member.dues_arrears), locale)}
+            </Text>
+          </Table.Td>
+        )}
         <Table.Td>
           <Text fz="sm" c="dimmed">
             {member.user.last_active
@@ -231,6 +254,7 @@ export const AllianceMembers = ({
             t('members.name', 'Name'),
             t('members.role', 'Role'),
             t('members.raceClass', 'Race / Class'),
+            ...(showArrears ? [t('memberDues.arrearsColumn')] : []),
             t('members.lastActive', 'Last Active'),
             ...(showActions
               ? [

@@ -11,6 +11,7 @@ import {
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import { toBigIntSafe } from '@/utils/jsonHelpers';
+import { wholeGoldSeparators } from '@/utils/wholeGoldInput';
 
 interface GoldRequestFormProps {
   allianceId: number;
@@ -22,7 +23,7 @@ export const GoldRequestForm = ({
   allianceId,
   onDone,
 }: GoldRequestFormProps) => {
-  const { t } = useTranslation('allianceTreasury');
+  const { t, i18n } = useTranslation('allianceTreasury');
   const { config } = useRuntimeConfig();
   const [amount, setAmount] = useState<bigint>(0n);
   const [reason, setReason] = useState('');
@@ -58,7 +59,7 @@ export const GoldRequestForm = ({
         min={0}
         value={amount.toString()}
         onChange={(val) => setAmount(toBigIntSafe(val))}
-        thousandSeparator=","
+        {...wholeGoldSeparators(i18n.language)}
       />
       <TextInput
         mt="sm"

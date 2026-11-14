@@ -4,6 +4,7 @@ import type { NextApiRequest } from 'next';
 import {
   getIpAddress,
   getTrustedProxyAddresses,
+  isCloudflareWorkersRuntime,
   resolveClientIp,
 } from './ipUtils';
 
@@ -199,5 +200,61 @@ describe('client IP resolution for rate limits and audit logs', () => {
     const req = makeRequest(undefined);
     expect(resolveClientIp(req)).toBeUndefined();
     expect(getIpAddress(req)).toBe('No IP address detected.');
+  });
+});
+
+describe('client IP on Cloudflare Workers', () => {
+  const originalNavigator = Object.getOwnPropertyDescriptor(
+    globalThis,
+    'navigator',
+  );
+  const setUserAgent = (userAgent: string) =>
+    Object.defineProperty(globalThis, 'navigator', {
+      value: { userAgent },
+      configurable: true,
+      writable: true,
+    });
+  afterEach(() => {
+    if (originalNavigator)
+      Object.defineProperty(globalThis, 'navigator', originalNavigator);
+    else delete (globalThis as { navigator?: unknown }).navigator;
+  });
+
+  // workerd's IncomingMessage has no socket address, only the edge header.
+  const workerRequest = (headers: FakeRequest['headers']) =>
+    ({ headers, socket: {} }) as unknown as NextApiRequest;
+
+  it('detects the Workers runtime by its user agent', () => {
+    setUserAgent('Cloudflare-Workers');
+    expect(isCloudflareWorkersRuntime()).toBe(true);
+    setUserAgent('Bun/1.4.2');
+    expect(isCloudflareWorkersRuntime()).toBe(false);
+  });
+
+  it('uses CF-Connecting-IP when the Worker has no peer address', () => {
+    setUserAgent('Cloudflare-Workers');
+    const req = workerRequest({ 'cf-connecting-ip': '198.51.100.7' });
+    expect(resolveClientIp(req)).toBe('198.51.100.7');
+    expect(getIpAddress(req)).toBe('198.51.100.7');
+  });
+
+  it('prefers CF-Connecting-IP over a client-sent X-Forwarded-For', () => {
+    setUserAgent('Cloudflare-Workers');
+    const req = workerRequest({
+      'cf-connecting-ip': '198.51.100.7',
+      'x-forwarded-for': '203.0.113.66',
+    });
+    expect(resolveClientIp(req)).toBe('198.51.100.7');
+  });
+
+  it('still ignores CF-Connecting-IP from an untrusted peer outside Workers', () => {
+    setUserAgent('Bun/1.4.2');
+    const req = makeRequest('203.0.113.9', {
+      'cf-connecting-ip': '198.51.100.7',
+    });
+    expect(resolveClientIp(req)).toBe('203.0.113.9');
+    expect(
+      resolveClientIp(workerRequest({ 'cf-connecting-ip': '198.51.100.7' })),
+    ).toBeUndefined();
   });
 });

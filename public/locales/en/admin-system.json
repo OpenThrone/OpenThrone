@@ -38,6 +38,7 @@
       "ENABLE_GARRISON_FATIGUE": "Garrison fatigue",
       "SHOW_KINGDOM_MORALE": "Show kingdom morale",
       "SHOW_DUNGEON": "Show dungeon",
+      "ENABLE_SITE_ANALYTICS": "Site analytics and its privacy policy wording",
       "DISABLE_LOGIN": "Disable login",
       "DISABLE_REGISTRATION": "Disable registration",
       "MAINTENANCE_MODE": "Maintenance mode",
@@ -50,6 +51,8 @@
       "recruit.dailyCap": "External link recruitment cap (times this player's link may be used per day; also affects the new-player protection population limit)",
       "recruit.internalDailyCap": "Internal recruitment cap (recruits a player may claim per day)",
       "recruit.externalIpDailyCap": "External link per-IP cap (times one IP may use the same player's link per day)",
+      "recruit.captchaProvider": "Recruitment captcha (ALTCHA solves in the player's browser with no third party; Turnstile is Cloudflare's. Applies to recruit links and auto-recruit only; sign-up, sign-in and appeals always use Turnstile)",
+      "recruit.altchaDifficulty": "ALTCHA recruitment difficulty (maximum hidden counter; higher means more solving time, 100-200000)",
       "combat.pairDailyLimit": "Pair attack daily limit",
       "era.protectionLevelLimit": "Protection level limit",
       "bank.depositCapPercent": "Bank deposit cap (%)",
@@ -97,7 +100,9 @@
       "abuse.bot.maxVariationPercent": "Bot timing: interval variation at or below (%)",
       "abuse.fresh.accountAgeDays": "Fresh accounts: counts while younger than (days)",
       "abuse.fresh.windowDays": "Fresh accounts: window (days)",
-      "abuse.fresh.minAttacks": "Fresh accounts: attacks by one player needed"
+      "abuse.fresh.minAttacks": "Fresh accounts: attacks by one player needed",
+      "moderation.shadowEnabled": "Shadow chat moderation (records verdicts, never enforces)",
+      "moderation.shadowBatchSize": "Shadow chat moderation: messages per sweep"
     },
     "resetBeforeLogin": "Reset current era before opening logins",
     "groups": {
@@ -115,7 +120,11 @@
     "staminaTitle": "Stamina rules",
     "staminaHelp": "Stamina governs action costs, recovery and the offense penalty below the threshold. Spying costs no stamina.",
     "groupCount_one": "{{count}} setting",
-    "groupCount_other": "{{count}} settings"
+    "groupCount_other": "{{count}} settings",
+    "captchaProviders": {
+      "altcha": "ALTCHA (self-hosted)",
+      "turnstile": "Cloudflare Turnstile"
+    }
   },
   "maintenance": {
     "title": "System: Maintenance Mode",

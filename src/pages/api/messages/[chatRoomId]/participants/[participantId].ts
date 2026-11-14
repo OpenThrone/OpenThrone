@@ -1,7 +1,7 @@
 import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
-import { evictUserFromChatRoom } from '@/lib/socket';
+import { evictUserFromChatRoom } from '@/lib/realtime';
 import { withAuth } from '@/middleware/auth';
 import { MessagingService } from '@/services/Messaging.service';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -66,7 +66,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         targetUserId,
       );
       // Open sockets of the removed user must stop receiving room broadcasts.
-      evictUserFromChatRoom(targetUserId, roomId);
+      await evictUserFromChatRoom(targetUserId, roomId);
       return res.status(200).json(result);
     }
   } catch (error) {

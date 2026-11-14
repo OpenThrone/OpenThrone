@@ -26,7 +26,7 @@ export const AllianceLatestAnnouncement = ({
   allianceId,
   onViewAll,
 }: AllianceLatestAnnouncementProps) => {
-  const { t } = useTranslation('allianceAnnouncements');
+  const { t, i18n } = useTranslation('allianceAnnouncements');
   // The list is ordered pinned first, then newest, so the first item wins.
   const { data } = useSWR<{ items: AllianceAnnouncementItem[] }>(
     announcementListUrl(allianceId, 1, 1),
@@ -35,12 +35,10 @@ export const AllianceLatestAnnouncement = ({
   const latest = data?.items?.[0];
   if (!latest) return null;
 
-  // Keep the gap on the card itself: a wrapper around this null state would
-  // still push the Overview's About Us card down when there is no announcement.
+  // The Overview's Stack sets the gap, and skips this card when it is null.
   return (
     <GameCard
       title={t('overview.heading')}
-      mb="md"
       action={
         latest.pinned && (
           <Badge
@@ -58,7 +56,7 @@ export const AllianceLatestAnnouncement = ({
         {t('list.by', {
           name: latest.author?.display_name ?? t('list.unknownAuthor'),
         })}{' '}
-        · {new Date(latest.created_at).toLocaleString()}
+        · {new Date(latest.created_at).toLocaleString(i18n.language)}
       </Text>
       <Text
         lineClamp={4}

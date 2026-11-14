@@ -2,7 +2,7 @@ import md5 from 'md5';
 import type { NextApiResponse } from 'next';
 import { z, ZodError } from 'zod';
 
-import { getSocketIO } from '@/lib/socket';
+import { emitToUser } from '@/lib/realtime';
 import { AttackSchema, IdQuerySchema } from '@/lib/validation';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { enforceIdempotency } from '@/middleware/idempotency';
@@ -67,10 +67,9 @@ const handler = async (
       evaluateAttackPair(sessionUserId, id);
     }
     if (results?.status === 'success' && results.attack_log) {
-      const io = getSocketIO();
       const message = `You were attacked in battle ${results.attack_log}`;
       const hash = md5(message + results.attack_log + id);
-      io?.to(`user-${id}`).emit('attackNotification', {
+      await emitToUser(id, 'attackNotification', {
         message,
         hash,
         battleId: results.attack_log,

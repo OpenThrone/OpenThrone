@@ -2,7 +2,7 @@ import md5 from 'md5';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 
-import { getSocketIO } from '@/lib/socket';
+import { emitToAll } from '@/lib/realtime';
 import { withAuth } from '@/middleware/auth';
 import { BlogService } from '@/services';
 import { logError } from '@/utils/logger';
@@ -41,7 +41,7 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
       const post = result.data;
       const message = `New blog post: ${post?.title || 'Untitled'}`;
       const hash = md5(message + post?.id);
-      getSocketIO()?.emit('blogPostNotification', {
+      await emitToAll('blogPostNotification', {
         message,
         hash,
         postId: post?.id,

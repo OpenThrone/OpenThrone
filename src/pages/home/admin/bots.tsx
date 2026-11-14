@@ -12,7 +12,6 @@ import {
 import type { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
@@ -22,6 +21,7 @@ import { GameCard } from '@/components/game/GameCard';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { alertService } from '@/services/Alert.service';
 import { isAdmin, isImpersonatedSession } from '@/utils/authorization';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 interface BotEntry {
   id: number;

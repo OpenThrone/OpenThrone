@@ -231,6 +231,7 @@ enum AllianceTransactionType {
   FEE
   LOAN
   LOAN_REPAYMENT
+  UPGRADE
 }
 
 enum AllianceLoanStatus {
@@ -248,6 +249,14 @@ enum AllianceGoldRequestStatus {
   APPROVED
   DECLINED
   CANCELLED
+}
+
+/// How often alliance dues are collected (src/constants/allianceDues.ts).
+enum AllianceDuesPeriod {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
 }
 
 enum Frequency {
@@ -750,6 +759,16 @@ model alliances {
   status_era_id     Int?
   status_changed_by Int?
 
+  // Alliance Hall level 0..5 (src/constants/allianceLevels.ts): member cap,
+  // deposits per member per rolling 24h and treasury cap. Era progression.
+  hall_level Int @default(0)
+
+  // Join fee and recurring dues in gold (src/constants/allianceDues.ts). The
+  // leader or a rank with set_dues sets them; the daily job collects dues.
+  join_fee    BigInt             @default(0)
+  dues_amount BigInt             @default(0)
+  dues_period AllianceDuesPeriod @default(NONE)
+
   // New Relations
   join_requests  alliance_join_requests[]
   cooldowns      alliance_cooldowns[] // Global cooldowns might not have alliance_id, but alliance-specific ones will
@@ -795,6 +814,10 @@ model alliance_memberships {
   role_id     Int
   created_at  DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at  DateTime?      @default(now()) @updatedAt @db.Timestamptz(6)
+  /// Unpaid alliance dues in gold, collected first at later runs.
+  dues_arrears      BigInt    @default(0)
+  /// Start of the last dues period collected (or covered at joining).
+  dues_paid_through DateTime? @db.Timestamptz(6)
   alliance    alliances      @relation(fields: [alliance_id], references: [id])
   role        alliance_roles @relation(fields: [role_id], references: [id])
   user        users          @relation(fields: [user_id], references: [id])
@@ -920,12 +943,46 @@ model ChatMessage {
   reactions ChatMessageReaction[] // Added for reactions
   readBy    ChatMessageReadStatus[] // Added for read receipts
   reports   Report[]
+  moderationVerdicts ChatModerationVerdict[]
 
   @@unique([roomId, senderId, clientMessageId])
   @@index([roomId, sentAt])
   @@index([roomId, id])
   @@index([replyToMessageId]) // Added index
   @@index([sharedAttackLogId]) // Added index
+}
+
+/// Shadow-mode chat moderation (#448): what a decision model said about a
+/// message and what our policy would have done. Measure only: nothing here
+/// hides, deletes or sanctions anything. Removed with the message.
+model ChatModerationVerdict {
+  id                Int      @id @default(autoincrement())
+  messageId         Int
+  provider          String   @db.VarChar(40)
+  model             String   @db.VarChar(120)
+  roomType          String   @db.VarChar(20)
+  /// Probability the message is harassment (0-1); null when the call failed.
+  harassment        Float?
+  /// Mean severity level 0-3; null when the call failed.
+  severity          Float?
+  spam              Float?
+  /// The model's own recommendation: allow | flag | hide.
+  recommendedAction String?  @db.VarChar(20)
+  /// Our policy's decision: allow | flag | would_block (shadow only).
+  policyAction      String   @db.VarChar(20)
+  latencyMs         Int?
+  error             String?  @db.VarChar(300)
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  /// Staff review: correct | false_positive | false_negative.
+  reviewOutcome     String?  @db.VarChar(20)
+  reviewedByUserId  Int?
+  reviewedAt        DateTime? @db.Timestamptz(3)
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, provider, model])
+  @@index([createdAt])
+  @@index([policyAction, createdAt])
 }
 
 model ChatMessageReaction {
@@ -1700,6 +1757,9 @@ model LoginEvent {
   ipPrefixHash  String?
   deviceHash    String?
   userAgentHash String?
+  /// What produced the row: a successful sign-in, a registration, or the
+  /// once-a-day activity record for long-lived sessions.
+  kind          String   @default("SIGN_IN")
   occurredAt    DateTime @default(now()) @db.Timestamptz(3)
 
   user users @relation("LoginEventsOnUser", fields: [userId], references: [id], onDelete: Cascade)
@@ -1778,6 +1838,17 @@ model RateLimitBucket {
   @@unique([key, bucket])
   @@index([expiresAt])
   @@map("rate_limit_buckets")
+}
+
+/// Solved ALTCHA recruitment challenges, kept until they expire so each one is
+/// accepted once. The nonce is the primary key, so a replay is a unique violation.
+model AltchaUsedChallenge {
+  nonce     String   @id
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@map("altcha_used_challenges")
 }
 
 model ResponseCache {
@@ -2592,4 +2663,15 @@ model ItemLedgerMismatch {
 
   @@index([createdAt])
   @@index([userId])
+}
+
+/// Aggregate cookie-consent choices per OT day, for the opt-in rate only.
+/// Stores no IP, no user id, no user agent: a pure counter.
+model ConsentTally {
+  day    DateTime @db.Date
+  choice String
+  count  Int      @default(0)
+
+  @@id([day, choice])
+  @@map("consent_tally")
 }

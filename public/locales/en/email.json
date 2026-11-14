@@ -38,5 +38,11 @@
     "alliance_sponsorship": "alliance sponsorship"
   },
   "veteranClaimSubject": "Welcome back to OpenThrone — confirm your Era 1 legacy",
-  "veteranClaim": "Hello {{display_name}},\n\nThis address belonged to an OpenThrone account from Era 1. To restore the Era 1 Tester title and your original join date, and to take back your old display name, open this link while signed in to your new account within 30 days:\n\n{{claimLink}}\n\nIf you did not just create an OpenThrone account with this address, someone else did: reset its password from the login page and sign in to keep it. Nothing has been granted yet."
+  "veteranClaim": "Hello {{display_name}},\n\nThis address belonged to an OpenThrone account from Era 1. To restore the Era 1 Tester title and your original join date, and to take back your old display name, open this link while signed in to your new account within 30 days:\n\n{{claimLink}}\n\nIf you did not just create an OpenThrone account with this address, someone else did: reset its password from the login page and sign in to keep it. Nothing has been granted yet.",
+  "passwordResetSubject": "Reset your OpenThrone password",
+  "passwordReset": "Hello {{display_name}},\n\nSomeone asked to reset the password for your OpenThrone account. Open this link to choose a new one:\n\n{{resetLink}}\n\nThe link works once and expires in 3 hours. If you did not ask for this, ignore this email: your password stays the same.",
+  "passwordResetAction": "Reset your password",
+  "emailChangeSubject": "Confirm your OpenThrone email change",
+  "emailChange": "Hello {{display_name}},\n\nYou asked to change the email address on your OpenThrone account. Open this link while signed in to finish the change:\n\n{{emailChangeLink}}\n\nThe link works once and expires in 3 hours. If you did not ask for this, ignore this email and change your password.",
+  "emailChangeAction": "Change your email address"
 }

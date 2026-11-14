@@ -1,6 +1,6 @@
 # Combat
 
-Last verified against code: 2026-11-06 (alpha d59b12d9)
+Last verified against code: 2026-11-13 (alpha 237e566f)
 
 An attack spends attack turns, and optionally stamina, to fight another player's kingdom. Every attack is one server-side battle that produces a winner, casualties on both sides, damage to the defender's fort, gold taken from the defender, and experience (XP) for both. The browser never decides any of it.
 
@@ -191,13 +191,13 @@ Within the same transaction the server also:
 - Resolves dungeon captives, Undead reanimation and Elf Sanctuary recovery where those features apply. Protected defenders and non-ACTIVE accounts are exempt from all three.
 - Queues a battle alert email and Discord alert for the defender.
 
-The battle API also pushes a socket notification to the defender.
+The battle API also pushes a live notification (`attackNotification`) to the defender, over Socket.IO on a Node host and through the player's Durable Object mailbox on Workers (`realtime.ts`, mailbox allowlist `USER_MAILBOX_NOTIFY_EVENTS` in `realtimeTransport.ts`). An open tab shows a translated toast linking to the battle report and refetches the defender's numbers (`useGameEventAlerts`, `gameEventAlerts.ts`). The first load of a tab after time away also says the player was attacked meanwhile (`beenAttacked`, once per tab). Nothing is pushed when realtime is switched off.
 
 ### Battle reports and replays
 
 - The log stores a redacted view by viewer role. Both sides see damage, XP, pillage, fort damage, loss totals, wounded totals, "Garrison fatigue" and "Low stamina" percent, stamina cost, and captives taken.
 - Only the attacker sees their own unit levels and loss breakdown. Only the defender sees their own loss breakdown and absolute fort HP. Defender rosters and replay inputs are never returned.
-- A participant who can read a report can re-run ("retest") it. The attacker can share it with members of a chat room they are in; a recipient can read and retest it but cannot reshare it. A retest of an old battle uses the ruleset version sealed in the log.
+- A participant who can read a report can re-run ("retest") it. The target of a spy mission that got through cannot read it ([spying.md](spying.md)). The attacker can share it with members of a chat room they are in; a recipient can read and retest it but cannot reshare it. A retest of an old battle uses the ruleset version sealed in the log.
 
 ### Voiding a battle
 

@@ -14,6 +14,8 @@ import {
 } from 'test/utils/mockPrisma';
 import { silenceLogger } from 'test/utils/silenceLogger';
 
+import { getGameDayStart } from '@/utils/timefunctions';
+
 installMockPrisma(vi);
 silenceLogger();
 
@@ -88,8 +90,12 @@ describe('cron job handlers record runs', () => {
     mockPrisma.cronRun.create.mockReset();
     mockPrisma.cronRun.update.mockReset();
     mockPrisma.cronRun.deleteMany.mockReset();
+    mockPrisma.cronRun.findFirst.mockReset();
+    mockPrisma.cronRun.findFirst.mockResolvedValue(null);
     mockPrisma.cronRun.create.mockResolvedValue({ id: 7 });
     mockPrisma.cronRun.update.mockResolvedValue({});
+    // Alliance membership dues pass: no alliance charges dues here.
+    mockPrisma.alliances = { findMany: vi.fn(async () => []) };
     process.env.TASK_SECRET = SECRET;
     process.env.DO_TURN_UPDATES = 'true';
     process.env.DO_DAILY_UPDATES = 'true';
@@ -230,7 +236,7 @@ describe('cron job handlers record runs', () => {
     // The supporter sub-job finishes first and gets its own row.
     expect(
       mockPrisma.cronRun.create.mock.calls.map((c: any) => c[0].data.job),
-    ).toEqual(['daily', 'dailySupporter', 'itemLedgerCheck']);
+    ).toEqual(['daily', 'dailySupporter', 'allianceDues', 'itemLedgerCheck']);
     const supporterUpdate = mockPrisma.cronRun.update.mock.calls[0][0];
     expect(supporterUpdate.data.status).toBe('SUCCESS');
     expect(supporterUpdate.data.summary).toEqual({
@@ -243,7 +249,10 @@ describe('cron job handlers record runs', () => {
       errors: 0,
       failures: [],
     });
-    const dailyUpdate = mockPrisma.cronRun.update.mock.calls[1][0];
+    const duesUpdate = mockPrisma.cronRun.update.mock.calls[1][0];
+    expect(duesUpdate.data.status).toBe('SUCCESS');
+    expect(duesUpdate.data.summary).toMatchObject({ alliances: 0, charged: 0 });
+    const dailyUpdate = mockPrisma.cronRun.update.mock.calls[2][0];
     expect(dailyUpdate.data.status).toBe('SUCCESS');
     expect(dailyUpdate.data.summary).toEqual({ processed: 9, failed: 0 });
     // Retention rides along with the daily job.
@@ -305,9 +314,39 @@ describe('cron job handlers record runs', () => {
     const supporterUpdate = mockPrisma.cronRun.update.mock.calls[0][0];
     expect(supporterUpdate.data.status).toBe('FAILED');
     expect(supporterUpdate.data.error).toBe('stripe unavailable');
-    const dailyUpdate = mockPrisma.cronRun.update.mock.calls[1][0];
+    const dailyUpdate = mockPrisma.cronRun.update.mock.calls[2][0];
     expect(dailyUpdate.data.status).toBe('SUCCESS');
     expect(dailyUpdate.data.summary).toEqual({ processed: 4, failed: 0 });
+  });
+
+  it('still serves the daily run when the alliance dues pass fails', async () => {
+    processDailyUpdates.mockResolvedValue({
+      success: true,
+      message: 'done',
+      processed: 2,
+      failed: 0,
+    });
+    runSupporterDaily.mockResolvedValue({
+      poolsConverted: 0,
+      membershipsLapsed: 0,
+      reconcile: null,
+      billingEnded: 0,
+      discordDigests: 0,
+      errors: 0,
+      failures: [],
+    });
+    mockPrisma.alliances.findMany = vi.fn(async () => {
+      throw new Error('alliances unavailable');
+    });
+    const response = makeResponse();
+    await dailyHandler(authorizedRequest(), response);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.allianceDues).toBeNull();
+    const duesUpdate = mockPrisma.cronRun.update.mock.calls[1][0];
+    expect(duesUpdate.data.status).toBe('FAILED');
+    const dailyUpdate = mockPrisma.cronRun.update.mock.calls[2][0];
+    expect(dailyUpdate.data.status).toBe('SUCCESS');
   });
 
   it('still prunes old rows when the daily pass throws', async () => {
@@ -425,5 +464,75 @@ describe('cron job handlers record runs', () => {
       byStatus: { OK: 6 },
       botDurationMs: 12,
     });
+  });
+
+  it('skips a repeated turns delivery inside the same interval, without running or logging it', async () => {
+    mockPrisma.cronRun.findFirst.mockResolvedValue({ id: 3 });
+    const response = makeResponse();
+    await turnsHandler(authorizedRequest(), response);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toMatchObject({ skipped: true });
+    expect(processTurnUpdates).not.toHaveBeenCalled();
+    expect(mockPrisma.cronRun.create).not.toHaveBeenCalled();
+    const { where } = mockPrisma.cronRun.findFirst.mock.calls[0][0];
+    expect(where.job).toBe('turns');
+    const [success, running] = where.OR;
+    expect(success.status).toBe('SUCCESS');
+    expect(running.status).toBe('RUNNING');
+    // Two thirds of the default 30-minute interval, for both kinds of run.
+    const windowMs = Date.now() - success.startedAt.gte.getTime();
+    expect(windowMs).toBeGreaterThan(19 * 60_000);
+    expect(windowMs).toBeLessThanOrEqual(20 * 60_000 + 1000);
+    expect(running.startedAt.gte.getTime()).toBe(
+      success.startedAt.gte.getTime(),
+    );
+  });
+
+  it('skips a second daily delivery in the same game day, so citizen growth is not granted twice', async () => {
+    mockPrisma.cronRun.findFirst.mockResolvedValue({ id: 9 });
+    const response = makeResponse();
+    await dailyHandler(authorizedRequest(), response);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toMatchObject({ skipped: true });
+    expect(processDailyUpdates).not.toHaveBeenCalled();
+    const { where } = mockPrisma.cronRun.findFirst.mock.calls[0][0];
+    expect(where.job).toBe('daily');
+    const [success, running] = where.OR;
+    // The window starts at the current game day's OT midnight, so a daily
+    // that ran yesterday afternoon never blocks tonight's scheduled run.
+    expect(success.startedAt.gte.getTime()).toBe(getGameDayStart().getTime());
+    // A RUNNING row counts only while it is younger than 2 hours: a daily
+    // that crashed mid-run must not block the rest of the game day.
+    expect(running.status).toBe('RUNNING');
+    expect(running.startedAt.gte.getTime()).toBeGreaterThanOrEqual(
+      Math.max(
+        getGameDayStart().getTime(),
+        Date.now() - 2 * 60 * 60 * 1000 - 1000,
+      ),
+    );
+  });
+
+  it('runs anyway when forced with ?force=true (operator re-run after a failure)', async () => {
+    mockPrisma.cronRun.findFirst.mockResolvedValue({ id: 3 });
+    processTurnUpdates.mockResolvedValue({ success: true, processed: 1 });
+    const response = makeResponse();
+    await turnsHandler(
+      authorizedRequest({ query: { force: 'true' } }),
+      response,
+    );
+
+    expect(processTurnUpdates).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.cronRun.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('runs when the recent-run lookup fails: a logging problem never blocks a tick', async () => {
+    mockPrisma.cronRun.findFirst.mockRejectedValue(new Error('db hiccup'));
+    processTurnUpdates.mockResolvedValue({ success: true, processed: 1 });
+    const response = makeResponse();
+    await turnsHandler(authorizedRequest(), response);
+
+    expect(processTurnUpdates).toHaveBeenCalledTimes(1);
   });
 });

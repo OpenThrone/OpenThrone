@@ -1,8 +1,8 @@
 # World clock and scheduled jobs
 
-Last verified against code: 2026-11-06 (alpha a365a67d)
+Last verified against code: 2026-11-13 (alpha 4138222f)
 
-The game runs on one clock, called OT Time, and on a few scheduled jobs: a turn job that pays income and attack turns, a daily job that grows and heals armies and cleans up, an account-status job, and a bot job. This page explains the clock, what each job does, and how runs are recorded.
+The game runs on one clock, called OT Time, and on a few scheduled jobs: a turn job that pays income and attack turns, a daily job that grows and heals armies and cleans up, an account-status job, a shadow chat moderation job, and a bot job. This page explains the clock, what each job does, and how runs are recorded.
 
 ## Rules
 
@@ -17,16 +17,25 @@ The game runs on one clock, called OT Time, and on a few scheduled jobs: a turn 
 
 ### Who runs the jobs
 
-The server does not schedule the four cron jobs. An external scheduler must POST to each endpoint. Each endpoint is enabled by an environment flag, and the caller must send the task secret in the `Authorization` header (compared in constant time, with no scheme prefix). A wrong secret or a disabled flag returns 401 and records nothing.
+The server does not schedule the five cron jobs. An external scheduler must POST to each endpoint. Each endpoint is enabled by an environment flag, and the caller must send the task secret in the `Authorization` header (compared in constant time, with no scheme prefix). A wrong secret or a disabled flag returns 401 and records nothing.
 
 | Endpoint | Flag | Cadence (see [operations.md](../operations.md)) | Run-log name |
 |---|---|---|---|
 | `/api/cronJobs/turns` | `DO_TURN_UPDATES` | Match the turn interval (30 minutes) | `turns` |
-| `/api/cronJobs/daily` | `DO_DAILY_UPDATES` | Daily | `daily`, plus `dailySupporter`, `itemLedgerCheck` |
+| `/api/cronJobs/daily` | `DO_DAILY_UPDATES` | Daily | `daily`, plus `dailySupporter`, `allianceDues`, `itemLedgerCheck` |
 | `/api/cronJobs/accountStatus` | `DO_TURN_UPDATES` | Operator's choice | `accountStatus` |
+| `/api/cronJobs/chatModeration` | `DO_TURN_UPDATES` | Every 30 minutes, no-op until `moderation.shadowEnabled` is on | `chatModeration` ([decision models](../features/decision-models.md)) |
 | `/api/cronJobs/bots` | `DO_BOT_UPDATES` | Daily, after citizen growth | `bots` |
 
-Each call grants once. The code keeps no catch-up ledger: a missed call is a missed grant, and a duplicate call is a second grant. The scheduler is responsible for cadence. The code does not tie the daily job to OT midnight; that depends on the scheduler's own time zone.
+Each call grants once. The code keeps no catch-up ledger: a missed call is a missed grant. The scheduler is responsible for cadence. The code does not tie the daily job to OT midnight; that depends on the scheduler's own time zone.
+
+The turn and daily endpoints skip a repeated delivery instead of granting twice ([CronRun.service.ts](../../src/services/CronRun.service.ts)):
+
+- **Turns** is skipped when a `turns` run that succeeded or is still running started within the last two thirds of the turn interval (20 minutes by default). A late but legitimate tick still runs.
+- **Daily** is skipped when a `daily` run that succeeded or is still running started since the start of the current game day (OT midnight on a real-day server).
+- A skipped call answers 200 with `skipped: true` and records no run. Failed runs never count, so a failed tick can be re-run at once. A `RUNNING` row older than 2 hours (`CRON_RUN_STALE_AFTER_MS`, the same point the admin page marks it stale) lost its finish and no longer counts, so a daily that crashed mid-run is retried by the next delivery. Adding `?force=true` to the request bypasses the check, for an operator re-run.
+- If the lookup itself fails, the job runs anyway. The check is not atomic: two deliveries arriving at the same instant can both pass. Per-user row locks still keep each write consistent.
+- The account-status, chat moderation and bot endpoints have no such check.
 
 The in-process workers (timed era reset, temporary forces, Discord and email outboxes) are not cron jobs. They poll continuously and are not in the run log.
 
@@ -49,7 +58,7 @@ After all users it settles alliance loan repayments that were diverted into trea
 
 ### Daily job (`daily`)
 
-The API handler first prunes run-log rows older than 90 days, then runs the daily pass, then supporter housekeeping as a separate logged run (`dailySupporter`), and finally the item ledger check (`itemLedgerCheck`), which runs even if the daily pass failed and never changes the response.
+The API handler first prunes run-log rows older than 90 days, then runs the daily pass, then supporter housekeeping as a separate logged run (`dailySupporter`), then alliance membership dues as another (`allianceDues`, idempotent per member per period; see [alliances.md](alliances.md#join-fee-and-membership-dues)), and finally the item ledger check (`itemLedgerCheck`), which runs even if the daily pass failed and never changes the response.
 
 The daily pass, per participant:
 
@@ -62,6 +71,10 @@ Then, once for the world: cleanup (login telemetry, audit-log IP pruning, foldin
 ### Account-status job (`accountStatus`)
 
 Re-evaluates each account's status history ([User.service.ts](../../src/services/User.service.ts)). A timed status that has expired reverts to `ACTIVE`. Accounts idle over 60 days become `IDLE`, and `IDLE` accounts that were active again become `ACTIVE`. Accounts idle over 365 days become `INACTIVE`. `CLOSED`, `BANNED`, `SUSPENDED` and `VACATION` are never rewritten by the idle rules.
+
+### Chat moderation job (`chatModeration`)
+
+Runs one shadow moderation sweep over chat messages from the last 24 hours that have no verdict yet. It does nothing unless the `moderation.shadowEnabled` runtime setting is on (off by default), and it only records verdicts, never enforces them. `moderation.shadowBatchSize` (default 25, 1 to 200) sets how many messages one sweep reads. If the decision provider is unreachable the sweep is skipped. See [decision models](../features/decision-models.md).
 
 ### Bot job (`bots`)
 
@@ -76,7 +89,7 @@ Every authorized call is wrapped by `withCronRunLog` ([CronRun.service.ts](../..
 - Summaries keep only finite numbers, booleans, null and strings (cut to 200 characters), nested at most two levels, at most 30 fields. Error messages keep the message only (never the stack), have credentials, bearer tokens, URL credentials and email addresses redacted, and are cut to 500 characters.
 - Logging never holds a job up. The start insert is not awaited before the job runs, and every write the caller waits for is raced against 2 seconds. If the start insert is late, the finish update is attached to it so the row is still closed.
 - A row can stay `RUNNING` if the process died or the start insert never confirmed. Rows still `RUNNING` after 2 hours are shown as stale. Rows older than 90 days are deleted by the daily job.
-- Rejected or disabled calls are not recorded.
+- Rejected or disabled calls, and repeated deliveries skipped by the duplicate check, are not recorded.
 
 ## Why it works this way
 
@@ -84,10 +97,12 @@ Every authorized call is wrapped by `withCronRunLog` ([CronRun.service.ts](../..
 - Per-user transactions that lock exactly one user row cannot deadlock with attacks and spy missions, which lock two users in id order ([CronJob.service.ts](../../src/services/CronJob.service.ts)).
 - The jobs avoid the era lifecycle lock: a reset takes lifecycle then user locks, so taking the lifecycle lock under a user lock would invert the order and could deadlock ([CronJob.service.ts](../../src/services/CronJob.service.ts)).
 - Run-log failures are swallowed so logging can never break a game job ([CronRun.service.ts](../../src/services/CronRun.service.ts)).
+- The daily pass has no per-run marker, so running it twice would grant citizen growth twice; the duplicate check guards against a duplicate Cron Trigger or two schedulers overlapping during a switchover ([daily.ts](../../src/pages/api/cronJobs/daily.ts), [CronRun.service.ts](../../src/services/CronRun.service.ts)).
 
 ## Admin and settings
 
 - **Administration → System → Cron run log** (`/home/admin/cron-runs`; settings-management permission). Filter by job and status, see the last success per job, and stale rows ([cron-runs.ts](../../src/pages/api/admin/cron-runs.ts)).
+- Administration → System → Runtime Settings: `moderation.shadowEnabled`, `moderation.shadowBatchSize`.
 - Environment: `DO_TURN_UPDATES`, `DO_DAILY_UPDATES`, `DO_BOT_UPDATES`, the task secret, `TURN_INTERVAL_MINUTES`, `GAME_DAY_MINUTES`. These are deployment values, not runtime settings.
 
 ## Source
@@ -95,7 +110,7 @@ Every authorized call is wrapped by `withCronRunLog` ([CronRun.service.ts](../..
 - [timefunctions.ts](../../src/utils/timefunctions.ts), [Turns.ts](../../src/constants/Turns.ts): clock and intervals.
 - [CronJob.service.ts](../../src/services/CronJob.service.ts): turn, daily and account-status work.
 - [CronRun.service.ts](../../src/services/CronRun.service.ts): run records.
-- Endpoints: [turns.ts](../../src/pages/api/cronJobs/turns.ts), [daily.ts](../../src/pages/api/cronJobs/daily.ts), [accountStatus.ts](../../src/pages/api/cronJobs/accountStatus.ts), [bots.ts](../../src/pages/api/cronJobs/bots.ts).
+- Endpoints: [turns.ts](../../src/pages/api/cronJobs/turns.ts), [daily.ts](../../src/pages/api/cronJobs/daily.ts), [accountStatus.ts](../../src/pages/api/cronJobs/accountStatus.ts), [chatModeration.ts](../../src/pages/api/cronJobs/chatModeration.ts), [bots.ts](../../src/pages/api/cronJobs/bots.ts).
 - [loginPolicy.ts](../../src/utils/loginPolicy.ts): who counts as a participant.
 - [ItemLedger.service.ts](../../src/services/ItemLedger.service.ts): the logged item ledger check.
 
@@ -106,11 +121,11 @@ Every authorized call is wrapped by `withCronRunLog` ([CronRun.service.ts](../..
 - [currentEraParticipants.test.ts](../../src/services/__tests__/currentEraParticipants.test.ts): jobs select only staff while logins are disabled.
 - [CronRun.service.test.ts](../../src/services/__tests__/CronRun.service.test.ts): record lifecycle, sanitizing and redaction, stalled writes, retention.
 - [cron-runs.api.test.ts](../../src/__tests__/pages/api/admin/cron-runs.api.test.ts): the admin run-log endpoint (permissions, stale flag, filters).
-- [cron-run-logging.api.test.ts](../../src/__tests__/pages/api/cronJobs/cron-run-logging.api.test.ts): endpoints record or skip runs, daily prune and supporter run, bot response contract.
+- [cron-run-logging.api.test.ts](../../src/__tests__/pages/api/cronJobs/cron-run-logging.api.test.ts): endpoints record or skip runs, daily prune, supporter and alliance dues runs (a failing dues pass still serves the daily), duplicate-delivery skips for turns and daily, `?force=true`, a failed lookup never blocking a tick, bot response contract.
 
 ## Known gaps
 
 - The OT-day and game-day helpers are tested, but no test covers daylight-saving transitions in `otWallClockToDate`.
 - The account-status transitions (`getUpdatedStatus`) are covered only through other suites, and the daily cleanup deletion window has no direct test.
 - Nothing in code enforces that the external scheduler matches `TURN_INTERVAL_MINUTES` or fires the daily job at OT midnight.
-- The account-status job shares the `DO_TURN_UPDATES` flag with the turn job.
+- The account-status and chat moderation jobs share the `DO_TURN_UPDATES` flag with the turn job.

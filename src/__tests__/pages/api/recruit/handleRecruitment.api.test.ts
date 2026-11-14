@@ -19,7 +19,7 @@ vi.mock('@/services/RecruitmentCaptcha.service', () => ({
   verifyRecruitmentCaptcha: vi.fn(
     async (token: unknown) => token !== 'invalid',
   ),
-  isRecruitmentCaptchaRequired: () => true,
+  getRecruitmentCaptcha: async () => ({ required: true, provider: 'altcha' }),
 }));
 vi.mock('@/middleware/auth', () => ({
   withAuth: (handler: unknown) => handler,

@@ -6,12 +6,19 @@ installMockPrisma(vi);
 const { AuthService } = require('../Auth.service');
 const emailService = require('@/services/Email.service');
 
-const USER = { id: 731, email: 'reset@example.invalid' };
+const USER = {
+  id: 731,
+  email: 'reset@example.invalid',
+  display_name: 'Resetter',
+  locale: 'en',
+};
+const savedRoot = process.env.NEXT_PUBLIC_URL_ROOT;
 let events: string[];
 let sendMail: ReturnType<typeof vi.fn>;
 let transportSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
+  process.env.NEXT_PUBLIC_URL_ROOT = 'https://example.test';
   events = [];
   mockPrisma.$queryRaw = vi.fn().mockResolvedValue([]);
   mockPrisma.users.findUnique = vi.fn(async () => USER);
@@ -33,7 +40,11 @@ beforeEach(() => {
     .mockImplementation(sendMail);
 });
 
-afterEach(() => transportSpy.mockRestore());
+afterEach(() => {
+  transportSpy.mockRestore();
+  if (savedRoot === undefined) delete process.env.NEXT_PUBLIC_URL_ROOT;
+  else process.env.NEXT_PUBLIC_URL_ROOT = savedRoot;
+});
 
 describe('password reset delivery', () => {
   it('stores a hash of the emailed token and audits before delivery', async () => {
@@ -44,9 +55,16 @@ describe('password reset delivery', () => {
       beforeCommit: audit,
     });
     const email = sendMail.mock.calls[0][0];
-    const token = /token is: ([a-f0-9]{64})/.exec(email.text)?.[1];
+    // The token rides in the link's fragment with the address, so the reset
+    // page fills itself in; it is never shown as text.
+    const token =
+      /verify#token=([a-f0-9]{64})&email=reset%40example\.invalid/.exec(
+        email.text,
+      )?.[1];
     expect(token).toBeDefined();
     expect(email.to).toBe(USER.email);
+    expect(email.html).toContain('>Reset your password</a>');
+    expect(email.html.split(token!).length - 1).toBe(1);
     const stored = mockPrisma.passwordReset.create.mock.calls[0][0].data;
     expect(stored.verificationCode).toBe(
       createHash('sha256').update(token!).digest('hex'),
@@ -61,7 +79,7 @@ describe('password reset delivery', () => {
     await AuthService.requestPasswordReset(USER.email);
     expect(mockPrisma.users.findUnique).toHaveBeenCalledWith({
       where: { email: USER.email },
-      select: { id: true, email: true },
+      select: { id: true, email: true, display_name: true, locale: true },
     });
     expect(mockPrisma.passwordReset.updateMany).toHaveBeenCalledWith({
       where: { userId: USER.id, status: 0, type: 'PASSWORD' },

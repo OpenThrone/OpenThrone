@@ -9,6 +9,15 @@ import { memo, useEffect, useState } from 'react';
 
 import { useLayout } from '@/context/LayoutContext';
 import useSocket from '@/hooks/useSocket';
+import { resolveRealtimeTransport } from '@/lib/realtimeTransport';
+
+// NEXT_PUBLIC_* inlines at build time; the banner is irrelevant only when the
+// resolved transport is 'off' (no realtime at all) — the 'do' pilot shows it.
+const REALTIME_DISABLED =
+  resolveRealtimeTransport(
+    process.env.NEXT_PUBLIC_REALTIME_TRANSPORT,
+    process.env.NEXT_PUBLIC_DISABLE_SOCKET,
+  ) === 'off';
 
 function ConnectionStatusBanner() {
   const { t } = useTranslation('common');
@@ -20,7 +29,7 @@ function ConnectionStatusBanner() {
     if (!connectionFailed) setDismissed(false);
   }, [connectionFailed]);
 
-  if (!connectionFailed || dismissed) return null;
+  if (REALTIME_DISABLED || !connectionFailed || dismissed) return null;
 
   const handleRetry = () => {
     socket?.connect();

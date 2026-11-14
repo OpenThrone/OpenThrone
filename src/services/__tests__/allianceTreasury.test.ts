@@ -106,6 +106,8 @@ beforeEach(() => {
           .reduce((sum, h) => sum + h.amount, 0n),
       },
     })),
+    // Deposits in the rolling 24-hour window (Alliance Hall slots).
+    findMany: vi.fn(async () => []),
   };
   mockPrisma.alliance_gold_requests = {
     count: vi.fn(

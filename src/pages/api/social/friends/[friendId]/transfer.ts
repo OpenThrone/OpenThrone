@@ -7,7 +7,7 @@ import {
   parseFriendTransferAmount,
 } from '@/constants/FriendTransfer';
 import prisma from '@/lib/prisma';
-import { getSocketIO } from '@/lib/socket';
+import { emitToUser } from '@/lib/realtime';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { enforceIdempotency } from '@/middleware/idempotency';
 import { evaluateTransferPair } from '@/services/AbuseDetection.service';
@@ -92,8 +92,7 @@ const transferHandler = async (
       const amountLabel = result?.amount ?? amount.toString();
       const message = `You received ${amountLabel} gold from ${senderName}`;
       const hash = md5(message + friendIdNum + result?.transferId);
-      const io = getSocketIO();
-      io?.to(`user-${friendIdNum}`).emit('goldTransferReceived', {
+      await emitToUser(friendIdNum, 'goldTransferReceived', {
         message,
         hash,
         fromUserId,

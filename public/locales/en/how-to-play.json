@@ -76,7 +76,7 @@
     "description": "Gold is the lifeblood of your empire. Manage it wisely — what you don't protect, someone will take.",
     "bank": {
       "title": "Bank",
-      "text": "Deposit gold so raiders cannot take it. Economy upgrades raise how much you can deposit each day and how much the bank holds."
+      "text": "Deposit gold so raiders cannot take it. There is no limit on how much the bank holds; Economy upgrades raise how many deposits you can make each day."
     },
     "armory": {
       "title": "Armory",
@@ -96,7 +96,7 @@
     },
     "economyUpgrades": {
       "title": "Economy Upgrades",
-      "text": "Also under Upgrades. Farms, markets and mines raise the gold each worker earns and how much your bank can take."
+      "text": "Also under Upgrades. Farms, markets and mines raise the gold each worker earns and how many deposits you can make each day."
     },
     "transfers": {
       "title": "Gold transfers"
@@ -128,15 +128,17 @@
     "stamina": {
       "title": "Stamina"
     },
-      "experience": {
-        "title": "Experience and Levels",
-        "text": "Experience (XP) comes from battle. Winning an attack pays the most, scaled by the turns you commit, the level gap and how close the fight was. A lost attack pays a smaller share, and only for a real fight: nothing below {{effortFloor}}% of the defender's strength, the full share from {{effortFull}}%. Defenders earn XP whenever they are attacked, more for holding than for falling, scaled by the size of the threat (at least {{threatFloor}}%). Stay on one level for more than {{graceDays}} game days and the XP you get from being attacked grows by {{stallStep}}% each further game day, up to {{stallMax}}×, so nobody can hide at a low level. Spy missions give no XP. The Overview shows how much XP your next level needs; each level gives a proficiency point and, at milestones, opens new structures."
-      }
+    "experience": {
+      "title": "Experience and Levels",
+      "text": "Experience (XP) comes from battle. Winning an attack pays the most, scaled by the turns you commit, the level gap and how close the fight was. A lost attack pays a smaller share, and only for a real fight: nothing below {{effortFloor}}% of the defender's strength, the full share from {{effortFull}}%. Defenders earn XP whenever they are attacked, more for holding than for falling, scaled by the size of the threat (at least {{threatFloor}}%). Stay on one level for more than {{graceDays}} game days and the XP you get from being attacked grows by {{stallStep}}% each further game day, up to {{stallMax}}×, so nobody can hide at a low level. Spy missions give no XP. The Overview shows how much XP your next level needs; each level gives a proficiency point and, at milestones, opens new structures."
+    }
   },
   "alliances": {
     "title": "Alliances",
     "description": "No commander rules alone. Join or create an alliance for mutual protection, coordinated attacks, and shared glory.",
-    "eraReserve": "Alliances survive a new era. When an era ends every alliance becomes reserved: its name, roster, ranks and artwork are kept, but its treasury, loans, troop contracts and wars are closed and its features stay locked. Members can leave at any time. The leader reactivates the alliance in the new era by reaching level 10 and paying 10,000,000 gold (admins can change both)."
+    "eraReserve": "Alliances survive a new era. When an era ends every alliance becomes reserved: its name, roster, ranks and artwork are kept, but its treasury, loans, troop contracts and wars are closed and its features stay locked. Members can leave at any time. The leader reactivates the alliance in the new era by reaching level 10 and paying 10,000,000 gold (admins can change both).",
+    "hall": "Each alliance has an Alliance Hall level, from Camp up to Stronghold. It sets how many members the alliance holds (10 at Camp, up to 100), how many times each member may deposit per 24 hours (2 at Camp, up to 8) and how much gold deposits may bring the treasury to (5,000,000 at Camp, up to 10,000,000,000). The leader, or a rank with \"Buy upgrades\", buys the next level with treasury gold on the alliance's Upgrades tab, which lists every level's cost, member requirement and limits. A new era returns the hall to Camp.",
+    "dues": "An alliance may charge a join fee, paid once from your gold on hand when you join (up to 10,000,000 gold), and membership dues taken from every member except the leader at the start of each day, week or month (up to 1,000,000, 5,000,000 or 20,000,000 gold per member). You see both, and confirm them, before you join. Dues you cannot pay are owed and taken first at the next collection, or paid from the alliance page; nobody is removed for them. The leader, or a rank with \"Set join fee and dues\", sets them on the Settings tab."
   },
   "cta": {
     "createCommander": "Create a Commander",

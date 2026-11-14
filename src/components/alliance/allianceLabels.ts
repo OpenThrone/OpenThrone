@@ -24,6 +24,7 @@ const TRANSACTION_TYPE_KEYS: Record<string, string> = {
   FEE: 'bank.types.FEE',
   LOAN: 'bank.types.LOAN',
   LOAN_REPAYMENT: 'bank.types.LOAN_REPAYMENT',
+  UPGRADE: 'bank.types.UPGRADE',
 };
 
 const lookup = (

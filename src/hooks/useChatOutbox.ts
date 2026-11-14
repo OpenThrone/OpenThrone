@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Socket } from 'socket.io-client';
 
+import type { RealtimeClientSocket } from '@/lib/realtimeTransport';
 import type { ChatDraft, ChatSendPayload } from '@/types/chat';
 import type { ChatMessage } from '@/types/typings';
 import { chatPlainText, parseChatRichContent } from '@/utils/chatContent';
@@ -21,7 +21,7 @@ export function useChatOutbox({
   sender,
   messages,
 }: {
-  socket: Socket | null;
+  socket: RealtimeClientSocket | null;
   isConnected: boolean;
   sender?: ChatMessage['sender'];
   messages: ChatMessage[];

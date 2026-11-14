@@ -31,7 +31,7 @@ module.exports = withBundleAnalyzer({
   allowedDevOrigins: [
     'ot.aioxhost.com',
     'alpha.openthrone.dev',
-    '192.168.4.103',
+    '192.0.2.10',
   ],
   /** Stop file-tracing from walking your home dir */
   outputFileTracingRoot: path.join(__dirname),

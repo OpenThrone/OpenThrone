@@ -1,5 +1,4 @@
 import { Text } from '@mantine/core';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import MainArea from '@/components/MainArea';
 import AllianceForcesSection from '@/components/showcase/sections/AllianceForcesSection';
@@ -21,6 +20,7 @@ import SupporterAdminSection from '@/components/showcase/sections/SupporterAdmin
 import SupporterSection from '@/components/showcase/sections/SupporterSection';
 import TablesSection from '@/components/showcase/sections/TablesSection';
 import ShowcaseControls from '@/components/showcase/ShowcaseControls';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const SECTIONS = [
   {

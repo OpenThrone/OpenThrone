@@ -49,6 +49,10 @@ interface RecruitmentFlowViewProps {
   succeeded: boolean;
   ready: boolean;
   showCaptcha: boolean;
+  /** Which challenge `captchaSlot` holds; picks the wording around it. */
+  captchaProvider?: 'altcha' | 'turnstile' | null;
+  /** The error came from the challenge, so the player gets a retry button. */
+  retryable?: boolean;
   allowance: RecruitmentFlowAllowance;
   userInfo: RecruitmentFlowUserInfo | null;
   targetName?: string;
@@ -56,7 +60,7 @@ interface RecruitmentFlowViewProps {
   formRef: RefObject<HTMLFormElement | null>;
   /**
    * The live challenge widget (or a guide placeholder) rendered while the
-   * captcha is pending; the view itself never talks to Turnstile.
+   * captcha is pending; the view itself never talks to a captcha provider.
    */
   captchaSlot?: ReactNode;
   onSubmit: (event?: FormEvent) => void;
@@ -78,6 +82,8 @@ export default function RecruitmentFlowView({
   succeeded,
   ready,
   showCaptcha,
+  captchaProvider = 'turnstile',
+  retryable = false,
   allowance,
   userInfo,
   targetName,
@@ -142,7 +148,9 @@ export default function RecruitmentFlowView({
       <Text role="alert" {...(embedded ? { mb: 'md' } : {})}>
         {error}
       </Text>
-      {embedded && <Button onClick={onRetry}>{t('recruit.retry')}</Button>}
+      {(embedded || retryable) && (
+        <Button onClick={onRetry}>{t('recruit.retry')}</Button>
+      )}
     </>
   ) : ready && !showCaptcha ? (
     <form
@@ -200,7 +208,13 @@ export default function RecruitmentFlowView({
             </Group>
             {/* Only while the captcha is actually pending (not next to a refusal). */}
             {showCaptcha && !error && (
-              <Text size="md">{t('recruit.pleaseWaitCaptcha')}</Text>
+              <Text size="md">
+                {t(
+                  captchaProvider === 'altcha'
+                    ? 'recruit.pleaseWaitAltcha'
+                    : 'recruit.pleaseWaitCaptcha',
+                )}
+              </Text>
             )}
           </div>
         </div>
@@ -238,7 +252,13 @@ export default function RecruitmentFlowView({
           <GameCard title={t('recruit.antiSpamPolicyTitle')}>
             <Text size="sm">{t('recruit.antiSpamPolicy')}</Text>
             <Space h="md" />
-            <Text size="sm">{t('recruit.captchaPolicy')}</Text>
+            <Text size="sm">
+              {t(
+                captchaProvider === 'altcha'
+                  ? 'recruit.captchaPolicyAltcha'
+                  : 'recruit.captchaPolicy',
+              )}
+            </Text>
           </GameCard>
         </div>
       </div>

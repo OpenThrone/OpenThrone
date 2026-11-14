@@ -1,6 +1,6 @@
 # Game events
 
-Last verified against code: 2026-11-06 (alpha d59b12d9)
+Last verified against code: 2026-11-12 (alpha 8ffa50de)
 
 A game event is a temporary, admin-created bonus that changes some rules for every player while it runs: more gold, more experience, extra turns, cheaper units, more citizens. Events are data, not code. Each one carries a flat set of optional effects.
 

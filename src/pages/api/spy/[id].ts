@@ -5,7 +5,7 @@ import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
-import { getSocketIO } from '@/lib/socket';
+import { emitToUser } from '@/lib/realtime';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { enforceIdempotency } from '@/middleware/idempotency';
 import UserModel from '@/models/Users';
@@ -130,7 +130,7 @@ const handler = async (
 
     const message = `You successfully defended against a spy mission (${missionType}).`;
     const hash = md5(message + defenderId + attackLogId);
-    getSocketIO()?.to(`user-${defenderId}`).emit('spyDefenseNotification', {
+    await emitToUser(defenderId, 'spyDefenseNotification', {
       message,
       hash,
       attackLogId,

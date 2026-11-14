@@ -38,7 +38,7 @@ const { AuthService } = require('../../../../services/Auth.service');
 
 const { authorize } = createAuthOptions({ clientIp: '203.0.113.20' })
   .providers[0].options;
-const argon2 = require('argon2');
+const passwordHash = require('@/lib/passwordHash');
 
 const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
 const PASSWORD = 'synthetic-password';
@@ -75,7 +75,7 @@ describe('login status gate and malformed hash handling', () => {
     mockPrisma.users.update = vi.fn(async () => account);
     mockPrisma.accountErasureRequest.findFirst = vi.fn(async () => null);
     setStatusHistory(statusRecord('ACTIVE'));
-    verifySpy = vi.spyOn(argon2, 'verify');
+    verifySpy = vi.spyOn(passwordHash, 'verifyPassword');
   });
 
   afterEach(() => {
@@ -243,7 +243,7 @@ describe('login during an account-erasure grace period', () => {
       callback(mockPrisma),
     );
     mockPrisma.$queryRaw = vi.fn(async () => [{ id: account.id }]);
-    verifySpy = vi.spyOn(argon2, 'verify');
+    verifySpy = vi.spyOn(passwordHash, 'verifyPassword');
   });
 
   afterEach(() => {

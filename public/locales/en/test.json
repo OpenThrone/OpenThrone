@@ -26,6 +26,7 @@
     "duplicateMessage": "Duplicate message notification:",
     "friendRequestSent": "{{email}} has sent you a friend request!",
     "enemyDeclared": "{{email}} has declared you as an enemy!",
-    "newMessage": "You have a new message from {{email}}!"
+    "newMessage": "You have a new message from {{email}}!",
+    "realtimeDisabled": "Realtime is disabled (NEXT_PUBLIC_DISABLE_SOCKET), so no socket connection will be made."
   }
 }

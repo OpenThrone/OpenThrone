@@ -1,5 +1,6 @@
 import { Button, Grid, Modal, Space, Text, TextInput } from '@mantine/core';
 import { useRouter } from 'next/router';
+import { signOut, useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 
@@ -14,16 +15,32 @@ const EmailVerify = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { user } = useUser();
+  // The client user object carries no email; the session does (as on Settings).
+  const { data: sessionData } = useSession();
+  const currentEmail = (sessionData?.user?.email as string) ?? '';
   const [opened, setOpened] = useState(false);
 
+  // The emailed link carries the token in the URL fragment (never sent to
+  // the server); links sent before that used ?token= (and older ones
+  // ?code=). Fill the code field from whichever is present, then clear it
+  // from the address bar and history.
   useEffect(() => {
-    const codeParam = Array.isArray(router.query.code)
-      ? router.query.code[0]
-      : router.query.code;
-    if (codeParam) {
-      setInput(codeParam);
-    }
-  }, [router.query.code]);
+    if (!router.isReady) return;
+    const first = (value: string | string[] | undefined) =>
+      Array.isArray(value) ? value[0] : value;
+    const fromHash = new URLSearchParams(window.location.hash.slice(1)).get(
+      'token',
+    );
+    const linkToken =
+      fromHash || first(router.query.token) || first(router.query.code);
+    if (!linkToken) return;
+    setInput(linkToken);
+    window.history.replaceState(
+      window.history.state,
+      '',
+      window.location.pathname,
+    );
+  }, [router.isReady, router.query.token, router.query.code]);
 
   const onChange = (event) => {
     const { name, value } = event.currentTarget;
@@ -32,31 +49,14 @@ const EmailVerify = () => {
     if (name === 'email') setEmail(value);
   };
 
-  const handleSubmit = async (event) => {
-    if (!user) return;
+  // The code, password and new address are all checked by
+  // /api/account/update-email when the change is confirmed. (This used to
+  // pre-check the code with /api/account/verify, which only accepts
+  // password-reset codes, so every email-change code was refused there.)
+  const handleSubmit = (event) => {
     event.preventDefault();
-
-    const response = await fetch('/api/account/verify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: user.email,
-        verify: input,
-        password,
-      }),
-    });
-
-    const data = await response.json();
-    if (response.ok) {
-      // Open confirmation modal
-      setOpened(true);
-    } else {
-      alertService.error(
-        `${t('emailVerify.verificationFailedError')} ${data.error}`,
-      );
-    }
+    if (!user) return;
+    setOpened(true);
   };
 
   const handleEmailUpdate = async () => {
@@ -76,8 +76,12 @@ const EmailVerify = () => {
     });
 
     if (updateResponse.ok) {
-      alertService.success(t('emailVerify.emailUpdatedSuccessfully'), true);
-      return router.push('/home/settings');
+      // Sessions are tied to the address they signed in with, so the old
+      // session ends here: sign out cleanly and send the player to sign in
+      // with the new address instead of bouncing them there on 401s.
+      alertService.success(t('emailVerify.emailUpdatedSignIn'), true);
+      await signOut({ redirect: false });
+      return router.push('/account/login');
     }
     const data = await updateResponse.json();
     return alertService.error(
@@ -135,7 +139,7 @@ const EmailVerify = () => {
       >
         <Text>
           {t('emailVerify.changingEmailConfirm', {
-            oldEmail: user?.email,
+            oldEmail: currentEmail,
             newEmail: email,
           })}
         </Text>

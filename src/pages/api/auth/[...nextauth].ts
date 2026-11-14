@@ -8,6 +8,8 @@ import {
   consumeImpersonationTicket,
   IMPERSONATION_MAX_MS,
 } from '@/lib/impersonationTickets';
+// Workers-safe hashing: native `argon2` must not be imported on request paths.
+import { hashPassword } from '@/lib/passwordHash';
 import prisma from '@/lib/prisma';
 import { isSessionAccountCurrent } from '@/lib/sessionAccount';
 import { AccountService } from '@/services/Account.service';
@@ -35,8 +37,6 @@ import { canAccessGame } from '@/utils/loginPolicy';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { isPrivileged2FAEnforced } from '@/utils/securityPolicies';
 
-const argon2 = require('argon2');
-
 const AUTH_SECRETS = Array.from(
   new Set(
     [process.env.NEXTAUTH_SECRET, process.env.JWT_SECRET].filter(Boolean),
@@ -58,7 +58,7 @@ const updateLastActive = async (email: string) => {
 };
 
 const updatePasswordEncryption = async (email: string, password: string) => {
-  const phash = await argon2.hash(password);
+  const phash = await hashPassword(password);
   return prisma.users.update({
     where: { email },
     data: { password_hash: phash },
@@ -334,7 +334,7 @@ const buildCredentialsProvider = (clientIp?: string, userAgent?: string) =>
       // isLoginCaptchaEnforced); request headers (Origin/Referer) never bypass
       // it. Impersonation is admin-initiated and carries its own single-use ticket.
       if (!impersonateUserId && !isReturn) {
-        await verifyLoginCaptcha(turnstileToken);
+        await verifyLoginCaptcha(turnstileToken, clientIp);
       }
       if (!impersonateUserId && !isReturn && (!email || !password)) {
         throw new Error('Missing username or password');

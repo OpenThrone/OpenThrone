@@ -38,6 +38,7 @@ import {
 
 import {
   ATTACK_LOG_ACL_SELECT,
+  defenderVisibleLogsWhere,
   getAttackLogViewerRole,
   getCurrentAllianceIds,
   grantAttackLogAccessToRoom,
@@ -883,7 +884,7 @@ export class BattleService {
     const era = await ensureActiveEra();
     const attackLogFilters: Prisma.attack_logWhereInput[] = [
       {
-        OR: [{ attacker_id: userId }, { defender_id: userId }],
+        OR: [{ attacker_id: userId }, defenderVisibleLogsWhere(userId)],
       },
       { timestamp: { gte: era.startDate } },
     ];
@@ -977,6 +978,8 @@ export class BattleService {
         id: true,
         attacker_id: true,
         defender_id: true,
+        type: true,
+        winner: true,
         acl: { select: ATTACK_LOG_ACL_SELECT },
       },
     });
@@ -1008,6 +1011,8 @@ export class BattleService {
           id: true,
           attacker_id: true,
           defender_id: true,
+          type: true,
+          winner: true,
           acl: { select: ATTACK_LOG_ACL_SELECT },
         },
       });

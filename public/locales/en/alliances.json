@@ -23,7 +23,7 @@
     "mottoPlaceholder": "Short motto",
     "avatar": "Avatar URL (optional)",
     "avatarPlaceholder": "https://...",
-    "comments": "Comments (optional)",
+    "comments": "About Us (optional)",
     "commentsPlaceholder": "Describe your alliance",
     "create": "Create Alliance",
     "creating": "Creating alliance...",
@@ -76,7 +76,8 @@
     "loadError": "Failed to load alliance",
     "bannerAlt": "Alliance banner",
     "infighting": "Infighting",
-    "troops": "Alliance troops"
+    "troops": "Alliance troops",
+    "upgrades": "Upgrades"
   },
   "mine": {
     "title": "My Alliances",
@@ -95,7 +96,9 @@
   },
   "profile": {
     "title": "Alliances",
-    "leaderOf": "Leader of {{name}}"
+    "leaderOf": "Leader of {{name}}",
+    "sharedTitle": "Same alliance",
+    "sharedBody": "You and {{name}} are both in {{alliances}}. You can still attack them, but it is an infighting battle."
   },
   "members": {
     "rosterHidden": "This alliance shares its roster with members only.",
@@ -155,7 +158,9 @@
       "edit_list": "Edit list",
       "view_list": "View list",
       "share_reports": "Share reports",
-      "call_targets": "Call targets"
+      "call_targets": "Call targets",
+      "upgrade_alliance": "Buy upgrades",
+      "set_dues": "Set join fee and dues"
     }
   },
   "invites": {
@@ -169,7 +174,9 @@
     "accept": "Accept",
     "decline": "Decline",
     "accepted": "You joined the alliance.",
-    "declined": "Invitation declined."
+    "declined": "Invitation declined.",
+    "cap": "Members: {{members}} of {{cap}} ({{level}}). Once the alliance is full, nobody can join until the Alliance Hall is upgraded.",
+    "capFull": "The alliance is full ({{members}} of {{cap}} at {{level}}): invitations and join requests cannot be accepted until the Alliance Hall is upgraded."
   },
   "war": {
     "end": "End war",
@@ -201,7 +208,12 @@
     "leader": "Leader",
     "members": "Members",
     "created": "Founded",
-    "gold": "Treasury"
+    "gold": "Treasury",
+    "hall": "Alliance Hall",
+    "fullHint": "The alliance is full: nobody can join until the Alliance Hall is upgraded.",
+    "chatTitle": "Alliance Chat",
+    "chatHelp": "A private conversation for every member, in your messages.",
+    "chatOpen": "Open alliance chat"
   },
   "player": {
     "races": {
@@ -229,10 +241,11 @@
     "types": {
       "DEPOSIT": "Deposit",
       "WITHDRAWAL": "Withdrawal",
-      "TAX": "Tax",
-      "FEE": "Fee",
+      "TAX": "Dues and taxes",
+      "FEE": "Join fee",
       "LOAN": "Loan",
-      "LOAN_REPAYMENT": "Loan repayment"
+      "LOAN_REPAYMENT": "Loan repayment",
+      "UPGRADE": "Hall upgrade"
     }
   },
   "settings": {
@@ -245,7 +258,8 @@
     "level": "Lvl {{level}}",
     "generalTitle": "General Settings",
     "save": "Save Changes",
-    "updateSuccess": "Settings updated successfully"
+    "updateSuccess": "Settings updated successfully",
+    "aboutUs": "About Us"
   },
   "internalBattles": {
     "title": "Attacks between members",
@@ -319,5 +333,119 @@
     "error": "Could not reactivate the alliance.",
     "leave": "Leave alliance",
     "leaveHint": "You can leave at any time; the leader does not need to reactivate first."
+  },
+  "upgrades": {
+    "title": "Alliance Hall",
+    "intro": "Upgrade the Alliance Hall with treasury gold to hold more members, let each member deposit more often and raise how much the treasury can hold. Levels are bought one at a time by the leader or a rank with \"Buy upgrades\".",
+    "currentLevel": "Current level",
+    "levelLabel": "{{name}} (level {{level}})",
+    "members": "Members",
+    "treasury": "Treasury",
+    "yourDeposits": "Your deposits (last 24 h)",
+    "ofCap": "{{value}} / {{cap}}",
+    "colLevel": "Level",
+    "colCost": "Cost (treasury)",
+    "colNeedsMembers": "Needs members",
+    "colMaxMembers": "Max members",
+    "colDeposits": "Deposits per member / 24 h",
+    "colTreasuryCap": "Treasury cap",
+    "blockReserved": "The alliance is reserved until the leader reactivates it.",
+    "blockPermission": "Only the leader or a rank with \"Buy upgrades\" can buy.",
+    "blockMembers": "Needs {{need}} members (the alliance has {{have}}).",
+    "blockGold": "The treasury needs {{missing}} more gold.",
+    "unlockAfter": "Buy {{name}} first.",
+    "footnote": "The cost is paid from the treasury. Deposits are counted per member over the last 24 hours. Only deposits are held to the treasury cap; loan repayments and dues still arrive. Alliances above a member cap keep their members but cannot add more. A new era returns the hall to Camp.",
+    "maxed": "The Alliance Hall is at its highest level.",
+    "confirmTitle": "Upgrade the Alliance Hall",
+    "confirmMessage": "Upgrade to {{name}} (level {{level}}) for {{cost}} gold from the treasury?",
+    "bought": "The Alliance Hall is now {{name}}.",
+    "loadError": "Failed to load the Alliance Hall.",
+    "raiseLink": "Raise it in Upgrades",
+    "levels": {
+      "0": "Camp",
+      "1": "Hall",
+      "2": "Great Hall",
+      "3": "Keep",
+      "4": "Citadel",
+      "5": "Stronghold"
+    }
+  },
+  "memberDues": {
+    "title": "Fee and dues",
+    "loading": "Loading fee and dues…",
+    "loadError": "Could not load the fee and dues.",
+    "joinFee": "Join fee",
+    "noFee": "No join fee",
+    "dues": "Membership dues",
+    "none": "No dues",
+    "amountPer": "{{amount}} {{period}}",
+    "period": {
+      "label": "Collected",
+      "NONE": "No dues",
+      "DAILY": "daily",
+      "WEEKLY": "weekly",
+      "MONTHLY": "monthly"
+    },
+    "periodOption": {
+      "NONE": "No dues",
+      "DAILY": "Daily",
+      "WEEKLY": "Weekly",
+      "MONTHLY": "Monthly"
+    },
+    "nextCollection": "Next collection",
+    "youOwe": "You owe",
+    "leaderExempt": "As leader you pay no dues.",
+    "arrearsHelp": "Unpaid dues are taken first at the next collection. Pay them now from your gold on hand.",
+    "payAmount": "Gold to pay",
+    "payInvalid": "Enter at least 1 and no more than you owe.",
+    "pay": "Pay dues",
+    "paid": "Paid {{amount}} of dues.",
+    "whereSetter": "You set the fee and dues in",
+    "whereMember": "The leader, or a rank with \"Set join fee and dues\", changes them on the Settings tab.",
+    "settingsLink": "Settings",
+    "settingsTitle": "Set join fee and dues",
+    "settingsHelp": "New members pay the join fee once from their gold on hand. Dues are taken from every member except the leader at each period start (00:00 OT; weeks start Monday, months on the 1st). A member who cannot pay in full pays what they have and owes the rest; nobody is removed for unpaid dues.",
+    "maxValue": "At most {{max}}",
+    "choosePeriod": "Choose how often to collect first",
+    "duesPerMember": "Dues per member",
+    "maxTitle": "Most dues per member",
+    "maxPerMember": "Most per member",
+    "settingsFootnote": "A new fee only applies to players who join afterwards. New dues start at the next period start; members are never charged for time before they joined. Fees and dues go to the treasury even above the Alliance Hall treasury cap.",
+    "save": "Save fee and dues",
+    "saved": "Fee and dues saved",
+    "joinTerms": "Join fee: {{fee}} · Dues: {{dues}}",
+    "confirmFee": "Joining {{name}} costs a join fee of {{fee}}, taken from your gold on hand.",
+    "confirmNoFee": "{{name}} charges no join fee.",
+    "confirmDues": "Members pay dues of {{dues}} from gold on hand; what you cannot pay is owed until you pay it.",
+    "confirmTitle": "Join {{name}}?",
+    "confirmJoin": "Pay and join",
+    "confirmRequestNote": "For a join request the fee is taken when the request is accepted, at the fee in force then.",
+    "acceptFeeNote": "Accepting a request takes the {{fee}} join fee from the applicant's gold on hand; a player who cannot pay stays pending.",
+    "arrearsColumn": "Dues owed"
+  },
+  "errors": {
+    "ALLIANCE_FULL": "The alliance is full ({{count, number}}/{{max, number}} members at {{levelName}}). Upgrade the Alliance Hall to raise it.",
+    "ALLIANCE_DEPOSIT_LIMIT": "Deposit limit reached: {{levelName}} allows {{limit, number}} deposits per member every 24 hours. Your next deposit opens in {{wait}}. Upgrade the Alliance Hall to raise it.",
+    "ALLIANCE_TREASURY_CAP": "Treasury cap reached: {{levelName}} holds at most {{cap, number}} gold, so you can deposit at most {{room, number}} more. Upgrade the Alliance Hall to raise it.",
+    "ALLIANCE_NOT_MEMBER": "You are not a member of this alliance.",
+    "ALLIANCE_NOT_FOUND": "Alliance not found.",
+    "ALLIANCE_UPGRADE_FORBIDDEN": "You do not have permission to buy alliance upgrades.",
+    "ALLIANCE_UPGRADE_MAXED": "The Alliance Hall is already at its highest level.",
+    "ALLIANCE_UPGRADE_STALE": "The Alliance Hall is at level {{current}}; only level {{next}} can be bought next. Reload the page.",
+    "ALLIANCE_UPGRADE_MEMBERS": "{{levelName}} needs at least {{min, number}} members; the alliance has {{count, number}}.",
+    "ALLIANCE_UPGRADE_FUNDS": "Not enough treasury gold: {{levelName}} costs {{cost, number}} gold.",
+    "ALLIANCE_DUES_FORBIDDEN": "You do not have permission to set the join fee and dues.",
+    "ALLIANCE_DUES_NONE_OWED": "You owe no dues.",
+    "ALLIANCE_DUES_NEED_GOLD": "You need {{pay, number}} gold on hand to pay these dues.",
+    "ALLIANCE_DUES_CHANGED": "Your dues changed; reload and try again.",
+    "ALLIANCE_JOIN_FEE_UNPAID_SELF": "The join fee is {{fee, number}} gold, paid from gold on hand. You do not have enough gold on hand.",
+    "ALLIANCE_JOIN_FEE_UNPAID_APPLICANT": "The join fee is {{fee, number}} gold, paid from gold on hand, and the applicant does not have enough gold on hand.",
+    "ALLIANCE_JOIN_FEE_CHANGED": "The join fee is now {{fee, number}} gold. Review it and confirm again.",
+    "ALLIANCE_DUES_NEGATIVE": "Fee and dues cannot be negative.",
+    "ALLIANCE_DUES_FEE_MAX": "The join fee can be at most {{max, number}} gold.",
+    "ALLIANCE_DUES_NEED_PERIOD": "Choose how often dues are collected, or set the dues to 0.",
+    "ALLIANCE_DUES_NEED_AMOUNT": "Set a dues amount above 0, or choose \"No dues\".",
+    "ALLIANCE_DUES_AMOUNT_MAX": "Dues can be at most {{max, number}} gold per member ({{periodName}}).",
+    "ALLIANCE_CALL_DUPLICATE": "A {{callTypeName}} call on {{name}} is already open."
   }
 }

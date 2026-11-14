@@ -27,6 +27,8 @@ beforeEach(() => {
       id: LOG_ID,
       attacker_id: participant,
       defender_id: DEFENDER,
+      type: 'attack',
+      winner: ATTACKER,
       timestamp: new Date('2026-10-01'),
       acl: grants,
     })),
@@ -96,6 +98,8 @@ describe('participant-controlled report access', () => {
         id: LOG_ID,
         attacker_id: ATTACKER,
         defender_id: DEFENDER,
+        type: 'attack',
+        winner: ATTACKER,
         acl: grants,
       }),
     ).toBe('shared');
@@ -109,6 +113,8 @@ describe('participant-controlled report access', () => {
       id: LOG_ID,
       attacker_id: ATTACKER,
       defender_id: DEFENDER,
+      type: 'attack',
+      winner: ATTACKER,
       acl: grants,
     });
     expect(await getAttackLogViewerRole(0, log())).toBeNull();
@@ -142,6 +148,8 @@ describe('participant-controlled report access', () => {
       id: LOG_ID,
       attacker_id: ATTACKER,
       defender_id: DEFENDER,
+      type: 'attack',
+      winner: ATTACKER,
       acl: grants,
     };
     expect(await getAttackLogViewerRole(RECIPIENT, log)).toBe('shared');
@@ -169,6 +177,8 @@ describe('participant-controlled report access', () => {
     mockPrisma.attack_log.findUnique.mockResolvedValue({
       attacker_id: ATTACKER,
       defender_id: DEFENDER,
+      type: 'attack',
+      winner: ATTACKER,
       timestamp: new Date('2025-01-01'),
     });
     await expect(

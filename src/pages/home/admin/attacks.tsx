@@ -15,7 +15,6 @@ import {
 import type { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useRef, useState } from 'react';
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
@@ -25,6 +24,7 @@ import VoidBattleModal from '@/components/admin/VoidBattleModal';
 import { useUser } from '@/context/users';
 import type { adminCombatDetails } from '@/utils/adminCombat';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 interface Attack {
   id: number;

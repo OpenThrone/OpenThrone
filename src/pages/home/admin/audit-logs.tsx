@@ -8,7 +8,6 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
@@ -16,6 +15,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const AuditLogsPage = () => {
   const [logs, setLogs] = useState<any[]>([]);

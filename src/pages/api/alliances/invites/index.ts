@@ -5,7 +5,7 @@ import { withAuth } from '@/middleware/auth';
 import { AllianceService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/numberFormatting';
-import { publicErrorMessage } from '@/utils/publicError';
+import { publicErrorBody } from '@/utils/publicError';
 
 const InviteSchema = z.object({
   allianceId: z.coerce.number().int().positive(),
@@ -56,7 +56,7 @@ const invitesHandler = async (
     res.setHeader('Allow', 'GET, POST, DELETE');
     return res.status(405).end();
   } catch (error) {
-    return res.status(400).json({ error: publicErrorMessage(error) });
+    return res.status(400).json(publicErrorBody(error));
   }
 };
 

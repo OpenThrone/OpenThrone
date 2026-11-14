@@ -1,0 +1,10 @@
+// www.openthrone.dev: a permanent redirect to the apex domain.
+// The custom domain creates the DNS record and certificate.
+// Deploy: bun run cloudflare:deploy:www
+{
+	"name": "openthrone-www-redirect",
+	"main": "worker.js",
+	"compatibility_date": "2026-06-01",
+	"workers_dev": false,
+	"routes": [{ "pattern": "www.openthrone.dev", "custom_domain": true }]
+}

@@ -16,10 +16,12 @@ import { SessionProvider } from 'next-auth/react';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 
+import GoogleAnalytics from '@/components/analytics/GoogleAnalytics';
 import GameNotifications from '@/components/GameNotifications';
 import Layout from '@/components/Layout';
 import LoadingDots from '@/components/loading-dots';
 import RuntimeMaintenanceBoundary from '@/components/RuntimeMaintenanceBoundary';
+import { ConsentProvider } from '@/context/ConsentContext';
 import { LayoutProvider } from '@/context/LayoutContext';
 import { UserProvider, useUser } from '@/context/users';
 import { useArtworkPreview } from '@/hooks/useArtworkPreview';
@@ -217,19 +219,22 @@ export const AppWithTheme = ({ Component, pageProps }: AppWithThemeProps) => {
       theme={theme}
       cssVariablesResolver={cssVariablesResolver}
     >
-      <GameNotifications />
-      <LayoutProvider key={artworkPreview}>
-        <Layout>
-          {pageResources === syncedPage.resources ||
-          pageKey === syncedPage.key ? (
-            <RuntimeMaintenanceBoundary>
-              <Component {...pageProps} />
-            </RuntimeMaintenanceBoundary>
-          ) : (
-            <LoadingDots />
-          )}
-        </Layout>
-      </LayoutProvider>
+      <ConsentProvider>
+        <GameNotifications />
+        <LayoutProvider key={artworkPreview}>
+          <Layout>
+            {pageResources === syncedPage.resources ||
+            pageKey === syncedPage.key ? (
+              <RuntimeMaintenanceBoundary>
+                <Component {...pageProps} />
+              </RuntimeMaintenanceBoundary>
+            ) : (
+              <LoadingDots />
+            )}
+          </Layout>
+        </LayoutProvider>
+        <GoogleAnalytics />
+      </ConsentProvider>
     </MantineProvider>
   );
 };

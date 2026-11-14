@@ -95,5 +95,33 @@
   "reserveConfirm": "{{name}} reservieren? Ihre Funktionen sind für alle Mitglieder gesperrt, bis sie reaktiviert wird; Mitglieder können weiter austreten. Schatzkammer, Kredite und Kriege bleiben unberührt.",
   "reactivate": "Reaktivieren",
   "reactivateTitle": "Allianz reaktivieren",
-  "reactivateConfirm": "{{name}} reaktivieren, ohne den Anführer zu belasten?"
+  "reactivateConfirm": "{{name}} reaktivieren, ohne den Anführer zu belasten?",
+  "colHallLevel": "Hallenstufe",
+  "hallLevelLabel": "Stufe der Allianzhalle",
+  "hallLevelHint": "Mitglieder: {{members}} von {{cap}} auf der aktuellen Stufe. Beim Senken bleiben alle Mitglieder und das gesamte Gold der Schatzkammer erhalten.",
+  "hallLevelSet": "Stufe setzen",
+  "hallLevelConfirm": "Die Allianzhalle von {{name}} von Stufe {{from}} auf Stufe {{to}} setzen? Es wird kein Gold berechnet oder erstattet.",
+  "hallLevels": {
+    "0": "Lager",
+    "1": "Halle",
+    "2": "Große Halle",
+    "3": "Burgfried",
+    "4": "Zitadelle",
+    "5": "Bollwerk"
+  },
+  "duesHeading": "Beitrittsgebühr und Beiträge",
+  "duesJoinFee": "Beitrittsgebühr (Gold)",
+  "duesMax": "Höchstens {{max}} Gold",
+  "duesPeriod": "Beitragseinzug",
+  "duesPeriods": {
+    "NONE": "Kein Beitrag",
+    "DAILY": "Täglich",
+    "WEEKLY": "Wöchentlich",
+    "MONTHLY": "Monatlich"
+  },
+  "duesAmount": "Beitrag pro Mitglied (Gold)",
+  "duesAmountNone": "Wählen Sie einen Zeitraum für Beiträge",
+  "duesConfirm": "{{name}} auf {{fee}} Gold Beitrittsgebühr und {{amount}} Gold Beitrag ({{period}}) setzen? Ein neuer Zeitraum zählt ab jetzt; offene Beiträge bleiben bestehen.",
+  "duesSave": "Gebühr und Beiträge speichern",
+  "colDuesArrears": "Offene Beiträge"
 }

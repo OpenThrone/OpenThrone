@@ -1,6 +1,6 @@
 # Battle protection
 
-Last verified against code: 2026-11-06 (alpha d59b12d9)
+Last verified against code: 2026-11-12 (alpha 8ffa50de)
 
 New kingdoms are protected for a while. Protection is a gold shield with softer battle damage, not immunity: other players can still attack you, kill units and damage your fort. It ends on its own as you grow.
 

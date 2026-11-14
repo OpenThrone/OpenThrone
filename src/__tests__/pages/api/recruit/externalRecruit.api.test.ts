@@ -15,7 +15,7 @@ vi.mock('@/services/RecruitmentCaptcha.service', () => ({
   verifyRecruitmentCaptcha: vi.fn(
     async (token: unknown) => token !== 'invalid',
   ),
-  isRecruitmentCaptchaRequired: () => true,
+  getRecruitmentCaptcha: async () => ({ required: true, provider: 'altcha' }),
 }));
 const {
   invalidateRuntimeConfigCache,
@@ -284,6 +284,7 @@ describe('public external recruitment', () => {
       expect.objectContaining({
         eligible: true,
         showCaptcha: true,
+        captchaProvider: 'altcha',
         remaining: 15,
         perIpRemaining: 3,
         dailyCap: 25,

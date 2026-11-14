@@ -1,6 +1,6 @@
 # Structures
 
-Last verified against code: 2026-11-06 (alpha 43c5fff7)
+Last verified against code: 2026-11-13 (alpha 237e566f)
 
 Structures are permanent upgrades you buy with gold: your fort, housing, economy, offense, spy and armory tracks, plus a racial track. The fort level is the key to everything else: most other upgrades, higher unit tiers and several features need a minimum fort level. Battle upgrades (siege gear and similar) and fort repair are separate purchases and are covered here too.
 
@@ -21,7 +21,7 @@ Costs and stat tables live in constants and change with balance: [Fortifications
 
 | Track | Levels | Starts at | What it needs | What it gives |
 | --- | --- | --- | --- | --- |
-| Fortifications | 24 (Manor to Empire Level 3) | level 1 | Player level (5 x (level - 1) at this commit) | Gold per turn, defense bonus %, hit points, casualty mitigation, repair price |
+| Fortifications | 24 (Manor to Empire Level 3) | level 1 | Player level (5 x (level - 1) up to Kingdom, then 92 to 100 in steps of 2) | Gold per turn, defense bonus %, hit points, casualty mitigation, repair price |
 | Housing | 7 (0 to 6) | level 0 | Fort level | Citizens per day (see [economy.md](economy.md)) |
 | Economy | 7 (Farm to Meat Market) | index 0 | Fort level | Gold per Worker, bank deposits per day, friend transfer limits, feature unlocks |
 | Offense (siege) | 22 | level 1 | Fort level | Offense bonus %, lower stamina drain per attack turn |
@@ -31,7 +31,8 @@ Costs and stat tables live in constants and change with balance: [Fortifications
 
 Notes:
 
-- Fortifications are the only track gated by player level, not fort level. The fort's `levelRequirement` is 0, 5, 10, ... 115. This is why Structure Upgrades has nothing to buy before player level 5.
+- Fortifications are the only track gated by player level, not fort level. The fort's `levelRequirement` is 0, 5, 10, ... 90 up to Kingdom (fort level 19), then 92, 94, 96, 98 and 100, so Empire Level 3 lands on the level cap ([decision](../decisions/top-forts-under-level-cap.md)). This is why Structure Upgrades has nothing to buy before player level 5.
+- Every fort can be built by level 100, and every tier's fort with it. Until v0.13.2 the Empire forts (fort levels 22 to 24) needed levels 105 to 115, above the cap, stranding Housing Level 6, Ballistas and Forging; they unlock with Empire now. Forgery Detection sits on Empire too, but players still cannot buy the Sentry track (see Known gaps). Meat Market, the last Economy tier, needs fort level 21 (until v0.13.1 it needed fort level 23).
 - Buying a fort level sets fort hit points to the new level's maximum.
 - Tier 1 of offense, spy and armory is free and everyone has it. New accounts also get a Sentry row at level 1.
 - The offense and fort bonuses are added to your offense and defense bonus percentages. How they combine in battle is a combat rule.
@@ -104,8 +105,9 @@ The UI shows an economy-gated tier only once it is built or can be bought next. 
 - [battleUpgrades.distribution.test.ts](../../src/services/__tests__/battleUpgrades.distribution.test.ts): coverage of `unitsCovered`.
 - [battleUpgradeStructure.test.ts](../../src/utils/battleUpgradeStructure.test.ts): which structure unlocks which type.
 - [AccountService.locks.test.ts](../../src/services/__tests__/AccountService.locks.test.ts): repair charges per point and refuses when the locked balance is short.
-- [history.structures.api.test.ts](../../src/__tests__/pages/api/bank/history.structures.api.test.ts): purchases appear in bank history.
+- [history.structures.api.test.ts](../../src/__tests__/pages/api/bank/history.structures.api.test.ts): the bank history Sale filter includes structure and battle upgrade purchases.
 - [fortDamage.test.ts](../../src/utils/fortDamage.test.ts): wall art by health band.
+- [upgradeReachability.test.ts](../../src/constants/upgradeReachability.test.ts): every fort needs a level at or under the cap, requirements never fall as forts rise, the top five forts step by 2 to level 100, and every upgrade tier (economy, housing, offense, spy, sentry, armory, racial) sits on a reachable fort.
 
 ## Known gaps
 

@@ -3,11 +3,19 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { AllianceService } from '@/services';
-import { publicErrorMessage } from '@/utils/publicError';
+import { stringifyObj } from '@/utils/numberFormatting';
+import { publicErrorBody } from '@/utils/publicError';
 // Adjust import if needed, usually we just cast req
 
 const JoinAllianceSchema = z.object({
   allianceId: z.number().int().positive(),
+  /** The join fee the player confirmed (whole gold); a changed fee refuses. */
+  expectedFee: z
+    .union([
+      z.number().int().nonnegative().safe(),
+      z.string().regex(/^\d{1,12}$/),
+    ])
+    .optional(),
 });
 
 const joinAlliance = async (req: any, res: any) => {
@@ -24,7 +32,7 @@ const joinAlliance = async (req: any, res: any) => {
   }
 
   const { user } = req.session;
-  const { allianceId } = validatedBody.data;
+  const { allianceId, expectedFee } = validatedBody.data;
 
   try {
     const alliance = await prisma.alliances.findUnique({
@@ -51,10 +59,11 @@ const joinAlliance = async (req: any, res: any) => {
     // Default to OPEN
     const result = await AllianceService.joinAlliance(user.id, {
       allianceId,
+      expectedFee: expectedFee ?? null,
     });
-    return res.status(200).json(result);
+    return res.status(200).json(stringifyObj(result));
   } catch (error: any) {
-    return res.status(400).json({ error: publicErrorMessage(error) });
+    return res.status(400).json(publicErrorBody(error));
   }
 };
 

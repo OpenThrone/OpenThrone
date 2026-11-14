@@ -12,7 +12,7 @@
     "joinSuccess": "Sie sind der Allianz beigetreten.",
     "manage": "Übersicht öffnen",
     "joinError": "Beitritt zur Allianz fehlgeschlagen",
-    "noAlliancesHint": "Noch hat niemand eine Allianz gegründet. Gründe die erste und lade deine Freunde ein."
+    "noAlliancesHint": "Noch hat niemand eine Allianz gegründet. Gründen Sie die erste und laden Sie Ihre Freunde ein."
   },
   "create": {
     "title": "Allianz erstellen",
@@ -23,7 +23,7 @@
     "mottoPlaceholder": "Kurzes Motto",
     "avatar": "Avatar-URL (optional)",
     "avatarPlaceholder": "https://...",
-    "comments": "Kommentare (optional)",
+    "comments": "Über uns (optional)",
     "commentsPlaceholder": "Beschreiben Sie Ihre Allianz",
     "create": "Allianz erstellen",
     "creating": "Allianz wird erstellt...",
@@ -75,7 +75,9 @@
     "settings": "Einstellungen",
     "loadError": "Allianz konnte nicht geladen werden",
     "bannerAlt": "Allianzbanner",
-    "infighting": "Bruderkämpfe"
+    "infighting": "Bruderkämpfe",
+    "troops": "Allianztruppen",
+    "upgrades": "Ausbau"
   },
   "mine": {
     "title": "Meine Allianzen",
@@ -94,7 +96,9 @@
   },
   "profile": {
     "title": "Allianzen",
-    "leaderOf": "Anführer von {{name}}"
+    "leaderOf": "Anführer von {{name}}",
+    "sharedTitle": "Gleiche Allianz",
+    "sharedBody": "Sie und {{name}} sind beide in {{alliances}}. Sie können {{name}} weiterhin angreifen, aber es zählt als Kampf innerhalb der Allianz."
   },
   "members": {
     "rosterHidden": "Diese Allianz zeigt ihre Mitgliederliste nur Mitgliedern.",
@@ -154,7 +158,9 @@
       "edit_list": "Liste bearbeiten",
       "view_list": "Liste ansehen",
       "share_reports": "Berichte teilen",
-      "call_targets": "Ziele ausrufen"
+      "call_targets": "Ziele ausrufen",
+      "upgrade_alliance": "Ausbau kaufen",
+      "set_dues": "Beitrittsgebühr und Beiträge festlegen"
     }
   },
   "invites": {
@@ -168,7 +174,9 @@
     "accept": "Annehmen",
     "decline": "Ablehnen",
     "accepted": "Sie sind der Allianz beigetreten.",
-    "declined": "Einladung abgelehnt."
+    "declined": "Einladung abgelehnt.",
+    "cap": "Mitglieder: {{members}} von {{cap}} ({{level}}). Ist die Allianz voll, kann niemand beitreten, bis die Allianzhalle ausgebaut wird.",
+    "capFull": "Die Allianz ist voll ({{members}} von {{cap}}, Stufe {{level}}): Einladungen und Beitrittsanfragen können erst angenommen werden, wenn die Allianzhalle ausgebaut ist."
   },
   "war": {
     "end": "Krieg beenden",
@@ -200,7 +208,12 @@
     "leader": "Anführer",
     "members": "Mitglieder",
     "created": "Gegründet",
-    "gold": "Schatzkammer"
+    "gold": "Schatzkammer",
+    "hall": "Allianzhalle",
+    "fullHint": "Die Allianz ist voll: Niemand kann beitreten, bis die Allianzhalle ausgebaut wird.",
+    "chatTitle": "Allianz-Chat",
+    "chatHelp": "Eine private Unterhaltung für alle Mitglieder, in Ihren Nachrichten.",
+    "chatOpen": "Allianz-Chat öffnen"
   },
   "player": {
     "races": {
@@ -228,10 +241,11 @@
     "types": {
       "DEPOSIT": "Einzahlung",
       "WITHDRAWAL": "Auszahlung",
-      "TAX": "Steuer",
-      "FEE": "Gebühr",
+      "TAX": "Beiträge und Steuern",
+      "FEE": "Beitrittsgebühr",
       "LOAN": "Darlehen",
-      "LOAN_REPAYMENT": "Darlehenstilgung"
+      "LOAN_REPAYMENT": "Darlehenstilgung",
+      "UPGRADE": "Hallenausbau"
     }
   },
   "settings": {
@@ -244,7 +258,8 @@
     "level": "Stufe {{level}}",
     "generalTitle": "Allgemeine Einstellungen",
     "save": "Änderungen speichern",
-    "updateSuccess": "Einstellungen erfolgreich gespeichert"
+    "updateSuccess": "Einstellungen erfolgreich gespeichert",
+    "aboutUs": "Über uns"
   },
   "internalBattles": {
     "title": "Angriffe unter Mitgliedern",
@@ -264,7 +279,7 @@
   },
   "artwork": {
     "title": "Allianzbilder",
-    "help": "Wähle ein Foto und Banner für deine Allianz. Änderungen werden beim Speichern zusammen veröffentlicht.",
+    "help": "Wählen Sie ein Foto und Banner für Ihre Allianz. Änderungen werden beim Speichern zusammen veröffentlicht.",
     "photo": "Allianzfoto",
     "photoHelp": "PNG, JPEG, GIF oder WebP. Bis zu 4 MB und 1024 × 1024 Pixel.",
     "banner": "Allianzbanner",
@@ -277,8 +292,8 @@
     "undo": "Entfernen rückgängig machen",
     "save": "Bilder speichern",
     "saved": "Bilder gespeichert.",
-    "saveError": "Bilder konnten nicht gespeichert werden. Prüfe die Abmessungen und versuche es erneut.",
-    "tooLarge": "Wähle ein Bild unter 4 MB.",
+    "saveError": "Bilder konnten nicht gespeichert werden. Prüfen Sie die Abmessungen und versuchen Sie es erneut.",
+    "tooLarge": "Wählen Sie ein Bild unter 4 MB.",
     "chooseFile": "Bild auswählen",
     "framePhoto": "Foto zuschneiden und positionieren",
     "frameBanner": "Banner zuschneiden und positionieren",
@@ -299,7 +314,7 @@
     "theLeader": "der Anführer",
     "title": "{{name}} ist reserviert",
     "visitor": "Eine neue Ära hat begonnen. Diese Allianz ruht, bis ihr Anführer sie reaktiviert.",
-    "member": "Eine neue Ära hat begonnen, daher ruht deine Allianz. Name, Mitglieder, Ränge und Bilder bleiben erhalten. Schatzkammer, Kredite, Truppenverträge und Kriege gehörten zur alten Ära und wurden beendet.",
+    "member": "Eine neue Ära hat begonnen, daher ruht Ihre Allianz. Name, Mitglieder, Ränge und Bilder bleiben erhalten. Schatzkammer, Kredite, Truppenverträge und Kriege gehörten zur alten Ära und wurden beendet.",
     "stillOpen": "Weiterhin möglich: Mitglieder und Ränge ansehen, Ränge verwalten, Mitglieder entfernen, die Führung übergeben und die Allianz jederzeit verlassen – ohne den Anführer.",
     "closed": "Gesperrt bis zur Reaktivierung: Schatzkammer und Kredite, Truppenverträge und Abgaben, Kriege, Diplomatie, Ziellisten, geteilte Aufklärung, Ankündigungen, Allianz-Chat, Anwerbung und Premium-Vorteile.",
     "requirementsTitle": "Reaktivierung (nur Anführer)",
@@ -308,15 +323,129 @@
     "reqLevelNow": "{{current}} von {{level}}",
     "reqGold": "{{cost}} Gold in der Hand",
     "reqGoldNow": "{{current}} von {{cost}}",
-    "waitingForLeader": "Nur {{leader}} kann die Allianz reaktivieren. Du kannst warten oder austreten.",
+    "waitingForLeader": "Nur {{leader}} kann die Allianz reaktivieren. Sie können warten oder austreten.",
     "reactivate": "Für {{cost}} Gold reaktivieren",
     "confirmTitle": "{{name}} reaktivieren?",
-    "confirmBody": "Dies kostet {{cost}} Gold aus deiner Hand. Die Allianzfunktionen öffnen sich wieder für alle.",
+    "confirmBody": "Dies kostet {{cost}} Gold aus Ihrer Hand. Die Allianzfunktionen öffnen sich wieder für alle.",
     "confirm": "Bezahlen und reaktivieren",
     "success": "Die Allianz ist wieder aktiv.",
     "alreadyActive": "Die Allianz war bereits aktiv; es wurde nichts abgebucht.",
     "error": "Die Allianz konnte nicht reaktiviert werden.",
     "leave": "Allianz verlassen",
-    "leaveHint": "Du kannst jederzeit austreten; der Anführer muss nicht zuerst reaktivieren."
+    "leaveHint": "Sie können jederzeit austreten; der Anführer muss nicht zuerst reaktivieren."
+  },
+  "upgrades": {
+    "title": "Allianzhalle",
+    "intro": "Bauen Sie die Allianzhalle mit Gold aus der Schatzkammer aus, um mehr Mitglieder aufzunehmen, jedem Mitglied häufigere Einzahlungen zu erlauben und die Obergrenze der Schatzkammer zu erhöhen. Stufen werden einzeln vom Anführer oder einem Rang mit „Ausbau kaufen“ gekauft.",
+    "currentLevel": "Aktuelle Stufe",
+    "levelLabel": "{{name}} (Stufe {{level}})",
+    "members": "Mitglieder",
+    "treasury": "Schatzkammer",
+    "yourDeposits": "Ihre Einzahlungen (letzte 24 Std.)",
+    "ofCap": "{{value}} / {{cap}}",
+    "colLevel": "Stufe",
+    "colCost": "Kosten (Schatzkammer)",
+    "colNeedsMembers": "Benötigte Mitglieder",
+    "colMaxMembers": "Max. Mitglieder",
+    "colDeposits": "Einzahlungen pro Mitglied / 24 Std.",
+    "colTreasuryCap": "Obergrenze Schatzkammer",
+    "blockReserved": "Die Allianz ist reserviert, bis der Anführer sie reaktiviert.",
+    "blockPermission": "Nur der Anführer oder ein Rang mit „Ausbau kaufen“ kann kaufen.",
+    "blockMembers": "Benötigt {{need}} Mitglieder (die Allianz hat {{have}}).",
+    "blockGold": "Der Schatzkammer fehlen {{missing}} Gold.",
+    "unlockAfter": "Kaufen Sie zuerst {{name}}.",
+    "footnote": "Die Kosten werden aus der Schatzkammer bezahlt. Einzahlungen werden pro Mitglied über die letzten 24 Stunden gezählt. Nur Einzahlungen sind an die Obergrenze gebunden; Darlehensrückzahlungen und Abgaben kommen weiterhin an. Allianzen über der Mitgliedergrenze behalten ihre Mitglieder, können aber keine neuen aufnehmen. Eine neue Ära setzt die Halle auf das Lager zurück.",
+    "maxed": "Die Allianzhalle hat ihre höchste Stufe erreicht.",
+    "confirmTitle": "Allianzhalle ausbauen",
+    "confirmMessage": "Für {{cost}} Gold aus der Schatzkammer auf {{name}} (Stufe {{level}}) ausbauen?",
+    "bought": "Die Allianzhalle ist jetzt {{name}}.",
+    "loadError": "Die Allianzhalle konnte nicht geladen werden.",
+    "raiseLink": "Unter Ausbau erhöhen",
+    "levels": {
+      "0": "Lager",
+      "1": "Halle",
+      "2": "Große Halle",
+      "3": "Burgfried",
+      "4": "Zitadelle",
+      "5": "Bollwerk"
+    }
+  },
+  "memberDues": {
+    "title": "Gebühr und Beiträge",
+    "loading": "Gebühr und Beiträge werden geladen…",
+    "loadError": "Gebühr und Beiträge konnten nicht geladen werden.",
+    "joinFee": "Beitrittsgebühr",
+    "noFee": "Keine Beitrittsgebühr",
+    "dues": "Mitgliedsbeitrag",
+    "none": "Kein Beitrag",
+    "amountPer": "{{amount}} {{period}}",
+    "period": {
+      "label": "Eingezogen",
+      "NONE": "Kein Beitrag",
+      "DAILY": "täglich",
+      "WEEKLY": "wöchentlich",
+      "MONTHLY": "monatlich"
+    },
+    "periodOption": {
+      "NONE": "Kein Beitrag",
+      "DAILY": "Täglich",
+      "WEEKLY": "Wöchentlich",
+      "MONTHLY": "Monatlich"
+    },
+    "nextCollection": "Nächster Einzug",
+    "youOwe": "Sie schulden",
+    "leaderExempt": "Als Anführer zahlen Sie keine Beiträge.",
+    "arrearsHelp": "Offene Beiträge werden beim nächsten Einzug zuerst eingezogen. Zahlen Sie sie jetzt aus Ihrem Gold auf der Hand.",
+    "payAmount": "Zu zahlendes Gold",
+    "payInvalid": "Geben Sie mindestens 1 und höchstens Ihre Schuld ein.",
+    "pay": "Beitrag zahlen",
+    "paid": "{{amount}} Beitrag gezahlt.",
+    "whereSetter": "Sie legen Gebühr und Beiträge fest unter",
+    "whereMember": "Der Anführer oder ein Rang mit „Beitrittsgebühr und Beiträge festlegen“ ändert sie im Reiter Einstellungen.",
+    "settingsLink": "Einstellungen",
+    "settingsTitle": "Beitrittsgebühr und Beiträge",
+    "settingsHelp": "Neue Mitglieder zahlen die Beitrittsgebühr einmal aus ihrem Gold auf der Hand. Beiträge werden zu Beginn jedes Zeitraums (00:00 OT; Wochen beginnen montags, Monate am 1.) von jedem Mitglied außer dem Anführer eingezogen. Wer nicht voll zahlen kann, zahlt, was er hat, und schuldet den Rest; niemand wird wegen offener Beiträge entfernt.",
+    "maxValue": "Höchstens {{max}}",
+    "choosePeriod": "Wählen Sie zuerst, wie oft eingezogen wird",
+    "duesPerMember": "Beitrag pro Mitglied",
+    "maxTitle": "Höchster Beitrag pro Mitglied",
+    "maxPerMember": "Höchstens pro Mitglied",
+    "settingsFootnote": "Eine neue Gebühr gilt nur für Spieler, die danach beitreten. Neue Beiträge beginnen mit dem nächsten Zeitraum; Mitglieder zahlen nie für die Zeit vor ihrem Beitritt. Gebühren und Beiträge fließen auch über die Schatzkammer-Grenze der Allianzhalle hinaus in die Schatzkammer.",
+    "save": "Gebühr und Beiträge speichern",
+    "saved": "Gebühr und Beiträge gespeichert",
+    "joinTerms": "Beitrittsgebühr: {{fee}} · Beitrag: {{dues}}",
+    "confirmFee": "Der Beitritt zu {{name}} kostet eine Beitrittsgebühr von {{fee}} aus Ihrem Gold auf der Hand.",
+    "confirmNoFee": "{{name}} verlangt keine Beitrittsgebühr.",
+    "confirmDues": "Mitglieder zahlen einen Beitrag von {{dues}} aus ihrem Gold auf der Hand; was Sie nicht zahlen können, schulden Sie, bis Sie es zahlen.",
+    "confirmTitle": "{{name}} beitreten?",
+    "confirmJoin": "Zahlen und beitreten",
+    "confirmRequestNote": "Bei einer Beitrittsanfrage wird die Gebühr bei Annahme fällig, in der dann gültigen Höhe.",
+    "acceptFeeNote": "Beim Annehmen einer Anfrage wird die Beitrittsgebühr von {{fee}} aus dem Gold auf der Hand des Bewerbers genommen; wer nicht zahlen kann, bleibt offen.",
+    "arrearsColumn": "Offene Beiträge"
+  },
+  "errors": {
+    "ALLIANCE_FULL": "Die Allianz ist voll ({{count, number}}/{{max, number}} Mitglieder, Stufe {{levelName}}). Bauen Sie die Allianzhalle aus, um das Limit zu erhöhen.",
+    "ALLIANCE_DEPOSIT_LIMIT": "Einzahlungslimit erreicht: {{levelName}} erlaubt {{limit, number}} Einzahlungen pro Mitglied alle 24 Stunden. Ihre nächste Einzahlung ist in {{wait}} möglich. Bauen Sie die Allianzhalle aus, um das Limit zu erhöhen.",
+    "ALLIANCE_TREASURY_CAP": "Schatzkammer-Limit erreicht: {{levelName}} fasst höchstens {{cap, number}} Gold, Sie können also höchstens {{room, number}} weitere einzahlen. Bauen Sie die Allianzhalle aus, um das Limit zu erhöhen.",
+    "ALLIANCE_NOT_MEMBER": "Sie sind kein Mitglied dieser Allianz.",
+    "ALLIANCE_NOT_FOUND": "Allianz nicht gefunden.",
+    "ALLIANCE_UPGRADE_FORBIDDEN": "Sie haben keine Berechtigung, den Ausbau der Allianzhalle zu kaufen.",
+    "ALLIANCE_UPGRADE_MAXED": "Die Allianzhalle hat bereits die höchste Stufe.",
+    "ALLIANCE_UPGRADE_STALE": "Die Allianzhalle ist auf Stufe {{current}}; als Nächstes kann nur Stufe {{next}} gekauft werden. Laden Sie die Seite neu.",
+    "ALLIANCE_UPGRADE_MEMBERS": "{{levelName}} braucht mindestens {{min, number}} Mitglieder; die Allianz hat {{count, number}}.",
+    "ALLIANCE_UPGRADE_FUNDS": "Nicht genug Gold in der Schatzkammer: {{levelName}} kostet {{cost, number}} Gold.",
+    "ALLIANCE_DUES_FORBIDDEN": "Sie haben keine Berechtigung, Beitrittsgebühr und Beiträge festzulegen.",
+    "ALLIANCE_DUES_NONE_OWED": "Sie schulden keine Beiträge.",
+    "ALLIANCE_DUES_NEED_GOLD": "Sie brauchen {{pay, number}} Gold in der Hand, um diese Beiträge zu zahlen.",
+    "ALLIANCE_DUES_CHANGED": "Ihre Beiträge haben sich geändert; laden Sie neu und versuchen Sie es erneut.",
+    "ALLIANCE_JOIN_FEE_UNPAID_SELF": "Die Beitrittsgebühr beträgt {{fee, number}} Gold und wird aus dem Gold in Ihrer Hand bezahlt. Sie haben nicht genug Gold in der Hand.",
+    "ALLIANCE_JOIN_FEE_UNPAID_APPLICANT": "Die Beitrittsgebühr beträgt {{fee, number}} Gold und wird aus dem Gold in der Hand bezahlt; der Bewerber hat nicht genug Gold in der Hand.",
+    "ALLIANCE_JOIN_FEE_CHANGED": "Die Beitrittsgebühr beträgt jetzt {{fee, number}} Gold. Prüfen Sie sie und bestätigen Sie erneut.",
+    "ALLIANCE_DUES_NEGATIVE": "Gebühr und Beiträge dürfen nicht negativ sein.",
+    "ALLIANCE_DUES_FEE_MAX": "Die Beitrittsgebühr darf höchstens {{max, number}} Gold betragen.",
+    "ALLIANCE_DUES_NEED_PERIOD": "Wählen Sie, wie oft Beiträge eingezogen werden, oder setzen Sie die Beiträge auf 0.",
+    "ALLIANCE_DUES_NEED_AMOUNT": "Legen Sie einen Beitrag über 0 fest oder wählen Sie „Kein Beitrag“.",
+    "ALLIANCE_DUES_AMOUNT_MAX": "Beiträge dürfen höchstens {{max, number}} Gold pro Mitglied betragen ({{periodName}}).",
+    "ALLIANCE_CALL_DUPLICATE": "Gegen {{name}} ist bereits ein Befehl „{{callTypeName}}“ offen."
   }
 }

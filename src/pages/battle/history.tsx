@@ -10,6 +10,7 @@ import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import prisma from '@/lib/prisma';
 import {
+  defenderVisibleLogsWhere,
   ownSpyMissionsWhere,
   redactAttackLogForViewer,
 } from '@/services/AttackLogAccess.service';
@@ -148,9 +149,8 @@ export const getServerSideProps = async (context: any) => {
     }),
     prisma.attack_log.findMany({
       where: {
-        defender_id: userId,
+        ...defenderVisibleLogsWhere(userId),
         timestamp: { gte: era.startDate },
-        OR: [{ type: 'attack' }, { winner: userId }],
       },
       include: {
         attackerPlayer: { select: { id: true, display_name: true } },

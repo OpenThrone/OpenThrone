@@ -32,8 +32,14 @@ mock.module('@/middleware/apiGuard', () => ({
 const idempotency = require('@/middleware/idempotency');
 
 let idempotencySpy: ReturnType<typeof vi.spyOn>;
-mock.module('@/lib/socket', () => ({
-  getSocketIO: () => ({ to: () => ({ emit: () => {} }) }),
+mock.module('@/lib/realtime', () => ({
+  emitToAll: () => {},
+  emitToRoom: () => {},
+  emitToUser: () => {},
+  emitToUsers: () => {},
+  evictUserFromChatRoom: async () => {},
+  evictUserFromAllianceChatRooms: async () => {},
+  isRealtimeEnabled: () => false,
 }));
 
 const spyHandler = require('../../../pages/api/spy/[id]').default;

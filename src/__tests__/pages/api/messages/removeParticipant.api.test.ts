@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'bun:test';
+import { beforeEach, describe, expect, it, vi } from 'bun:test';
 import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 import { silenceLogger } from 'test/utils/silenceLogger';
 
@@ -6,12 +6,20 @@ installMockPrisma(vi);
 vi.mock('@/middleware/auth', () => ({
   withAuth: (handler: unknown) => handler,
 }));
+vi.mock('@/lib/realtime', () => ({
+  emitToAll: vi.fn(),
+  emitToRoom: vi.fn(),
+  emitToUser: vi.fn(),
+  emitToUsers: vi.fn(),
+  evictUserFromChatRoom: vi.fn(async () => {}),
+  evictUserFromAllianceChatRooms: vi.fn(async () => {}),
+  isRealtimeEnabled: () => true,
+}));
 silenceLogger();
 
 const route =
   require('../../../../pages/api/messages/[chatRoomId]/participants/[participantId]').default;
-
-type GlobalWithIo = typeof globalThis & { __OT_SOCKET_IO__?: unknown };
+const { evictUserFromChatRoom } = require('@/lib/realtime');
 
 // Synthetic ids; no real players or rooms.
 const ADMIN_ID = 5;
@@ -26,9 +34,6 @@ const makeRes = () => {
 };
 
 describe('DELETE chat participant (MSG-03)', () => {
-  const socketsLeave = vi.fn();
-  const server = { in: vi.fn(() => ({ socketsLeave })) };
-
   beforeEach(() => {
     mockPrisma.$queryRaw = vi.fn().mockResolvedValue([]);
     mockPrisma.$transaction.mockImplementation(async (callback: any) =>
@@ -37,9 +42,7 @@ describe('DELETE chat participant (MSG-03)', () => {
     mockPrisma.chatRoom = {
       findUnique: vi.fn().mockResolvedValue({ allianceId: null }),
     };
-    socketsLeave.mockClear();
-    server.in.mockClear();
-    (globalThis as GlobalWithIo).__OT_SOCKET_IO__ = server;
+    evictUserFromChatRoom.mockClear();
     mockPrisma.chatRoomParticipant = {
       findUnique: vi.fn(async ({ where }: any) =>
         where.roomId_userId.userId === ADMIN_ID
@@ -49,10 +52,6 @@ describe('DELETE chat participant (MSG-03)', () => {
       count: vi.fn(async () => 1),
       delete: vi.fn(async () => ({})),
     };
-  });
-
-  afterEach(() => {
-    delete (globalThis as GlobalWithIo).__OT_SOCKET_IO__;
   });
 
   const remove = async (callerId: number) => {
@@ -75,14 +74,13 @@ describe('DELETE chat participant (MSG-03)', () => {
     const res = await remove(ADMIN_ID);
 
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(server.in).toHaveBeenCalledWith(`user-${MEMBER_ID}`);
-    expect(socketsLeave).toHaveBeenCalledWith(`room-${ROOM_ID}`);
+    expect(evictUserFromChatRoom).toHaveBeenCalledWith(MEMBER_ID, ROOM_ID);
   });
 
   it('evicts nobody when the removal is refused', async () => {
     const res = await remove(MEMBER_ID);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(socketsLeave).not.toHaveBeenCalled();
+    expect(evictUserFromChatRoom).not.toHaveBeenCalled();
   });
 });

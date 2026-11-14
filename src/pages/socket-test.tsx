@@ -27,6 +27,9 @@ const SocketTestPage = () => {
 
   return (
     <MainArea title={t('socketTest.title')}>
+      {['true', '1'].includes(
+        (process.env.NEXT_PUBLIC_DISABLE_SOCKET || '').toLowerCase(),
+      ) && <p>{t('socketTest.realtimeDisabled')}</p>}
       <p>
         Status:{' '}
         {isConnected ? t('socketTest.connected') : t('socketTest.disconnected')}

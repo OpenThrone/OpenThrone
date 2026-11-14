@@ -18,6 +18,7 @@ import { PageLoading } from '@/components/game/PageLoading';
 import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
+import { formatWhole } from '@/utils/formatWhole';
 import { logError } from '@/utils/logger';
 
 /** Create alliance. */
@@ -25,7 +26,7 @@ export default function CreateAlliance() {
   const { user } = useUser();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const { t } = useTranslation('alliances');
+  const { t, i18n } = useTranslation('alliances');
 
   const form = useForm({
     initialValues: {
@@ -71,7 +72,9 @@ export default function CreateAlliance() {
     return (
       <MainArea title={t('create.title')}>
         <Alert color="red">
-          {t('create.goldRequired', { cost: '100 million' })}
+          {t('create.goldRequired', {
+            cost: formatWhole(100000000, i18n.language),
+          })}
         </Alert>
       </MainArea>
     );

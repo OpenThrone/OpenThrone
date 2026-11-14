@@ -46,4 +46,14 @@ CREATE TABLE public.other_thing (id int);`;
     expect(namesIn(sql, CREATE_TABLE)).toEqual(['NewThing', 'other_thing']);
     expect(namesIn(sql, ENABLE_RLS)).toEqual(['NewThing']);
   });
+
+  it('the LoginEvent kind migration adds no table, so none needs RLS', () => {
+    const name = '20261112130000_login_event_kind';
+    expect(migrations).toContain(name);
+    const sql = readFileSync(
+      path.join(MIGRATIONS_DIR, name, 'migration.sql'),
+      'utf8',
+    );
+    expect(namesIn(sql, CREATE_TABLE)).toEqual([]);
+  });
 });

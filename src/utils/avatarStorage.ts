@@ -1,5 +1,3 @@
-import { createHash } from 'crypto';
-import fs from 'fs';
 import path from 'path';
 
 const AVATAR_EXTENSIONS = new Set(['jpg', 'png', 'gif', 'webp']);
@@ -10,17 +8,6 @@ export function avatarExtensionFromImageType(
 ): string | null {
   const ext = imageType === 'jpeg' ? 'jpg' : imageType;
   return ext && AVATAR_EXTENSIONS.has(ext) ? ext : null;
-}
-
-/** Streams a file through SHA-256 and returns the lowercase hex digest. */
-export function hashFileSha256(filePath: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const hash = createHash('sha256');
-    fs.createReadStream(filePath)
-      .on('data', (chunk) => hash.update(chunk))
-      .on('end', () => resolve(hash.digest('hex')))
-      .on('error', reject);
-  });
 }
 
 /**

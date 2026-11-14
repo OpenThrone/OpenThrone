@@ -149,6 +149,9 @@
     "supporterOnly": "Automatische Rekrutierung ist ein Patron-Vorteil. Sie rekrutiert bis zum selben Tageslimit wie die Rekrutierung von Hand.",
     "becomeSupporter": "Patron werden",
     "doneForToday": "Du hast heute jedes Königreich rekrutiert, das möglich ist. Rekrutierungen werden zu Beginn des nächsten Spieltags zurückgesetzt.",
-    "dailyCapReached": "Du hast dein tägliches Rekrutierungslimit erreicht. Es wird zu Beginn des nächsten Spieltags zurückgesetzt."
+    "dailyCapReached": "Du hast dein tägliches Rekrutierungslimit erreicht. Es wird zu Beginn des nächsten Spieltags zurückgesetzt.",
+    "verifyToStartAltcha": "Ihr Browser führt eine kurze Prüfung durch, bevor die Sitzung startet.",
+    "verificationExpired": "Verifizierung abgelaufen. Bitte erneut versuchen.",
+    "retryVerification": "Erneut versuchen"
   }
 }

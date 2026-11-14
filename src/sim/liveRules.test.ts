@@ -160,6 +160,18 @@ describe('bankBeforeLogoff', () => {
     expect(player.bankDepositHistory).toHaveLength(1);
   });
 
+  it('is not limited by the bank balance', () => {
+    const player = makePlayer();
+    applyLiveRulesToPlayer(player, 'casual', createRng(10).next);
+    player.economyLevel = 1; // the Farm
+    player.gold = 1_000_000;
+    player.goldInBank = 2_000_000_000;
+    player.bankDepositHistory = [];
+    player.maximumBankDeposits = 1;
+    expect(bankBeforeLogoff(player, 0, 48)).toBe(800_000);
+    expect(player.goldInBank).toBe(2_000_800_000);
+  });
+
   it('keeps deposits for later when little gold is on hand', () => {
     const player = makePlayer();
     applyLiveRulesToPlayer(player, 'grinder', createRng(11).next);

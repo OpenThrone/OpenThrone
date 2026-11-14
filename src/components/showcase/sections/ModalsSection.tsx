@@ -125,6 +125,7 @@ const LIVE_ONLY_MODALS = [
   'GoldRequestModal: submits real gold requests.',
   'NewMessageModal: live search and room creation; its shared dialog is shown in Chat & messaging with mock data.',
   'SessionModal: lists recruitment sessions as soon as it opens.',
+  'ReportPlayerModal (profile Report Player): posts a real report; ReportPlayerForm is the same form on /report.',
 ];
 
 export default function ModalsSection() {

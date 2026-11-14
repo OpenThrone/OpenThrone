@@ -2,7 +2,6 @@ import { Alert, Button, Loader, Stack } from '@mantine/core';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { mutate } from 'swr';
 
@@ -13,6 +12,7 @@ import { AllianceForces } from '@/components/alliance/AllianceForces';
 import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 export default function AllianceTroops() {
   const { query } = useRouter();

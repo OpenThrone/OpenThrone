@@ -138,12 +138,6 @@ export class UserEconomyService {
     return upgrade?.depositsPerDay ?? 0;
   }
 
-  /** Most gold the bank will accept deposits up to at this economy level. */
-  getBankCap(): number {
-    const topTier = EconomyUpgrades[EconomyUpgrades.length - 1];
-    return (EconomyUpgrades[this.economyLevel] ?? topTier).bankCap;
-  }
-
   getRecruitingBonus(): number {
     const houseBonus =
       HouseUpgrades[this.houseLevel as keyof typeof HouseUpgrades]

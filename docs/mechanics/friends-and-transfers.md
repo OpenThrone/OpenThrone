@@ -1,6 +1,6 @@
 # Friends and gold transfers
 
-Last verified against code: 2026-11-06 (alpha d59b12d9)
+Last verified against code: 2026-11-12 (alpha 8ffa50de)
 
 Players can friend each other. Friends can send each other gold gifts, or ask a
 friend for gold. Gifts cost a fee, are capped per day, and are blocked between

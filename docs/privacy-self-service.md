@@ -17,7 +17,8 @@ Included (see `EXPORT_INCLUDED`, also written into the file header): account
 and profile, kingdom state, units, items, upgrades, bonus points, eras, status
 history (staff-written reasons left out), reset history, battle and spy logs
 (viewer-side redaction shared with the in-game reports, opponent names as
-shown in game), captives, desertions, forces, messages and chat messages the
+shown in game; as in game, a spy mission that got through is left out of its
+target's export), captives, desertions, forces, messages and chat messages the
 player wrote, friends, alliance membership/requests/bank activity/gold
 requests/loans, recruit history (only the player's own address), reports the
 player filed, own ban appeals, email preferences, Discord link, supporter

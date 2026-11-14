@@ -149,6 +149,9 @@
     "supporterOnly": "El reclutamiento automático es una ventaja para Patrones. Recluta hasta el mismo límite diario que el reclutamiento manual.",
     "becomeSupporter": "Hazte Patrón",
     "doneForToday": "Has reclutado todos los reinos posibles hoy. Los reclutamientos se reinician al comenzar el siguiente día de juego.",
-    "dailyCapReached": "Has alcanzado tu límite diario de reclutamiento. Se reinicia al comenzar el siguiente día de juego."
+    "dailyCapReached": "Has alcanzado tu límite diario de reclutamiento. Se reinicia al comenzar el siguiente día de juego.",
+    "verifyToStartAltcha": "Tu navegador está realizando una comprobación rápida antes de que empiece la sesión.",
+    "verificationExpired": "La verificación ha caducado. Inténtalo de nuevo.",
+    "retryVerification": "Intentar de nuevo"
   }
 }

@@ -1,6 +1,6 @@
 # Stamina
 
-Last verified against code: 2026-11-06 (alpha d59b12d9)
+Last verified against code: 2026-11-12 (alpha 8ffa50de)
 
 Stamina is how fresh an army is for attacking. Only attacks spend it; spy
 missions are free. Attacks are never blocked: the cost is capped at the

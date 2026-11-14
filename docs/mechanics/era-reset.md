@@ -1,6 +1,6 @@
 # Eras and era resets
 
-Last verified against code: 2026-11-08 (alpha 6c3554e6)
+Last verified against code: 2026-11-12 (alpha 8ffa50de)
 
 An era is one season of the game world. Exactly one era is open at a time (its `endDate` is empty). This page covers how eras start and end, the two ways to wipe gameplay state (the **era rollover** and the **current-era reset**), the timed reset, per-era stats, and veteran claims.
 
@@ -68,7 +68,7 @@ Maintenance mode is a separate switch and is not changed by a reset.
 
 ### Alliances at an era boundary
 
-Both wipes call the same step ([allianceStatus.ts](../../src/services/allianceStatus.ts)). Active alliances become `RESERVED`: identity, roster, roles and artwork are kept. Treasury is set to zero (not paid out), parked loan repayments are dropped, active and defaulted loans are written off, requested loans and pending gold and join requests are cancelled, wars in warmup, active or cooldown are ended, and alliance XP and upgrades are deleted. A reserved alliance stays locked until its leader reactivates it. The requirements are two runtime settings, `alliance.reactivationMinLevel` (default 10) and `alliance.reactivationCostGold` (default 10,000,000).
+Both wipes call the same step ([allianceStatus.ts](../../src/services/allianceStatus.ts)). Active alliances become `RESERVED`: identity, roster, roles and artwork are kept. Treasury is set to zero (not paid out), parked loan repayments are dropped, active and defaulted loans are written off, requested loans and pending gold and join requests are cancelled, wars in warmup, active or cooldown are ended, and alliance XP and upgrades are deleted. The Alliance Hall returns to level 0 (Camp, 10 members); an alliance with more members keeps them but cannot add more until it upgrades again. Every membership's unpaid dues (`dues_arrears`) and `dues_paid_through` are cleared; the join fee and dues settings are kept (see [alliances.md](alliances.md)). A reserved alliance stays locked until its leader reactivates it. The requirements are two runtime settings, `alliance.reactivationMinLevel` (default 10) and `alliance.reactivationCostGold` (default 10,000,000).
 
 ### Factory restore
 
@@ -160,7 +160,7 @@ The era-relaunch email tells players who have not played since the open era star
 
 - [EraActivity.test.ts](../../src/services/__tests__/EraActivity.test.ts): tallying logs, top battles, and leaderboards that combine totals with logs.
 - [eraActivityRollup.test.ts](../../test/integration/eraActivityRollup.test.ts): on real PostgreSQL, leaderboards match before and after logs expire, reruns count nothing twice, and a failed run keeps the logs.
-- [CurrentEraReset.service.test.ts](../../src/services/__tests__/CurrentEraReset.service.test.ts): reset scope, no snapshot, alliances reserved, chosen vs saved starting values, stale era and start date, confirmation phrases, friend requests, login opening and audit rollback.
+- [CurrentEraReset.service.test.ts](../../src/services/__tests__/CurrentEraReset.service.test.ts): reset scope, no snapshot, alliances reserved with treasury and hall level reset and dues arrears cleared, chosen vs saved starting values, stale era and start date, confirmation phrases, friend requests, login opening and audit rollback.
 - [EraResetSchedule.service.test.ts](../../src/services/__tests__/EraResetSchedule.service.test.ts): immediate start, scheduling, stale and cancel conflicts, closing before reset, restart recovery, retry, audit rollback.
 - [reset-current-era.api.test.ts](../../src/__tests__/pages/api/admin/reset-current-era.api.test.ts) and [era-reset-schedule.api.test.ts](../../src/__tests__/pages/api/admin/era-reset-schedule.api.test.ts): admin guard and input validation.
 - [allianceStatus.test.ts](../../src/services/allianceStatus.test.ts): reserved status and the ordinary vs factory phrase.

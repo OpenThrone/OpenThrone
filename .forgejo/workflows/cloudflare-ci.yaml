@@ -1,0 +1,165 @@
+# Promotion gate for issue #22. Live since a Forgejo runner was registered
+# on the Unraid host (labels docker/ubuntu-latest, capacity 1, so jobs run
+# one at a time; Forgejo 11 ignores workflow `concurrency` groups). Pull
+# requests run verify and build only; deploy, smoke and promote need a push
+# to a listed branch or a manual dispatch. Nothing here deploys on its own.
+#
+# Pipeline (issue #22, part 2 of 2):
+#   verify -> build -> deploy-preview -> smoke -> (manual approval) -> promote
+#
+# - verify: Bun-first checks (types, changed-files lint, unit tests).
+# - build: the repo's webpack-pinned Cloudflare build (package.json script
+#   `cloudflare:build`, pinned to `next build --webpack` for the OpenNext
+#   Turbopack 404-chunk bug recorded in docs/cloudflare-modernization.md).
+# - deploy-preview: deploy the preview Worker from THIS commit so the smoke
+#   suite gates the artifact that promotion would ship.
+# - promote: `bun run cloudflare:deploy:production`, gated behind a manual
+#   approval. Forgejo Actions supports workflow_dispatch (manual run from the
+#   UI/API) but has no GitHub-style environment protection rules / required
+#   reviewers yet (Codeberg forgejo/discussions#440), so the approval IS the
+#   dispatch: a human triggers this workflow by hand and types "approved" into
+#   the promotion_approval input. The run log records who dispatched it.
+#
+# Activation checklist, once a runner is registered:
+#   1. runs-on below must match a label the runner actually advertises
+#     ( Forgejo act_runner labels, e.g. ubuntu-latest / ubuntu-22.04 / docker).
+#   2. The Forgejo instance must be able to fetch the actions used below
+#     (actions/checkout, oven-sh/setup-bun - same major versions as the legacy
+#     .github/workflows/CI.yml) from its configured default actions URL or the
+#     code.forgejo.org mirror.
+#   3. Repo secrets (names only; values live in the Forgejo secret store):
+#     CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID.
+#   4. wrangler.jsonc env.production.hyperdrive[0].id is still the placeholder
+#     00000000000000000000000000000000 - the promote step fails until a real
+#     production Hyperdrive resource id is configured (docs/operations.md
+#     one-time setup).
+#   5. NEXT_PUBLIC_* values are inlined by `next build`
+#     (docs/cloudflare-modernization.md env mapping); only
+#     NEXT_PUBLIC_DISABLE_SOCKET is set here - supply the remaining
+#     build-time flags through CI variables before activation.
+#   6. Consider pinning a bun-version in the setup steps to the version the
+#     repository is developed with.
+#
+# Reference: legacy .github/workflows/CI.yml is syntax reference only; it
+# predates the Bun-first doctrine and stays untouched.
+
+name: Cloudflare CI
+
+on:
+  push:
+    branches: [attack-revert, cloudflare-platform-modernization]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      promotion_approval:
+        description: 'Manual promotion approval - type "approved" to deploy to production after the smoke suite passes'
+        required: false
+        default: ""
+
+jobs:
+  verify:
+    name: Verify (types, lint, tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Type check
+        run: bun run check-types
+      # Repo-wide `bun run lint` is not viable as a gate: `eslint .` does not
+      # terminate on this repository's full tree, and `eslint src` carries
+      # ~144 pre-existing errors. The repo doctrine is lint-clean touched
+      # files, so lint exactly the files this change touches against the
+      # default branch (all files when the base is unknown).
+      - name: Lint changed files
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || 'origin/alpha' }}"
+          FILES=$(git diff --name-only --diff-filter=ACMR "$BASE" -- '*.ts' '*.tsx' 2>/dev/null | grep -v '^\.zcode/' || true)
+          if [ -z "$FILES" ]; then echo "No changed TS files to lint"; exit 0; fi
+          bunx eslint $FILES
+      - name: Test
+        run: bun run test
+
+  build:
+    name: Build (webpack-pinned Cloudflare bundle)
+    runs-on: ubuntu-latest
+    needs: verify
+    env:
+      # Workers builds disable the socket path (docs/operations.md, Cloudflare
+      # deployment section). Other NEXT_PUBLIC_* flags are build-time inlined
+      # and must come from the CI environment - see activation checklist.
+      NEXT_PUBLIC_DISABLE_SOCKET: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      # package.json `cloudflare:build`: locales + prisma-wasm prepare/strip,
+      # then `next build --webpack` and `opennextjs-cloudflare build
+      # --skipNextBuild`. Do not replace with plain `next build` - Turbopack
+      # breaks the Pages-Router 404 chunk on the Workers target.
+      - name: Cloudflare build
+        run: bun run cloudflare:build
+
+  # The gate must smoke the artifact it promotes: CI deploys the preview
+  # itself, smokes that deployment, and only then may promote the SAME
+  # commit to production. (The previous draft smoked an out-of-band preview
+  # while promoting a fresh CI build - the promoted artifact was never the
+  # smoke-tested one.)
+  deploy-preview:
+    name: Deploy the preview Worker from this commit
+    runs-on: ubuntu-latest
+    needs: verify
+    if: github.event_name != 'pull_request'
+    env:
+      NEXT_PUBLIC_DISABLE_SOCKET: "true"
+      # Remaining NEXT_PUBLIC_* build-time flags must come from CI variables
+      # before activation - see the activation checklist.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      # package.json `cloudflare:deploy:preview`: argon2 sidecar first, then
+      # the webpack-pinned build and `wrangler deploy --env preview`.
+      - name: Deploy preview
+        run: bun run cloudflare:deploy:preview
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  smoke:
+    name: Smoke the preview deployment this pipeline produced
+    runs-on: ubuntu-latest
+    needs: deploy-preview
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      # scripts/smoke-deploy.ts is zero-dependency (global fetch only), so no
+      # `bun install` is needed in this job.
+      - name: Run deploy smoke suite against the preview Worker
+        run: bun scripts/smoke-deploy.ts --base-url https://openthrone-preview.example.workers.dev
+
+  promote:
+    name: Promote to production (manual approval)
+    runs-on: ubuntu-latest
+    needs: smoke
+    if: >
+      github.event_name != 'pull_request' &&
+      inputs.promotion_approval == 'approved'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      # The `inputs` context carries workflow_dispatch inputs; on Forgejo
+      # versions without it, switch to github.event.inputs.promotion_approval.
+      # Deploy needs its own install: cloudflare:deploy:production runs the
+      # full webpack-pinned build (package.json), not just wrangler.
+      - name: Deploy production
+        run: bun run cloudflare:deploy:production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

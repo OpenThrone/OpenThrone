@@ -113,6 +113,16 @@ temp/*
 
 # Local QA screenshots and browser artifacts; never commit
 dogfood-output/
+.wrangler/
+.dev.vars
+.dev.vars.*
+cloudflare-env.d.ts
+prisma-generated/
+
+# zcode harness state
+.zcode/plans/
+.zcode/workflow-drafts/
+.zcode/workflow-runs/
 
 # Project skills are tracked
 !.claude/

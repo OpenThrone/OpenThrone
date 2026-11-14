@@ -116,6 +116,7 @@ const CHAT_MESSAGE_RELATIONS = {
       id: true,
       display_name: true,
       avatar: true,
+      race: true,
       last_active: true,
       supporter_until: true,
     },
@@ -173,6 +174,7 @@ export function serializeChatMessage(message: StoredChatMessage): ChatMessage {
       id: message.sender.id,
       display_name: message.sender.display_name,
       avatar: message.sender.avatar,
+      race: message.sender.race,
       supporterUntil: message.sender.supporter_until?.toISOString() ?? null,
       is_online:
         !!message.sender.last_active &&
@@ -275,6 +277,8 @@ export class MessagingService {
         id: true,
         attacker_id: true,
         defender_id: true,
+        type: true,
+        winner: true,
         acl: { select: ATTACK_LOG_ACL_SELECT },
       },
     });
@@ -328,6 +332,7 @@ export class MessagingService {
                   id: true,
                   display_name: true,
                   avatar: true,
+                  race: true,
                   last_active: true,
                 },
               },
@@ -396,6 +401,7 @@ export class MessagingService {
               canWrite: p.canWrite,
               display_name: p.user.display_name,
               avatar: p.user.avatar,
+              race: p.user.race,
               is_online: p.user.last_active
                 ? new Date().getTime() -
                     new Date(p.user.last_active).getTime() <
@@ -902,99 +908,126 @@ export class MessagingService {
     await assertMessagingAllowed(userId, roomId);
 
     try {
-      return await withLockedChatRoom(roomId, async (tx) => {
-        await assertAllianceChatMembership(tx, userId, roomId);
-        await assertAllianceChatOpen(tx, roomId);
-        // Verify user is a participant and has write permission
-        const roomParticipant = await tx.chatRoomParticipant.findUnique({
-          where: { roomId_userId: { roomId, userId } },
-          select: { canWrite: true },
+      // Same lock-free validation as sendMessageRealtime: read-only checks
+      // must not serialize behind the room write mutex (see the §8 ladder
+      // note there); the accepted race is one in-flight message landing
+      // after a concurrent membership revocation.
+      await assertAllianceChatMembership(prisma, userId, roomId);
+      await assertAllianceChatOpen(prisma, roomId);
+      // Verify user is a participant and has write permission
+      const roomParticipant = await prisma.chatRoomParticipant.findUnique({
+        where: { roomId_userId: { roomId, userId } },
+        select: { canWrite: true },
+      });
+
+      if (!roomParticipant) {
+        throw new Error('Forbidden: You are not a participant in this room.');
+      }
+
+      if (!roomParticipant.canWrite) {
+        throw new Error(
+          'Forbidden: You do not have permission to send messages in this room.',
+        );
+      }
+
+      if (validatedData.replyToMessageId) {
+        const reply = await prisma.chatMessage.findFirst({
+          where: { id: validatedData.replyToMessageId, roomId },
+          select: { id: true },
         });
+        if (!reply) throw new Error('Cannot reply to this message.');
+      }
 
-        if (!roomParticipant) {
-          throw new Error('Forbidden: You are not a participant in this room.');
-        }
+      const { sharedAttackLogId } = validatedData;
+      if (
+        sharedAttackLogId &&
+        !(await MessagingService.checkLogSharePermission(
+          userId,
+          sharedAttackLogId,
+          prisma,
+        ))
+      ) {
+        throw new Error('Forbidden: No permission to share this log.');
+      }
 
-        if (!roomParticipant.canWrite) {
-          throw new Error(
-            'Forbidden: You do not have permission to send messages in this room.',
-          );
-        }
-
-        if (validatedData.replyToMessageId) {
-          const reply = await tx.chatMessage.findFirst({
-            where: { id: validatedData.replyToMessageId, roomId },
-            select: { id: true },
+      // Write phase under the room lock, rechecking participation first —
+      // same rationale as sendMessageRealtime above.
+      return await withLockedChatRoom(
+        roomId,
+        async (tx) => {
+          const stillParticipant = await tx.chatRoomParticipant.findUnique({
+            where: { roomId_userId: { roomId, userId } },
+            select: { canWrite: true },
           });
-          if (!reply) throw new Error('Cannot reply to this message.');
-        }
+          if (!stillParticipant) {
+            throw new Error(
+              'Forbidden: You are not a participant in this room.',
+            );
+          }
+          if (!stillParticipant.canWrite) {
+            throw new Error(
+              'Forbidden: You do not have permission to send messages in this room.',
+            );
+          }
 
-        const { sharedAttackLogId } = validatedData;
-        if (
-          sharedAttackLogId &&
-          !(await MessagingService.checkLogSharePermission(
-            userId,
-            sharedAttackLogId,
-            tx,
-          ))
-        ) {
-          throw new Error('Forbidden: No permission to share this log.');
-        }
-
-        const message = await tx.chatMessage.create({
-          data: {
-            roomId,
-            senderId: userId,
-            content: validatedData.content,
-            messageType: validatedData.messageType,
-            replyToMessageId: validatedData.replyToMessageId,
-            sharedAttackLogId: validatedData.sharedAttackLogId,
-          },
-          include: {
-            sender: {
-              select: {
-                id: true,
-                display_name: true,
-                avatar: true,
-                supporter_until: true,
+          const message = await tx.chatMessage.create({
+            data: {
+              roomId,
+              senderId: userId,
+              content: validatedData.content,
+              messageType: validatedData.messageType,
+              replyToMessageId: validatedData.replyToMessageId,
+              sharedAttackLogId: validatedData.sharedAttackLogId,
+            },
+            include: {
+              sender: {
+                select: {
+                  id: true,
+                  display_name: true,
+                  avatar: true,
+                  race: true,
+                  supporter_until: true,
+                },
               },
             },
-          },
-        });
+          });
 
-        // Update room's updatedAt timestamp
-        await tx.chatRoom.update({
-          where: { id: roomId },
-          data: { updatedAt: new Date() },
-        });
+          // Update room's updatedAt timestamp
+          await tx.chatRoom.update({
+            where: { id: roomId },
+            data: { updatedAt: new Date() },
+          });
 
-        if (sharedAttackLogId) {
-          await MessagingService.grantAclToParticipants(
-            sharedAttackLogId,
-            roomId,
-            userId,
-            tx,
-          );
-        }
+          if (sharedAttackLogId) {
+            await MessagingService.grantAclToParticipants(
+              sharedAttackLogId,
+              roomId,
+              userId,
+              tx,
+            );
+          }
 
-        return {
-          id: message.id,
-          roomId: message.roomId,
-          senderId: message.senderId,
-          content: message.content,
-          richContent: message.richContent,
-          clientMessageId: message.clientMessageId,
-          messageType: message.messageType,
-          sentAt: message.sentAt,
-          sender: {
-            id: message.sender.id,
-            display_name: message.sender.display_name,
-            avatar: message.sender.avatar,
-            supporterUntil:
-              message.sender.supporter_until?.toISOString() ?? null,
-          },
-        };
-      });
+          return {
+            id: message.id,
+            roomId: message.roomId,
+            senderId: message.senderId,
+            content: message.content,
+            richContent: message.richContent,
+            clientMessageId: message.clientMessageId,
+            messageType: message.messageType,
+            sentAt: message.sentAt,
+            sender: {
+              id: message.sender.id,
+              display_name: message.sender.display_name,
+              avatar: message.sender.avatar,
+              race: message.sender.race,
+              supporterUntil:
+                message.sender.supporter_until?.toISOString() ?? null,
+            },
+          };
+        },
+        { timeoutMs: 15_000 },
+      );
     } catch (error) {
       logError('Error sending message', {
         userId,
@@ -1033,110 +1066,135 @@ export class MessagingService {
     }
 
     try {
-      return await withLockedChatRoom(roomId, async (tx) => {
-        await assertAllianceChatMembership(tx, userId, roomId);
-        await assertAllianceChatOpen(tx, roomId);
-        const participant = await tx.chatRoomParticipant.findUnique({
-          where: { roomId_userId: { roomId, userId } },
-          include: { room: { select: { allianceId: true } } },
-        });
+      // Validation runs WITHOUT the room lock: these are read-only checks,
+      // and holding the write mutex across them serialized every send in a
+      // room behind ~1 s of query round trips on the Workers path — lock
+      // queues then expired Prisma's 5 s interactive-transaction timeout
+      // from ~5 concurrent senders (realtime-pilot.md §8, 2026-10-19
+      // ladder). Accepted race: a membership revoked between check and
+      // insert can land one in-flight message.
+      await assertAllianceChatMembership(prisma, userId, roomId);
+      await assertAllianceChatOpen(prisma, roomId);
+      const participant = await prisma.chatRoomParticipant.findUnique({
+        where: { roomId_userId: { roomId, userId } },
+        include: { room: { select: { allianceId: true } } },
+      });
 
-        if (!participant || !participant.canWrite) {
-          throw new Error('Cannot send message in this room.');
-        }
+      if (!participant || !participant.canWrite) {
+        throw new Error('Cannot send message in this room.');
+      }
 
-        if (participant.room.allianceId) {
-          const membership = await tx.alliance_memberships.findUnique({
-            where: {
-              unique_alliance_user: {
-                alliance_id: participant.room.allianceId,
-                user_id: userId,
-              },
+      if (participant.room.allianceId) {
+        const membership = await prisma.alliance_memberships.findUnique({
+          where: {
+            unique_alliance_user: {
+              alliance_id: participant.room.allianceId,
+              user_id: userId,
             },
-          });
-          if (!membership) {
-            throw new Error('Not an alliance member.');
-          }
+          },
+        });
+        if (!membership) {
+          throw new Error('Not an alliance member.');
         }
+      }
 
-        if (clientMessageId) {
-          const existing = await tx.chatMessage.findUnique({
-            where: {
-              roomId_senderId_clientMessageId: {
-                roomId,
-                senderId: userId,
-                clientMessageId,
+      let validReplyToId: number | null = null;
+      if (replyToMessageId) {
+        const repliedTo = await prisma.chatMessage.findUnique({
+          where: { id: replyToMessageId, roomId },
+        });
+        if (!repliedTo) {
+          throw new Error('Cannot reply to this message.');
+        }
+        validReplyToId = repliedTo.id;
+      }
+
+      let validSharedAttackLogId: number | null = null;
+      if (messageType === 'ATTACK_LOG_SHARE' && sharedAttackLogId) {
+        // Unknown and unreadable logs get the same answer.
+        const canShare = await MessagingService.checkLogSharePermission(
+          userId,
+          sharedAttackLogId,
+          prisma,
+        );
+        if (!canShare) {
+          throw new Error('No permission to share this log.');
+        }
+        validSharedAttackLogId = sharedAttackLogId;
+      } else if (messageType !== 'TEXT') {
+        throw new Error('Unsupported message type.');
+      }
+
+      // Write phase under the room lock: recheck participation (a removal
+      // serialized on this same lock must still win), the clientMessageId
+      // dedup (a retry racing its original must see the first insert), then
+      // the write set only. Validation above ran lock-free, so the lock
+      // queue contains just these few statements; the raised timeout
+      // absorbs deep queues on slow paths.
+      return await withLockedChatRoom(
+        roomId,
+        async (tx) => {
+          const stillParticipant = await tx.chatRoomParticipant.findUnique({
+            where: { roomId_userId: { roomId, userId } },
+            select: { canWrite: true },
+          });
+          if (!stillParticipant || !stillParticipant.canWrite) {
+            throw new Error('Cannot send message in this room.');
+          }
+
+          if (clientMessageId) {
+            const existing = await tx.chatMessage.findUnique({
+              where: {
+                roomId_senderId_clientMessageId: {
+                  roomId,
+                  senderId: userId,
+                  clientMessageId,
+                },
               },
+              include: CHAT_MESSAGE_RELATIONS,
+            });
+            if (existing) return { ...existing, deduplicated: true };
+          }
+
+          const newMessage = await tx.chatMessage.create({
+            data: {
+              roomId,
+              senderId: userId,
+              content: richContent
+                ? chatPlainText(richContent.doc).trim()
+                : content,
+              richContent: richContent
+                ? JSON.parse(JSON.stringify(richContent))
+                : undefined,
+              clientMessageId,
+              messageType,
+              replyToMessageId: validReplyToId,
+              sharedAttackLogId: validSharedAttackLogId,
             },
             include: CHAT_MESSAGE_RELATIONS,
           });
-          if (existing) return { ...existing, deduplicated: true };
-        }
 
-        let validReplyToId: number | null = null;
-        if (replyToMessageId) {
-          const repliedTo = await tx.chatMessage.findUnique({
-            where: { id: replyToMessageId, roomId },
+          await tx.chatRoom.update({
+            where: { id: roomId },
+            data: { updatedAt: new Date() },
           });
-          if (!repliedTo) {
-            throw new Error('Cannot reply to this message.');
+
+          if (
+            newMessage.messageType === 'ATTACK_LOG_SHARE' &&
+            newMessage.sharedAttackLogId
+          ) {
+            await MessagingService.grantAclToParticipants(
+              newMessage.sharedAttackLogId,
+              roomId,
+              userId,
+              tx,
+            );
           }
-          validReplyToId = repliedTo.id;
-        }
 
-        let validSharedAttackLogId: number | null = null;
-        if (messageType === 'ATTACK_LOG_SHARE' && sharedAttackLogId) {
-          // Unknown and unreadable logs get the same answer.
-          const canShare = await MessagingService.checkLogSharePermission(
-            userId,
-            sharedAttackLogId,
-            tx,
-          );
-          if (!canShare) {
-            throw new Error('No permission to share this log.');
-          }
-          validSharedAttackLogId = sharedAttackLogId;
-        } else if (messageType !== 'TEXT') {
-          throw new Error('Unsupported message type.');
-        }
-
-        const newMessage = await tx.chatMessage.create({
-          data: {
-            roomId,
-            senderId: userId,
-            content: richContent
-              ? chatPlainText(richContent.doc).trim()
-              : content,
-            richContent: richContent
-              ? JSON.parse(JSON.stringify(richContent))
-              : undefined,
-            clientMessageId,
-            messageType,
-            replyToMessageId: validReplyToId,
-            sharedAttackLogId: validSharedAttackLogId,
-          },
-          include: CHAT_MESSAGE_RELATIONS,
-        });
-
-        await tx.chatRoom.update({
-          where: { id: roomId },
-          data: { updatedAt: new Date() },
-        });
-
-        if (
-          newMessage.messageType === 'ATTACK_LOG_SHARE' &&
-          newMessage.sharedAttackLogId
-        ) {
-          await MessagingService.grantAclToParticipants(
-            newMessage.sharedAttackLogId,
-            roomId,
-            userId,
-            tx,
-          );
-        }
-
-        return newMessage;
-      });
+          return newMessage;
+        },
+        { timeoutMs: 15_000 },
+      );
     } catch (error) {
       logError('Error sending realtime message', {
         userId,
@@ -1207,6 +1265,7 @@ export class MessagingService {
                 id: true,
                 display_name: true,
                 avatar: true,
+                race: true,
                 supporter_until: true,
               },
             },
@@ -1233,6 +1292,7 @@ export class MessagingService {
             id: message.sender.id,
             display_name: message.sender.display_name,
             avatar: message.sender.avatar,
+            race: message.sender.race,
             supporterUntil:
               message.sender.supporter_until?.toISOString() ?? null,
           },
@@ -1414,6 +1474,7 @@ export class MessagingService {
               id: true,
               display_name: true,
               avatar: true,
+              race: true,
               last_active: true,
             },
           },
@@ -1429,6 +1490,7 @@ export class MessagingService {
         joinedAt: p.joinedAt,
         display_name: p.user.display_name,
         avatar: p.user.avatar,
+        race: p.user.race,
         is_online: p.user.last_active
           ? new Date().getTime() - new Date(p.user.last_active).getTime() <
             5 * 60 * 1000

@@ -769,10 +769,6 @@ class UserModel {
     return this.economyService.getMaximumBankDeposits();
   }
 
-  get bankCap(): number {
-    return this.economyService.getBankCap();
-  }
-
   // Recruit / session helpers
   get recruitingLink(): string {
     return md5(this.id.toString());

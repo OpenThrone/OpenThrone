@@ -127,7 +127,11 @@
     "veteranTitleNone": "Keiner",
     "veteranTitleERA1_TESTER": "Ära-1-Tester",
     "veteranSince": "Veteran seit (ursprüngliches Beitrittsdatum)",
-    "veteranSinceHelp": "ISO-Datum der Erstellung des ursprünglichen Kontos. Wird geleert, wenn der Titel entfernt wird."
+    "veteranSinceHelp": "ISO-Datum der Erstellung des ursprünglichen Kontos. Wird geleert, wenn der Titel entfernt wird.",
+    "duesArrears": "Offene Allianzbeiträge (Gold)",
+    "duesArrearsHelp": "Offene Beiträge, vor neuen Beiträgen eingezogen. 0 löscht sie.",
+    "duesArrearsMax": "Höchstens {{max}} Gold",
+    "duesLeaderExempt": "Anführer: zahlt keine Beiträge"
   },
   "actions": {
     "edit": "Bearbeiten",

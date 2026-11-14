@@ -29,6 +29,10 @@ export function installMockPrisma(vi: any) {
     findMany: vi.fn(async () => []),
     findUnique: vi.fn(async () => null),
   };
+  mockPrisma.consentTally = {
+    upsert: vi.fn(),
+    findMany: vi.fn(async () => []),
+  };
   mockPrisma.forceContract = {
     findMany: vi.fn(async () => []),
     findFirst: vi.fn(async () => null),
@@ -70,6 +74,7 @@ export function installMockPrisma(vi: any) {
     updateMany: vi.fn(async () => ({ count: 0 })),
   };
   mockPrisma.cronRun = {
+    findFirst: vi.fn(async () => null),
     create: vi.fn(async () => ({ id: 1 })),
     update: vi.fn(async () => ({})),
     deleteMany: vi.fn(async () => ({ count: 0 })),

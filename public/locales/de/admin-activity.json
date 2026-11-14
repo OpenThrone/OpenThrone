@@ -158,5 +158,49 @@
       "SPY": "Spionage",
       "SENTRY": "Wache"
     }
+  },
+  "traffic": {
+    "title": "Seitenzugriffe",
+    "range": "Zeitraum",
+    "days7": "Letzte 7 Tage",
+    "days30": "Letzte 30 Tage",
+    "days90": "Letzte 90 Tage",
+    "loadError": "Zugriffsdaten konnten nicht geladen werden",
+    "retryHint": "Bitte gleich noch einmal versuchen.",
+    "gaError": "Google Analytics antwortet nicht",
+    "setup": {
+      "title": "Google Analytics ist nicht eingerichtet",
+      "intro": "Setze diese Umgebungsvariablen (nur Namen; Werte gehören in den Geheimnisspeicher), um hier Zugriffe zu sehen:",
+      "steps": "Einrichtung: GA4-Property anlegen, Google-Cloud-Dienstkonto anlegen, die Google Analytics Data API aktivieren, die E-Mail des Dienstkontos als Viewer auf die Property setzen, dann die Variablen oben setzen und ausrollen."
+    },
+    "totals": {
+      "activeUsers": "Aktive Nutzer",
+      "newUsers": "Neue Nutzer",
+      "sessions": "Sitzungen",
+      "screenPageViews": "Seitenaufrufe",
+      "averageSessionDuration": "Ø Sitzung",
+      "engagementRate": "Interaktion",
+      "realtime": "Jetzt aktiv (30 Min.)"
+    },
+    "trendTitle": "Zugriffsverlauf",
+    "topPages": "Top-Seiten",
+    "pagePath": "Seite",
+    "views": "Aufrufe",
+    "users": "Nutzer",
+    "sources": "Zugriffsquellen",
+    "source": "Quelle / Medium",
+    "countries": "Länder",
+    "country": "Land",
+    "devices": "Geräte",
+    "device": "Gerät",
+    "empty": "Keine Daten in diesem Zeitraum.",
+    "consent": {
+      "title": "Cookie-Einwilligung",
+      "granted": "Angenommen",
+      "denied": "Abgelehnt",
+      "optInRate": "Opt-in-Quote",
+      "noChoices": "—",
+      "note": "Google Analytics zählt nur Besucher, die Analyse-Cookies akzeptiert haben; die Zählung oben erfasst jede ausdrückliche Wahl."
+    }
   }
 }

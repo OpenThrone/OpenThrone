@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+import {
+  ALLIANCE_DEPOSIT_WINDOW_MS,
+  ALLIANCE_LIMIT_CODES,
+  AllianceLimitError,
+  getAllianceLevel,
+} from '@/constants/allianceLevels';
 import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import {
   ALLIANCE_NOTE_MAX_LENGTH,
@@ -8,10 +14,7 @@ import {
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { AllianceTransactionType } from '@/lib/prisma-exports';
-import {
-  assertAllianceActive,
-  assertAllianceIdActive,
-} from '@/services/allianceStatus';
+import { assertAllianceActive } from '@/services/allianceStatus';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { getMaxDeposit } from '@/utils/bankLimits';
@@ -54,6 +57,64 @@ export const lockAllianceThenUsers = async (
   for (const userId of orderedIds) {
     await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
   }
+};
+
+/** A member's deposit slots in the rolling 24-hour window. */
+export interface DepositWindow {
+  /** Deposits made in the last 24 hours. */
+  used: number;
+  /** Deposits allowed per 24 hours at the alliance's level. */
+  limit: number;
+  /** When the next slot opens; null while a slot is free. */
+  nextSlotAt: Date | null;
+}
+
+/**
+ * Counts a member's DEPOSIT rows for the alliance in the last 24 hours. When
+ * every slot is used, the next one opens 24 hours after the deposit that
+ * must expire to bring the count below the limit (the limit can drop below
+ * `used` when an admin lowers the hall level).
+ */
+export const getDepositWindow = async (
+  tx: Pick<Prisma.TransactionClient, 'alliance_bank_history'>,
+  allianceId: number,
+  userId: number,
+  limit: number,
+  now: Date = new Date(),
+): Promise<DepositWindow> => {
+  const since = new Date(now.getTime() - ALLIANCE_DEPOSIT_WINDOW_MS);
+  const rows = await tx.alliance_bank_history.findMany({
+    where: {
+      alliance_id: allianceId,
+      performed_by_user_id: userId,
+      transaction_type: AllianceTransactionType.DEPOSIT,
+      created_at: { gt: since },
+    },
+    select: { created_at: true },
+    orderBy: { created_at: 'asc' },
+  });
+  const used = rows.length;
+  const blocking = used >= limit ? rows[used - limit] : undefined;
+  return {
+    used,
+    limit,
+    nextSlotAt: blocking
+      ? new Date(
+          new Date(blocking.created_at).getTime() + ALLIANCE_DEPOSIT_WINDOW_MS,
+        )
+      : null,
+  };
+};
+
+/** "3h 12m" until `at`, rounded up to the minute. */
+const formatWait = (at: Date, now: Date): string => {
+  const minutes = Math.max(
+    1,
+    Math.ceil((at.getTime() - now.getTime()) / 60000),
+  );
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 
 /**
@@ -204,7 +265,14 @@ export class AllianceBankService {
         await lockAllianceThenUsers(tx, validatedData.allianceId, [
           validatedData.userId,
         ]);
-        await assertAllianceIdActive(tx, validatedData.allianceId);
+        // The alliance row is locked, so its level and balance are committed.
+        const alliance = await tx.alliances.findUnique({
+          where: { id: validatedData.allianceId },
+          select: { status: true, hall_level: true, gold_in_bank: true },
+        });
+        if (!alliance) throw new Error('Alliance not found');
+        assertAllianceActive(alliance);
+        const level = getAllianceLevel(alliance.hall_level);
 
         const membership = await tx.alliance_memberships.count({
           where: {
@@ -227,6 +295,48 @@ export class AllianceBankService {
         if (validatedData.amount > getMaxDeposit(depositor.gold, capPercent)) {
           throw new Error(
             `You can deposit at most ${capPercent}% of the gold you hold at once`,
+          );
+        }
+
+        // Deposits per member per rolling 24 hours, set by the hall level.
+        const now = new Date();
+        const window = await getDepositWindow(
+          tx,
+          validatedData.allianceId,
+          validatedData.userId,
+          level.depositsPer24h,
+          now,
+        );
+        if (window.nextSlotAt) {
+          throw new AllianceLimitError(
+            ALLIANCE_LIMIT_CODES.depositSlots,
+            `Deposit limit reached: ${level.name} allows ${level.depositsPer24h} deposits per member every 24 hours. Your next deposit opens in ${formatWait(window.nextSlotAt, now)}. Upgrade the Alliance Hall to raise it.`,
+            {
+              level: level.level,
+              limit: level.depositsPer24h,
+              waitMinutes: Math.max(
+                1,
+                Math.ceil(
+                  (window.nextSlotAt.getTime() - now.getTime()) / 60000,
+                ),
+              ),
+            },
+          );
+        }
+
+        // Treasury cap: only deposits are capped (repayments, dues are not).
+        const balance = BigInt(alliance.gold_in_bank ?? 0n);
+        if (balance + validatedData.amount > level.treasuryCap) {
+          const room =
+            level.treasuryCap > balance ? level.treasuryCap - balance : 0n;
+          throw new AllianceLimitError(
+            ALLIANCE_LIMIT_CODES.treasuryCap,
+            `Treasury cap reached: ${level.name} holds at most ${level.treasuryCap.toLocaleString('en-US')} gold, so you can deposit at most ${room.toLocaleString('en-US')} more. Upgrade the Alliance Hall to raise it.`,
+            {
+              level: level.level,
+              cap: Number(level.treasuryCap),
+              room: Number(room),
+            },
           );
         }
 

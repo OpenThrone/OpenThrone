@@ -95,5 +95,33 @@
   "reserveConfirm": "¿Reservar {{name}}? Sus funciones se cierran para todos los miembros hasta que se reactive; los miembros aún pueden abandonarla. La tesorería, los préstamos y las guerras no se tocan.",
   "reactivate": "Reactivar",
   "reactivateTitle": "Reactivar alianza",
-  "reactivateConfirm": "¿Reactivar {{name}} sin cobrar al líder?"
+  "reactivateConfirm": "¿Reactivar {{name}} sin cobrar al líder?",
+  "colHallLevel": "Nivel del salón",
+  "hallLevelLabel": "Nivel del Salón de la alianza",
+  "hallLevelHint": "Miembros: {{members}} de {{cap}} en el nivel actual. Bajarlo conserva a todos los miembros y todo el oro del tesoro.",
+  "hallLevelSet": "Fijar nivel",
+  "hallLevelConfirm": "¿Cambiar el Salón de la alianza de {{name}} del nivel {{from}} al nivel {{to}}? No se cobra ni se devuelve oro.",
+  "hallLevels": {
+    "0": "Campamento",
+    "1": "Salón",
+    "2": "Gran salón",
+    "3": "Torreón",
+    "4": "Ciudadela",
+    "5": "Fortaleza"
+  },
+  "duesHeading": "Cuota de ingreso y aportaciones",
+  "duesJoinFee": "Cuota de ingreso (oro)",
+  "duesMax": "Como máximo {{max}} de oro",
+  "duesPeriod": "Cobro de aportaciones",
+  "duesPeriods": {
+    "NONE": "Sin aportaciones",
+    "DAILY": "Diario",
+    "WEEKLY": "Semanal",
+    "MONTHLY": "Mensual"
+  },
+  "duesAmount": "Aportación por miembro (oro)",
+  "duesAmountNone": "Elige un periodo para fijar aportaciones",
+  "duesConfirm": "¿Fijar para {{name}} una cuota de {{fee}} de oro y aportaciones de {{amount}} de oro ({{period}})? Un periodo nuevo cuenta desde ahora; las deudas existentes se mantienen.",
+  "duesSave": "Guardar cuota y aportaciones",
+  "colDuesArrears": "Aportaciones debidas"
 }

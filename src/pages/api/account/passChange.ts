@@ -13,6 +13,13 @@ const guardedHandler = withApiGuard({
   rateLimitProfile: 'password_reset',
 });
 
+/** Errors from AccountService.resetPasswordWithCode that are the caller's, not ours. */
+const INVALID_CODE_ERRORS = new Set([
+  'Invalid verification code',
+  'User not found',
+]);
+const TOO_MANY_ATTEMPTS = 'Too many verification attempts. Request a new code.';
+
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed!' });
@@ -44,6 +51,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     return res.json(result);
   } catch (error: any) {
+    const message = error instanceof Error ? error.message : '';
+    // A wrong or used code and an unknown address get the same answer as
+    // /api/account/verify, so the response does not reveal which accounts
+    // exist. Only genuine faults are a 500.
+    if (INVALID_CODE_ERRORS.has(message)) {
+      return res.status(400).json({
+        status: false,
+        error: 'Invalid or expired verification code',
+      });
+    }
+    if (message === TOO_MANY_ATTEMPTS) {
+      return res.status(429).json({ status: false, error: TOO_MANY_ATTEMPTS });
+    }
     return res.status(500).json({
       status: false,
       error: 'Internal server error',

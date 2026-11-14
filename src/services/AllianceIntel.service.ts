@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+import {
+  ALLIANCE_RULE_CODES,
+  AllianceRuleError,
+} from '@/constants/allianceErrors';
 import type { AlliancePermissionKey } from '@/constants/alliancePermissions';
 import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import prisma from '@/lib/prisma';
@@ -223,6 +227,8 @@ export class AllianceIntelService {
           id: true,
           attacker_id: true,
           defender_id: true,
+          type: true,
+          winner: true,
           acl: {
             select: {
               shared_with_user_id: true,
@@ -365,6 +371,25 @@ export class AllianceIntelService {
       });
       if (targetMembership || alliance.leader_id === target.id) {
         throw new Error('You cannot call a member of your own alliance');
+      }
+
+      // One open call per target and type: a second click or a teammate's
+      // duplicate would otherwise list the same call twice.
+      const duplicate = await tx.alliance_target_calls.findFirst({
+        where: {
+          alliance_id: alliance.id,
+          target_user_id: target.id,
+          call_type: data.callType,
+          status: 'OPEN',
+        },
+        select: { id: true },
+      });
+      if (duplicate) {
+        throw new AllianceRuleError(
+          ALLIANCE_RULE_CODES.callDuplicate,
+          `A ${CALL_LABEL[data.callType].toLowerCase()} call on ${target.display_name} is already open`,
+          { name: target.display_name, callType: data.callType },
+        );
       }
 
       const call = await tx.alliance_target_calls.create({

@@ -76,7 +76,7 @@
     "description": "Gold ist das Lebensblut Ihres Imperiums. Verwalten Sie es klug — was Sie nicht schützen, wird jemand anderes nehmen.",
     "bank": {
       "title": "Bank",
-      "text": "Zahlen Sie Gold ein, damit Plünderer es nicht nehmen können. Wirtschafts-Upgrades erhöhen, wie viel Sie pro Tag einzahlen können und wie viel die Bank fasst."
+      "text": "Zahlen Sie Gold ein, damit Plünderer es nicht nehmen können. Die Bank fasst unbegrenzt viel Gold; Wirtschafts-Upgrades erhöhen, wie oft Sie pro Tag einzahlen können."
     },
     "armory": {
       "title": "Waffenkammer",
@@ -96,7 +96,7 @@
     },
     "economyUpgrades": {
       "title": "Wirtschafts-Upgrades",
-      "text": "Ebenfalls unter Verbesserungen. Farmen, Märkte und Minen erhöhen das Gold, das jeder Arbeiter verdient, und wie viel Ihre Bank aufnehmen kann."
+      "text": "Ebenfalls unter Verbesserungen. Farmen, Märkte und Minen erhöhen das Gold, das jeder Arbeiter verdient, und wie oft Sie pro Tag einzahlen können."
     },
     "transfers": {
       "title": "Goldüberweisungen"
@@ -128,15 +128,17 @@
     "stamina": {
       "title": "Ausdauer"
     },
-      "experience": {
-        "title": "Erfahrung und Stufen",
-        "text": "Erfahrung (EP) gibt es im Kampf. Ein gewonnener Angriff bringt am meisten, abhängig von den eingesetzten Zügen, dem Stufenunterschied und davon, wie knapp der Kampf war. Ein verlorener Angriff bringt einen kleineren Anteil, aber nur bei einem echten Kampf: nichts unter {{effortFloor}} % der Stärke des Verteidigers, den vollen Anteil ab {{effortFull}} %. Verteidiger erhalten bei jedem Angriff EP, mehr fürs Standhalten als fürs Fallen, abhängig von der Größe der Bedrohung (mindestens {{threatFloor}} %). Bleiben Sie länger als {{graceDays}} Spieltage auf einer Stufe, steigen die EP aus erlittenen Angriffen um {{stallStep}} % pro weiterem Spieltag, bis zum {{stallMax}}-Fachen, damit sich niemand auf niedrigen Stufen verstecken kann. Spionagemissionen geben keine EP. Die Übersicht zeigt, wie viele EP Ihnen bis zur nächsten Stufe fehlen; jede Stufe gibt einen Kompetenzpunkt und schaltet an Meilensteinen neue Gebäude frei."
-      }
+    "experience": {
+      "title": "Erfahrung und Stufen",
+      "text": "Erfahrung (EP) gibt es im Kampf. Ein gewonnener Angriff bringt am meisten, abhängig von den eingesetzten Zügen, dem Stufenunterschied und davon, wie knapp der Kampf war. Ein verlorener Angriff bringt einen kleineren Anteil, aber nur bei einem echten Kampf: nichts unter {{effortFloor}} % der Stärke des Verteidigers, den vollen Anteil ab {{effortFull}} %. Verteidiger erhalten bei jedem Angriff EP, mehr fürs Standhalten als fürs Fallen, abhängig von der Größe der Bedrohung (mindestens {{threatFloor}} %). Bleiben Sie länger als {{graceDays}} Spieltage auf einer Stufe, steigen die EP aus erlittenen Angriffen um {{stallStep}} % pro weiterem Spieltag, bis zum {{stallMax}}-Fachen, damit sich niemand auf niedrigen Stufen verstecken kann. Spionagemissionen geben keine EP. Die Übersicht zeigt, wie viele EP Ihnen bis zur nächsten Stufe fehlen; jede Stufe gibt einen Kompetenzpunkt und schaltet an Meilensteinen neue Gebäude frei."
+    }
   },
   "alliances": {
     "title": "Allianzen",
     "description": "Kein Kommandant herrscht allein. Treten Sie einer Allianz bei oder gründen Sie eine für gegenseitigen Schutz, koordinierte Angriffe und geteilten Ruhm.",
-    "eraReserve": "Allianzen überstehen eine neue Ära. Wenn eine Ära endet, wird jede Allianz reserviert: Name, Mitglieder, Ränge und Bilder bleiben erhalten, aber Schatzkammer, Kredite, Truppenverträge und Kriege werden beendet und ihre Funktionen bleiben gesperrt. Mitglieder können jederzeit austreten. Der Anführer reaktiviert die Allianz in der neuen Ära, indem er Stufe 10 erreicht und 10.000.000 Gold zahlt (Admins können beide Werte ändern)."
+    "eraReserve": "Allianzen überstehen eine neue Ära. Wenn eine Ära endet, wird jede Allianz reserviert: Name, Mitglieder, Ränge und Bilder bleiben erhalten, aber Schatzkammer, Kredite, Truppenverträge und Kriege werden beendet und ihre Funktionen bleiben gesperrt. Mitglieder können jederzeit austreten. Der Anführer reaktiviert die Allianz in der neuen Ära, indem er Stufe 10 erreicht und 10.000.000 Gold zahlt (Admins können beide Werte ändern).",
+    "hall": "Jede Allianz hat eine Stufe der Allianzhalle, vom Lager bis zum Bollwerk. Sie bestimmt, wie viele Mitglieder die Allianz aufnehmen kann (10 im Lager, bis zu 100), wie oft jedes Mitglied pro 24 Stunden einzahlen darf (2 im Lager, bis zu 8) und bis zu welcher Summe Einzahlungen die Schatzkammer füllen dürfen (5.000.000 im Lager, bis zu 10.000.000.000). Der Anführer oder ein Rang mit „Ausbau kaufen“ kauft die nächste Stufe mit Gold aus der Schatzkammer im Reiter Ausbau der Allianz, der Kosten, benötigte Mitglieder und Grenzen jeder Stufe zeigt. Eine neue Ära setzt die Halle auf das Lager zurück.",
+    "dues": "Eine Allianz kann eine Beitrittsgebühr verlangen, die beim Beitritt einmal aus Ihrem Gold auf der Hand bezahlt wird (bis 10.000.000 Gold), und Mitgliedsbeiträge, die zu Beginn jedes Tages, jeder Woche oder jedes Monats von jedem Mitglied außer dem Anführer eingezogen werden (bis 1.000.000, 5.000.000 oder 20.000.000 Gold pro Mitglied). Sie sehen und bestätigen beides vor dem Beitritt. Beiträge, die Sie nicht zahlen können, schulden Sie; sie werden beim nächsten Einzug zuerst eingezogen oder auf der Allianzseite bezahlt, und niemand wird deswegen entfernt. Der Anführer oder ein Rang mit „Beitrittsgebühr und Beiträge festlegen“ legt sie im Reiter Einstellungen fest."
   },
   "cta": {
     "createCommander": "Kommandant erstellen",

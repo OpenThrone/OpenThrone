@@ -9,6 +9,7 @@ const {
   getRoomShareRecipientIds,
   grantAttackLogAccessToRoom,
   ownSpyMissionsWhere,
+  readableAttackLogWhere,
 } = await import('@/services/AttackLogAccess.service');
 
 // Synthetic IDs; none correspond to real players, rooms or alliances.
@@ -57,11 +58,14 @@ beforeEach(() => {
   };
 });
 
-const log = (acl: any[] = []) => ({
+const log = (acl: any[] = [], fields: Record<string, unknown> = {}) => ({
   id: 100,
   attacker_id: ATTACKER_ID,
   defender_id: DEFENDER_ID,
+  type: 'attack',
+  winner: ATTACKER_ID,
   acl,
+  ...fields,
 });
 
 describe('canReadAttackLog', () => {
@@ -93,6 +97,41 @@ describe('canReadAttackLog', () => {
   it('denies everyone else, including staff (no staff exemption)', async () => {
     mockPrisma.staffRoleAssignment.findFirst.mockResolvedValue({ id: 1 });
     expect(await canReadAttackLog(OUTSIDER_ID, log())).toBe(false);
+  });
+
+  it('hides a spy mission that got through from its target', async () => {
+    const gotThrough = log([], { type: 'INTEL', winner: ATTACKER_ID });
+    expect(await getAttackLogViewerRole(DEFENDER_ID, gotThrough)).toBeNull();
+    expect(await getAttackLogViewerRole(ATTACKER_ID, gotThrough)).toBe(
+      'attacker',
+    );
+  });
+
+  it('shows the target a spy mission their sentries stopped', async () => {
+    const stopped = log([], { type: 'ASSASSINATE', winner: DEFENDER_ID });
+    expect(await getAttackLogViewerRole(DEFENDER_ID, stopped)).toBe('defender');
+  });
+
+  it('keeps the defender on a log whose type was not loaded', async () => {
+    const { type: _type, ...untyped } = log([], { winner: ATTACKER_ID });
+    expect(await getAttackLogViewerRole(DEFENDER_ID, untyped as never)).toBe(
+      'defender',
+    );
+  });
+
+  it('lets the target read a successful mission the spy shared with them', async () => {
+    const shared = log(
+      [{ shared_with_user_id: DEFENDER_ID, shared_with_alliance_id: null }],
+      { type: 'INFILTRATE', winner: ATTACKER_ID },
+    );
+    expect(await getAttackLogViewerRole(DEFENDER_ID, shared)).toBe('shared');
+  });
+
+  it('limits the defender branch of readable logs to battles and stopped missions', () => {
+    expect(readableAttackLogWhere(DEFENDER_ID, []).OR).toContainEqual({
+      defender_id: DEFENDER_ID,
+      OR: [{ type: 'attack' }, { winner: DEFENDER_ID }],
+    });
   });
 
   it('denies missing logs and invalid viewer IDs', async () => {

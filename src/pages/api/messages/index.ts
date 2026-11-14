@@ -3,7 +3,7 @@ import type { Session } from 'next-auth'; // Import Session type
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
-import { getSocketIO } from '@/lib/socket';
+import { emitToUsers, isUserPushEnabled } from '@/lib/realtime';
 import { withAuth } from '@/middleware/auth';
 import { MessagingService } from '@/services/Messaging.service';
 import { logDebug, logError, logInfo } from '@/utils/logger';
@@ -57,46 +57,42 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         isPrivate,
       });
 
-      if (message?.trim()) {
-        const io = getSocketIO();
-        if (io) {
-          const [latestMessage, participants] = await Promise.all([
-            prisma.chatMessage.findFirst({
-              where: { roomId: result.id },
-              orderBy: { sentAt: 'desc' },
-              select: {
-                id: true,
-                sentAt: true,
-                content: true,
-                sender: { select: { id: true, display_name: true } },
-              },
-            }),
-            prisma.chatRoomParticipant.findMany({
-              where: { roomId: result.id, userId: { not: userId } },
-              select: { userId: true },
-            }),
-          ]);
+      if (message?.trim() && isUserPushEnabled()) {
+        const [latestMessage, participants] = await Promise.all([
+          prisma.chatMessage.findFirst({
+            where: { roomId: result.id },
+            orderBy: { sentAt: 'desc' },
+            select: {
+              id: true,
+              sentAt: true,
+              content: true,
+              sender: { select: { id: true, display_name: true } },
+            },
+          }),
+          prisma.chatRoomParticipant.findMany({
+            where: { roomId: result.id, userId: { not: userId } },
+            select: { userId: true },
+          }),
+        ]);
 
-          if (latestMessage) {
-            const notificationPayload = {
-              id: latestMessage.id,
-              senderId: latestMessage.sender.id,
-              senderName: latestMessage.sender.display_name,
-              content:
-                latestMessage.content.substring(0, 50) +
-                (latestMessage.content.length > 50 ? '...' : ''),
-              timestamp: latestMessage.sentAt.toISOString(),
-              isRead: false,
-              chatRoomId: result.id,
-            };
+        if (latestMessage) {
+          const notificationPayload = {
+            id: latestMessage.id,
+            senderId: latestMessage.sender.id,
+            senderName: latestMessage.sender.display_name,
+            content:
+              latestMessage.content.substring(0, 50) +
+              (latestMessage.content.length > 50 ? '...' : ''),
+            timestamp: latestMessage.sentAt.toISOString(),
+            isRead: false,
+            chatRoomId: result.id,
+          };
 
-            participants.forEach((p) => {
-              io.to(`user-${p.userId}`).emit(
-                'newMessageNotification',
-                notificationPayload,
-              );
-            });
-          }
+          await emitToUsers(
+            participants.map((p) => p.userId),
+            'newMessageNotification',
+            notificationPayload,
+          );
         }
       }
 

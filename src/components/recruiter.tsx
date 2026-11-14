@@ -3,11 +3,18 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import { useTranslation } from 'next-i18next';
 import React, { useEffect, useRef } from 'react';
 
+import AltchaChallenge from '@/components/AltchaChallenge';
 import Image from '@/components/ArtworkImage';
 import { GameCard } from '@/components/game/GameCard';
 import { getAssetPath, getLevelFromXP } from '@/utils/utilities';
 
-const Recruiter = ({ user, showCaptcha, onSuccess, status }) => {
+const Recruiter = ({
+  user,
+  showCaptcha,
+  captchaProvider = 'turnstile',
+  onSuccess,
+  status,
+}) => {
   const { t } = useTranslation('common');
   const firedRef = useRef(false);
   const onSuccessRef = useRef(onSuccess);
@@ -56,10 +63,19 @@ const Recruiter = ({ user, showCaptcha, onSuccess, status }) => {
         <div className="container mx-auto text-center">
           {showCaptcha && (
             <div className="flex items-center justify-center">
-              <Turnstile
-                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
-                onSuccess={succeedOnce}
-              />
+              {captchaProvider === 'altcha' ? (
+                <AltchaChallenge
+                  onVerified={succeedOnce}
+                  // Auto-recruit checks once per session (see auto-recruit.tsx),
+                  // so this per-target path never shows a failure of its own.
+                  onFailed={() => undefined}
+                />
+              ) : (
+                <Turnstile
+                  siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
+                  onSuccess={succeedOnce}
+                />
+              )}
             </div>
           )}
         </div>

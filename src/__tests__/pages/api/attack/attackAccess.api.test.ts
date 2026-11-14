@@ -226,6 +226,30 @@ describe('attack log retest (RET-01)', () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
+  it('refuses the target a retest of a spy mission that got through', async () => {
+    mockPrisma.attack_log.findUnique.mockResolvedValue({
+      id: LOG_ID,
+      attacker_id: ATTACKER_ID,
+      defender_id: DEFENDER_ID,
+      type: 'INTEL',
+      winner: ATTACKER_ID,
+      acl: [],
+      stats: {},
+    });
+    const res = makeRes();
+
+    await retestRoute(
+      {
+        method: 'GET',
+        query: { id: String(LOG_ID) },
+        session: { user: { id: DEFENDER_ID } },
+      },
+      res,
+    );
+
+    expect(res.status).not.toHaveBeenCalledWith(200);
+  });
+
   it('lets the defender retest their own log', async () => {
     const res = makeRes();
 

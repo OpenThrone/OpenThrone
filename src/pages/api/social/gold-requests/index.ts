@@ -4,7 +4,6 @@ import {
   FRIEND_TRANSFER_NOTE_MAX_LENGTH,
   parseFriendTransferAmount,
 } from '@/constants/FriendTransfer';
-import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
 import { highRiskLimiter } from '@/middleware/rateLimit';
 import { SocialService } from '@/services/Social.service';
@@ -61,13 +60,12 @@ const requestHandler = async (
       notes,
     });
 
-    const io = getSocketIO();
-    await emitGoldRequestNotification(io, {
+    await emitGoldRequestNotification({
       senderId: fromUserId,
       recipientId: Number(friendId),
     });
-    await emitSocialCountUpdate(io, Number(friendId));
-    await emitGoldRequestCountUpdate(io, Number(friendId));
+    await emitSocialCountUpdate(Number(friendId));
+    await emitGoldRequestCountUpdate(Number(friendId));
 
     return res.status(201).json(stringifyObj(result));
   } catch (error: any) {

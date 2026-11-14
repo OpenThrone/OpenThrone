@@ -4,6 +4,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 
 import { transactionTypeLabel } from '@/components/alliance/allianceLabels';
+import { AllianceDuesCard } from '@/components/alliance/AllianceMembershipDues';
 import { getAllianceStanding } from '@/components/alliance/allianceStanding';
 import { DepositForm } from '@/components/alliance/treasury/DepositForm';
 import { GoldRequestForm } from '@/components/alliance/treasury/GoldRequestForm';
@@ -30,7 +31,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export const AllianceBank = ({ alliance, onUpdate }: AllianceBankProps) => {
   const { t, i18n } = useTranslation('alliances');
   const { user } = useUser();
-  const locale = user?.locale ?? (i18n.language as Locales);
+  const locale = i18n.language as Locales;
   const [requestsKey, setRequestsKey] = useState(0);
 
   const standing = getAllianceStanding(alliance, user?.id ?? null);
@@ -68,6 +69,10 @@ export const AllianceBank = ({ alliance, onUpdate }: AllianceBankProps) => {
 
       <Grid.Col span={{ base: 12, md: 6 }}>
         <DepositForm allianceId={alliance.id} onDone={refresh} />
+      </Grid.Col>
+
+      <Grid.Col span={{ base: 12, md: 6 }}>
+        <AllianceDuesCard allianceId={alliance.id} onPaid={refresh} />
       </Grid.Col>
 
       {canManageBank && (
@@ -128,7 +133,7 @@ export const AllianceBank = ({ alliance, onUpdate }: AllianceBankProps) => {
                   <Table.Td>
                     <Text
                       c={
-                        ['DEPOSIT', 'LOAN_REPAYMENT'].includes(
+                        ['DEPOSIT', 'LOAN_REPAYMENT', 'TAX', 'FEE'].includes(
                           entry.transaction_type,
                         )
                           ? 'green'

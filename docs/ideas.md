@@ -31,6 +31,17 @@ Status is one of: **Exploring** (open design question), **Planned** (agreed, not
 | Incremental platform modernization | Parked | #19 |
 | Public GitHub repository hygiene: CI on Bun, security contact, code of conduct | Planned | #380 |
 
+## Decision models (#448)
+
+Phase A (provider layer and shadow chat moderation) and phase B (AI-guided playtesting MVP) are in [decision models](features/decision-models.md). The rest is not built.
+
+| Idea | Status | Issue |
+| --- | --- | --- |
+| Chat moderation enforcement (hide, mute) once shadow data shows an acceptable false-positive rate | Exploring | #448 |
+| Anomaly detection on gold transfers and other economy flows | Exploring | #448 |
+| AI kingdoms in the live game, and playtesting at scale for balance (live-rules mode, many seeds) | Exploring | #448 |
+| Support triage: classify and route player reports and appeals | Exploring | #448 |
+
 ## Adding an idea
 
 Open an issue, then add a row here in the same PR as any work that touches it. When an idea ships, remove its row and document it under [mechanics](mechanics/README.md). When one is rejected, remove its row and record why in [decisions](decisions/README.md) if the reason is worth keeping.

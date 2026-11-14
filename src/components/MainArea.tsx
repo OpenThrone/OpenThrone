@@ -35,6 +35,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
+import useSocialCountPush from '@/hooks/useSocialCountPush';
 
 import HeaderIconButton from './HeaderIconButton';
 import classes from './MainArea.module.css';
@@ -79,6 +80,11 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
       markRoomAsRead(roomId);
     },
     [markRoomAsRead],
+  );
+
+  useSocialCountPush(
+    Boolean(authorized && enableSocial),
+    setSocialNotificationCount,
   );
 
   useEffect(() => {

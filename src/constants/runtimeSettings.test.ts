@@ -40,6 +40,8 @@ describe('runtime setting registry', () => {
       'recruit.dailyCap',
       'recruit.internalDailyCap',
       'recruit.externalIpDailyCap',
+      'recruit.captchaProvider',
+      'recruit.altchaDifficulty',
       'era.protectionDurationDays',
       'mercenary.hireMultiplier',
       'mercenary.dailyPriceRate',
@@ -77,6 +79,7 @@ describe('runtime setting registry', () => {
       'ENABLE_GARRISON_FATIGUE',
       'SHOW_KINGDOM_MORALE',
       'SHOW_DUNGEON',
+      'ENABLE_SITE_ANALYTICS',
       'DISABLE_LOGIN',
       'DISABLE_REGISTRATION',
       'MAINTENANCE_MODE',
@@ -97,6 +100,8 @@ describe('runtime setting registry', () => {
       'abuse.fresh.accountAgeDays',
       'abuse.fresh.windowDays',
       'abuse.fresh.minAttacks',
+      'moderation.shadowEnabled',
+      'moderation.shadowBatchSize',
     ]);
     expect(isRuntimeSettingKey('DATABASE_URL')).toBe(false);
   });
@@ -221,6 +226,24 @@ describe('runtime setting registry', () => {
     expect(setting.schema.safeParse('14').success).toBe(false);
   });
 
+  it('defaults recruiting to ALTCHA and accepts only the two providers', () => {
+    const provider = RUNTIME_SETTING_REGISTRY['recruit.captchaProvider'];
+    expect(provider.fallback).toBe('altcha');
+    expect(provider.isPublic).toBe(false);
+    expect(provider.schema.safeParse('altcha').success).toBe(true);
+    expect(provider.schema.safeParse('turnstile').success).toBe(true);
+    for (const bad of ['recaptcha', '', 'ALTCHA', true, 1, null])
+      expect(provider.schema.safeParse(bad).success).toBe(false);
+  });
+
+  it('bounds the ALTCHA difficulty', () => {
+    const difficulty = RUNTIME_SETTING_REGISTRY['recruit.altchaDifficulty'];
+    expect(difficulty.schema.safeParse(difficulty.fallback).success).toBe(true);
+    expect(difficulty.schema.safeParse(99).success).toBe(false);
+    expect(difficulty.schema.safeParse(200_001).success).toBe(false);
+    expect(difficulty.schema.safeParse(1000.5).success).toBe(false);
+  });
+
   it('keeps independent recruitment allowances with the requested defaults', () => {
     expect(RUNTIME_SETTING_REGISTRY['recruit.internalDailyCap'].fallback).toBe(
       250,
@@ -257,5 +280,15 @@ describe('runtime setting labels', () => {
       );
       expect({ locale, missing }).toEqual({ locale, missing: [] });
     }
+  });
+});
+
+describe('site analytics switch', () => {
+  it('is off by default with no environment override', () => {
+    const setting = RUNTIME_SETTING_REGISTRY.ENABLE_SITE_ANALYTICS;
+    expect(setting.fallback).toBe(false);
+    expect(setting.env).toBeUndefined();
+    expect(setting.isPublic).toBe(true);
+    expect(setting.schema.safeParse('true').success).toBe(false);
   });
 });

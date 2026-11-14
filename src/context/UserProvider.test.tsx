@@ -52,9 +52,9 @@ jest.mock('@/utils/userDataFetch', () => ({
 }));
 
 const mockFetchUser = jest.fn();
-const okResult = (name: string) => ({
+const okResult = (name: string, extra: Record<string, unknown> = {}) => ({
   kind: 'ok',
-  data: { id: 7, display_name: name },
+  data: { id: 7, display_name: name, ...extra },
 });
 
 let refresh: () => void;
@@ -142,5 +142,33 @@ describe('UserProvider through a failed refresh (#362)', () => {
     await act(async () => finishOlder({ kind: 'unauthorized' }));
     expect(shown()).toBe('Newest');
     expect(mockSignOut).not.toHaveBeenCalled();
+  });
+});
+
+describe('UserProvider away notices', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (global as any).IS_REACT_ACT_ENVIRONMENT = true;
+    container = document.createElement('div');
+    root = createRoot(container);
+  });
+
+  afterEach(() => {
+    act(() => root.unmount());
+  });
+
+  it('reports attacks and spies from the time away once, not on every refresh', async () => {
+    const away = { beenAttacked: true, detectedSpy: true };
+    mockFetchUser.mockResolvedValueOnce(okResult('Rex', away));
+    await mount();
+    expect(alertService.error).toHaveBeenCalledWith('gameAlerts.awayAttacked');
+    expect(alertService.error).toHaveBeenCalledWith('gameAlerts.awaySpy');
+    expect(alertService.error).toHaveBeenCalledTimes(2);
+
+    // A refetch (after a live attack alert, or any action) still carries the
+    // flags until last_active moves on; it must not repeat the notices.
+    mockFetchUser.mockResolvedValueOnce(okResult('Rex', away));
+    await act(async () => refresh());
+    expect(alertService.error).toHaveBeenCalledTimes(2);
   });
 });

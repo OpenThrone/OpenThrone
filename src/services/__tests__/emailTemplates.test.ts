@@ -269,3 +269,82 @@ it('renders safe localized optional battle alerts with report and unsubscribe li
     }),
   ).toThrow('attack log ID');
 });
+
+describe('password reset and email change links', () => {
+  const TOKEN = 'a'.repeat(64);
+
+  it('puts the reset token and address in the fragment and hides the token in HTML', () => {
+    const rendered = renderEmail({
+      kind: 'PASSWORD_RESET',
+      locale: 'en',
+      vars: {
+        userId: 4,
+        display_name: 'Aria',
+        email: 'aria+x@example.test',
+        resetToken: TOKEN,
+      },
+    });
+    const link = `https://example.test/account/password-reset/verify#token=${TOKEN}&email=aria%2Bx%40example.test`;
+    expect(rendered.subject).toBe('Reset your OpenThrone password');
+    expect(rendered.text).toContain(link);
+    expect(rendered.text).not.toContain('token is');
+    expect(rendered.html).toContain(`href="${link.replace(/&/g, '&amp;')}"`);
+    expect(rendered.html).toContain('>Reset your password</a>');
+    // The token appears only inside the href, never as visible text.
+    expect(rendered.html.split(TOKEN).length - 1).toBe(1);
+    expect(rendered.text).not.toContain('/api/email/unsubscribe');
+  });
+
+  it('links the email change page with the token in the fragment', () => {
+    const rendered = renderEmail({
+      kind: 'EMAIL_CHANGE',
+      locale: 'de',
+      vars: { userId: 4, display_name: 'Aria', resetToken: TOKEN },
+    });
+    expect(rendered.subject).toContain('OpenThrone');
+    expect(rendered.text).toContain(
+      `https://example.test/account/email-verify#token=${TOKEN}`,
+    );
+    expect(rendered.html).toContain('>E-Mail-Adresse ändern</a>');
+    expect(rendered.html.split(TOKEN).length - 1).toBe(1);
+  });
+
+  it('localizes both templates in es', () => {
+    for (const kind of ['PASSWORD_RESET', 'EMAIL_CHANGE'] as const) {
+      const rendered = renderEmail({
+        kind,
+        locale: 'es-ES',
+        vars: { userId: 4, email: 'a@example.test', resetToken: TOKEN },
+      });
+      expect(rendered.text).toContain('caduca en 3 horas');
+    }
+  });
+
+  it('refuses to render without the token or address', () => {
+    expect(() =>
+      renderEmail({
+        kind: 'PASSWORD_RESET',
+        locale: 'en',
+        vars: { userId: 4, resetToken: TOKEN },
+      }),
+    ).toThrow('token and address');
+    expect(() =>
+      renderEmail({ kind: 'EMAIL_CHANGE', locale: 'en', vars: { userId: 4 } }),
+    ).toThrow('requires a token');
+  });
+
+  it('allows plain http only for a loopback root', () => {
+    const render = () =>
+      renderEmail({
+        kind: 'EMAIL_CHANGE',
+        locale: 'en',
+        vars: { userId: 4, resetToken: TOKEN },
+      });
+    process.env.NEXT_PUBLIC_URL_ROOT = 'http://localhost:3000';
+    expect(render().text).toContain(
+      'http://localhost:3000/account/email-verify#',
+    );
+    process.env.NEXT_PUBLIC_URL_ROOT = 'http://openthrone.example';
+    expect(render).toThrow('HTTPS');
+  });
+});

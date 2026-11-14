@@ -1,6 +1,6 @@
 # Spying and intel
 
-Last verified against code: 2026-11-06 (alpha d59b12d9)
+Last verified against code: 2026-11-13 (alpha 237e566f)
 
 Spies let you look at another kingdom (intel), damage its fort (infiltration) or kill some of its units (assassination) without a battle. Your spy force is tested against the target's sentries. Missions cost attack turns and spies, never stamina or gold, and give no XP.
 
@@ -110,8 +110,8 @@ Only units the defender's fort level lets them field (and always citizens and wo
 ### Sentries and defending
 
 - Sentries and your own spies defend you. Only sentry power counts in the entry contest. Citizens never help against spies.
-- A mission the defender stops (the mission fails) is recorded as a defender win. The defender gets a Discord alert (if opted in) and a live notice. The spy is not named.
-- A mission that gets in is not shown to the defender.
+- A mission the defender stops (the mission fails) is recorded as a defender win. The defender gets a Discord alert (if opted in) and a live notice (`spyDefenseNotification`, on both realtime transports, like the battle notice in [combat.md](combat.md)): a toast naming the mission type with a link to the report. The notice does not name the spy.
+- A mission that gets in is not shown to the defender anywhere: not in War History, the report page (opened by id it answers as for any unrelated log), the attack log API, the attack list filters, retests or the account data export. `getAttackLogViewerRole` and `defenderVisibleLogsWhere` (`AttackLogAccess.service.ts`) apply the rule; the spy can still share the report, and then the target reads it as a shared report.
 - The stats `SPY` (attacker) and `SENTRY` (defender) count missions won and lost.
 
 ### Reports

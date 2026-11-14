@@ -21,15 +21,25 @@ const ACCOUNT_EMAIL = 'synthetic-player@example.invalid';
 const ACCOUNT_ID = 501;
 
 describe('password reset code attempts', () => {
+  // Emailed links need an absolute HTTPS root (renderEmail refuses otherwise).
+  const savedUrlRoot = process.env.NEXT_PUBLIC_URL_ROOT;
+  afterEach(() => {
+    if (savedUrlRoot === undefined) delete process.env.NEXT_PUBLIC_URL_ROOT;
+    else process.env.NEXT_PUBLIC_URL_ROOT = savedUrlRoot;
+  });
+
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_URL_ROOT = 'https://example.test';
     resetMockPrisma();
     store = installRateLimitStore(mockPrisma, vi);
     mockPrisma.users.findUnique.mockResolvedValue({
       id: ACCOUNT_ID,
       email: ACCOUNT_EMAIL,
     });
-    const argon2 = require('argon2');
-    hashSpy = vi.spyOn(argon2, 'hash').mockResolvedValue('synthetic-hash');
+    const passwordHash = require('@/lib/passwordHash');
+    hashSpy = vi
+      .spyOn(passwordHash, 'hashPassword')
+      .mockResolvedValue('synthetic-hash');
   });
 
   afterEach(() => hashSpy.mockRestore());
@@ -105,7 +115,7 @@ describe('password reset code attempts', () => {
     expect(result.status).toBe(true);
     expect(result).not.toHaveProperty('userId');
     expect(result).not.toHaveProperty('info');
-    const token = /token is: ([a-f0-9]{64})/.exec(
+    const token = /email-verify#token=([a-f0-9]{64})/.exec(
       sendMail.mock.calls[0][0].text,
     )?.[1];
     expect(token).toBeDefined();
@@ -113,5 +123,6 @@ describe('password reset code attempts', () => {
       mockPrisma.passwordReset.create.mock.calls[0][0].data.verificationCode,
     ).toBe(createHash('sha256').update(token!).digest('hex'));
     transportSpy.mockRestore();
+    delete process.env.MAIL_DRIVER;
   });
 });

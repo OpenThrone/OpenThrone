@@ -38,5 +38,11 @@
     "alliance_sponsorship": "patrocinio de alianza"
   },
   "veteranClaimSubject": "Bienvenido de nuevo a OpenThrone: confirma tu legado de la Era 1",
-  "veteranClaim": "Hola, {{display_name}}:\n\nEsta dirección pertenecía a una cuenta de OpenThrone de la Era 1. Para recuperar el título de Probador de la Era 1 y tu fecha de registro original, y para recuperar tu antiguo nombre visible, abre este enlace con la sesión iniciada en tu nueva cuenta en un plazo de 30 días:\n\n{{claimLink}}\n\nSi no acabas de crear una cuenta de OpenThrone con esta dirección, la ha creado otra persona: restablece su contraseña desde la página de inicio de sesión e inicia sesión para quedártela. Todavía no se ha concedido nada."
+  "veteranClaim": "Hola, {{display_name}}:\n\nEsta dirección pertenecía a una cuenta de OpenThrone de la Era 1. Para recuperar el título de Probador de la Era 1 y tu fecha de registro original, y para recuperar tu antiguo nombre visible, abre este enlace con la sesión iniciada en tu nueva cuenta en un plazo de 30 días:\n\n{{claimLink}}\n\nSi no acabas de crear una cuenta de OpenThrone con esta dirección, la ha creado otra persona: restablece su contraseña desde la página de inicio de sesión e inicia sesión para quedártela. Todavía no se ha concedido nada.",
+  "passwordResetSubject": "Restablece tu contraseña de OpenThrone",
+  "passwordReset": "Hola, {{display_name}}:\n\nAlguien ha pedido restablecer la contraseña de tu cuenta de OpenThrone. Abre este enlace para elegir una nueva:\n\n{{resetLink}}\n\nEl enlace funciona una sola vez y caduca en 3 horas. Si no lo has pedido tú, ignora este correo: tu contraseña no cambia.",
+  "passwordResetAction": "Restablecer la contraseña",
+  "emailChangeSubject": "Confirma el cambio de tu correo de OpenThrone",
+  "emailChange": "Hola, {{display_name}}:\n\nHas pedido cambiar la dirección de correo de tu cuenta de OpenThrone. Abre este enlace con la sesión iniciada para completar el cambio:\n\n{{emailChangeLink}}\n\nEl enlace funciona una sola vez y caduca en 3 horas. Si no lo has pedido tú, ignora este correo y cambia tu contraseña.",
+  "emailChangeAction": "Cambiar la dirección de correo"
 }

@@ -1,7 +1,6 @@
 // pages/api/social/remove.ts
 import type { NextApiResponse } from 'next';
 
-import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -32,7 +31,7 @@ const removeSocialRelation = async (
     });
 
     if (relationshipType === 'FRIEND') {
-      await emitSocialCountUpdate(getSocketIO(), Number(friendId));
+      await emitSocialCountUpdate(Number(friendId));
     }
 
     res.status(200).json(result);

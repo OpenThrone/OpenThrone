@@ -7,6 +7,19 @@ import {
 } from '@/constants/FriendRequests';
 import { FRIEND_TRANSFER_MIN_LEVEL_DEFAULT } from '@/constants/FriendTransfer';
 
+/** Captcha providers the recruitment flow can use (setting `recruit.captchaProvider`). */
+export const RECRUIT_CAPTCHA_PROVIDERS = ['altcha', 'turnstile'] as const;
+export type RecruitCaptchaProvider = (typeof RECRUIT_CAPTCHA_PROVIDERS)[number];
+
+/**
+ * ALTCHA work factor: the server hides a counter between half of this value
+ * and the value itself; the browser tries counters until one matches. Higher
+ * means more solving time.
+ */
+export const ALTCHA_DIFFICULTY_MIN = 100;
+export const ALTCHA_DIFFICULTY_MAX = 200_000;
+export const ALTCHA_DIFFICULTY_DEFAULT = 4000;
+
 export const MaintenanceModeSchema = z.object({
   enabled: z.boolean(),
   message: z.string().max(1000),
@@ -148,6 +161,30 @@ export const RUNTIME_SETTING_REGISTRY = {
     schema: z.number().int().min(0).max(1000),
     env: undefined,
     fallback: 5,
+  },
+  'recruit.captchaProvider': {
+    group: 'recruiting',
+    type: 'STRING',
+    label: 'Recruitment captcha provider',
+    isPublic: false,
+    schema: z.enum(RECRUIT_CAPTCHA_PROVIDERS),
+    env: undefined,
+    // ALTCHA solves in the player's browser with no third party. Switch to
+    // Turnstile here, without a deploy, if it ever misbehaves.
+    fallback: 'altcha',
+  },
+  'recruit.altchaDifficulty': {
+    group: 'recruiting',
+    type: 'NUMBER',
+    label: 'ALTCHA recruitment difficulty (maximum counter)',
+    isPublic: false,
+    schema: z
+      .number()
+      .int()
+      .min(ALTCHA_DIFFICULTY_MIN)
+      .max(ALTCHA_DIFFICULTY_MAX),
+    env: undefined,
+    fallback: ALTCHA_DIFFICULTY_DEFAULT,
   },
   'era.protectionDurationDays': {
     group: 'combat',
@@ -491,6 +528,18 @@ export const RUNTIME_SETTING_REGISTRY = {
     // (those units are killed instead).
     fallback: false,
   },
+  ENABLE_SITE_ANALYTICS: {
+    group: 'features',
+    type: 'BOOLEAN',
+    label: 'Site analytics and its privacy policy wording',
+    isPublic: true,
+    schema: z.boolean(),
+    env: undefined,
+    // Off: no consent banner, no Cookie settings link, no Google request, and
+    // the privacy policy shows its wording without Google Analytics. Turn on
+    // only once the policy change has been announced and its date has come.
+    fallback: false,
+  },
   DISABLE_LOGIN: {
     group: 'access',
     type: 'BOOLEAN',
@@ -672,6 +721,26 @@ export const RUNTIME_SETTING_REGISTRY = {
     env: undefined,
     fallback: 5,
   },
+  'moderation.shadowEnabled': {
+    group: 'abuse',
+    type: 'BOOLEAN',
+    label: 'Shadow chat moderation enabled',
+    isPublic: false,
+    schema: z.boolean(),
+    env: undefined,
+    // Off: classifying chat with a hosted provider is a privacy change that
+    // needs advance notice. Shadow mode records verdicts and never enforces.
+    fallback: false,
+  },
+  'moderation.shadowBatchSize': {
+    group: 'abuse',
+    type: 'NUMBER',
+    label: 'Shadow chat moderation: messages per sweep',
+    isPublic: false,
+    schema: z.number().int().min(1).max(200),
+    env: undefined,
+    fallback: 25,
+  },
 } as const;
 
 export const RUNTIME_SETTING_GROUPS = [
@@ -691,6 +760,7 @@ export type RuntimeSettingKey = keyof typeof RUNTIME_SETTING_REGISTRY;
 export type RuntimeSettingValue =
   | boolean
   | number
+  | string
   | { enabled: boolean; message: string };
 export const RUNTIME_SETTING_KEYS = Object.keys(
   RUNTIME_SETTING_REGISTRY,

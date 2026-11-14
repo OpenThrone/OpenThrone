@@ -76,7 +76,7 @@
     "description": "El oro es la sangre de tu imperio. Manéjalo con sabiduría — lo que no protejas, alguien lo tomará.",
     "bank": {
       "title": "Banco",
-      "text": "Deposita oro para que los saqueadores no puedan llevárselo. Las mejoras de economía aumentan cuánto puedes depositar al día y cuánto cabe en el banco."
+      "text": "Deposita oro para que los saqueadores no puedan llevárselo. El banco no tiene límite de oro; las mejoras de economía aumentan cuántos depósitos puedes hacer al día."
     },
     "armory": {
       "title": "Armería",
@@ -96,7 +96,7 @@
     },
     "economyUpgrades": {
       "title": "Mejoras de economía",
-      "text": "También en Mejoras. Granjas, mercados y minas aumentan el oro que gana cada trabajador y cuánto admite tu banco."
+      "text": "También en Mejoras. Granjas, mercados y minas aumentan el oro que gana cada trabajador y cuántos depósitos puedes hacer al día."
     },
     "transfers": {
       "title": "Transferencias de oro"
@@ -128,15 +128,17 @@
     "stamina": {
       "title": "Resistencia"
     },
-      "experience": {
-        "title": "Experiencia y niveles",
-        "text": "La experiencia (XP) se gana en combate. Ganar un ataque es lo que más da, según los turnos que comprometas, la diferencia de nivel y lo reñida que fue la batalla. Un ataque perdido da una parte menor, y solo si fue un combate real: nada por debajo del {{effortFloor}} % de la fuerza del defensor, la parte completa desde el {{effortFull}} %. Los defensores ganan XP cada vez que los atacan, más por resistir que por caer, según el tamaño de la amenaza (al menos el {{threatFloor}} %). Si te quedas en un nivel más de {{graceDays}} días de juego, la XP que recibes al ser atacado sube un {{stallStep}} % por cada día de juego adicional, hasta {{stallMax}}×, para que nadie se esconda en niveles bajos. Las misiones de espionaje no dan XP. El resumen muestra cuánta XP necesitas para el siguiente nivel; cada nivel da un punto de competencia y, en ciertos hitos, abre nuevas estructuras."
-      }
+    "experience": {
+      "title": "Experiencia y niveles",
+      "text": "La experiencia (XP) se gana en combate. Ganar un ataque es lo que más da, según los turnos que comprometas, la diferencia de nivel y lo reñida que fue la batalla. Un ataque perdido da una parte menor, y solo si fue un combate real: nada por debajo del {{effortFloor}} % de la fuerza del defensor, la parte completa desde el {{effortFull}} %. Los defensores ganan XP cada vez que los atacan, más por resistir que por caer, según el tamaño de la amenaza (al menos el {{threatFloor}} %). Si te quedas en un nivel más de {{graceDays}} días de juego, la XP que recibes al ser atacado sube un {{stallStep}} % por cada día de juego adicional, hasta {{stallMax}}×, para que nadie se esconda en niveles bajos. Las misiones de espionaje no dan XP. El resumen muestra cuánta XP necesitas para el siguiente nivel; cada nivel da un punto de competencia y, en ciertos hitos, abre nuevas estructuras."
+    }
   },
   "alliances": {
     "title": "Alianzas",
     "description": "Ningún comandante gobierna solo. Únete o crea una alianza para protección mutua, ataques coordinados y gloria compartida.",
-    "eraReserve": "Las alianzas sobreviven a una nueva era. Cuando termina una era, cada alianza queda reservada: se conservan su nombre, miembros, rangos e imágenes, pero su tesorería, préstamos, contratos de tropas y guerras se cierran y sus funciones permanecen bloqueadas. Los miembros pueden abandonarla en cualquier momento. El líder reactiva la alianza en la nueva era al alcanzar el nivel 10 y pagar 10.000.000 de oro (los administradores pueden cambiar ambos valores)."
+    "eraReserve": "Las alianzas sobreviven a una nueva era. Cuando termina una era, cada alianza queda reservada: se conservan su nombre, miembros, rangos e imágenes, pero su tesorería, préstamos, contratos de tropas y guerras se cierran y sus funciones permanecen bloqueadas. Los miembros pueden abandonarla en cualquier momento. El líder reactiva la alianza en la nueva era al alcanzar el nivel 10 y pagar 10.000.000 de oro (los administradores pueden cambiar ambos valores).",
+    "hall": "Cada alianza tiene un nivel de Salón de la alianza, desde Campamento hasta Fortaleza. Fija cuántos miembros admite la alianza (10 en Campamento, hasta 100), cuántas veces puede depositar cada miembro cada 24 horas (2 en Campamento, hasta 8) y hasta cuánto oro pueden llenar el tesoro los depósitos (5.000.000 en Campamento, hasta 10.000.000.000). El líder, o un rango con «Comprar mejoras», compra el siguiente nivel con oro del tesoro en la pestaña Mejoras de la alianza, que muestra el coste, los miembros necesarios y los límites de cada nivel. Una nueva era devuelve el salón a Campamento.",
+    "dues": "Una alianza puede cobrar una cuota de ingreso, pagada una vez con tu oro en mano al ingresar (hasta 10.000.000 de oro), y aportaciones de miembro cobradas a todos salvo al líder al inicio de cada día, semana o mes (hasta 1.000.000, 5.000.000 o 20.000.000 de oro por miembro). Ves y confirmas ambas antes de ingresar. Las aportaciones que no puedas pagar quedan como deuda, que se cobra primero en el próximo cobro o se paga desde la página de la alianza; nadie es expulsado por ello. El líder, o un rango con «Fijar cuota de ingreso y aportaciones», las fija en la pestaña Ajustes."
   },
   "cta": {
     "createCommander": "Crear un Comandante",

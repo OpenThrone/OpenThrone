@@ -24,7 +24,7 @@ const {
   default: handler,
   authOptions,
 } = require('../../../../pages/api/auth/[...nextauth]');
-const argon2 = require('argon2');
+const passwordHash = require('@/lib/passwordHash');
 
 const ENV_KEYS = [
   'NEXTAUTH_SECRET',
@@ -116,7 +116,9 @@ describe('[...nextauth] handler passes the resolved client IP to authorize', () 
       })),
       create: vi.fn(async () => ({})),
     };
-    verifySpy = vi.spyOn(argon2, 'verify').mockResolvedValue(false);
+    verifySpy = vi
+      .spyOn(passwordHash, 'verifyPassword')
+      .mockResolvedValue(false);
   });
 
   afterEach(() => {

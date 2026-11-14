@@ -26,6 +26,7 @@
     "duplicateMessage": "Notificación de mensaje duplicada:",
     "friendRequestSent": "¡{{email}} te ha enviado una solicitud de amistad!",
     "enemyDeclared": "¡{{email}} te ha declarado como enemigo!",
-    "newMessage": "¡Tienes un nuevo mensaje de {{email}}!"
+    "newMessage": "¡Tienes un nuevo mensaje de {{email}}!",
+    "realtimeDisabled": "El tiempo real está desactivado (NEXT_PUBLIC_DISABLE_SOCKET), por lo que no se realizará ninguna conexión de socket."
   }
 }

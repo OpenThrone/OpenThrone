@@ -13,7 +13,7 @@ and the write-time checks off.
 
 | Signal | Type | Rule (defaults) | Data used |
 | --- | --- | --- | --- |
-| Shared network/device | `LINKED_ACCOUNT_ACTIVITY` | 3+ human accounts on one hashed IP, or one IP+browser pattern, within 14 days. Max severity MEDIUM alone | `LoginEvent` hashes (30-day retention, already disclosed) |
+| Shared network/device | `LINKED_ACCOUNT_ACTIVITY` | 3+ human accounts on one hashed IP, or one IP+browser pattern, within 14 days. Max severity MEDIUM alone. Network **ranges** (/24, /64) never raise a signal | `LoginEvent` hashes (30-day retention, already disclosed) |
 | Resource funnelling | `RESOURCE_FUNNELLING` | 3+ sources send 80%+ of their gold transfers / one-sided attacks / internal recruit-link clicks to one account (2M gold, 5 actions each) in 7 days; alliance treasury payouts to one member (LOW) | `bank_history`, `attack_log`, `recruit_history`, `alliance_bank_history` (20-day retention) |
 | Gold ping-pong | `RESOURCE_FUNNELLING` | 3+ transfers and 500k gold each way between two accounts, balance 50%+ | `bank_history` |
 | Bot-like timing | `BOT_TIMING` | 20+ active hours a day on 3 of the last 7 days, or action-interval spread ≤10% over 500+ in-session intervals | `ActivityDay` counters |
@@ -25,6 +25,39 @@ ping-pong or fresh-account pair raises the score. Official bots are excluded.
 Detection runs in the daily job (`runAbuseDetection`, bounded queries, each
 detector isolated) and at write time where cheap: after a login (shared
 network), a friend transfer (ping-pong) and an attack (fresh account).
+
+## Login telemetry
+
+`LoginEvent` rows carry only salted hashes (`ipHash`, `ipPrefixHash`,
+`deviceHash`, `userAgentHash`) - never raw IPs, user agents or ranges - and a
+`kind`:
+
+| Kind | Written when | Feeds signals |
+| --- | --- | --- |
+| `SIGN_IN` | A successful credential sign-in | Yes (unchanged write-time check) |
+| `SIGN_UP` | A registration | No; linkage only |
+| `SEEN` | At most once per user per UTC day of authenticated activity (the game-shell data request), for players on long-lived sessions that never sign in | No; linkage only |
+
+`ipPrefixHash` is the IPv4 /24 or IPv6 /64 of the resolved client address
+(trusted-proxy addresses get none, like `deviceHash`). Ranges are shared by
+mobile carriers, CGNAT, campuses and large VPN exits, so a range cluster is
+weaker evidence: `findLoginClusters` only queries it for the staff view, and
+`raiseLoginClusterSignal` returns without filing for `via: 'range'`. Sign-up
+and seen rows join the same 30-day retention purge and account-erasure
+sweep as sign-ins.
+
+## Multi-account staff view
+
+`/home/admin/multi-accounts` (permission `VIEW_MULTI_ACCOUNTS`,
+`getMultiAccountClusters`) groups accounts that shared an IP, a network range
+or an IP+browser pattern in the last 30 days, from **two accounts up** - a
+pair is context even though it takes `abuse.network.minAccounts` (default 3)
+to raise a signal. Each group shows the pattern type (range groups carry a
+"weaker evidence" note), the event kinds seen, first/last seen and the
+accounts with profile links. Reading the page is audited
+(`ADMIN_MULTI_ACCOUNTS_READ`); the logins ledger under Administration →
+Ledgers shows each row's `kind`. Multiple accounts are allowed; nothing on
+these pages sanctions anyone automatically.
 
 ### Recruit direction
 `recruit_history` stores the link owner in `from_user` and the signed-in recruiter
@@ -65,3 +98,33 @@ a 24-bit set of active hours, an action count and the sum and sum of squares of
 in-session action intervals (gaps up to 15 minutes), updated by the existing
 gameplay-action hook. It contains no IP, device or content and is pruned after
 14 days by the daily sweep.
+
+## Tests
+
+- `src/services/__tests__/LoginTelemetry.service.test.ts`: hash-only storage,
+  /24 and /64 prefix hashing, proxy skips, SIGN_UP writes no signal, the daily
+  seen guard (once per user per UTC day, idempotent insert, never throws),
+  range clusters raising nothing, retention and erasure covering every kind.
+- `src/services/__tests__/CheatDetection.clusters.test.ts`: proxy exclusion,
+  two-account groups, range groups with kinds and first/last seen.
+- `src/__tests__/pages/api/auth/register-telemetry.api.test.ts`: registration
+  writes a `SIGN_UP` event (hashes only) and succeeds when telemetry fails.
+- `src/__tests__/pages/api/general/getUser-telemetry.api.test.ts`: the daily
+  seen hook records once per day, skips impersonated sessions and never fails
+  the request.
+- `src/__tests__/migrations-row-level-security.test.ts`: the kind migration
+  adds no table, so none needs RLS.
+
+## Known gaps
+
+- The staff view builds groups in memory from the newest 5000 rows of the
+  window; on a busy server a busy day could push older groups out of view.
+- `SEEN` rows are deduplicated per UTC day per user per process; two app
+  processes could race, but the `WHERE NOT EXISTS` insert keeps at most one
+  row per user per day.
+- The once-a-day seen hook covers the game-shell data request
+  (`/api/general/getUser`); activity that never loads the game shell (API
+  tokens, some admin pages) leaves no seen row. Sign-in and sign-up rows still
+  cover those users.
+
+Last verified against code: 2026-11-12 (alpha 49c9273)

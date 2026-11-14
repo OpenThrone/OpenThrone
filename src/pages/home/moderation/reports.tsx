@@ -11,7 +11,6 @@ import {
 } from '@mantine/core';
 import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -23,6 +22,7 @@ import {
   ReportStatus,
 } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 const ReportsQueuePage = () => {
   const { t } = useTranslation('moderation-admin');

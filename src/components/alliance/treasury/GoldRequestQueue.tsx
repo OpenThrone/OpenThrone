@@ -17,6 +17,7 @@ import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
+import type { Locales } from '@/types/typings';
 import { toLocale } from '@/utils/numberFormatting';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -46,7 +47,7 @@ export const GoldRequestQueue = ({
   onChanged,
   refreshKey,
 }: GoldRequestQueueProps) => {
-  const { t } = useTranslation('allianceTreasury');
+  const { t, i18n } = useTranslation('allianceTreasury');
   const { user, forceUpdate } = useUser();
   const [busyId, setBusyId] = useState<number | null>(null);
   const { data, error, mutate } = useSWR(
@@ -116,7 +117,9 @@ export const GoldRequestQueue = ({
             return (
               <Table.Tr key={request.id}>
                 <Table.Td>{request.requester?.display_name}</Table.Td>
-                <Table.Td>{toLocale(request.amount)}</Table.Td>
+                <Table.Td>
+                  {toLocale(request.amount, i18n.language as Locales)}
+                </Table.Td>
                 <Table.Td>{request.reason ?? ''}</Table.Td>
                 <Table.Td>
                   <Badge

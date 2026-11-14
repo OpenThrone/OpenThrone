@@ -1,6 +1,5 @@
 import type { NextApiResponse } from 'next';
 
-import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
 import { highRiskLimiter } from '@/middleware/rateLimit';
 import { SocialService } from '@/services/Social.service';
@@ -46,12 +45,11 @@ const respondHandler = async (
       message,
     });
 
-    const io = getSocketIO();
-    await emitSocialCountUpdate(io, userId);
-    await emitGoldRequestCountUpdate(io, userId);
+    await emitSocialCountUpdate(userId);
+    await emitGoldRequestCountUpdate(userId);
     if (participants?.from_user_id) {
-      await emitSocialCountUpdate(io, participants.from_user_id);
-      await emitGoldRequestCountUpdate(io, participants.from_user_id);
+      await emitSocialCountUpdate(participants.from_user_id);
+      await emitGoldRequestCountUpdate(participants.from_user_id);
     }
 
     return res.status(200).json(stringifyObj(result));

@@ -13,7 +13,7 @@ const {
   handler: updateEmail,
 } = require('../../../../pages/api/account/update-email');
 const { AccountService } = require('../../../../services/Account.service');
-const argon2 = require('argon2');
+const passwordHash = require('@/lib/passwordHash');
 const {
   AccountAnonymizationService,
 } = require('@/services/AccountAnonymization.service');
@@ -119,7 +119,9 @@ describe('email change credentials', () => {
   });
 
   it('requires a hash, expiry and atomic pending-token claim', async () => {
-    const spy = vi.spyOn(argon2, 'verify').mockResolvedValue(true);
+    const spy = vi
+      .spyOn(passwordHash, 'verifyPassword')
+      .mockResolvedValue(true);
     try {
       expect((await callUpdate())._getStatusCode()).toBe(200);
       expect(verifiedWhere.verificationCode).toBe(
@@ -143,7 +145,9 @@ describe('email change credentials', () => {
     const blockSpy = vi
       .spyOn(AccountAnonymizationService, 'isIdentityBlocked')
       .mockResolvedValue({ emailBlocked: true, displayNameBlocked: false });
-    const passwordSpy = vi.spyOn(argon2, 'verify').mockResolvedValue(false);
+    const passwordSpy = vi
+      .spyOn(passwordHash, 'verifyPassword')
+      .mockResolvedValue(false);
     try {
       mockPrisma.passwordReset.findFirst.mockResolvedValueOnce(null);
       expect((await callUpdate())._getStatusCode()).toBe(400);
@@ -166,7 +170,9 @@ describe('email change credentials', () => {
   });
 
   it('stores trimmed lowercase email and checks existing addresses case-insensitively', async () => {
-    const spy = vi.spyOn(argon2, 'verify').mockResolvedValue(true);
+    const spy = vi
+      .spyOn(passwordHash, 'verifyPassword')
+      .mockResolvedValue(true);
     try {
       expect((await callUpdate(' New@Example.Invalid '))._getStatusCode()).toBe(
         200,

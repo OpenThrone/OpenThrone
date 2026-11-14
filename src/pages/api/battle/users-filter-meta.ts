@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
+import { defenderVisibleLogsWhere } from '@/services/AttackLogAccess.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
 
@@ -37,7 +38,8 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       where: {
         timestamp: { gt: since },
         voidedAt: null,
-        OR: [{ attacker_id: userId }, { defender_id: userId }],
+        // Spy missions that got through stay hidden from their target.
+        OR: [{ attacker_id: userId }, defenderVisibleLogsWhere(userId)],
       },
       select: {
         attacker_id: true,

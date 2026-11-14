@@ -6,11 +6,11 @@ import UserModel from '@/models/Users';
 import { assertNoDefaultedLoan } from '@/services/AllianceLoan.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
-import { getBankRoom, getMaxDeposit } from '@/utils/bankLimits';
+import { getMaxDeposit } from '@/utils/bankLimits';
 import { parseBigInt } from '@/utils/jsonHelpers';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { sanitizeUserForResponse } from '@/utils/sanitizeUser';
-import { getGameDayMs } from '@/utils/timefunctions';
+import { getGameDayMs, getGameDayWindowCountdown } from '@/utils/timefunctions';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -61,8 +61,9 @@ export const withdrawGold = async (
 
 /**
  * Deposits gold from a user's hand into their bank account within a transaction.
- * The user row is locked first, so the deposit-count cap, balance, bank capacity and 80% cap
- * are all evaluated against committed state. Creates a bank history record.
+ * The user row is locked first, so the deposit-count cap, balance and 80% cap
+ * are all evaluated against committed state. The bank balance has no upper
+ * limit (docs/decisions/no-bank-capacity.md). Creates a bank history record.
  *
  * Transaction budget: Prisma defaults (timeout 5s / maxWait 2s) are kept.
  * Both bank transactions are a handful of indexed statements under one user
@@ -116,16 +117,6 @@ const deposit = async (userId: number, depositAmount: bigint) => {
       throw new Error(
         `Deposit amount exceeds the maximum allowed (${capPercent}% of gold on hand).`,
       );
-
-    const room = getBankRoom(
-      BigInt(uModel.bankCap),
-      BigInt(user.gold_in_bank ?? 0),
-    );
-    if (validatedData.depositAmount > room) {
-      throw new Error(
-        `Your bank holds up to ${uModel.bankCap.toLocaleString('en-US')} gold and has room for ${room.toLocaleString('en-US')} more. Economy upgrades raise this limit.`,
-      );
-    }
 
     const updateResult = await tx.users.updateMany({
       where: {
@@ -282,4 +273,230 @@ export const getBankHistory = async (
   });
 
   return { rows, total };
+};
+
+/** String filter flags accepted by the bank history query. */
+export interface BankHistoryFilterFlags {
+  deposits?: string;
+  withdraws?: string;
+  war_spoils?: string;
+  transfers?: string;
+  sale?: string;
+  training?: string;
+  economy?: string;
+  recruitment?: string;
+  fortification?: string;
+  daily?: string;
+  friend_transfers?: string;
+}
+
+/**
+ * Builds the bank_history conditions for one user's filtered history page.
+ * Every filter is opt-in via `=== 'true'`; the caller's own rows condition is
+ * always appended last.
+ */
+export const buildBankHistoryConditions = (
+  userId: number,
+  flags: BankHistoryFilterFlags,
+): Prisma.bank_historyWhereInput[] => {
+  const conditions: Prisma.bank_historyWhereInput[] = [];
+  const transactionConditions: Prisma.bank_historyWhereInput[] = [];
+
+  if (flags.deposits === 'true') {
+    transactionConditions.push({
+      from_user_account_type: 'HAND',
+      to_user_id: userId,
+      to_user_account_type: 'BANK',
+      from_user_id: userId,
+      history_type: 'PLAYER_TRANSFER',
+    });
+  }
+
+  if (flags.withdraws === 'true') {
+    transactionConditions.push({
+      from_user_account_type: 'BANK',
+      to_user_id: userId,
+      to_user_account_type: 'HAND',
+      from_user_id: userId,
+      history_type: 'PLAYER_TRANSFER',
+    });
+  }
+
+  if (flags.war_spoils === 'true') {
+    transactionConditions.push({
+      history_type: 'WAR_SPOILS',
+    });
+  }
+
+  if (flags.transfers === 'true') {
+    transactionConditions.push({
+      history_type: 'PLAYER_TRANSFER',
+      AND: [
+        {
+          OR: [{ from_user_id: userId }, { to_user_id: userId }],
+        },
+        {
+          NOT: [{ from_user_id: userId, to_user_id: userId }],
+        },
+      ],
+    });
+  }
+
+  if (flags.economy === 'true') {
+    transactionConditions.push({
+      history_type: 'ECONOMY',
+      to_user_id: userId,
+    });
+  }
+
+  if (flags.fortification === 'true') {
+    transactionConditions.push({
+      history_type: 'FORT_REPAIR',
+      from_user_id: userId,
+    });
+  }
+
+  if (flags.recruitment === 'true') {
+    transactionConditions.push({
+      history_type: 'RECRUITMENT',
+      to_user_id: userId,
+    });
+  }
+
+  if (flags.sale === 'true') {
+    transactionConditions.push({
+      history_type: 'SALE',
+      stats: {
+        path: ['type'],
+        string_contains: 'ARMORY',
+      },
+    });
+    transactionConditions.push({
+      history_type: 'SALE',
+      stats: {
+        path: ['type'],
+        // Structure purchases (FORTIFICATIONS_UPGRADE, SPY_UPGRADE, ...) and
+        // battle upgrades (BATTLE_UPGRADES_BUY) both contain this (#346).
+        string_contains: '_UPGRADE',
+      },
+    });
+    transactionConditions.push({
+      history_type: 'SALE',
+      stats: {
+        path: ['action'],
+        string_contains: '_upgrade',
+      },
+    });
+  }
+
+  if (flags.training === 'true') {
+    transactionConditions.push({
+      history_type: { in: ['SALE'] },
+      stats: {
+        path: ['type'],
+        string_contains: 'TRAINING_',
+      },
+    });
+    transactionConditions.push({
+      history_type: { in: ['SALE'] },
+      stats: {
+        path: ['type'],
+        string_contains: '_MERCENARY',
+      },
+    });
+  }
+
+  if (flags.daily === 'true') {
+    transactionConditions.push({
+      history_type: 'DAILY_RECRUIT',
+      to_user_id: userId,
+    });
+  }
+
+  if (flags.friend_transfers === 'true') {
+    transactionConditions.push({
+      history_type: { in: ['FRIEND_TRANSFER', 'FRIEND_REQUEST'] },
+      OR: [{ from_user_id: userId }, { to_user_id: userId }],
+    });
+  }
+
+  if (transactionConditions.length > 0) {
+    conditions.push({
+      OR: transactionConditions,
+    });
+  }
+
+  conditions.push({
+    OR: [{ from_user_id: userId }, { to_user_id: userId }],
+  });
+
+  return conditions;
+};
+
+/**
+ * Era-bounded, paginated bank history for one user.
+ * @param userId - The ID of the user whose history to retrieve.
+ * @param filters - Validated query flags plus `page`/`limit` pagination.
+ * @returns The history rows and total for the page, with the pagination echo.
+ */
+export const getBankHistoryForUser = async (
+  userId: number,
+  filters: BankHistoryFilterFlags & { page: number; limit: number },
+) => {
+  const conditions = buildBankHistoryConditions(userId, filters);
+  const era = await ensureActiveEra();
+  conditions.push({
+    date_time: { gte: era.startDate },
+  });
+
+  const { rows, total } = await getBankHistory(
+    conditions,
+    Number(filters.limit),
+    Number(filters.page),
+  );
+
+  return {
+    rows,
+    total,
+    page: Number(filters.page),
+    limit: Number(filters.limit),
+  };
+};
+
+/** Countdown until the next deposit slot opens. */
+export interface DepositCountdown {
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
+
+/** Deposit availability as served by GET /api/bank/getDeposits. */
+export interface DepositStatus {
+  deposits: number;
+  nextDepositAvailable: DepositCountdown | 0;
+}
+
+/**
+ * Returns how many deposits the user still has available in the current
+ * window and the countdown to the next slot (based on their oldest deposit in
+ * the window). Returns null when the user row does not exist so the route can
+ * answer 404.
+ * @param userId - The ID of the user.
+ */
+export const getDepositStatus = async (
+  userId: number,
+): Promise<DepositStatus | null> => {
+  const history = await getDepositHistory(userId);
+  const user = await prisma.users.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) return null;
+
+  const userMod = new UserModel(user);
+  return {
+    deposits: userMod.maximumBankDeposits - history.length,
+    nextDepositAvailable:
+      history.length > 0 ? getGameDayWindowCountdown(history[0].date_time) : 0,
+  };
 };

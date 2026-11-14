@@ -515,6 +515,35 @@ export interface SimulationConfig {
   event?: SimGameEvent;
   /** Live rules only: the dungeon is on, so breaches take captives (SHOW_DUNGEON). */
   dungeon?: boolean;
+  /**
+   * Optional decision hook (see decisionAdvisor.ts). When absent the run is
+   * byte-for-byte what it was before the hook existed.
+   */
+  decisionAdvisor?: SimDecisionAdvisor;
+}
+
+/** What the advisor sees at the start of one player's round. */
+export interface SimAdvisorContext {
+  player: PlayerState;
+  /** Everyone the player may meet this round (allies already removed when live). */
+  population: PlayerState[];
+  /** The decision the built-in behavior model made. */
+  legacyDecision: AgentDecision;
+  attackLevelRange: number;
+  /** Zero-based simulation day and absolute tick. */
+  day: number;
+  tick: number;
+  live: boolean;
+}
+
+/**
+ * Chooses among actions the engine already allows. The engine still validates
+ * and executes whatever is returned, so an advisor can only narrow a decision.
+ */
+export interface SimDecisionAdvisor {
+  advise(context: SimAdvisorContext): Promise<AgentDecision>;
+  /** Called once the round's actions have been applied (checks, metrics). */
+  afterRound?(context: SimAdvisorContext, decision: AgentDecision): void;
 }
 
 /** A game event's effects (constants/gameEvents.ts) over a span of sim days. */

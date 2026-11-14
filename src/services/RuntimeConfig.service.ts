@@ -3,6 +3,7 @@ import {
   buildAbuseConfig,
 } from '@/constants/abuseSignals';
 import {
+  type RecruitCaptchaProvider,
   RUNTIME_SETTING_KEYS,
   RUNTIME_SETTING_REGISTRY,
 } from '@/constants/runtimeSettings';
@@ -22,6 +23,10 @@ export interface RuntimeConfig {
   externalRecruitDailyCap: number;
   /** External link recruit attempts allowed per IP and link owner per day. */
   externalRecruitIpDailyCap: number;
+  /** Captcha behind recruiting: self-hosted ALTCHA, or Cloudflare Turnstile. */
+  recruitCaptchaProvider?: RecruitCaptchaProvider;
+  /** Maximum hidden counter of an ALTCHA recruitment challenge. */
+  recruitAltchaDifficulty?: number;
   /** External attempts one IP may make across all link owners per day. */
   /** Days of new-player battle protection after joining an era (1-60). */
   protectionDurationDays: number;
@@ -52,6 +57,9 @@ export interface RuntimeConfig {
   allianceReactivationCostGold?: number;
   /** Admin-only abuse detection thresholds (group "abuse"). */
   abuse: AbuseDetectionConfig;
+  /** Shadow chat moderation sweep (#448): records verdicts, never enforces. */
+  moderationShadowEnabled?: boolean;
+  moderationShadowBatchSize?: number;
   enableSupporter: boolean;
   enableAttacking: boolean;
   attackLevelRange: number;
@@ -75,6 +83,11 @@ export interface RuntimeConfig {
    * battles take captives. Off: captured units are killed instead.
    */
   showDungeon: boolean;
+  /**
+   * Google Analytics and the privacy policy wording that describes it go live
+   * together. Off: no banner, no Google request, policy without analytics.
+   */
+  enableSiteAnalytics: boolean;
   disableLogin: boolean;
   disableRegistration: boolean;
   maintenance: { enabled: boolean; message: string };
@@ -175,6 +188,10 @@ export async function getRuntimeConfig(
         externalRecruitIpDailyCap: values[
           'recruit.externalIpDailyCap'
         ] as number,
+        recruitCaptchaProvider: values[
+          'recruit.captchaProvider'
+        ] as RecruitCaptchaProvider,
+        recruitAltchaDifficulty: values['recruit.altchaDifficulty'] as number,
         protectionDurationDays: values['era.protectionDurationDays'] as number,
         mercenaryHireMultiplier: values['mercenary.hireMultiplier'] as number,
         mercenaryDailyPriceRate: values['mercenary.dailyPriceRate'] as number,
@@ -215,6 +232,10 @@ export async function getRuntimeConfig(
           'alliance.reactivationCostGold'
         ] as number,
         abuse: buildAbuseConfig(values),
+        moderationShadowEnabled: values['moderation.shadowEnabled'] as boolean,
+        moderationShadowBatchSize: values[
+          'moderation.shadowBatchSize'
+        ] as number,
         enableSupporter: values.ENABLE_SUPPORTER as boolean,
         enableAttacking: values.ENABLE_ATTACKING as boolean,
         attackLevelRange: values.ATTACK_LEVEL_RANGE as number,
@@ -229,6 +250,7 @@ export async function getRuntimeConfig(
         enableGarrisonFatigue: values.ENABLE_GARRISON_FATIGUE as boolean,
         showKingdomMorale: values.SHOW_KINGDOM_MORALE as boolean,
         showDungeon: values.SHOW_DUNGEON as boolean,
+        enableSiteAnalytics: values.ENABLE_SITE_ANALYTICS as boolean,
         disableLogin: values.DISABLE_LOGIN as boolean,
         disableRegistration: values.DISABLE_REGISTRATION as boolean,
         maintenance: values.MAINTENANCE_MODE as RuntimeConfig['maintenance'],

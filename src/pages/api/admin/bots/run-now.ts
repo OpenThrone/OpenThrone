@@ -1,9 +1,7 @@
-import { existsSync, statSync } from 'fs';
 import type { NextApiResponse } from 'next';
-import { join } from 'path';
 import { z } from 'zod';
 
-import { CONFIG_ROOT_DIR } from '@/botUsers/constants';
+import { isKnownBotSchedule } from '@/botUsers/config';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { BotService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -29,13 +27,7 @@ const runBotTickNow = async (
   ctx: { body: z.infer<typeof RunNowBodySchema> },
 ) => {
   const schedule = ctx.body.schedule ?? 'default';
-  const schedulePath = join(
-    process.cwd(),
-    CONFIG_ROOT_DIR,
-    'schedules',
-    `${schedule}.json`,
-  );
-  if (!existsSync(schedulePath) || !statSync(schedulePath).isFile()) {
+  if (!isKnownBotSchedule(schedule)) {
     return res.status(400).json({ error: 'Unknown bot schedule' });
   }
   const result = await BotService.runDailyBotTick(schedule);

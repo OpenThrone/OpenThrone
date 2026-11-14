@@ -11,7 +11,6 @@ import {
 } from '@mantine/core';
 import type { GetServerSidePropsContext } from 'next';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -27,6 +26,7 @@ import {
 } from '@/components/admin/ForceAdminTables';
 import { GameCard } from '@/components/game/GameCard';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
 type Tab = 'contracts' | 'reserves' | 'obligations';
 

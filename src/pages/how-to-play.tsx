@@ -289,6 +289,8 @@ const HowToPlay = ({
                 <Text className={classes.prose}>
                   {t('alliances.description')}
                 </Text>
+                <Text className={classes.prose}>{t('alliances.hall')}</Text>
+                <Text className={classes.prose}>{t('alliances.dues')}</Text>
                 <Text className={classes.prose}>
                   {t('alliances.eraReserve')}
                 </Text>

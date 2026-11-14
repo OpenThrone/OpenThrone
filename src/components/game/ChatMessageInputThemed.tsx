@@ -30,6 +30,8 @@ interface ChatMessageInputThemedProps {
   setIsShareModalOpen: (isOpen: boolean) => void;
   canWrite: boolean;
   onTyping?: (isTyping: boolean) => void;
+  /** Renders nothing (read-only mode when realtime is disabled). */
+  hidden?: boolean;
 }
 
 const ChatMessageInputThemed: React.FC<ChatMessageInputThemedProps> = ({
@@ -41,6 +43,7 @@ const ChatMessageInputThemed: React.FC<ChatMessageInputThemedProps> = ({
   setIsShareModalOpen,
   canWrite,
   onTyping,
+  hidden = false,
 }) => {
   const { t } = useTranslation('messaging');
   const [drafts, setDrafts] = useState<Record<number, ChatDraft>>({});
@@ -89,6 +92,8 @@ const ChatMessageInputThemed: React.FC<ChatMessageInputThemedProps> = ({
     event.preventDefault();
     handleSendMessage();
   };
+
+  if (hidden) return null;
 
   return (
     <Paper

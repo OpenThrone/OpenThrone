@@ -251,7 +251,10 @@ export const Fortifications: Fortification[] = [
   {
     name: 'Kingdom Level 2',
     level: 20,
-    levelRequirement: 95,
+    // From here the forts step by 2 player levels, so Empire Level 3 lands on
+    // the level cap (100). At 5 per fort the Empire forts needed 105-115
+    // (docs/decisions/top-forts-under-level-cap.md).
+    levelRequirement: 92,
     hitpoints: 7500,
     costPerRepairPoint: 6750,
     goldPerTurn: 20000,
@@ -264,7 +267,7 @@ export const Fortifications: Fortification[] = [
   {
     name: 'Kingdom Level 3',
     level: 21,
-    levelRequirement: 100,
+    levelRequirement: 94,
     hitpoints: 8000,
     costPerRepairPoint: 7500,
     goldPerTurn: 21000,
@@ -277,7 +280,7 @@ export const Fortifications: Fortification[] = [
   {
     name: 'Empire',
     level: 22,
-    levelRequirement: 105,
+    levelRequirement: 96,
     hitpoints: 8500,
     costPerRepairPoint: 8250,
     goldPerTurn: 22000,
@@ -290,7 +293,7 @@ export const Fortifications: Fortification[] = [
   {
     name: 'Empire Level 2',
     level: 23,
-    levelRequirement: 110,
+    levelRequirement: 98,
     hitpoints: 9000,
     costPerRepairPoint: 9000,
     goldPerTurn: 23000,
@@ -303,7 +306,7 @@ export const Fortifications: Fortification[] = [
   {
     name: 'Empire Level 3',
     level: 24,
-    levelRequirement: 115,
+    levelRequirement: 100,
     hitpoints: 9500,
     costPerRepairPoint: 9750,
     goldPerTurn: 24000,

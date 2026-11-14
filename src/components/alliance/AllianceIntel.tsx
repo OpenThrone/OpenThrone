@@ -19,6 +19,7 @@ import useSWR from 'swr';
 
 import { AllianceIntelShareModal } from '@/components/alliance/AllianceIntelShareModal';
 import { allianceRequest } from '@/components/alliance/allianceStanding';
+import { PlayerNameAutocomplete } from '@/components/alliance/PlayerNameAutocomplete';
 import { GameCard } from '@/components/game/GameCard';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
@@ -92,7 +93,7 @@ const IntelItemCard = ({
   canCall: boolean;
   onCallThreat: (item: IntelItem, type: 'HIT' | 'FARM') => void;
 }) => {
-  const { t } = useTranslation('allianceIntel');
+  const { t, i18n } = useTranslation('allianceIntel');
   return (
     <Card withBorder padding="sm" radius="md">
       <Stack gap={4}>
@@ -117,7 +118,7 @@ const IntelItemCard = ({
             )}
           </Group>
           <Text size="xs" c="dimmed">
-            {new Date(item.created_at).toLocaleString()}
+            {new Date(item.created_at).toLocaleString(i18n.language)}
           </Text>
         </Group>
         <Text size="sm">
@@ -388,11 +389,11 @@ export const AllianceIntel = ({
                     label: typeLabel(type),
                   }))}
                 />
-                <TextInput
+                <PlayerNameAutocomplete
                   label={t('calls.targetLabel', 'Target (display name)')}
                   placeholder={t('calls.targetPlaceholder', 'Display name')}
                   value={targetName}
-                  onChange={(event) => setTargetName(event.currentTarget.value)}
+                  onChange={setTargetName}
                   maxLength={100}
                 />
                 <TextInput

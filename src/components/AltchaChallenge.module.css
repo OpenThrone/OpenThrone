@@ -1,0 +1,35 @@
+/* The ALTCHA web component reads these custom properties through its shadow root. */
+.host {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 56px;
+  --altcha-max-width: 320px;
+  --altcha-color-base: var(--ot-surface-2);
+  --altcha-color-base-content: var(--ot-body);
+  --altcha-color-neutral: var(--ot-line);
+  --altcha-color-neutral-content: var(--ot-body);
+  --altcha-color-primary: var(--ot-accent);
+  --altcha-color-primary-content: var(--ot-inset);
+  --altcha-color-success: var(--ot-accent);
+  --altcha-color-success-content: var(--ot-inset);
+  --altcha-color-error: var(--mantine-color-red-6);
+  --altcha-color-error-content: #fff;
+  --altcha-border-color: var(--ot-border);
+  --altcha-border-radius: 4px;
+  --altcha-spinner-color: var(--ot-accent);
+}
+
+/* Fill the row up to the max width so the label and the logo never crowd. */
+.host :global(altcha-widget) {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .host {
+    --altcha-transition-duration: 0s;
+    --altcha-checkbox-transition-duration: 0s;
+  }
+}

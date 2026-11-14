@@ -161,5 +161,6 @@
     "externalLink": "Link in neuem Tab öffnen",
     "internalLink": "Link in diesem Tab öffnen",
     "toolbar": "Nachrichtenformatierung"
-  }
+  },
+  "readOnlyNotice": "Echtzeit ist deaktiviert: Der Nachrichtendienst ist schreibgeschützt. Sie können Unterhaltungen lesen, aber das Senden von Nachrichten und Reaktionen ist nicht verfügbar."
 }

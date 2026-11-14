@@ -6,6 +6,7 @@ import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
+import { CookieSettingsFooterLink } from '@/components/analytics/CookieSettingsFooterLink';
 import ArtworkPreviewSelector from '@/components/ArtworkPreviewSelector';
 import EraResetNotice from '@/components/EraResetNotice';
 import MobileSidebarContent from '@/components/MobileSidebarContent';
@@ -273,6 +274,7 @@ const Layout = (props: IMainProps) => {
           >
             {tNav('loggedOut.privacy')}
           </Link>
+          <CookieSettingsFooterLink />
         </p>
         {t('app.copyright', {
           year: new Date().getFullYear(),

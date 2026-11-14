@@ -164,6 +164,16 @@ const firstHeaderValue = (
 ): string | undefined => (Array.isArray(value) ? value[0] : value);
 
 /**
+ * True inside Cloudflare Workers (workerd). There every request arrives
+ * through Cloudflare's edge, which sets `CF-Connecting-IP` itself, and there
+ * is no TCP peer: workerd's `node:http` `IncomingMessage` ignores the socket
+ * OpenNext passes in, so `req.socket.remoteAddress` is always undefined.
+ */
+export function isCloudflareWorkersRuntime(): boolean {
+  return globalThis.navigator?.userAgent === 'Cloudflare-Workers';
+}
+
+/**
  * Client IP for rate limits and audit logs. Forwarded headers are read only
  * when the TCP peer is a trusted proxy, so clients cannot pick their bucket:
  *
@@ -176,8 +186,15 @@ const firstHeaderValue = (
  *    trusted proxy (for example cloudflared on loopback). It is never used
  *    to override a chain, since a client can send it to a proxy directly.
  * 3. Otherwise the leftmost trusted hop or the socket peer address.
+ *
+ * On Cloudflare Workers `cf-connecting-ip` is used first: the edge sets it
+ * and no client can reach the Worker any other way.
  */
 export function resolveClientIp(req: ClientIpRequest): string | undefined {
+  if (isCloudflareWorkersRuntime()) {
+    const edgeIp = firstHeaderValue(req.headers?.['cf-connecting-ip']);
+    if (edgeIp && isIP(normalizeIp(edgeIp))) return normalizeIp(edgeIp);
+  }
   const rawSocket = req.socket?.remoteAddress ?? req.connection?.remoteAddress;
   if (!rawSocket) return undefined;
   const socketAddress = normalizeIp(rawSocket);
@@ -212,4 +229,25 @@ export function resolveClientIp(req: ClientIpRequest): string | undefined {
 /** Returns ip address for callers that need normalized game data. */
 export function getIpAddress(req: ClientIpRequest): string {
   return resolveClientIp(req) ?? 'No IP address detected.';
+}
+
+/**
+ * The IPv4 /24 or IPv6 /64 network prefix of an address, as canonical text
+ * ("203.0.113.0/24", "2001:db8:a:b::/64"). Shared by households, campuses,
+ * VPN exits and carrier-grade NAT, so it is weaker evidence than a full
+ * address. Null for anything that is not a parseable IP address.
+ */
+export function ipNetworkPrefix(address: string): string | null {
+  const bits = toBits(address);
+  if (!bits) return null;
+  if (bits.width === 32) {
+    // Clear the low 8 bits; bigint division/modulo avoids bit twiddling.
+    const prefix = (bits.value / 256n) * 256n;
+    const octet = (shift: bigint) => Number((prefix / shift) % 256n);
+    return `${octet(16777216n)}.${octet(65536n)}.${octet(256n)}.0/24`;
+  }
+  // The value is 128 bits wide; the first four groups sit at bits 127..64.
+  const group = (index: number) =>
+    ((bits.value / 2n ** BigInt(112 - index * 16)) % 65536n).toString(16);
+  return `${group(0)}:${group(1)}:${group(2)}:${group(3)}::/64`;
 }

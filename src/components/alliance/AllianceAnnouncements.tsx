@@ -77,7 +77,7 @@ export const AllianceAnnouncements = ({
   allianceId,
   viewerId,
 }: AllianceAnnouncementsProps) => {
-  const { t } = useTranslation('allianceAnnouncements');
+  const { t, i18n } = useTranslation('allianceAnnouncements');
   const [page, setPage] = useState(1);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -236,7 +236,8 @@ export const AllianceAnnouncements = ({
                         name:
                           item.author?.display_name ?? t('list.unknownAuthor'),
                       })}{' '}
-                      · {new Date(item.created_at).toLocaleString()}
+                      ·{' '}
+                      {new Date(item.created_at).toLocaleString(i18n.language)}
                     </Text>
                   </Stack>
                   <Group gap={4} wrap="nowrap">

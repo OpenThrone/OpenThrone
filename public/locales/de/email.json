@@ -38,5 +38,11 @@
     "alliance_sponsorship": "Allianz-Sponsoring"
   },
   "veteranClaimSubject": "Willkommen zurück bei OpenThrone – bestätigen Sie Ihr Erbe aus Ära 1",
-  "veteranClaim": "Hallo {{display_name}},\n\ndiese Adresse gehörte zu einem OpenThrone-Konto aus Ära 1. Um den Titel „Ära-1-Tester“ und Ihr ursprüngliches Beitrittsdatum wiederherzustellen und Ihren alten Anzeigenamen zurückzubekommen, öffnen Sie innerhalb von 30 Tagen diesen Link, während Sie in Ihrem neuen Konto angemeldet sind:\n\n{{claimLink}}\n\nFalls Sie gerade kein OpenThrone-Konto mit dieser Adresse erstellt haben, hat das jemand anderes getan: Setzen Sie auf der Anmeldeseite das Passwort zurück und melden Sie sich an, um es zu behalten. Bisher wurde nichts gewährt."
+  "veteranClaim": "Hallo {{display_name}},\n\ndiese Adresse gehörte zu einem OpenThrone-Konto aus Ära 1. Um den Titel „Ära-1-Tester“ und Ihr ursprüngliches Beitrittsdatum wiederherzustellen und Ihren alten Anzeigenamen zurückzubekommen, öffnen Sie innerhalb von 30 Tagen diesen Link, während Sie in Ihrem neuen Konto angemeldet sind:\n\n{{claimLink}}\n\nFalls Sie gerade kein OpenThrone-Konto mit dieser Adresse erstellt haben, hat das jemand anderes getan: Setzen Sie auf der Anmeldeseite das Passwort zurück und melden Sie sich an, um es zu behalten. Bisher wurde nichts gewährt.",
+  "passwordResetSubject": "Setzen Sie Ihr OpenThrone-Passwort zurück",
+  "passwordReset": "Hallo {{display_name}},\n\njemand hat angefordert, das Passwort Ihres OpenThrone-Kontos zurückzusetzen. Öffnen Sie diesen Link, um ein neues zu wählen:\n\n{{resetLink}}\n\nDer Link funktioniert einmal und läuft nach 3 Stunden ab. Falls Sie das nicht angefordert haben, ignorieren Sie diese E-Mail: Ihr Passwort bleibt unverändert.",
+  "passwordResetAction": "Passwort zurücksetzen",
+  "emailChangeSubject": "Bestätigen Sie die Änderung Ihrer OpenThrone-E-Mail-Adresse",
+  "emailChange": "Hallo {{display_name}},\n\nSie haben angefordert, die E-Mail-Adresse Ihres OpenThrone-Kontos zu ändern. Öffnen Sie diesen Link, während Sie angemeldet sind, um die Änderung abzuschließen:\n\n{{emailChangeLink}}\n\nDer Link funktioniert einmal und läuft nach 3 Stunden ab. Falls Sie das nicht angefordert haben, ignorieren Sie diese E-Mail und ändern Sie Ihr Passwort.",
+  "emailChangeAction": "E-Mail-Adresse ändern"
 }
